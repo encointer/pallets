@@ -1,0 +1,127 @@
+[package]
+name = "pallet-encointer-ceremonies"
+version = "0.3.0"
+authors = ["encointer.org <alain@encointer.org>"]
+edition = "2018"
+
+[dependencies]
+
+[dependencies.rstd]
+default-features = false
+package = "sp-std"
+version = "2.0.0-alpha.7"
+
+[dependencies.runtime-io]
+default-features = false
+package = "sp-io"
+version = "2.0.0-alpha.7"
+
+[dependencies.sp-runtime]
+default-features = false
+package = "sp-runtime"
+version = "2.0.0-alpha.7"
+
+[dependencies.balances]
+default-features = false
+package = "pallet-balances"
+version = "2.0.0-alpha.7"
+
+[dependencies.encointer-scheduler]
+default-features = false
+path = "../scheduler"
+package = "pallet-encointer-scheduler"
+
+[dependencies.encointer-currencies]
+default-features = false
+path = "../currencies"
+package = "pallet-encointer-currencies"
+
+[dependencies.encointer-balances]
+default-features = false
+path = "../balances"
+package = "pallet-encointer-balances"
+
+[dependencies.codec]
+default-features = false
+package = "parity-scale-codec"
+features = ["derive"]
+version = "1.3.0"
+
+[dependencies.support]
+default-features = false
+package = "frame-support"
+version = "2.0.0-alpha.7"
+
+[dependencies.system]
+default-features = false
+package = "frame-system"
+version = "2.0.0-alpha.7"
+
+[dependencies.serde]
+features = ["derive"]
+optional = true
+version = "1.0.101"
+
+[dependencies.primitives]
+default-features = false
+package = "sp-core"
+version = "2.0.0-alpha.7"
+
+[dependencies.timestamp]
+default-features = false
+package = "pallet-timestamp"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies]
+approx = "0.3.0"
+tempdir = "0.3.7"
+
+[dev-dependencies.inherents]
+package = "sp-inherents"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.keystore]
+package = "sc-keystore"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.app-crypto]
+package = "sp-application-crypto"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.externalities]
+package = "sp-externalities"
+version = "0.8.0-alpha.7"
+
+[dev-dependencies.sp-keyring]
+package = "sp-keyring"
+version = "2.0.0-alpha.7"
+
+[features]
+default = ["std"]
+std = [
+	"balances/std",
+	"codec/std",
+	"rstd/std",
+	"runtime-io/std",
+	"serde",
+	"sp-runtime/std",
+	"primitives/std",
+	"timestamp/std",
+	"support/std",
+	"system/std",
+	"encointer-currencies/std",
+	"encointer-scheduler/std",
+	"encointer-balances/std"
+]
+
+#[patch."https://github.com/encointer/pallet-encointer-currencies"]
+#pallet-encointer-currencies = { path = "../pallet-encointer-currencies" }
+
+#[patch."https://github.com/encointer/pallet-encointer-balances"]
+#pallet-encointer-balances = { path = "../pallet-encointer-balances" }
+
+#[patch."https://github.com/encointer/pallet-encointer-scheduler"]
+#pallet-encointer-scheduler = { path = "../pallet-encointer-scheduler" }
+
+#[patch."https://github.com/encointer/substrate-fixed"]
+#substrate-fixed = { path = "../substrate-fixed" }

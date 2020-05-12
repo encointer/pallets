@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    'scheduler',
+    'balances',
+    'currencies',
+    'ceremonies'
+]

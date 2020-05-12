@@ -1,0 +1,98 @@
+[package]
+name = "pallet-encointer-balances"
+version = "0.3.0"
+authors = ["encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>"]
+edition = "2018"
+
+[dependencies]
+serde = { version = "1.0.101", optional = true }
+safe-mix = { version = "1.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = ["derive"] }
+num-traits = { version = "0.2.8", default-features = false }
+impl-trait-for-tuples = "0.1.3"
+
+[dependencies.encointer-currencies]
+default-features = false
+path = "../currencies"
+package = "pallet-encointer-currencies"
+
+[dependencies.fixed]
+default-features = false
+git = "https://github.com/encointer/substrate-fixed"
+tag = "v0.5.4+sub_v0.1"
+package = "substrate-fixed"
+
+[dependencies.rstd]
+default-features = false
+package = "sp-std"
+version = "2.0.0-alpha.7"
+
+[dependencies.sp-runtime]
+default-features = false
+package = "sp-runtime"
+version = "2.0.0-alpha.7"
+
+[dependencies.runtime-io]
+default-features = false
+package = "sp-io"
+version = "2.0.0-alpha.7"
+
+[dependencies.support]
+default-features = false
+package = "frame-support"
+version = "2.0.0-alpha.7"
+
+[dependencies.system]
+default-features = false
+package = "frame-system"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies]
+approx = "0.3.0"
+
+[dev-dependencies.sp-keyring]
+package = "sp-keyring"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.runtime-io]
+package = "sp-io"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.primitives]
+package = "sp-core"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.transaction-payment]
+package = "pallet-transaction-payment"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.runtime-interface]
+default-features = false
+package = "sp-runtime-interface"
+version = "2.0.0-alpha.7"
+
+[dev-dependencies.test-client]
+package = "substrate-test-runtime-client"
+git = "https://github.com/paritytech/substrate"
+rev = "3bf9540e72df5ecb3955845764dfee7dcdbb26b5"
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"safe-mix/std",
+	"num-traits/std",
+	"codec/std",
+	"rstd/std",
+	"support/std",
+	"sp-runtime/std",
+	"runtime-io/std",
+	"system/std",
+	"encointer-currencies/std",
+	"fixed/std",
+	"fixed/serde"
+]
+
+
+#[patch."https://github.com/encointer/pallet-encointer-currencies"]
+#pallet-encointer-currencies = { path = "../pallet-encointer-currencies" }
