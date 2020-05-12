@@ -22,7 +22,7 @@
 
 use super::*;
 use mock::{ExtBuilder, System, TestRuntime, TestEvent, EncointerBalances, EncointerCurrencies, ALICE, BOB, register_test_currency};
-use support::{assert_noop, assert_ok};
+use support::{assert_noop, assert_ok, traits::OnInitialize};
 use fixed::{transcendental::exp, traits::LossyInto};
 use encointer_currencies::CurrencyIdentifier;
 
@@ -60,6 +60,9 @@ fn transfer_should_work() {
 	ExtBuilder::default()
 		.build()
 		.execute_with(|| {
+			System::set_block_number(System::block_number() + 1);
+			System::on_initialize(System::block_number());
+
 			let cid = CurrencyIdentifier::default();
 			assert_ok!(EncointerBalances::issue(cid, &ALICE, BalanceType::from_num(50)));
 			assert_ok!(EncointerBalances::transfer(Some(ALICE).into(), BOB, cid, BalanceType::from_num(10)));

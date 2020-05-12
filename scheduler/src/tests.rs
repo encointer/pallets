@@ -18,12 +18,13 @@
 use crate::{Module, Trait, CeremonyPhaseType, GenesisConfig};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup, OnFinalize, OnInitialize},
+	traits::{BlakeTwo256, IdentityLookup},
 	Perbill,
 };
 use primitives::H256;
 use support::{assert_ok, impl_outer_origin, impl_outer_event, parameter_types,
-        storage::StorageValue};
+    storage::StorageValue,
+    traits::{OnFinalize, OnInitialize}};
 use runtime_io::TestExternalities;
 use inherents::ProvideInherent;
 use std::ops::Rem;
@@ -76,7 +77,10 @@ impl system::Trait for TestRuntime {
 	type Header = Header;
 	type Event = TestEvent;
 	type BlockHashCount = BlockHashCount;
-	type MaximumBlockWeight = MaximumBlockWeight;
+    type MaximumBlockWeight = MaximumBlockWeight;
+	type DbWeight = ();
+	type BlockExecutionWeight = ();
+	type ExtrinsicBaseWeight = ();    
 	type MaximumBlockLength = MaximumBlockLength;
 	type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();

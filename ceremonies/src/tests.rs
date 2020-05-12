@@ -26,7 +26,7 @@ use encointer_scheduler::{CeremonyPhaseType, CeremonyIndexType, OnCeremonyPhaseC
 use externalities::set_and_run_with_externalities;
 use primitives::crypto::Ss58Codec;
 use primitives::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
-use sp_runtime::traits::{CheckedAdd, IdentifyAccount, Member, Verify, OnFinalize, OnInitialize};
+use sp_runtime::traits::{CheckedAdd, IdentifyAccount, Member, Verify};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -34,7 +34,7 @@ use sp_runtime::{
 };
 use inherents::ProvideInherent;
 use std::{cell::RefCell, collections::HashSet, ops::Rem};
-use support::traits::{Currency, FindAuthor, Get, LockIdentifier};
+use support::traits::{Currency, FindAuthor, Get, LockIdentifier, OnFinalize, OnInitialize};
 use support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
 use sp_keyring::AccountKeyring;
 
@@ -103,6 +103,9 @@ impl system::Trait for TestRuntime {
     type Event = ();
     type BlockHashCount = BlockHashCount;
     type MaximumBlockWeight = MaximumBlockWeight;
+	type DbWeight = ();
+	type BlockExecutionWeight = ();
+	type ExtrinsicBaseWeight = ();    
     type MaximumBlockLength = MaximumBlockLength;
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
