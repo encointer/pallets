@@ -37,7 +37,7 @@ use sp_timestamp::OnTimestampSet;
 use rstd::prelude::*;
 use runtime_io::misc::{print_utf8, print_hex};
 use codec::{Decode, Encode};
-use sp_runtime::traits::{CheckedAdd, Zero};
+use sp_runtime::traits::{Saturating, CheckedAdd, CheckedDiv, Zero};
 use rstd::ops::Rem;
 
 #[cfg(feature = "std")]
@@ -129,10 +129,7 @@ impl<T: Trait> Module<T> {
                     CeremonyPhaseType::ATTESTING
             },
             CeremonyPhaseType::ATTESTING => {
-                    let next_ceremony_index = match current_ceremony_index.checked_add(1) {
-                        Some(v) => v,
-                        None => 0, //deliberate wraparound
-                    };
+                    let next_ceremony_index = current_ceremony_index.saturating_add(1);
                     <CurrentCeremonyIndex>::put(next_ceremony_index);
                     CeremonyPhaseType::REGISTERING
             },
@@ -141,7 +138,7 @@ impl<T: Trait> Module<T> {
         let next = last_phase_timestamp
             .checked_add(&<PhaseDurations<T>>::get(next_phase))
             .expect("overflowing timestamp");
-        <NextPhaseTimestamp<T>>::put(next);
+        Self::resync_and_set_next_phase_timestamp(next)?;
 
         <CurrentPhase>::put(next_phase);
         T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
@@ -152,6 +149,30 @@ impl<T: Trait> Module<T> {
 
     }
 
+    // we need to resync in two situations:
+    // 1. when the chain bootstraps and cycle duration is smaller than 24h, phases would cycle with every block until catched up
+    // 2. when next_phase() is used, we would introduce long idle phases because next_phase_timestamp would be pushed furhter and further into the future
+    fn resync_and_set_next_phase_timestamp(tnext: T::Moment) -> DispatchResult {
+        let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING)
+            + <PhaseDurations<T>>::get(CeremonyPhaseType::ASSIGNING)
+            + <PhaseDurations<T>>::get(CeremonyPhaseType::ATTESTING);
+        let now = <timestamp::Module<T>>::now();
+
+        let tnext = if tnext < now {
+            let gap = now - tnext;
+            let n = gap.checked_div(&cycle_duration).expect("invalid phase durations: may not be zero");
+            tnext.saturating_add(
+                (cycle_duration).saturating_mul(n+T::Moment::from(1)))
+        } else {
+            let gap = tnext- now;
+            let n = gap.checked_div(&cycle_duration).expect("invalid phase durations: may not be zero");
+            tnext.saturating_sub(
+                cycle_duration.saturating_mul(n))
+        };
+        <NextPhaseTimestamp<T>>::put(tnext);
+        Ok(())
+    }
+
 	fn on_timestamp_set(now: T::Moment) {
         if Self::next_phase_timestamp() == T::Moment::zero() {
             // only executed in first block after genesis. 
@@ -159,7 +180,7 @@ impl<T: Trait> Module<T> {
             let next = (now - now.rem(T::MomentsPerDay::get()))
                 .checked_add(&<PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING))
                 .expect("overflowing timestamp");
-            <NextPhaseTimestamp<T>>::put(next);
+            Self::resync_and_set_next_phase_timestamp(next).expect("set next phase failed");
         } else if Self::next_phase_timestamp() < now {
             Self::progress_phase().expect("phase progress error");
         }

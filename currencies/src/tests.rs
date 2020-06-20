@@ -146,6 +146,12 @@ fn get_accountid(pair: &sr25519::Pair) -> AccountId {
 type T = Degree;
 
 #[test]
+fn testdata_lat_long() {
+    println!(" {} : {:x?} ", 1.1, Degree::from_num(1.1));
+}
+
+
+#[test]
 fn solar_trip_time_works() {
     // one degree equator
     let a = Location {

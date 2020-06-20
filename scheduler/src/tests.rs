@@ -23,7 +23,6 @@ use sp_runtime::{
 };
 use primitives::H256;
 use support::{assert_ok, impl_outer_origin, impl_outer_event, parameter_types,
-    storage::StorageValue,
     traits::{OnFinalize, OnInitialize}};
 use runtime_io::TestExternalities;
 use inherents::ProvideInherent;
@@ -54,6 +53,7 @@ impl Trait for TestRuntime {
 }
 
 type AccountId = u64;
+type Moment = u64;
 
 // Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -94,17 +94,32 @@ parameter_types! {
     pub const MinimumPeriod: u64 = 1;
 }
 impl timestamp::Trait for TestRuntime {
-	type Moment = u64;
+	type Moment = Moment;
 	type OnTimestampSet = EncointerScheduler;
 	type MinimumPeriod = MinimumPeriod;
 }
 
-pub struct ExtBuilder;
+pub struct ExtBuilder{
+    equal_phase_duration: Moment,
+}
+
+impl Default for ExtBuilder {
+    fn default() -> Self {
+        Self {
+            equal_phase_duration: 86_400_000,
+        }
+    }
+}
 
 const MASTER: AccountId = 0;
 
 impl ExtBuilder {
-    pub fn build() -> TestExternalities {
+    pub fn equal_phase_duration(mut self, d: Moment) -> Self {
+        self.equal_phase_duration = d;
+        self
+    }
+
+    pub fn build(&self) -> TestExternalities {
         let mut storage = system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
@@ -113,9 +128,9 @@ impl ExtBuilder {
             current_ceremony_index: 1,
             ceremony_master: MASTER,
             phase_durations: vec![
-                (CeremonyPhaseType::REGISTERING, 86_400_000),
-                (CeremonyPhaseType::ASSIGNING, 86_400_000),
-                (CeremonyPhaseType::ATTESTING, 86_400_000),
+                (CeremonyPhaseType::REGISTERING, self.equal_phase_duration),
+                (CeremonyPhaseType::ASSIGNING, self.equal_phase_duration),
+                (CeremonyPhaseType::ATTESTING, self.equal_phase_duration),
             ]
         }
         .assimilate_storage(&mut storage)
@@ -142,7 +157,7 @@ pub fn run_to_block(n: u64) {
 
 #[test]
 fn ceremony_phase_statemachine_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build().execute_with(|| {
         assert_eq!(
             EncointerScheduler::current_phase(),
             CeremonyPhaseType::REGISTERING
@@ -175,7 +190,7 @@ fn ceremony_phase_statemachine_works() {
 
 #[test]
 fn timestamp_callback_works() {
-    ExtBuilder::build().execute_with(|| {
+    ExtBuilder::default().build().execute_with(|| {
         //large offset since 1970 to when first block is generated
         const GENESIS_TIME: u64 = 1_585_058_843_000;
         const ONE_DAY: u64 = 86_400_000;
@@ -220,6 +235,169 @@ fn timestamp_callback_works() {
             EncointerScheduler::current_phase(),
             CeremonyPhaseType::REGISTERING
         );
+
+    });
+}
+
+const TEN_MIN: u64 = 600_000;
+const ONE_DAY: u64 = 86_400_000;
+
+#[test]
+fn resync_catches_up_short_cycle_times_at_genesis_during_first_registering_phase() {
+    ExtBuilder::default().equal_phase_duration(TEN_MIN).build().execute_with(|| {
+        // CASE1: genesis happens during first REGISTERING phase of the day
+        let genesis_time: u64 = 0 * TEN_MIN + 1;
+
+        System::set_block_number(0);
+        
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+            set(genesis_time), Origin::NONE);
+
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::REGISTERING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * TEN_MIN);
+    });
+}
+    
+#[test]
+fn resync_catches_up_short_cycle_times_at_genesis_during_third_registering_phase() {
+    ExtBuilder::default().equal_phase_duration(TEN_MIN).build().execute_with(|| {
+        // CASE2: genesis happens during 3rd REGISTERING phase of the day
+        let genesis_time: u64 = 6 * TEN_MIN + 1;
+
+        System::set_block_number(0);
+        
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+            set(genesis_time), Origin::NONE);
+
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::REGISTERING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 7 * TEN_MIN);
+    });
+}
+    
+#[test]
+fn resync_catches_up_short_cycle_times_at_genesis_during_third_assigning_phase() {
+    ExtBuilder::default().equal_phase_duration(TEN_MIN).build().execute_with(|| {
+        // CASE3: genesis happens during 3rd ASSIGNING phase of the day
+        let genesis_time: u64 = 7 * TEN_MIN + 1;
+
+        System::set_block_number(0);
+        
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+            set(genesis_time), Origin::NONE);
+
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::REGISTERING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 10 * TEN_MIN);
+    });
+}
+    
+#[test]
+fn resync_catches_up_short_cycle_times_at_genesis_during_third_attesting_phase() {
+    ExtBuilder::default().equal_phase_duration(TEN_MIN).build().execute_with(|| {
+        // CASE4: genesis happens during 3rd ATTESTING phase of the day
+        let genesis_time: u64 = 8 * TEN_MIN + 1;
+
+        System::set_block_number(0);
+        
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+            set(genesis_time), Origin::NONE);
+
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::REGISTERING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 10 * TEN_MIN);
+
+    });
+}
+
+#[test]
+fn resync_after_next_phase_works() {
+    ExtBuilder::default().equal_phase_duration(ONE_DAY).build().execute_with(|| {
+        let genesis_time: u64 = 0;
+        
+        System::set_block_number(0);
+        
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+            set(genesis_time), Origin::NONE);
+
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::REGISTERING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY);
+
+        run_to_block(1);
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+                set(genesis_time + TEN_MIN), Origin::NONE);  
+
+        // now use next_phase manually 
+        assert_ok!(EncointerScheduler::next_phase(Origin::signed(
+            MASTER
+        )));
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::ASSIGNING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 2 * ONE_DAY);
+        // this means that we merely anticipated the ASSIGNING_PHASE. NExt ATTESTING will still start as if next_phase() had not been called 
+
+        run_to_block(2);
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+                set(genesis_time + 2*TEN_MIN), Origin::NONE);              
+
+        // again
+        assert_ok!(EncointerScheduler::next_phase(Origin::signed(
+            MASTER
+        )));
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::ATTESTING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 3 * ONE_DAY);
+        // this means that we merely anticipated the ATTESTING phase. NExt REGISTERING will still start as if next_phase() had not been called 
+    
+        run_to_block(3);
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+                set(genesis_time + 3*TEN_MIN), Origin::NONE);              
+
+        // again
+        // because we would skip an entire Cycle now, we resync to the next 
+        // even next_phase_timestamp in the future
+        assert_ok!(EncointerScheduler::next_phase(Origin::signed(
+            MASTER
+        )));
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::REGISTERING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY);
+        // now the next ASSIGNING phase starts exactly at the time it would have startet if next_phase had not been called. 
+        // But the ceremony index increased by one
 
     });
 }
