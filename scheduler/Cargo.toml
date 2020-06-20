@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-scheduler"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 

@@ -96,11 +96,22 @@ decl_module! {
 
         fn deposit_event() = default;
 
+        /// Manually transition to next phase without affecting the ceremony rhythm
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn next_phase(origin) -> DispatchResult {
             let sender = ensure_signed(origin)?;
             ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
             Self::progress_phase()?;
+            Ok(())
+        }
+
+        /// Push next phase change by one entire day
+        #[weight = (1000, DispatchClass::Operational, Pays::No)]
+        pub fn push_by_one_day(origin) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+            ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
+            let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
+            <NextPhaseTimestamp<T>>::put(tnext);
             Ok(())
         }
     }
