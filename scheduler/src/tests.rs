@@ -262,7 +262,7 @@ fn push_one_day_works() {
         run_to_block(1);
         let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
             set(genesis_time + TEN_MIN), Origin::NONE);
-            
+
         assert_ok!(EncointerScheduler::push_by_one_day(Origin::signed(
             MASTER
         )));  
@@ -480,6 +480,58 @@ fn resync_after_next_phase_works_during_assigning() {
         );
         assert_eq!(EncointerScheduler::next_phase_timestamp(), 
             (genesis_time - genesis_time.rem(ONE_DAY)) + 2 * ONE_DAY);
+
+    });
+}
+#[test]
+fn resync_after_next_phase_works_during_attesting() {
+    ExtBuilder::default().equal_phase_duration(ONE_DAY).build().execute_with(|| {
+        let genesis_time: u64 = 0;
+        
+        System::set_block_number(0);
+        
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+            set(genesis_time), Origin::NONE);
+
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::REGISTERING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY);
+
+        run_to_block(1);
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+                set(genesis_time + 1*ONE_DAY+ TEN_MIN), Origin::NONE);  
+
+        run_to_block(2);
+        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
+                set(genesis_time + 2*ONE_DAY+ TEN_MIN), Origin::NONE);  
+        
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::ATTESTING
+        );
+
+        // now use next_phase manually 
+        assert_ok!(EncointerScheduler::next_phase(Origin::signed(
+            MASTER
+        )));
+        assert_ok!(EncointerScheduler::next_phase(Origin::signed(
+            MASTER
+        )));
+        assert_ok!(EncointerScheduler::next_phase(Origin::signed(
+            MASTER
+        )));
+
+        assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::ATTESTING
+        );
+        assert_eq!(EncointerScheduler::next_phase_timestamp(), 
+            (genesis_time - genesis_time.rem(ONE_DAY)) + 3 * ONE_DAY);
 
     });
 }
