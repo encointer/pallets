@@ -67,8 +67,8 @@ pub trait Trait: system::Trait + encointer_currencies::Trait {
 
 decl_storage! {
 	trait Store for Module<T: Trait> as EncointerBalances {
-		pub TotalIssuance: map hasher(blake2_128_concat) CurrencyIdentifier => BalanceEntry<T::BlockNumber>;
-		pub Balance: double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
+		pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CurrencyIdentifier => BalanceEntry<T::BlockNumber>;
+		pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
 		//pub DemurragePerBlock get(fn demurrage_per_block): BalanceType = DemurrageRate;
 	}
 }
@@ -115,21 +115,21 @@ decl_error! {
 impl<T: Trait> Module<T> {
 
 	pub fn balance(currency_id: CurrencyIdentifier, who: &T::AccountId) -> BalanceType {
-		Self::balance_entry(currency_id, who).principal
+		Self::balance_entry_updated(currency_id, who).principal
 	}
 
 	/// get balance and apply demurrage. This is not a noop! It changes state.
-	fn balance_entry(currency_id: CurrencyIdentifier, who: &T::AccountId) -> BalanceEntry<T::BlockNumber> {
+	fn balance_entry_updated(currency_id: CurrencyIdentifier, who: &T::AccountId) -> BalanceEntry<T::BlockNumber> {
 		let entry = <Balance<T>>::get(currency_id, who);
 		Self::apply_demurrage(entry, <encointer_currencies::Module<T>>::currency_properties(currency_id).demurrage_per_block)
 	}
 
 	pub fn total_issuance(currency_id: CurrencyIdentifier) -> BalanceType {
-		Self::total_issuance_entry(currency_id).principal
+		Self::total_issuance_entry_updated(currency_id).principal
 	}
 
 	/// get total_issuance and apply demurrage. This is not a noop! It changes state.
-	fn total_issuance_entry(currency_id: CurrencyIdentifier) -> BalanceEntry<T::BlockNumber> {
+	fn total_issuance_entry_updated(currency_id: CurrencyIdentifier) -> BalanceEntry<T::BlockNumber> {
 		let entry =	<TotalIssuance<T>>::get(currency_id);
 		Self::apply_demurrage(entry, <encointer_currencies::Module<T>>::currency_properties(currency_id).demurrage_per_block)
 	}
@@ -156,11 +156,11 @@ impl<T: Trait> Module<T> {
 		to: &T::AccountId,
 		amount: BalanceType,
 	) -> DispatchResult {
-		let mut entry_from = Self::balance_entry(currency_id, from);
+		let mut entry_from = Self::balance_entry_updated(currency_id, from);
 		ensure!(entry_from.principal >= amount, Error::<T>::BalanceTooLow);
 		//FIXME: delete account if it falls below existential deposit
 		if from != to {
-			let mut entry_to = Self::balance_entry(currency_id, to);
+			let mut entry_to = Self::balance_entry_updated(currency_id, to);
 			entry_from.principal -= amount;
 			entry_to.principal += amount;
 			<Balance<T>>::insert(currency_id, from, entry_from);
@@ -176,8 +176,8 @@ impl<T: Trait> Module<T> {
 		who: &T::AccountId,
 		amount: BalanceType,
 	) -> DispatchResult {
-		let mut entry_who = Self::balance_entry(currency_id, who);
-		let mut entry_tot = Self::total_issuance_entry(currency_id);
+		let mut entry_who = Self::balance_entry_updated(currency_id, who);
+		let mut entry_tot = Self::total_issuance_entry_updated(currency_id);
 		ensure!(entry_tot.principal.checked_add(amount).is_some(),
 			Error::<T>::TotalIssuanceOverflow,
 		);
@@ -195,8 +195,8 @@ impl<T: Trait> Module<T> {
 		who: &T::AccountId,
 		amount: BalanceType,
 	) -> DispatchResult {
-		let mut entry_who = Self::balance_entry(currency_id, who);
-		let mut entry_tot = Self::total_issuance_entry(currency_id);
+		let mut entry_who = Self::balance_entry_updated(currency_id, who);
+		let mut entry_tot = Self::total_issuance_entry_updated(currency_id);
 		entry_who.principal = if let Some(res) = entry_who.principal.checked_sub(amount) {
 			ensure!(res >= 0, Error::<T>::BalanceTooLow);
 			res
