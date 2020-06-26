@@ -562,11 +562,15 @@ impl<T: Trait> Module<T> {
         }
     }
 
-    pub fn get_meetup_time(
+    // this function only works during ATTESTING, so we're keeping it for private use
+    fn get_meetup_time(
         cid: &CurrencyIdentifier,
         meetup_idx: MeetupIndexType,
     ) -> Option<T::Moment> {
         if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
+            return None;
+        }
+        if meetup_idx == 0 {
             return None;
         }
         let duration = <encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
