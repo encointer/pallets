@@ -555,7 +555,7 @@ impl<T: Trait> Module<T> {
         meetup_idx: MeetupIndexType,        
     ) -> Option<Location> {
         let locations = <encointer_currencies::Module<T>>::locations(&cid);
-        if meetup_idx <= locations.len() as MeetupIndexType {
+        if (meetup_idx > 0) && (meetup_idx <= locations.len() as MeetupIndexType) {
             Some(locations[(meetup_idx - 1) as usize])
         } else {
             None
