@@ -579,13 +579,14 @@ impl<T: Trait> Module<T> {
         let day = T::MomentsPerDay::get(); 
         let perdegree = day / T::Moment::from(360);
         let start = next - duration;
+        // rounding to the lower integer degree. Max error: 240s = 4min
         let abs_lon: i64 = mlocation.lon.abs().lossy_into();
         let abs_lon_time = T::Moment::from(abs_lon.try_into().unwrap()) * perdegree;
 
         if mlocation.lon < Degree::from_num(0) {
-            Some(start + day + abs_lon_time)
+            Some(start + day/T::Moment::from(2) + abs_lon_time)
         } else {
-            Some(start + day - abs_lon_time)
+            Some(start + day/T::Moment::from(2) - abs_lon_time)
         }
     }
 

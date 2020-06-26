@@ -218,7 +218,7 @@ fn correct_meetup_time(cid: &CurrencyIdentifier, mindex: MeetupIndexType) -> Mom
         + cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING)
         + cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING)
         + (cindex-1) * EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING)    
-        + ONE_DAY - (mlon / 360.0 * ONE_DAY as f64) as u64 ;
+        + ONE_DAY/2 - (mlon / 360.0 * ONE_DAY as f64) as u64 ;
     t.into()
 }
 
@@ -963,7 +963,7 @@ fn register_attestations_with_wrong_timestamp_fails() {
         run_to_next_phase();
         run_to_next_phase();
         // ATTESTING
-        let loc = Location::default();
+        let loc = Location {lon: Degree::from_num(25.9), lat: Degree::from_num(0)};
         // too late!
         let time = correct_meetup_time(&cid, 1) + TIME_TOLERANCE + 1;
         let mut alice_attestations: Vec<TestAttestation> = vec![];
@@ -1365,13 +1365,13 @@ fn get_meetup_time_works() {
         );
         
         assert_eq!(EncointerCeremonies::get_meetup_time(&cid,1), 
-            Some(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 3*ONE_DAY));
+            Some(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2*ONE_DAY + ONE_DAY/2));
 
         assert_eq!(EncointerCeremonies::get_meetup_time(&cid,2), 
-            Some(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 3*ONE_DAY - 1*ONE_DAY/360));
+            Some(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2*ONE_DAY + ONE_DAY/2 - 1*ONE_DAY/360));
 
         assert_eq!(EncointerCeremonies::get_meetup_time(&cid,3), 
-            Some(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 3*ONE_DAY - 2*ONE_DAY/360));
+            Some(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2*ONE_DAY + ONE_DAY/2 - 2*ONE_DAY/360));
     });
 }
 
