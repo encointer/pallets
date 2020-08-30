@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-ceremonies"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
