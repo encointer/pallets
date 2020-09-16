@@ -32,9 +32,9 @@ fn issue_should_work() {
 		.build()
 		.execute_with(|| {
 			let cid = CurrencyIdentifier::default();
-			assert_ok!(EncointerBalances::issue(cid, &ALICE, BalanceType::from_num(50)));
-			assert_eq!(EncointerBalances::balance(cid, &ALICE), BalanceType::from_num(50));
-			assert_eq!(EncointerBalances::total_issuance(cid), BalanceType::from_num(50));
+			assert_ok!(EncointerBalances::issue(cid, &ALICE, BalanceType::from_num(50.1)));
+			assert_eq!(EncointerBalances::balance(cid, &ALICE), BalanceType::from_num(50.1));
+			assert_eq!(EncointerBalances::total_issuance(cid), BalanceType::from_num(50.1));
 		});
 }
 
@@ -65,12 +65,18 @@ fn transfer_should_work() {
 
 			let cid = CurrencyIdentifier::default();
 			assert_ok!(EncointerBalances::issue(cid, &ALICE, BalanceType::from_num(50)));
-			assert_ok!(EncointerBalances::transfer(Some(ALICE).into(), BOB, cid, BalanceType::from_num(10)));
-			assert_eq!(EncointerBalances::balance(cid, &ALICE), BalanceType::from_num(40));
-			assert_eq!(EncointerBalances::balance(cid, &BOB), BalanceType::from_num(10));
-			assert_eq!(EncointerBalances::total_issuance(cid), BalanceType::from_num(50));
+			assert_ok!(EncointerBalances::transfer(Some(ALICE).into(), BOB, cid, BalanceType::from_num(9.999)));
+			//assert_abs_diff_eq!(EncointerBalances::balance(cid, &ALICE), 40.001, 1.0e-9);
+			let balance: f64 = EncointerBalances::balance(cid, &ALICE).lossy_into();
+			assert_relative_eq!(balance, 40.001, epsilon = 1.0e-9);
 
-			let transferred_event = TestEvent::tokens(RawEvent::Transferred(cid, ALICE, BOB, BalanceType::from_num(10)));
+			let balance: f64 = EncointerBalances::balance(cid, &BOB).lossy_into();
+			assert_relative_eq!(balance, 9.999, epsilon = 1.0e-9);
+
+			let balance: f64 = EncointerBalances::total_issuance(cid).lossy_into();
+			assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
+
+			let transferred_event = TestEvent::tokens(RawEvent::Transferred(cid, ALICE, BOB, BalanceType::from_num(9.999)));
 			assert!(System::events().iter().any(|record| record.event == transferred_event));
 
 			assert_noop!(
