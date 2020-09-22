@@ -327,3 +327,29 @@ fn new_community_near_dateline_fails() {
         .is_err());
     });
 }
+
+#[test]
+fn new_currency_with_problematic_location_works() {
+    ExtBuilder::build().execute_with(|| {
+        let alice = AccountId::from(AccountKeyring::Alice);
+        let bob = AccountId::from(AccountKeyring::Bob);
+        let charlie = AccountId::from(AccountKeyring::Charlie);
+        let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+
+        let a = Location {
+            lat: T::from_num(47.2705520547),
+            lon: T::from_num(8.6401677132),
+        };
+        let b = Location {
+            lat: T::from_num(47.2696129372),
+            lon: T::from_num(8.6439979076),
+        };
+        let loc = vec![a, b];
+        assert!(EncointerCommunities::new_community(
+            Origin::signed(alice.clone()),
+            loc,
+            bs.clone()
+        )
+        .is_ok());
+    });
+}

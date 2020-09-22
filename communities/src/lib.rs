@@ -197,6 +197,8 @@ impl<T: Trait> Module<T> {
             I::from_num(0)
         };
         let aa = tmp1 + tmp2 * tmp4;
+        // Fixme: Here we fail in the test: new_currency_with_problematic_location_works
+        // as sqrt(0.0000000002) returns an error.
         let c: I = two * asin(sqrt::<I, I>(aa).unwrap());
         let d = I::from(MEAN_EARTH_RADIUS) * c;
         let d: i64 = d.lossy_into();
