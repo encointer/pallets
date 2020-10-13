@@ -34,7 +34,7 @@ use sp_runtime::{
 };
 use inherents::ProvideInherent;
 use std::{cell::RefCell, collections::HashSet, ops::Rem};
-use support::traits::{Currency, FindAuthor, Get, LockIdentifier, OnFinalize, OnInitialize};
+use support::traits::{Currency, FindAuthor, Get, LockIdentifier, OnFinalize, OnInitialize, UnfilteredDispatchable};
 use support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
 use sp_keyring::AccountKeyring;
 
@@ -90,7 +90,8 @@ parameter_types! {
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
-impl system::Trait for TestRuntime {
+impl frame_system::Trait for TestRuntime {
+    type BaseCallFilter = ();          
     type Origin = Origin;
     type Index = u64;
     type Call = ();
@@ -107,15 +108,17 @@ impl system::Trait for TestRuntime {
 	type BlockExecutionWeight = ();
 	type ExtrinsicBaseWeight = ();    
     type MaximumBlockLength = MaximumBlockLength;
+    type MaximumExtrinsicWeight = MaximumBlockWeight;   
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
-	type ModuleToIndex = ();
 	type AccountData = balances::AccountData<u64>;
 	type OnNewAccount = ();
-	type OnKilledAccount = ();          
+    type OnKilledAccount = ();  
+    type SystemWeightInfo = (); 
+    type PalletInfo = ();          
 }
 
-pub type System = system::Module<TestRuntime>;
+pub type System = frame_system::Module<TestRuntime>;
 
 impl encointer_balances::Trait for TestRuntime {
 	type Event = ();
@@ -140,7 +143,8 @@ parameter_types! {
 impl timestamp::Trait for TestRuntime {
 	type Moment = Moment;
 	type OnTimestampSet = EncointerScheduler;
-	type MinimumPeriod = MinimumPeriod;
+    type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
 }
 pub type Timestamp = timestamp::Module<TestRuntime>;
 
@@ -150,7 +154,7 @@ pub struct ExtBuilder;
 
 impl ExtBuilder {
     pub fn build() -> runtime_io::TestExternalities {
-        let mut storage = system::GenesisConfig::default()
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
         encointer_currencies::GenesisConfig::<TestRuntime> {
@@ -191,8 +195,7 @@ fn run_to_block(n: u64) {
 		if System::block_number() > 1 {
             System::on_finalize(System::block_number());
         }
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(GENESIS_TIME + BLOCKTIME * n), Origin::NONE);
+        set_timestamp(GENESIS_TIME + BLOCKTIME * n);
         Timestamp::on_finalize(System::block_number());
 		System::set_block_number(System::block_number() + 1);
 		System::on_initialize(System::block_number());
@@ -207,6 +210,11 @@ fn run_to_next_phase() {
         blocknr += 1;
         run_to_block(blocknr);
     }
+}
+
+pub fn set_timestamp(t: u64) {
+    let _ = <timestamp::Module<TestRuntime> as ProvideInherent>::Call::set(t)
+        .dispatch_bypass_filter(Origin::none());    
 }
 
 /// get correct meetup time for a certain cid and meetup

@@ -70,7 +70,8 @@ parameter_types! {
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
-impl system::Trait for TestRuntime {
+impl frame_system::Trait for TestRuntime {
+    type BaseCallFilter = ();       
     type Origin = Origin;
     type Index = u64;
     type Call = ();
@@ -87,15 +88,17 @@ impl system::Trait for TestRuntime {
 	type BlockExecutionWeight = ();
 	type ExtrinsicBaseWeight = ();    
     type MaximumBlockLength = MaximumBlockLength;
+    type MaximumExtrinsicWeight = MaximumBlockWeight;    
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
-	type ModuleToIndex = ();
 	type AccountData = balances::AccountData<u64>;
 	type OnNewAccount = ();
-	type OnKilledAccount = ();       
+    type OnKilledAccount = ();  
+    type SystemWeightInfo = (); 
+    type PalletInfo = ();     
 }
 
-pub type System = system::Module<TestRuntime>;
+pub type System = frame_system::Module<TestRuntime>;
 
 parameter_types! {
     pub const TransferFee: Balance = 0;
@@ -109,6 +112,8 @@ impl balances::Trait for TestRuntime {
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
+    type WeightInfo = ();
+    type MaxLocks = ();   
 }
 pub type Balances = balances::Module<TestRuntime>;
 
@@ -118,7 +123,7 @@ pub struct ExtBuilder;
 
 impl ExtBuilder {
     pub fn build() -> runtime_io::TestExternalities {
-        let mut storage = system::GenesisConfig::default()
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
         balances::GenesisConfig::<TestRuntime> {

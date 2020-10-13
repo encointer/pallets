@@ -21,6 +21,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	Perbill,
 };
+use support::traits::UnfilteredDispatchable;
 use primitives::H256;
 use support::{assert_ok, impl_outer_origin, impl_outer_event, parameter_types,
     traits::{OnFinalize, OnInitialize}};
@@ -39,7 +40,7 @@ mod simple_event {
 impl_outer_event! {
 	pub enum TestEvent for TestRuntime {
 		simple_event,
-		system<T>,
+		frame_system<T>,
 	}
 }
 
@@ -65,7 +66,8 @@ parameter_types! {
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
-impl system::Trait for TestRuntime {
+impl frame_system::Trait for TestRuntime {
+    type BaseCallFilter = ();    
 	type Origin = Origin;
 	type Index = u64;
 	type Call = ();
@@ -81,13 +83,15 @@ impl system::Trait for TestRuntime {
 	type DbWeight = ();
 	type BlockExecutionWeight = ();
 	type ExtrinsicBaseWeight = ();    
-	type MaximumBlockLength = MaximumBlockLength;
+    type MaximumBlockLength = MaximumBlockLength;
+    type MaximumExtrinsicWeight = MaximumBlockWeight;
 	type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
-	type ModuleToIndex = ();
 	type AccountData = ();
 	type OnNewAccount = ();
-	type OnKilledAccount = ();    
+    type OnKilledAccount = ();   
+    type SystemWeightInfo = (); 
+    type PalletInfo = ();
 }
 
 parameter_types! {
@@ -96,7 +100,8 @@ parameter_types! {
 impl timestamp::Trait for TestRuntime {
 	type Moment = Moment;
 	type OnTimestampSet = EncointerScheduler;
-	type MinimumPeriod = MinimumPeriod;
+    type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
 }
 
 pub struct ExtBuilder{
@@ -120,7 +125,7 @@ impl ExtBuilder {
     }
 
     pub fn build(&self) -> TestExternalities {
-        let mut storage = system::GenesisConfig::default()
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
         GenesisConfig::<TestRuntime> {
@@ -138,7 +143,7 @@ impl ExtBuilder {
         runtime_io::TestExternalities::from(storage)
     }
 }
-pub type System = system::Module<TestRuntime>;
+pub type System = frame_system::Module<TestRuntime>;
 pub type Timestamp = timestamp::Module<TestRuntime>;
 pub type EncointerScheduler = Module<TestRuntime>;
 
@@ -154,6 +159,10 @@ pub fn run_to_block(n: u64) {
 	}
 }
 
+pub fn set_timestamp(t: u64) {
+    let _ = <timestamp::Module<TestRuntime> as ProvideInherent>::Call::set(t)
+        .dispatch_bypass_filter(Origin::none());    
+}
 
 #[test]
 fn ceremony_phase_statemachine_works() {
@@ -196,8 +205,7 @@ fn timestamp_callback_works() {
         const ONE_DAY: u64 = 86_400_000;
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(GENESIS_TIME), Origin::NONE);
+        set_timestamp(GENESIS_TIME);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -208,9 +216,7 @@ fn timestamp_callback_works() {
             (GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)) + ONE_DAY);
 
         run_to_block(1);
-
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(GENESIS_TIME + ONE_DAY), Origin::NONE);
+        set_timestamp(GENESIS_TIME + ONE_DAY);
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
             EncointerScheduler::current_phase(),
@@ -218,9 +224,7 @@ fn timestamp_callback_works() {
         );
 
         run_to_block(2);
-
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(GENESIS_TIME + 2 * ONE_DAY), Origin::NONE);
+        set_timestamp(GENESIS_TIME + 2 * ONE_DAY);
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
             EncointerScheduler::current_phase(),
@@ -228,8 +232,7 @@ fn timestamp_callback_works() {
         );
 
         run_to_block(3);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(GENESIS_TIME + 3 * ONE_DAY), Origin::NONE);
+        set_timestamp(GENESIS_TIME + 3 * ONE_DAY);
         assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
         assert_eq!(
             EncointerScheduler::current_phase(),
@@ -248,8 +251,7 @@ fn push_one_day_works() {
         let genesis_time: u64 = 0 * TEN_MIN + 1;
 
         System::set_block_number(0);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::next_phase_timestamp(), 
             (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY);
@@ -260,8 +262,7 @@ fn push_one_day_works() {
         );   
 
         run_to_block(1);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time + TEN_MIN), Origin::NONE);
+        set_timestamp(genesis_time + TEN_MIN);
 
         assert_ok!(EncointerScheduler::push_by_one_day(Origin::signed(
             MASTER
@@ -284,8 +285,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_first_registering_phase
 
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -305,8 +305,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_third_registering_phase
 
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -326,8 +325,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_third_assigning_phase()
 
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -347,8 +345,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_third_attesting_phase()
 
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -368,8 +365,7 @@ fn resync_after_next_phase_works() {
         
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -380,8 +376,7 @@ fn resync_after_next_phase_works() {
             (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY);
 
         run_to_block(1);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-                set(genesis_time + TEN_MIN), Origin::NONE);  
+        set_timestamp(genesis_time + TEN_MIN);  
 
         // now use next_phase manually 
         assert_ok!(EncointerScheduler::next_phase(Origin::signed(
@@ -397,8 +392,7 @@ fn resync_after_next_phase_works() {
         // this means that we merely anticipated the ASSIGNING_PHASE. NExt ATTESTING will still start as if next_phase() had not been called 
 
         run_to_block(2);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-                set(genesis_time + 2*TEN_MIN), Origin::NONE);              
+        set_timestamp(genesis_time + 2*TEN_MIN);              
 
         // again
         assert_ok!(EncointerScheduler::next_phase(Origin::signed(
@@ -414,8 +408,7 @@ fn resync_after_next_phase_works() {
         // this means that we merely anticipated the ATTESTING phase. NExt REGISTERING will still start as if next_phase() had not been called 
     
         run_to_block(3);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-                set(genesis_time + 3*TEN_MIN), Origin::NONE);              
+        set_timestamp(genesis_time + 3*TEN_MIN);              
 
         // again
         // because we would skip an entire Cycle now, we resync to the next 
@@ -443,8 +436,7 @@ fn resync_after_next_phase_works_during_assigning() {
         
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -455,8 +447,7 @@ fn resync_after_next_phase_works_during_assigning() {
             (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY);
 
         run_to_block(1);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-                set(genesis_time + ONE_DAY+ TEN_MIN), Origin::NONE);  
+        set_timestamp(genesis_time + ONE_DAY+ TEN_MIN);  
         assert_eq!(
             EncointerScheduler::current_phase(),
             CeremonyPhaseType::ASSIGNING
@@ -490,8 +481,7 @@ fn resync_after_next_phase_works_during_attesting() {
         
         System::set_block_number(0);
         
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-            set(genesis_time), Origin::NONE);
+        set_timestamp(genesis_time);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -502,12 +492,10 @@ fn resync_after_next_phase_works_during_attesting() {
             (genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY);
 
         run_to_block(1);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-                set(genesis_time + 1*ONE_DAY+ TEN_MIN), Origin::NONE);  
+        set_timestamp(genesis_time + 1*ONE_DAY+ TEN_MIN);  
 
         run_to_block(2);
-        let _ = Timestamp::dispatch(<timestamp::Module<TestRuntime> as ProvideInherent>::Call::
-                set(genesis_time + 2*ONE_DAY+ TEN_MIN), Origin::NONE);  
+        set_timestamp(genesis_time + 2*ONE_DAY+ TEN_MIN);  
         
         assert_eq!(
             EncointerScheduler::current_phase(),

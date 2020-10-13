@@ -21,11 +21,10 @@
 
 use support::{impl_outer_event, impl_outer_origin, parameter_types};
 use support::{assert_noop, assert_ok};
-use system;
+use frame_system;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 use primitives::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
 use encointer_currencies::{CurrencyIdentifier, Location, Degree};
-//use test_client::AccountKeyring;
 use super::*;
 
 impl_outer_origin! {
@@ -42,7 +41,7 @@ impl_outer_event! {
 	pub enum TestEvent for TestRuntime {
 		tokens<T>,
 		currencies<T>,
-		system<T>,
+		frame_system<T>,
 	}
 }
 
@@ -57,11 +56,12 @@ parameter_types! {
 }
 
 type AccountId = u64;
-impl system::Trait for TestRuntime {
+impl frame_system::Trait for TestRuntime {
+    type BaseCallFilter = ();    
 	type Origin = Origin;
 	type Index = u64;
-	type BlockNumber = u64;
 	type Call = ();
+	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type AccountId = AccountId;
@@ -69,19 +69,21 @@ impl system::Trait for TestRuntime {
 	type Header = Header;
 	type Event = TestEvent;
 	type BlockHashCount = BlockHashCount;
-	type MaximumBlockWeight = MaximumBlockWeight;
+    type MaximumBlockWeight = MaximumBlockWeight;
 	type DbWeight = ();
 	type BlockExecutionWeight = ();
-	type ExtrinsicBaseWeight = ();	
-	type MaximumBlockLength = MaximumBlockLength;
+	type ExtrinsicBaseWeight = ();    
+    type MaximumBlockLength = MaximumBlockLength;
+    type MaximumExtrinsicWeight = MaximumBlockWeight;
 	type AvailableBlockRatio = AvailableBlockRatio;
-	type Version = ();
-	type ModuleToIndex = ();
+    type Version = ();
 	type AccountData = ();
 	type OnNewAccount = ();
-	type OnKilledAccount = ();    	
+    type OnKilledAccount = ();   
+    type SystemWeightInfo = (); 
+    type PalletInfo = ();
 }
-pub type System = system::Module<TestRuntime>;
+pub type System = frame_system::Module<TestRuntime>;
 
 impl encointer_currencies::Trait for TestRuntime {
     type Event = TestEvent;
@@ -110,7 +112,7 @@ impl Default for ExtBuilder {
 impl ExtBuilder {
 
 	pub fn build(self) -> runtime_io::TestExternalities {
-		let t = system::GenesisConfig::default()
+		let t = frame_system::GenesisConfig::default()
 			.build_storage::<TestRuntime>()
 			.unwrap();
 		t.into()

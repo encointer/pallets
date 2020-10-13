@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-ceremonies"
-version = "0.3.4"
+version = "0.3.5"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
@@ -9,22 +9,22 @@ edition = "2018"
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.runtime-io]
 default-features = false
 package = "sp-io"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.balances]
 default-features = false
 package = "pallet-balances"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.encointer-scheduler]
 default-features = false
@@ -50,12 +50,12 @@ version = "1.3.0"
 [dependencies.support]
 default-features = false
 package = "frame-support"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
-[dependencies.system]
+[dependencies.frame-system]
 default-features = false
 package = "frame-system"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.serde]
 features = ["derive"]
@@ -65,12 +65,12 @@ version = "1.0.101"
 [dependencies.primitives]
 default-features = false
 package = "sp-core"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.timestamp]
 default-features = false
 package = "pallet-timestamp"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies]
 approx = "0.3.0"
@@ -78,23 +78,23 @@ tempdir = "0.3.7"
 
 [dev-dependencies.inherents]
 package = "sp-inherents"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies.keystore]
 package = "sc-keystore"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies.app-crypto]
 package = "sp-application-crypto"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies.externalities]
 package = "sp-externalities"
-version = "0.8.0-alpha.7"
+version = "0.8.0"
 
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [features]
 default = ["std"]
@@ -108,7 +108,7 @@ std = [
 	"primitives/std",
 	"timestamp/std",
 	"support/std",
-	"system/std",
+	"frame-system/std",
 	"encointer-currencies/std",
 	"encointer-scheduler/std",
 	"encointer-balances/std"

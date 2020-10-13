@@ -26,7 +26,7 @@ use sp_runtime::traits::{
 	StaticLookup,
 };
 use runtime_io::misc::{print_utf8, print_hex};
-use system::{self as system, ensure_signed};
+use frame_system::{self as frame_system, ensure_signed};
 use fixed::{types::I64F64, 
 	transcendental::exp};
 use encointer_currencies::CurrencyIdentifier;
@@ -61,8 +61,8 @@ pub struct BalanceEntry<BlockNumber> {
 	pub last_update: BlockNumber,
 }
 
-pub trait Trait: system::Trait + encointer_currencies::Trait {
-	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+pub trait Trait: frame_system::Trait + encointer_currencies::Trait {
+	type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
 decl_storage! {
@@ -75,7 +75,7 @@ decl_storage! {
 
 decl_event!(
 	pub enum Event<T> where
-		<T as system::Trait>::AccountId,
+		<T as frame_system::Trait>::AccountId,
 	{
 		/// Token transfer success (currency_id, from, to, amount)
 		Transferred(CurrencyIdentifier, AccountId, AccountId, BalanceType),
@@ -136,7 +136,7 @@ impl<T: Trait> Module<T> {
 
 	/// calculate actual value with demurrage
 	fn apply_demurrage(entry: BalanceEntry<T::BlockNumber>, demurrage: BalanceType) -> BalanceEntry<T::BlockNumber> {
-		let current_block = system::Module::<T>::block_number();
+		let current_block = frame_system::Module::<T>::block_number();
 		let elapsed_time_block_number = current_block - entry.last_update;
 		let elapsed_time_u32: u32 = elapsed_time_block_number.try_into().ok()
 			.expect("blockchain will not exceed 2^32 blocks; qed").try_into().unwrap();

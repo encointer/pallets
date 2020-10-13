@@ -37,7 +37,7 @@ use support::{
     storage::{StorageDoubleMap, StorageMap},
     traits::Get,
 };
-use system::ensure_signed;
+use frame_system::ensure_signed;
 
 use rstd::{cmp::min, convert::TryInto};
 use rstd::prelude::*;
@@ -51,13 +51,13 @@ use encointer_currencies::{CurrencyIdentifier, Location, Degree, LossyInto};
 use encointer_balances::BalanceType;
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
 
-pub trait Trait: system::Trait 
+pub trait Trait: frame_system::Trait 
     + timestamp::Trait
     + encointer_currencies::Trait 
     + encointer_balances::Trait 
     + encointer_scheduler::Trait
 {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
 }
@@ -297,7 +297,7 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as frame_system::Trait>::AccountId,
     {
         ParticipantRegistered(AccountId),
     }
@@ -336,7 +336,7 @@ impl<T: Trait> Module<T> {
 
     /* this is for a more recent revision of substrate....
     fn random_permutation(elements: Vec<u8>) -> Vec<u8> {
-        let random_seed = <system::Module<T>>::random_seed();
+        let random_seed = <frame_system::Module<T>>::random_seed();
         let out = Vec::with_capacity(elements.len());
         let n = elements.len();
         for i in 0..n {

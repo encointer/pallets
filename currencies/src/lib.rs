@@ -31,7 +31,7 @@ use support::{
     ensure,
     storage::{StorageMap, StorageValue},
 };
-use system::ensure_signed;
+use frame_system::ensure_signed;
 
 use rstd::prelude::*;
 
@@ -45,8 +45,8 @@ use runtime_io::{
     misc::{print_hex, print_utf8},
 };
 
-pub trait Trait: system::Trait {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+pub trait Trait: frame_system::Trait {
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
 pub type CurrencyIndexType = u32;
@@ -167,7 +167,7 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as frame_system::Trait>::AccountId,
     {
         CurrencyRegistered(AccountId, CurrencyIdentifier),
     }

@@ -32,7 +32,7 @@ use support::{
     traits::Get,
     weights::{DispatchClass, Pays}
 };
-use system::ensure_signed;
+use frame_system::ensure_signed;
 use sp_timestamp::OnTimestampSet;
 use rstd::prelude::*;
 use runtime_io::misc::{print_utf8, print_hex};
@@ -43,9 +43,9 @@ use rstd::ops::Rem;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-pub trait Trait: system::Trait  + timestamp::Trait
+pub trait Trait: frame_system::Trait  + timestamp::Trait
 {
-    type Event: From<Event> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
     type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
     type MomentsPerDay: Get<Self::Moment>;
 }

@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-balances"
-version = "0.3.2"
+version = "0.3.5"
 authors = ["encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
@@ -25,56 +25,52 @@ package = "substrate-fixed"
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.runtime-io]
 default-features = false
 package = "sp-io"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dependencies.support]
 default-features = false
 package = "frame-support"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
-[dependencies.system]
+[dependencies.frame-system]
 default-features = false
 package = "frame-system"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies]
 approx = "0.3.0"
 
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies.runtime-io]
 package = "sp-io"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies.primitives]
 package = "sp-core"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies.transaction-payment]
 package = "pallet-transaction-payment"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
 [dev-dependencies.runtime-interface]
 default-features = false
 package = "sp-runtime-interface"
-version = "2.0.0-alpha.7"
+version = "2.0.0"
 
-[dev-dependencies.test-client]
-package = "substrate-test-runtime-client"
-git = "https://github.com/paritytech/substrate"
-rev = "3bf9540e72df5ecb3955845764dfee7dcdbb26b5"
 
 [features]
 default = ["std"]
@@ -87,7 +83,7 @@ std = [
 	"support/std",
 	"sp-runtime/std",
 	"runtime-io/std",
-	"system/std",
+	"frame-system/std",
 	"encointer-currencies/std",
 	"fixed/std",
 	"fixed/serde"
