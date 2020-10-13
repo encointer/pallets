@@ -1,4 +1,7 @@
 # Encointer Pallets
+
+![badge](https://img.shields.io/badge/substrate-2.0.0-success)
+
 All application-specific pallets for [encointer](https://encointer.org)
 
 ## pallet-encointer-ceremonies
