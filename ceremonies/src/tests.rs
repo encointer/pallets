@@ -42,8 +42,8 @@ const NONE: u64 = 0;
 const GENESIS_TIME: u64 = 1_585_058_843_000;
 const ONE_DAY: u64 = 86_400_000;
 const BLOCKTIME: u64 = 3_600_000; //1h per block
-const TIME_TOLERANCE: u64 = 1000; // [ms]
-const LOCATION_TOLERANCE: u32 = 100; // [m]
+const TIME_TOLERANCE: u64 = 600000; // [ms]
+const LOCATION_TOLERANCE: u32 = 1000; // [m]
 const ZERO: BalanceType = BalanceType::from_bits(0x0);
 
 thread_local! {

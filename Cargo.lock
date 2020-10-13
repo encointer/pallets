@@ -2287,7 +2287,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "approx",
  "frame-support",
