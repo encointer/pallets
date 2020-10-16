@@ -24,8 +24,8 @@ use crate::{GenesisConfig, Module, Trait};
 use encointer_currencies::{CurrencyIdentifier, Location, Degree};
 use encointer_scheduler::{CeremonyPhaseType, CeremonyIndexType, OnCeremonyPhaseChange};
 use externalities::set_and_run_with_externalities;
-use primitives::crypto::Ss58Codec;
-use primitives::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
+use sp_core::crypto::Ss58Codec;
+use sp_core::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
 use sp_runtime::traits::{CheckedAdd, IdentifyAccount, Member, Verify};
 use sp_runtime::{
     testing::Header,

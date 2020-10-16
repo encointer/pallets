@@ -36,7 +36,9 @@ use support::{
     ensure,
     storage::{StorageDoubleMap, StorageMap},
     traits::Get,
+    debug
 };
+use sp_core::RuntimeDebug;
 use frame_system::ensure_signed;
 
 use rstd::{cmp::min, convert::TryInto};
@@ -69,7 +71,7 @@ pub type MeetupIndexType = u64;
 pub type AttestationIndexType = u64;
 pub type CurrencyCeremony = (CurrencyIdentifier, CeremonyIndexType);
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum Reputation {
     // no attestations for attendance claim
     Unverified,
@@ -86,14 +88,14 @@ impl Default for Reputation {
     }
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, Debug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct Attestation<Signature, AccountId, Moment> {
     pub claim: ClaimOfAttendance<AccountId, Moment>,
     pub signature: Signature,
     pub public: AccountId,
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, Debug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct ClaimOfAttendance<AccountId, Moment> {
     pub claimant_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
@@ -104,7 +106,7 @@ pub struct ClaimOfAttendance<AccountId, Moment> {
     pub number_of_participants_confirmed: u32,
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, Debug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct ProofOfAttendance<Signature, AccountId> {
     pub prover_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
@@ -168,6 +170,7 @@ decl_module! {
             ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
                 "CurrencyIdentifier not found");
 
+            debug::RuntimeLogger::init();
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
             if <ParticipantIndex<T>>::contains_key((cid, cindex), &sender) {
@@ -200,8 +203,8 @@ decl_module! {
             <ParticipantRegistry<T>>::insert((cid, cindex), &new_count, &sender);
             <ParticipantIndex<T>>::insert((cid, cindex), &sender, &new_count);
             <ParticipantCount>::insert((cid, cindex), new_count);
-            print_utf8(b"registered particiant:");
-            print_hex(&sender.encode());
+            print_utf8(b"registered particiant");
+            debug::info!("registered participant: {:?}", sender);
             Ok(())
         }
 
@@ -230,6 +233,8 @@ decl_module! {
                 { l } else { return Err(<Error<T>>::MeetupLocationNotFound.into()) };
             let mtime = if let Some(t) = Self::get_meetup_time(&cid, meetup_index)
                 { t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
+            debug::debug!("meetup {} at location {:?} should happen at {:?}", 
+                meetup_index, mlocation, mtime);
             for w in 0..num_signed {
                 let attestation = &attestations[w];
                 let attestation_account = &attestations[w].public;
@@ -252,14 +257,17 @@ decl_module! {
                 if <encointer_currencies::Module<T>>::haversine_distance(
                     &mlocation, &attestation.claim.location) > Self::location_tolerance() {
                         print_utf8(b"ignoring claim beyond location tolerance");
+                        debug::debug!("claim meetup location: {:?}", attestation.claim.location);
                         continue };   
                 if let Some(dt) = mtime.checked_sub(&attestation.claim.timestamp) {
                     if dt > Self::time_tolerance() {
                         print_utf8(b"ignoring claim beyond time tolerance (too early)");
+                        debug::debug!("claim meetup time: {:?}", attestation.claim.timestamp);
                         continue }; 
                 } else if let Some(dt) = attestation.claim.timestamp.checked_sub(&mtime) {
                     if dt > Self::time_tolerance() {
                         print_utf8(b"ignoring claim beyond time tolerance (too late)");
+                        debug::debug!("claim meetup time: {:?}", attestation.claim.timestamp);
                         continue }; 
                 }
                 if Self::verify_attestation_signature(attestation.clone()).is_err() {
