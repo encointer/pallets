@@ -56,7 +56,7 @@ const LOG: &str = "encointer";
 
 pub type CeremonyIndexType = u32;
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum CeremonyPhaseType {
     REGISTERING,
