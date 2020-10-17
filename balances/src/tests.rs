@@ -22,7 +22,7 @@
 
 use super::*;
 use mock::{ExtBuilder, System, TestRuntime, TestEvent, EncointerBalances, EncointerCurrencies, ALICE, BOB, register_test_currency};
-use support::{assert_noop, assert_ok, traits::OnInitialize};
+use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use fixed::{transcendental::exp, traits::LossyInto};
 use encointer_currencies::CurrencyIdentifier;
 

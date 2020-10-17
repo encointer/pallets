@@ -24,18 +24,19 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use support::{
+use frame_support::{
     decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::StorageValue,
     traits::Get,
-    weights::{DispatchClass, Pays}
+    weights::{DispatchClass, Pays},
+    debug
 };
+use sp_core::RuntimeDebug;
 use frame_system::ensure_signed;
 use sp_timestamp::OnTimestampSet;
 use rstd::prelude::*;
-use runtime_io::misc::{print_utf8, print_hex};
 use codec::{Decode, Encode};
 use sp_runtime::traits::{Saturating, CheckedAdd, CheckedDiv, Zero};
 use rstd::ops::Rem;
@@ -50,9 +51,12 @@ pub trait Trait: frame_system::Trait  + timestamp::Trait
     type MomentsPerDay: Get<Self::Moment>;
 }
 
+// Logger target
+const LOG: &str = "encointer";
+
 pub type CeremonyIndexType = u32;
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum CeremonyPhaseType {
     REGISTERING,
@@ -99,6 +103,7 @@ decl_module! {
         /// Manually transition to next phase without affecting the ceremony rhythm
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn next_phase(origin) -> DispatchResult {
+            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
             Self::progress_phase()?;
@@ -108,6 +113,7 @@ decl_module! {
         /// Push next phase change by one entire day
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn push_by_one_day(origin) -> DispatchResult {
+            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
             let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
@@ -154,8 +160,7 @@ impl<T: Trait> Module<T> {
         <CurrentPhase>::put(next_phase);
         T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
         Self::deposit_event(Event::PhaseChangedTo(next_phase));
-        print_utf8(b"phase changed to:");
-        print_hex(&next_phase.encode());
+        debug::info!(target: LOG, "phase changed to: {:?}", next_phase);  
         Ok(())
 
     }
@@ -181,6 +186,7 @@ impl<T: Trait> Module<T> {
                 cycle_duration.saturating_mul(n))
         };
         <NextPhaseTimestamp<T>>::put(tnext);
+        debug::info!(target: LOG, "next phase change at: {:?}", tnext);            
         Ok(())
     }
 

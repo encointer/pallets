@@ -25,12 +25,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // use host_calls::runtime_interfaces;
-use support::{
+use frame_support::{
     decl_event, decl_module, decl_storage, decl_error,
     dispatch::DispatchResult,
     ensure,
     storage::{StorageMap, StorageValue},
+    debug
 };
+use sp_core::{RuntimeDebug, H256};
 use frame_system::ensure_signed;
 
 use rstd::prelude::*;
@@ -39,15 +41,16 @@ use codec::{Decode, Encode};
 pub use fixed::traits::{LossyFrom, LossyInto};
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use fixed::types::{I32F0, I32F32, U0F64, I64F64};
-use primitives::H256;
 use runtime_io::{
     hashing::blake2_256,
-    misc::{print_hex, print_utf8},
 };
 
 pub trait Trait: frame_system::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
+
+// Logger target
+const LOG: &str = "encointer";
 
 pub type CurrencyIndexType = u32;
 pub type LocationIndexType = u32;
@@ -55,14 +58,14 @@ pub type Degree = I32F32;
 pub type Demurrage = I64F64;
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, Debug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct Location {
     pub lat: Degree,
     pub lon: Degree,
 }
 pub type CurrencyIdentifier = H256;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, Debug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct CurrencyPropertiesType {
     pub name_utf8: Vec<u8>,
     pub demurrage_per_block: Demurrage,
@@ -109,6 +112,7 @@ decl_module! {
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
         pub fn new_currency(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
+            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::currency_identifiers();
@@ -124,23 +128,22 @@ decl_module! {
                 // prohibit proximity to poles
                 if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
                     || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M {
-                    print_utf8(b"location distance violation for:");
-                    print_hex(&l1.encode());
+                    debug::warn!(target: LOG, "location too close to pole: {:?}", l1);    
                     return Err(<Error<T>>::MinimumDistanceViolationToPole.into());
                 }
                 // prohibit proximity to dateline
                 let dateline_proxy = Location { lat: l1.lat, lon: DATELINE_LON };
                 if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
-                    print_utf8(b"location distance violation for:");
-                    print_hex(&l1.encode());
+                    debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);                        
                     return Err(<Error<T>>::MinimumDistanceViolationToDateLine.into());
                 }
                 // test against all other currencies globally
                 for other in cids.iter() {
                     for l2 in Self::locations(other) {
                         if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
-                            print_utf8(b"location distance violation for:");
-                            print_hex(&other.encode());
+                            debug::warn!(target: LOG, 
+                                "location {:?} too close to previously registered location {:?} with cid {:?}", 
+                                l1, l2, other);    
                             return Err(<Error<T>>::MinimumDistanceViolationToOtherCurrency.into());
                         }
                     }
@@ -157,8 +160,7 @@ decl_module! {
                 }
             );
             Self::deposit_event(RawEvent::CurrencyRegistered(sender, cid));
-            print_utf8(b"registered currency wth cid:");
-            print_hex(&cid.encode());
+            debug::info!(target: LOG, "registered currency with cid: {:?}", cid);                
             Ok(())
         }
     }

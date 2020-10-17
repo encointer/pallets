@@ -19,11 +19,11 @@
 
 #![cfg(test)]
 
-use support::{impl_outer_event, impl_outer_origin, parameter_types};
-use support::{assert_noop, assert_ok};
+use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
+use frame_support::{assert_noop, assert_ok};
 use frame_system;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
-use primitives::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
+use sp_core::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
 use encointer_currencies::{CurrencyIdentifier, Location, Degree};
 use super::*;
 

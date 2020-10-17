@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-scheduler"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
@@ -27,7 +27,7 @@ package = "parity-scale-codec"
 features = ["derive"]
 version = "1.3.0"
 
-[dependencies.support]
+[dependencies.frame-support]
 default-features = false
 package = "frame-support"
 version = "2.0.0"
@@ -52,7 +52,7 @@ features = ["derive"]
 optional = true
 version = "1.0.101"
 
-[dependencies.primitives]
+[dependencies.sp-core]
 default-features = false
 package = "sp-core"
 version = "2.0.0"
@@ -86,7 +86,7 @@ std = [
 	"sp-runtime/std",
 	"timestamp/std",
 	"sp-timestamp/std",
-	"primitives/std",
-	"support/std",
+	"sp-core/std",
+	"frame-support/std",
 	"frame-system/std",
 ]

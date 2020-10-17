@@ -16,8 +16,11 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use support::{decl_error, decl_event, decl_module, decl_storage, 
-	ensure, dispatch::DispatchResult};
+use frame_support::{decl_error, decl_event, decl_module, decl_storage, 
+	ensure, dispatch::DispatchResult,
+	debug
+};
+use sp_core::RuntimeDebug;
 use rstd::{
 	convert::TryInto,
 };
@@ -25,7 +28,6 @@ use codec::{Encode, Decode};
 use sp_runtime::traits::{
 	StaticLookup,
 };
-use runtime_io::misc::{print_utf8, print_hex};
 use frame_system::{self as frame_system, ensure_signed};
 use fixed::{types::I64F64, 
 	transcendental::exp};
@@ -43,6 +45,9 @@ extern crate approx;
 // We're working with fixpoint here.
 pub type BalanceType = I64F64;
 
+// Logger target
+const LOG: &str = "encointer";
+
 /// Demurrage rate per block. 
 /// Assuming 50% demurrage per year and a block time of 5s
 /// ```matlab
@@ -52,7 +57,7 @@ pub type BalanceType = I64F64;
 // FIXME: how to define negative hex literal?
 //pub const DemurrageRate: BalanceType = BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 
-#[derive(Encode, Decode, Default, Debug, Clone, Copy)]
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Copy)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct BalanceEntry<BlockNumber> {
 	/// The balance of the account after last manual adjustment
@@ -94,6 +99,7 @@ decl_module! {
 			currency_id: CurrencyIdentifier,
 			amount: BalanceType,
 		) -> DispatchResult {
+			debug::RuntimeLogger::init();
 			let from = ensure_signed(origin)?;
 			let to = T::Lookup::lookup(dest)?;
 			Self::transfer_(currency_id, &from, &to, amount)?;
@@ -176,6 +182,7 @@ impl<T: Trait> Module<T> {
 		who: &T::AccountId,
 		amount: BalanceType,
 	) -> DispatchResult {
+		debug::RuntimeLogger::init();
 		let mut entry_who = Self::balance_entry_updated(currency_id, who);
 		let mut entry_tot = Self::total_issuance_entry_updated(currency_id);
 		ensure!(entry_tot.principal.checked_add(amount).is_some(),
@@ -185,8 +192,7 @@ impl<T: Trait> Module<T> {
 		entry_tot.principal += amount;
 		<TotalIssuance<T>>::insert(currency_id, entry_tot);
 		<Balance<T>>::insert(currency_id, who, entry_who);
-		print_utf8(b"issue for:");
-		print_hex(&who.encode());
+		debug::info!(target: LOG, "issue {:?} for {:?}", amount, who);
 		Ok(())
 	}
 
