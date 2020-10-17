@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-ceremonies"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
@@ -47,7 +47,7 @@ package = "parity-scale-codec"
 features = ["derive"]
 version = "1.3.0"
 
-[dependencies.support]
+[dependencies.frame-support]
 default-features = false
 package = "frame-support"
 version = "2.0.0"
@@ -107,21 +107,12 @@ std = [
 	"sp-runtime/std",
 	"sp-core/std",
 	"timestamp/std",
-	"support/std",
+	"frame-support/std",
 	"frame-system/std",
 	"encointer-currencies/std",
 	"encointer-scheduler/std",
 	"encointer-balances/std"
 ]
-
-#[patch."https://github.com/encointer/pallet-encointer-currencies"]
-#pallet-encointer-currencies = { path = "../pallet-encointer-currencies" }
-
-#[patch."https://github.com/encointer/pallet-encointer-balances"]
-#pallet-encointer-balances = { path = "../pallet-encointer-balances" }
-
-#[patch."https://github.com/encointer/pallet-encointer-scheduler"]
-#pallet-encointer-scheduler = { path = "../pallet-encointer-scheduler" }
 
 #[patch."https://github.com/encointer/substrate-fixed"]
 #substrate-fixed = { path = "../substrate-fixed" }

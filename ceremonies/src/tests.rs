@@ -34,8 +34,8 @@ use sp_runtime::{
 };
 use inherents::ProvideInherent;
 use std::{cell::RefCell, collections::HashSet, ops::Rem};
-use support::traits::{Currency, FindAuthor, Get, LockIdentifier, OnFinalize, OnInitialize, UnfilteredDispatchable};
-use support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
+use frame_support::traits::{Currency, FindAuthor, Get, LockIdentifier, OnFinalize, OnInitialize, UnfilteredDispatchable};
+use frame_support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
 use sp_keyring::AccountKeyring;
 
 const NONE: u64 = 0;

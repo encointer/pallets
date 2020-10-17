@@ -21,9 +21,9 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	Perbill,
 };
-use support::traits::UnfilteredDispatchable;
-use primitives::H256;
-use support::{assert_ok, impl_outer_origin, impl_outer_event, parameter_types,
+use frame_support::traits::UnfilteredDispatchable;
+use sp_core::H256;
+use frame_support::{assert_ok, impl_outer_origin, impl_outer_event, parameter_types,
     traits::{OnFinalize, OnInitialize}};
 use runtime_io::TestExternalities;
 use inherents::ProvideInherent;

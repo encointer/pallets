@@ -18,7 +18,7 @@
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
 use externalities::set_and_run_with_externalities;
-use primitives::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
+use sp_core::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
 use sp_runtime::traits::{CheckedAdd, IdentifyAccount, Member, Verify};
 use sp_runtime::{
     testing::Header,
@@ -26,8 +26,8 @@ use sp_runtime::{
     Perbill,
 };
 use std::{cell::RefCell, collections::HashSet};
-use support::traits::{Currency, FindAuthor, Get, LockIdentifier};
-use support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
+use frame_support::traits::{Currency, FindAuthor, Get, LockIdentifier};
+use frame_support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
 use sp_keyring::AccountKeyring;
 
 use fixed::traits::LossyFrom;
