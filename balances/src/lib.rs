@@ -99,7 +99,6 @@ decl_module! {
 			currency_id: CurrencyIdentifier,
 			amount: BalanceType,
 		) -> DispatchResult {
-			debug::RuntimeLogger::init();
 			let from = ensure_signed(origin)?;
 			let to = T::Lookup::lookup(dest)?;
 			Self::transfer_(currency_id, &from, &to, amount)?;
@@ -192,7 +191,7 @@ impl<T: Trait> Module<T> {
 		entry_tot.principal += amount;
 		<TotalIssuance<T>>::insert(currency_id, entry_tot);
 		<Balance<T>>::insert(currency_id, who, entry_who);
-		debug::info!(target: LOG, "issue {:?} for {:?}", amount, who);
+		debug::debug!(target: LOG, "issue {:?} for {:?}", amount, who);
 		Ok(())
 	}
 

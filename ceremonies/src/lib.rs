@@ -547,7 +547,7 @@ impl<T: Trait> Module<T> {
                             p);
                         continue;
                     }
-                    debug::debug!(target: LOG, 
+                    debug::trace!(target: LOG, 
                         "participant merits reward: {:?}", 
                         p);
                     if let Ok(_) = <encointer_balances::Module<T>>::issue(*cid, &p, reward) {
@@ -560,7 +560,7 @@ impl<T: Trait> Module<T> {
                 }
             }
         }
-        debug::debug!(target: LOG, 
+        debug::info!(target: LOG, 
             "issuing rewards completed");
     }
 
