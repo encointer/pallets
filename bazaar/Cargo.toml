@@ -1,0 +1,92 @@
+[package]
+name = "pallet-encointer-bazaar"
+version = "0.3.6"
+authors = ["encointer.org <alain@encointer.org>"]
+edition = "2018"
+
+[dependencies]
+
+[dependencies.rstd]
+default-features = false
+package = "sp-std"
+version = "2.0.0"
+
+[dependencies.runtime-io]
+default-features = false
+package = "sp-io"
+version = "2.0.0"
+
+[dependencies.sp-runtime]
+default-features = false
+package = "sp-runtime"
+version = "2.0.0"
+
+[dependencies.codec]
+default-features = false
+package = "parity-scale-codec"
+features = ["derive"]
+version = "1.3.0"
+
+[dependencies.frame-support]
+default-features = false
+package = "frame-support"
+version = "2.0.0"
+
+[dependencies.frame-system]
+default-features = false
+package = "frame-system"
+version = "2.0.0"
+
+[dependencies.sp-timestamp]
+default-features = false
+package = "sp-timestamp"
+version = "2.0.0"
+
+[dependencies.timestamp]
+default-features = false
+package = "pallet-timestamp"
+version = "2.0.0"
+
+[dependencies.serde]
+features = ["derive"]
+optional = true
+version = "1.0.101"
+
+[dependencies.sp-core]
+default-features = false
+package = "sp-core"
+version = "2.0.0"
+
+[dev-dependencies.keystore]
+package = "sc-keystore"
+version = "2.0.0"
+
+[dev-dependencies.inherents]
+package = "sp-inherents"
+version = "2.0.0"
+
+[dev-dependencies]
+tempdir = "0.3.7"
+
+[dev-dependencies.app-crypto]
+package = "sp-application-crypto"
+version = "2.0.0"
+
+[dev-dependencies.externalities]
+package = "sp-externalities"
+version = "0.8.0"
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"rstd/std",
+	"runtime-io/std",
+	"serde",
+	"sp-runtime/std",
+	"timestamp/std",
+	"sp-timestamp/std",
+	"sp-core/std",
+	"frame-support/std",
+	"frame-system/std",
+]
