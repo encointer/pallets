@@ -51,59 +51,62 @@ pub trait Trait: frame_system::Trait  + timestamp::Trait
 // Logger target
 const LOG: &str = "encointer";
 
-// The pallet's runtime storage items.
-// https://substrate.dev/docs/en/knowledgebase/runtime/storage
 decl_storage! {
-    trait Store for Module<T: Trait> as TemplateModule {
-        /// The storage item for our proofs.
-        /// It maps a proof to the user who made the claim and when they made it.
-        Proofs: map hasher(blake2_128_concat) Vec<u8> => (T::AccountId, T::BlockNumber);
+    trait Store for Module<T: Trait> as Bazaar {
+        // Maps the shop or article owner to the respective items 
+        // TODO: Necessary?
+        ShopsOwned get(fn shops_owned): map hasher(blake2_128_concat) T::AccountId => Vec<Shop>; 
+        ArticlesOwned get(fn articles_owned): map hasher(blake2_128_concat) T::AccountId => Vec<Article>; 
+        // The set of all shops and articles.
+        // TODO: Neccessary for Item to have an owner? To send messages to owner in case of questions to item?
+        // Can content also be the key of the hash map?
+        Shops get(fn shops): map hasher(blake2_128_concat) Shop => (T::AccountId, content);
+        Articles get(fn articles): map hasher(blake2_128_concat) Article => (T::AccountId, content);
     }
 }
-}
-// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-// These functions materialize as "extrinsics", which are often compared to transactions.
-// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
+
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         // initialisation
         type Error = Error<T>;
         fn deposit_event() = default;
 
-        /// Allow a user to claim ownership of an unclaimed proof.
+        /// Allow a user to create a shop.
         #[weight = 10_000]
-        fn create_claim(origin, proof: Vec<u8>) {
+        fn upload_shop(origin, shop: Shop, content: TYPE) {
             // Check that the extrinsic was signed and get the signer.
-            // This function will return an error if the extrinsic is not signed.
-            // https://substrate.dev/docs/en/knowledgebase/runtime/origin
             let sender = ensure_signed(origin)?;
 
-            // Verify that the specified proof has not already been claimed.
-            ensure!(!Proofs::<T>::contains_key(&proof), Error::<T>::ProofAlreadyClaimed);
+            // Verify that the specified shop has not already been created.
+            ensure!(!Shops::<T>::contains_key(&shop), Error::<T>::ShopAlreadyCreated);            
 
-            // Get the block number from the FRAME System module.
-            let current_block = <frame_system::Module<T>>::block_number();
+            // Create the shop and add it to the shop list of the creator.
+            // TODO: necessary two way? Or better solution possible?
+            Shops::<T>::insert(&shop, (&sender, content));
 
-            // Store the proof with the sender and block number.
-            Proofs::<T>::insert(&proof, (&sender, current_block));
+            match members.binary_search(&new_member)
+            // Assumption: In case shop is not in Shops storage, it is also not in ShopsOwned of the sender.
 
-            // Emit an event that the claim was created.
-            Self::deposit_event(RawEvent::ClaimCreated(sender, proof));
+            //ShopsOwned::<T>::insert(&sender, (&shop));
+
+            
+
+            // Emit an event that the shop was created.
+            Self::deposit_event(RawEvent::ShopCreated(sender, shop));
         }
 
-        /// Allow the owner to revoke their claim.
+        /// Allow the owner to revoke their shop.
         #[weight = 10_000]
-        fn revoke_claim(origin, proof: Vec<u8>) {
+        fn revoke_claim(origin, shop: Vec<Shop>) {
             // Check that the extrinsic was signed and get the signer.
-            // This function will return an error if the extrinsic is not signed.
-            // https://substrate.dev/docs/en/knowledgebase/runtime/origin
             let sender = ensure_signed(origin)?;
 
-            // Verify that the specified proof has been claimed.
-            ensure!(Proofs::<T>::contains_key(&proof), Error::<T>::NoSuchProof);
+            // Verify that the specified shop has been uploaded.
+            ensure!(Shops::<T>::contains_key(&shop), Error::<T>::NoSuchShop);
 
-            // Get owner of the claim.
-            let (owner, _) = Proofs::<T>::get(&proof);
+            // Get owner of the shop.
+            //let (owner, _) = Proofs::<T>::get(&proof);
+            
 
             // Verify that sender of the current call is the claim owner.
             ensure!(sender == owner, Error::<T>::NotProofOwner);
@@ -120,10 +123,21 @@ decl_module! {
 decl_event! {
     pub enum Event<T> where AccountId = <T as frame_system::Trait>::AccountId {
         /// Event emitted when a shop is uploaded. [who, shop]
-        ShopCreated(AccountId, Vec<u8>),
+        ShopCreated(AccountId, Shop),
         /// Event emitted when a shop is revoked by the owner. [who, shop]
-        ShopRevoked(AccountId, Vec<u8>),
+        ShopRevoked(AccountId, Shop),
     }
+}
+
+decl_error! {
+	pub enum Error for Module<T: Trait> {
+		/// minimum distance violated towards pole
+        MinimumDistanceViolationToPole,
+        /// minimum distance violated towards dateline
+        MinimumDistanceViolationToDateLine,
+        /// minimum distance violated towards other currency's location
+		MinimumDistanceViolationToOtherCurrency,
+	}
 }
 
 
