@@ -6,6 +6,11 @@ edition = "2018"
 
 [dependencies]
 
+[dependencies.encointer-currencies]
+default-features = false
+path = "../currencies"
+package = "pallet-encointer-currencies"
+
 [dependencies.rstd]
 default-features = false
 package = "sp-std"

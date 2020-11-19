@@ -1114,6 +1114,7 @@ version = "0.3.6"
 dependencies = [
  "frame-support",
  "frame-system",
+ "pallet-encointer-currencies",
  "pallet-timestamp",
  "parity-scale-codec",
  "sc-keystore",
