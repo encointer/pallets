@@ -18,14 +18,14 @@
 //! # Encointer Bazaar Module
 //!
 //! provides functionality for
-//! - creating new bazaar entries
-//! - removing existing entries
+//! - creating new bazaar entries (shop and articles)
+//! - removing existing entries (shop and articles)
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    decl_event, decl_module, decl_storage,
+    decl_event, decl_module, decl_storage, decl_error,
     dispatch::DispatchResult,
     ensure,
     //storage::StorageValue,
@@ -55,13 +55,13 @@ decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
         // Maps the shop or article owner to the respective items 
         // TODO: Necessary?
-        ShopsOwned get(fn shops_owned): map hasher(blake2_128_concat) T::AccountId => Vec<Shop>; 
-        ArticlesOwned get(fn articles_owned): map hasher(blake2_128_concat) T::AccountId => Vec<Article>; 
+        pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<Shop>;
+        pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<Article>; 
         // The set of all shops and articles.
         // TODO: Neccessary for Item to have an owner? To send messages to owner in case of questions to item?
-        // Can content also be the key of the hash map?
-        Shops get(fn shops): map hasher(blake2_128_concat) Shop => (T::AccountId, content);
-        Articles get(fn articles): map hasher(blake2_128_concat) Article => (T::AccountId, content);
+        // Can content(URL) also be the key of the hash map?
+        ShopRegistry get(fn shop_registry): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ShopIdentifier => (T::AccountId, content);
+        ArticleRegistry get(fn article_registry): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, content, ShopIdentifier);
     }
 }
 
@@ -73,49 +73,54 @@ decl_module! {
 
         /// Allow a user to create a shop.
         #[weight = 10_000]
-        fn upload_shop(origin, shop: Shop, content: TYPE) {
+        pub fn upload_shop(origin, cid: CurrencyIdentifier, shop: Shop, content: TYPE) {
             // Check that the extrinsic was signed and get the signer.
             let sender = ensure_signed(origin)?;
 
+            let mut ownedShops = ShopsOwned::<T>::get(cid, &sender);
+
             // Verify that the specified shop has not already been created.
-            ensure!(!Shops::<T>::contains_key(&shop), Error::<T>::ShopAlreadyCreated);            
-
-            // Create the shop and add it to the shop list of the creator.
-            // TODO: necessary two way? Or better solution possible?
-            Shops::<T>::insert(&shop, (&sender, content));
-
-            match members.binary_search(&new_member)
-            // Assumption: In case shop is not in Shops storage, it is also not in ShopsOwned of the sender.
-
-            //ShopsOwned::<T>::insert(&sender, (&shop));
-
-            
+            ensure!(!ShopRegistry::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);   
+            // Get the index of the last entry of the Shop vector          
+            match ownedShops.binary_search(cid, &shop) {
+                // If the search succeeds, the shop was already created
+                Ok(_) => Err(Error::<T>::ShopAlreadyCreated),
+                // If the search fails, the shop can be inserted into the owned list
+                Err(index) => {
+                    ownedShops.insert(&index, shop.clone());
+                    ShopsOwned::<T>::insert(cid, &sender, ownedShops);
+                }
+            }
+            // Add the shop to the community registry.
+            ShopRegistry::<T>::insert((cid, &shop), &sender, content);
 
             // Emit an event that the shop was created.
             Self::deposit_event(RawEvent::ShopCreated(sender, shop));
         }
 
-        /// Allow the owner to revoke their shop.
+        /// Allow a user to revoke their shop.
         #[weight = 10_000]
-        fn revoke_claim(origin, shop: Vec<Shop>) {
+        pub fn revoke_claim(origin, cid:CurrencyIdentifier, shop: Shop) {
             // Check that the extrinsic was signed and get the signer.
             let sender = ensure_signed(origin)?;
 
-            // Verify that the specified shop has been uploaded.
-            ensure!(Shops::<T>::contains_key(&shop), Error::<T>::NoSuchShop);
+            let mut ownedShops = ShopsOwned::<T>::get(cid, &sender);
 
-            // Get owner of the shop.
-            //let (owner, _) = Proofs::<T>::get(&proof);
-            
+            // Verify that the specified shop is existing.
+            ensure!(ShopRegistry::<T>::contains_key(cid, &shop), Error::<T>::NoSuchShop);
 
-            // Verify that sender of the current call is the claim owner.
-            ensure!(sender == owner, Error::<T>::NotProofOwner);
-
-            // Remove claim from storage.
-            Proofs::<T>::remove(&proof);
-
-            // Emit an event that the claim was erased.
-            Self::deposit_event(RawEvent::ClaimRevoked(sender, proof));
+            // Get the index of the shop in the owner list.
+            match ownedShops.binary_search(cid, &shop) {
+                // If the search succeeds, delete the respective entry.
+                Ok(index) => {
+                    ownedShops.remove(&index);
+                    ShopsOwned::<T>::insert(cid, &sender, ownedShops);                    
+                },
+                // If the search fails, no such shop is owned.
+                Err(_) => Err(Error::<T>::NoSuchShop),                
+            }
+            // Emit an event that the shop was removed.
+            Self::deposit_event(RawEvent::ShopRemoved(sender, shop));
         }
     }
 }
@@ -125,22 +130,18 @@ decl_event! {
         /// Event emitted when a shop is uploaded. [who, shop]
         ShopCreated(AccountId, Shop),
         /// Event emitted when a shop is revoked by the owner. [who, shop]
-        ShopRevoked(AccountId, Shop),
+        ShopRemoved(AccountId, Shop),
     }
 }
 
 decl_error! {
 	pub enum Error for Module<T: Trait> {
-		/// minimum distance violated towards pole
-        MinimumDistanceViolationToPole,
-        /// minimum distance violated towards dateline
-        MinimumDistanceViolationToDateLine,
-        /// minimum distance violated towards other currency's location
-		MinimumDistanceViolationToOtherCurrency,
+		/// no such shop exisiting that could be deleted
+        NoSuchShop,
+        /// shop can not be created twice
+        ShopAlreadyCreated,
 	}
 }
-
-
 
 #[cfg(test)]
 mod tests;

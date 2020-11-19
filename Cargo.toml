@@ -3,6 +3,6 @@ members = [
     'scheduler',
     'balances',
     'currencies',
-    'ceremonies'
-    'bazaar'
+    'ceremonies',
+    'bazaar',
 ]

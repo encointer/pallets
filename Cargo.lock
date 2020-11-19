@@ -1109,6 +1109,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-bazaar"
+version = "0.3.6"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "sc-keystore",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-externalities",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-timestamp",
+ "tempdir",
+]
+
+[[package]]
 name = "pallet-encointer-ceremonies"
 version = "0.3.6"
 dependencies = [
