@@ -52,21 +52,20 @@ use encointer_balances::BalanceType;
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
 
 pub trait Trait: frame_system::Trait 
-    + timestamp::Trait
-    + encointer_currencies::Trait 
-    + encointer_balances::Trait 
-    + encointer_scheduler::Trait
+  //  + encointer_currencies::Trait 
+   // + encointer_balances::Trait 
+   // + encointer_scheduler::Trait
 {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
-    type Public: IdentifyAccount<AccountId = Self::AccountId>;
-    type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
+    //type Public: IdentifyAccount<AccountId = Self::AccountId>;
+    //type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
 }
 // Logger target
 const LOG: &str = "encointer";
 
 pub type ShopIdentifier = u64; //URL
 pub type ArticleIdentifier = u64; //URL
-
+/*
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct ProofOfAttendance<Signature, AccountId> {
     pub prover_public: AccountId,
@@ -75,6 +74,8 @@ pub struct ProofOfAttendance<Signature, AccountId> {
     pub attendee_public: AccountId,
     pub attendee_signature: Signature,
 }
+*/
+
 
 decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
@@ -105,6 +106,7 @@ decl_error! {
 	}
 }
 
+// TODO: Check if URL valid?
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         // initialisation

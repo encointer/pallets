@@ -18,7 +18,8 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use crate::{GenesisConfig, Module, Trait};
+//use crate::{GenesisConfig, Module, Trait};
+use crate::{Module, Trait};
 use encointer_currencies::{CurrencyIdentifier, Location, Degree};
 use externalities::set_and_run_with_externalities;
 use sp_core::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
@@ -60,6 +61,10 @@ impl Get<u64> for ExistentialDeposit {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
+
+impl Trait for TestRuntime {
+    type Event = ();
+}
 
 impl encointer_balances::Trait for TestRuntime {
 	type Event = ();
@@ -144,30 +149,77 @@ impl_outer_origin! {
     pub enum Origin for TestRuntime {}
 }
 
+
 fn get_accountid(pair: &sr25519::Pair) -> AccountId {
     AccountPublic::from(pair.public()).into_account()
 }
 
+
+/// register a simple test currency with 3 meetup locations and well known bootstrappers
+fn register_test_currency() -> CurrencyIdentifier {
+    // all well-known keys are boottrappers for easy testen afterwards
+    let alice = AccountId::from(AccountKeyring::Alice);
+    let bob = AccountId::from(AccountKeyring::Bob);
+    let charlie = AccountId::from(AccountKeyring::Charlie);
+    
+    let a = Location::default(); // 0, 0
+    
+    let b = Location {
+        lat: Degree::from_num(1),
+        lon: Degree::from_num(1),
+    };
+    let c = Location {
+        lat: Degree::from_num(2),
+        lon: Degree::from_num(2),
+    };
+    let loc = vec![a, b, c];
+    let bs = vec![
+        alice.clone(),
+        bob.clone(),
+        charlie.clone(),
+    ];
+    assert_ok!(EncointerCurrencies::new_currency(
+        Origin::signed(alice.clone()),
+        loc.clone(),
+        bs.clone()
+    ));
+    CurrencyIdentifier::from(blake2_256(&(loc, bs).encode()))
+}
+
 type T = Degree;
 
+
 #[test]
-fn new_shop_works() {
+fn create_new_shop_works() {
+    // initialisation
+    let cid = register_test_currency();
+    let alice = AccountId::from(AccountKeyring::Alice);
+    
+    let dummy_url = 40;
+    
+    assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, dummy_url).is_ok());
+
+    
+    //assert!(cids.contains(&cid));
+    //assert_eq!(EncointerCurrencies::locations(&cid), loc);
+    //assert_eq!(EncointerCurrencies::bootstrappers(&cid), bs);
+}
+
+/*
+#[test]
+fn create_new_shop_works() {
     ExtBuilder::build().execute_with(|| {
-        let alice = AccountId::from(AccountKeyring::Alice);
+        // initialisation
+        let cid = register_test_currency();
+        let alice = AccountKeyring::Alice.pair();
+        let bob = AccountKeyring::Bob.pair();
+        let charlie = AccountKeyring::Charlie.pair();
         
-        assert!(EncointerCurrencies::is_valid_geolocation(&a));
-        assert!(EncointerCurrencies::is_valid_geolocation(&b));
-        println!("testing Location {:?} and {:?}", a, b);
-        println!("north pole at {:?}", NORTH_POLE);
-        let loc = vec![a, b];
-        let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        assert_ok!(EncointerCurrencies::new_currency(
-            Origin::signed(alice.clone()),
-            loc.clone(),
-            bs.clone()
-        ));
-        let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()));
-        let cids = EncointerCurrencies::currency_identifiers();
+        let dummyURL = 40;
+        
+        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, dummyURL).is_ok());
+
+        
         assert!(cids.contains(&cid));
         assert_eq!(EncointerCurrencies::locations(&cid), loc);
         assert_eq!(EncointerCurrencies::bootstrappers(&cid), bs);
@@ -196,4 +248,4 @@ fn new_currency_with_too_close_inner_locations_fails() {
 
         assert!(EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs).is_err());
     });
-}
+}*/
