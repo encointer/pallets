@@ -186,45 +186,46 @@ fn register_test_currency() -> CurrencyIdentifier {
     CurrencyIdentifier::from(blake2_256(&(loc, bs).encode()))
 }
 
-type T = Degree;
-
-
 #[test]
 fn create_new_shop_works() {
     // initialisation
     let cid = register_test_currency();
     let alice = AccountId::from(AccountKeyring::Alice);
     
-    let dummy_url = 40;
-    
+    let dummy_url: u64 = 40;
+    /*
+    // upload dummy store to blockchain
     assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, dummy_url).is_ok());
+    // get shops from blockchain
+    let shops = EncointerBazaar::shop_registry(cid);
+    let owned_shops = EncointerBazaar::shops_owned(cid, alice);
+    // assert that shop was added
+    assert!(shops.contains(&dummy_url));
+    assert!(owned_shops.contains(&dummy_url));*/
 
     
-    //assert!(cids.contains(&cid));
+    //
     //assert_eq!(EncointerCurrencies::locations(&cid), loc);
     //assert_eq!(EncointerCurrencies::bootstrappers(&cid), bs);
 }
 
 /*
+
 #[test]
 fn create_new_shop_works() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
         let cid = register_test_currency();
-        let alice = AccountKeyring::Alice.pair();
-        let bob = AccountKeyring::Bob.pair();
-        let charlie = AccountKeyring::Charlie.pair();
+        let alice = AccountId::from(AccountKeyring::Alice);
         
         let dummyURL = 40;
         
         assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, dummyURL).is_ok());
 
-        
-        assert!(cids.contains(&cid));
-        assert_eq!(EncointerCurrencies::locations(&cid), loc);
-        assert_eq!(EncointerCurrencies::bootstrappers(&cid), bs);
+
     });
 }
+
 
 #[test]
 fn new_currency_with_too_close_inner_locations_fails() {
