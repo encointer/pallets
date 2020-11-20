@@ -1112,21 +1112,24 @@ dependencies = [
 name = "pallet-encointer-bazaar"
 version = "0.3.6"
 dependencies = [
+ "approx",
  "frame-support",
  "frame-system",
+ "pallet-balances",
+ "pallet-encointer-balances",
  "pallet-encointer-currencies",
+ "pallet-encointer-scheduler",
  "pallet-timestamp",
  "parity-scale-codec",
- "sc-keystore",
  "serde",
- "sp-application-crypto",
  "sp-core",
  "sp-externalities",
- "sp-inherents",
  "sp-io",
+ "sp-keyring",
  "sp-runtime",
  "sp-std",
  "sp-timestamp",
+ "substrate-fixed",
  "tempdir",
 ]
 
