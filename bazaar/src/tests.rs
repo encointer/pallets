@@ -153,18 +153,8 @@ type T = Degree;
 #[test]
 fn new_shop_works() {
     ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
         let alice = AccountId::from(AccountKeyring::Alice);
-        let bob = AccountId::from(AccountKeyring::Bob);
-        let charlie = AccountId::from(AccountKeyring::Charlie);
-        let a = Location {
-            lat: T::from_num(1i32),
-            lon: T::from_num(1i32),
-        };
-        let b = Location {
-            lat: T::from_num(1i32),
-            lon: T::from_num(2i32),
-        };
+        
         assert!(EncointerCurrencies::is_valid_geolocation(&a));
         assert!(EncointerCurrencies::is_valid_geolocation(&b));
         println!("testing Location {:?} and {:?}", a, b);
@@ -205,110 +195,5 @@ fn new_currency_with_too_close_inner_locations_fails() {
         let cid = CurrencyIdentifier::default();
 
         assert!(EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs).is_err());
-    });
-}
-
-#[test]
-fn new_currency_too_close_to_existing_currency_fails() {
-    ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let bob = AccountId::from(AccountKeyring::Bob);
-        let charlie = AccountId::from(AccountKeyring::Charlie);
-        let a = Location {
-            lat: T::from_num(1i32),
-            lon: T::from_num(1i32),
-        };
-        let b = Location {
-            lat: T::from_num(1i32),
-            lon: T::from_num(2i32),
-        };
-        let loc = vec![a, b];
-        let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        assert_ok!(EncointerCurrencies::new_currency(
-            Origin::signed(alice.clone()),
-            loc.clone(),
-            bs.clone()
-        ));
-
-        // second currency
-        let a = Location {
-            lat: T::from_num(1.000001_f64),
-            lon: T::from_num(1.000001_f64),
-        };
-        let b = Location {
-            lat: T::from_num(1.000001_f64),
-            lon: T::from_num(2.000001_f64),
-        };
-        let loc = vec![a, b];
-        assert!(EncointerCurrencies::new_currency(
-            Origin::signed(alice.clone()),
-            loc.clone(),
-            bs.clone()
-        )
-        .is_err());
-    });
-}
-
-#[test]
-fn new_currency_with_near_pole_locations_fails() {
-    ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let bob = AccountId::from(AccountKeyring::Bob);
-        let charlie = AccountId::from(AccountKeyring::Charlie);
-        let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        let cid = CurrencyIdentifier::default();
-
-        let a = Location {
-            lat: T::from_num(89),
-            lon: T::from_num(60),
-        };
-        let b = Location {
-            lat: T::from_num(89),
-            lon: T::from_num(-60),
-        };
-        let loc = vec![a, b];
-        assert!(
-            EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs.clone())
-                .is_err()
-        );
-
-        let a = Location {
-            lat: T::from_num(-89),
-            lon: T::from_num(60),
-        };
-        let b = Location {
-            lat: T::from_num(-89),
-            lon: T::from_num(-60),
-        };
-        let loc = vec![a, b];
-        assert!(EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs).is_err());
-    });
-}
-
-#[test]
-fn new_currency_near_dateline_fails() {
-    ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let bob = AccountId::from(AccountKeyring::Bob);
-        let charlie = AccountId::from(AccountKeyring::Charlie);
-        let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        let cid = CurrencyIdentifier::default();
-
-        let a = Location {
-            lat: T::from_num(10),
-            lon: T::from_num(179),
-        };
-        let b = Location {
-            lat: T::from_num(11),
-            lon: T::from_num(179),
-        };
-        let loc = vec![a, b];
-        assert!(
-            EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs.clone())
-                .is_err()
-        );
     });
 }
