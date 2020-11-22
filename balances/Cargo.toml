@@ -25,52 +25,62 @@ package = "substrate-fixed"
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
 
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dependencies.runtime-io]
 default-features = false
 package = "sp-io"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dependencies.sp-core]
 default-features = false
 package = "sp-core"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies]
 approx = "0.3.0"
 
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.runtime-io]
 package = "sp-io"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.transaction-payment]
 package = "pallet-transaction-payment"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.runtime-interface]
 default-features = false
 package = "sp-runtime-interface"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 
 [features]
