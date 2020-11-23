@@ -154,9 +154,9 @@ decl_module! {
             }            
         }
 
-        /// Allow a user to revoke their shop.
+        /// Allow a user to remove their shop.
         #[weight = 10_000]
-        pub fn revoke_claim(origin, cid:CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
+        pub fn remove_shop(origin, cid:CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer.
             let sender = ensure_signed(origin)?;
 
