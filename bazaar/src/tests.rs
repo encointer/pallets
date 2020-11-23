@@ -234,64 +234,100 @@ fn removal_of_shop_works() {
         // update local shop list
         let shops = EncointerBazaar::shop_registry(cid);
         let alices_shops = EncointerBazaar::shops_owned(cid, alice);
-        let shop_affiliation_registry = EncointerBazaar::shop_affiliation(&cid, &alice_shop);
 
         // assert that shop was removed
         assert_eq!(shops.contains(&alice_shop), false);
         assert_eq!(alices_shops.contains(&alice_shop), false);
+        // TODO: How to assert that hash key is exisiting or empty?
         //assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop), None);
 
     });
 }
 
-/*
 
 #[test]
-fn removal_of_shop_works() {
+fn alices_store_are_differentiated() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
-        let bob = AccountId::from(AccountKeyring::Bob);           
-        let alice_shop = 40; // for now URL validity is not checked (TODO: IPFS)
-        let bob_shop = 30;
-        
-        // upload dummy store to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
-        assert!(EncointerBazaar::upload_shop(Origin::signed(bob.clone()), cid, bob_shop).is_ok());
+        let alice_shop_one = 40; 
+        let alice_shop_two = 50;
+
+        // upload stores to blockchain
+        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
+        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
         let alices_shops = EncointerBazaar::shops_owned(cid, alice);
-        // assert that shop was added
-        assert!(shops.contains(&dummy_url));
-        assert!(alices_shops.contains(&dummy_url));
-        // assert that the shop is owned by alice
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &dummy_url), alice);
+        // assert that shops were added
+        assert!(shops.contains(&alice_shop_one));
+        assert!(shops.contains(&alice_shop_two));
+
+        assert!(alices_shops.contains(&alice_shop_one));
+        assert!(alices_shops.contains(&alice_shop_two));
+
+        // assert that the shops are owned by alice
+        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_one), alice);
+        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_two), alice);
+
+        // delete shop two
+        assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());   
+        
+        // assert that shop two was removed and shop one still exisits
+        let shops = EncointerBazaar::shop_registry(cid);
+        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+
+        assert!(shops.contains(&alice_shop_one));        
+        assert_eq!(shops.contains(&alice_shop_two), false);
+
+        assert!(alices_shops.contains(&alice_shop_one));
+        assert_eq!(alices_shops.contains(&alice_shop_two), false);       
     });
 }
 
 
 #[test]
-fn new_currency_with_too_close_inner_locations_fails() {
+fn multiple_accounts_are_differentiated() {
     ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
+        // initialisation
+        let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
-        let charlie = AccountId::from(AccountKeyring::Charlie);
-        let a = Location {
-            lat: T::from_num(1i32),
-            lon: T::from_num(1i32),
-        };
-        let b = Location {
-            lat: T::from_num(1i32),
-            lon: T::from_num(1.000001_f64),
-        };
-        // a and b roughly 11cm apart
-        let loc = vec![a, b];
-        let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        let cid = CurrencyIdentifier::default();
+        let alice_shop= 40; 
+        let bob_shop = 50;
 
-        assert!(EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs).is_err());
+        // upload stores to blockchain
+        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
+        assert!(EncointerBazaar::upload_shop(Origin::signed(bob.clone()), cid, bob_shop).is_ok());
+/*
+        // get shops from blockchain
+        let shops = EncointerBazaar::shop_registry(cid);
+        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        // assert that shops were added
+        assert!(shops.contains(&alice_shop_one));
+        assert!(shops.contains(&alice_shop_two));
+
+        assert!(alices_shops.contains(&alice_shop_one));
+        assert!(alices_shops.contains(&alice_shop_two));
+
+        // assert that the shops are owned by alice
+        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_one), alice);
+        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_two), alice);
+
+        // delete shop two
+        assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());   
+        
+        // assert that shop two was removed and shop one still exisits
+        let shops = EncointerBazaar::shop_registry(cid);
+        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+
+        assert!(shops.contains(&alice_shop_one));        
+        assert_eq!(shops.contains(&alice_shop_two), false);
+
+        assert!(alices_shops.contains(&alice_shop_one));
+        assert_eq!(alices_shops.contains(&alice_shop_two), false);  
+        */     
     });
-}*/
+}
