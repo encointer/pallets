@@ -287,9 +287,31 @@ fn alices_store_are_differentiated() {
     });
 }
 
+#[test]
+fn stores_cannot_be_uploaded_twice() {
+    ExtBuilder::build().execute_with(|| {
+        // initialisation
+        let cid = register_test_currency();
+        let alice = AccountId::from(AccountKeyring::Alice);
+        let alice_shop_one = 40; 
+        let alice_shop_two = 40;
+
+        // upload stores to blockchain
+        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
+        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_err());
+
+        // get shops from blockchain
+        let shops = EncointerBazaar::shop_registry(cid);
+        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+
+        // Assert that the shop has been uploaded correctly
+        assert!(shops.contains(&alice_shop_one));   
+        assert!(alices_shops.contains(&alice_shop_one)); 
+    });
+}
 
 #[test]
-fn bob_cannot_delete_alices_store() {
+fn bob_cannot_remove_alices_store() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
         let cid = register_test_currency();
@@ -303,7 +325,7 @@ fn bob_cannot_delete_alices_store() {
         assert!(EncointerBazaar::upload_shop(Origin::signed(bob.clone()), cid, bob_shop).is_ok());
 
         // get shops from blockchain
-        let shops = EncointerBazaar::shop_registry(cid);
+        let mut shops = EncointerBazaar::shop_registry(cid);
         let mut alices_shops = EncointerBazaar::shops_owned(cid, alice);
         let bobs_shops = EncointerBazaar::shops_owned(cid, bob);
         // assert that shops were added
@@ -322,6 +344,9 @@ fn bob_cannot_delete_alices_store() {
 
         // assert that shop has not been deleted
         alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        shops = EncointerBazaar::shop_registry(cid);
+
         assert!(alices_shops.contains(&alice_shop));
+        assert!(shops.contains(&alice_shop));
     });
 }

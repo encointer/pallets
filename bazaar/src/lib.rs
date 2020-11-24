@@ -112,6 +112,7 @@ decl_error! {
 }
 
 // TODO: Check if URL valid?
+// TODO: Add Article Upload / Removal
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         // initialisation
