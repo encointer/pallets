@@ -106,6 +106,8 @@ decl_error! {
         NoSuchShop,
         /// shop can not be created twice
         ShopAlreadyCreated,
+        /// shop can not be removed by anyone else than its owner
+        OnlyOwnerCanRemoveShop,
 	}
 }
 
@@ -165,6 +167,10 @@ decl_module! {
 
             // Verify that the specified shop is existing.
             ensure!(ShopAffiliation::<T>::contains_key(cid, &shop), Error::<T>::NoSuchShop);
+
+            // Verify that the removal request is coming from the righteous owner.
+            let owner = ShopAffiliation::<T>::get(cid, &shop);
+            ensure!(owner == sender, Error::<T>::OnlyOwnerCanRemoveShop);
 
             // Get the index of the shop in the owner list.
             match owned_shops.binary_search(&shop) {

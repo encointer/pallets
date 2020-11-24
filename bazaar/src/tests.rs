@@ -289,7 +289,7 @@ fn alices_store_are_differentiated() {
 
 
 #[test]
-fn multiple_accounts_are_differentiated() {
+fn bob_cannot_delete_alices_store() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
         let cid = register_test_currency();
@@ -301,33 +301,24 @@ fn multiple_accounts_are_differentiated() {
         // upload stores to blockchain
         assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
         assert!(EncointerBazaar::upload_shop(Origin::signed(bob.clone()), cid, bob_shop).is_ok());
-/*
+
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
         let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        let bobs_shops = EncointerBazaar::shops_owned(cid, bob);
         // assert that shops were added
-        assert!(shops.contains(&alice_shop_one));
-        assert!(shops.contains(&alice_shop_two));
+        assert!(shops.contains(&alice_shop));
+        assert!(shops.contains(&bob_shop));
 
-        assert!(alices_shops.contains(&alice_shop_one));
-        assert!(alices_shops.contains(&alice_shop_two));
+        assert!(alices_shops.contains(&alice_shop));
+        assert!(bobs_shops.contains(&bob_shop));
 
-        // assert that the shops are owned by alice
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_one), alice);
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_two), alice);
+        // assert that the shops are owned by alice or bob respective
+        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop), alice);
+        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &bob_shop), bob);
 
-        // delete shop two
-        assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());   
-        
-        // assert that shop two was removed and shop one still exisits
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
-
-        assert!(shops.contains(&alice_shop_one));        
-        assert_eq!(shops.contains(&alice_shop_two), false);
-
-        assert!(alices_shops.contains(&alice_shop_one));
-        assert_eq!(alices_shops.contains(&alice_shop_two), false);  
-        */     
+        // assert that bob can not delete alices shop
+        assert!(EncointerBazaar::remove_shop(Origin::signed(bob.clone()), cid, alice_shop).is_err());   
+                 
     });
 }
