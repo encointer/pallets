@@ -135,7 +135,7 @@ decl_module! {
                 Ok(_) => Err(<Error<T>>::ShopAlreadyCreated.into()),
                 // If the search fails, the shop can be inserted into the owned list
                 Err(shop_registry_index) => {
-                    match shops.binary_search(&shop) {
+                    match owned_shops.binary_search(&shop) {
                         Ok(_) => Err(<Error<T>>::ShopAlreadyCreated.into()), // should not be possible
                         Err(onwed_shops_index) => {
                             // Add the shop to the registries

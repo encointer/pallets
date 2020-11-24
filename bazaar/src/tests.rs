@@ -295,7 +295,7 @@ fn multiple_accounts_are_differentiated() {
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
-        let alice_shop= 40; 
+        let alice_shop = 40; 
         let bob_shop = 50;
 
         // upload stores to blockchain
