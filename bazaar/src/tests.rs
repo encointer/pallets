@@ -220,8 +220,8 @@ fn removal_of_shop_works() {
         assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
 
         // get shops from blockchain
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        let mut shops = EncointerBazaar::shop_registry(cid);
+        let mut alices_shops = EncointerBazaar::shops_owned(cid, alice);
         // assert that shop was added
         assert!(shops.contains(&alice_shop));
         assert!(alices_shops.contains(&alice_shop));
@@ -232,8 +232,8 @@ fn removal_of_shop_works() {
         assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
 
         // update local shop list
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        shops = EncointerBazaar::shop_registry(cid);
+        alices_shops = EncointerBazaar::shops_owned(cid, alice);
 
         // assert that shop was removed
         assert_eq!(shops.contains(&alice_shop), false);
@@ -259,8 +259,8 @@ fn alices_store_are_differentiated() {
         assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());
 
         // get shops from blockchain
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        let mut shops = EncointerBazaar::shop_registry(cid);
+        let mut alices_shops = EncointerBazaar::shops_owned(cid, alice);
         // assert that shops were added
         assert!(shops.contains(&alice_shop_one));
         assert!(shops.contains(&alice_shop_two));
@@ -276,8 +276,8 @@ fn alices_store_are_differentiated() {
         assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());   
         
         // assert that shop two was removed and shop one still exisits
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        shops = EncointerBazaar::shop_registry(cid);
+        alices_shops = EncointerBazaar::shops_owned(cid, alice);
 
         assert!(shops.contains(&alice_shop_one));        
         assert_eq!(shops.contains(&alice_shop_two), false);
@@ -304,7 +304,7 @@ fn bob_cannot_delete_alices_store() {
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        let mut alices_shops = EncointerBazaar::shops_owned(cid, alice);
         let bobs_shops = EncointerBazaar::shops_owned(cid, bob);
         // assert that shops were added
         assert!(shops.contains(&alice_shop));
@@ -318,7 +318,10 @@ fn bob_cannot_delete_alices_store() {
         assert_eq!(EncointerBazaar::shop_affiliation(&cid, &bob_shop), bob);
 
         // assert that bob can not delete alices shop
-        assert!(EncointerBazaar::remove_shop(Origin::signed(bob.clone()), cid, alice_shop).is_err());   
-                 
+        assert!(EncointerBazaar::remove_shop(Origin::signed(bob.clone()), cid, alice_shop).is_err()); 
+
+        // assert that shop has not been deleted
+        alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        assert!(alices_shops.contains(&alice_shop));
     });
 }
