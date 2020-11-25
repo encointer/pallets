@@ -54,7 +54,7 @@ decl_storage! {
         // Maps the shop or article owner to the respective items 
         pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ShopIdentifier>;
         pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>; 
-        // Show item affiliation
+        // Item owner
         pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
         pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
         // The set of all shops and articles per currency (community)
@@ -65,10 +65,10 @@ decl_storage! {
 
 decl_event! {
     pub enum Event<T> where AccountId = <T as frame_system::Trait>::AccountId {
-        /// Event emitted when a shop is uploaded. [who, shop]
-        ShopCreated(AccountId, ShopIdentifier),
-        /// Event emitted when a shop is revoked by the owner. [who, shop]
-        ShopRemoved(AccountId, ShopIdentifier),
+        /// Event emitted when a shop is uploaded. [currency, who, shop]
+        ShopCreated(CurrencyIdentifier, AccountId, ShopIdentifier),
+        /// Event emitted when a shop is removed by the owner. [currency, who, shop]
+        ShopRemoved(CurrencyIdentifier, AccountId, ShopIdentifier),
     }
 }
 
@@ -120,7 +120,7 @@ decl_module! {
                             ShopOwner::<T>::insert(cid, &shop, &sender);
                             ShopRegistry::insert(cid, shops);  
                             // Emit an event that the shop was created
-                            Self::deposit_event(RawEvent::ShopCreated(sender, shop));
+                            Self::deposit_event(RawEvent::ShopCreated(cid, sender, shop));
                             Ok(())
                         },
                     }
@@ -156,7 +156,7 @@ decl_module! {
                             ShopRegistry::insert(cid, shops);                             
                             ShopOwner::<T>::remove(cid, &shop);
                             // Emit an event that the shop was removed.
-                            Self::deposit_event(RawEvent::ShopRemoved(sender, shop));    
+                            Self::deposit_event(RawEvent::ShopRemoved(cid, sender, shop));    
                             Ok(())       
                         },
                         Err(_) => Err(Error::<T>::NoSuchShop.into()), // should not be possible
