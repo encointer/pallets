@@ -197,6 +197,27 @@ fn create_new_shop_works() {
 }
 
 #[test]
+fn create_new_shop_with_bad_cid_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // initialisation      
+        let alice = AccountId::from(AccountKeyring::Alice);        
+        let alice_shop = 40;
+        let cid = CurrencyIdentifier::from(blake2_256(&(0, alice).encode())); // fails to register cid
+        
+        // assert that upload fails
+        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_err());
+
+        // get shops from blockchain
+        let shops = EncointerBazaar::shop_registry(cid);
+        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        
+        // assert that shop was not added
+        assert_eq!(shops.contains(&alice_shop), false);
+        assert_eq!(alices_shops.contains(&alice_shop), false);
+    });
+}
+
+#[test]
 fn removal_of_shop_works() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
@@ -231,7 +252,6 @@ fn removal_of_shop_works() {
 
     });
 }
-
 
 #[test]
 fn alices_store_are_differentiated() {

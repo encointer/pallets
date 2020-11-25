@@ -42,7 +42,9 @@ use codec::{Decode, Encode};
 
 use encointer_currencies::{CurrencyIdentifier};
 
-pub trait Trait: frame_system::Trait {
+pub trait Trait: frame_system::Trait 
+    + encointer_currencies::Trait 
+{
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
@@ -95,6 +97,9 @@ decl_module! {
         pub fn upload_shop(origin, cid: CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
+            // Check that the supplied currency is actually registered
+            ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
+                "CurrencyIdentifier not found");
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
             let mut shops = ShopRegistry::get(cid);
