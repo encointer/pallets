@@ -55,8 +55,8 @@ decl_storage! {
         pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ShopIdentifier>;
         pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>; 
         // Show item affiliation
-        pub ShopAffiliation get(fn shop_affiliation): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
-        pub ArticleAffiliation get(fn article_affiliation): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
+        pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
+        pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
         // The set of all shops and articles per currency (community)
         pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<ShopIdentifier>;
         pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<ArticleIdentifier>;
@@ -83,7 +83,7 @@ decl_error! {
 	}
 }
 
-// TODO: Check if URL valid?
+// TODO: Check if URL valid
 // TODO: Add Article Upload / Removal
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -100,7 +100,7 @@ decl_module! {
             let mut shops = ShopRegistry::get(cid);
 
             // Verify that the specified shop has not already been created with fast search
-            ensure!(!ShopAffiliation::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);   
+            ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);   
             
              // TODO: Really necessary to do the binary search twice just to get index?
             // Get the index of the last entry of the Shop vector          
@@ -117,7 +117,7 @@ decl_module! {
                             shops.insert(shop_registry_index, shop.clone());
                             // Update blockchain        
                             ShopsOwned::<T>::insert(cid, &sender, owned_shops);
-                            ShopAffiliation::<T>::insert(cid, &shop, &sender);
+                            ShopOwner::<T>::insert(cid, &shop, &sender);
                             ShopRegistry::insert(cid, shops);  
                             // Emit an event that the shop was created
                             Self::deposit_event(RawEvent::ShopCreated(sender, shop));
@@ -137,12 +137,9 @@ decl_module! {
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
             let mut shops = ShopRegistry::get(cid);
 
-            // Verify that the specified shop is existing.
-            ensure!(ShopAffiliation::<T>::contains_key(cid, &shop), Error::<T>::NoSuchShop);
-
             // Verify that the removal request is coming from the righteous owner.
-            let owner = ShopAffiliation::<T>::get(cid, &shop);
-            ensure!(owner == sender, Error::<T>::OnlyOwnerCanRemoveShop);
+            let shop_owner = ShopOwner::<T>::get(cid, &shop);
+            ensure!(shop_owner == sender, Error::<T>::OnlyOwnerCanRemoveShop);
 
             // Get the index of the shop in the owner list.
             match owned_shops.binary_search(&shop) {
@@ -157,7 +154,7 @@ decl_module! {
                             // Update blockchain
                             ShopsOwned::<T>::insert(cid, &sender, owned_shops);    
                             ShopRegistry::insert(cid, shops);                             
-                            ShopAffiliation::<T>::remove(cid, &shop);
+                            ShopOwner::<T>::remove(cid, &shop);
                             // Emit an event that the shop was removed.
                             Self::deposit_event(RawEvent::ShopRemoved(sender, shop));    
                             Ok(())       

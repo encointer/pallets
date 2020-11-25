@@ -192,7 +192,7 @@ fn create_new_shop_works() {
         assert!(shops.contains(&alice_shop));
         assert!(alices_shops.contains(&alice_shop));
         // assert that the shop is owned by alice
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop), alice);
+        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), alice);
     });
 }
 
@@ -214,7 +214,7 @@ fn removal_of_shop_works() {
         assert!(shops.contains(&alice_shop));
         assert!(alices_shops.contains(&alice_shop));
         // assert that the shop is owned by alice
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop), alice);
+        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), alice);
 
         // remove shop from blockchain
         assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
@@ -227,7 +227,7 @@ fn removal_of_shop_works() {
         assert_eq!(shops.contains(&alice_shop), false);
         assert_eq!(alices_shops.contains(&alice_shop), false);
         // TODO: How to assert that hash key is exisiting or empty?
-        //assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop), None);
+        //assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), None);
 
     });
 }
@@ -257,8 +257,8 @@ fn alices_store_are_differentiated() {
         assert!(alices_shops.contains(&alice_shop_two));
 
         // assert that the shops are owned by alice
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_one), alice);
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop_two), alice);
+        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop_one), alice);
+        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop_two), alice);
 
         // delete shop two
         assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());   
@@ -324,8 +324,8 @@ fn bob_cannot_remove_alices_store() {
         assert!(bobs_shops.contains(&bob_shop));
 
         // assert that the shops are owned by alice or bob respective
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &alice_shop), alice);
-        assert_eq!(EncointerBazaar::shop_affiliation(&cid, &bob_shop), bob);
+        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), alice);
+        assert_eq!(EncointerBazaar::shop_owner(&cid, &bob_shop), bob);
 
         // assert that bob can not delete alices shop
         assert!(EncointerBazaar::remove_shop(Origin::signed(bob.clone()), cid, alice_shop).is_err()); 
