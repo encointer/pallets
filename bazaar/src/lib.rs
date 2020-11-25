@@ -102,67 +102,54 @@ decl_module! {
             // Verify that the specified shop has not already been created with fast search
             ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);   
             
-             // TODO: Really necessary to do the binary search twice just to get index?
-            // Get the index of the last entry of the Shop vector          
-            match shops.binary_search(&shop) {
-                // If the search succeeds, the shop was already created
-                Ok(_) => Err(<Error<T>>::ShopAlreadyCreated.into()),
-                // If the search fails, the shop can be inserted into the owned list
-                Err(shop_registry_index) => {
-                    match owned_shops.binary_search(&shop) {
-                        Ok(_) => Err(<Error<T>>::ShopAlreadyCreated.into()), // should not be possible
-                        Err(onwed_shops_index) => {
-                            // Add the shop to the registries
-                            owned_shops.insert(onwed_shops_index, shop.clone());
-                            shops.insert(shop_registry_index, shop.clone());
-                            // Update blockchain        
-                            ShopsOwned::<T>::insert(cid, &sender, owned_shops);
-                            ShopOwner::<T>::insert(cid, &shop, &sender);
-                            ShopRegistry::insert(cid, shops);  
-                            // Emit an event that the shop was created
-                            Self::deposit_event(RawEvent::ShopCreated(cid, sender, shop));
-                            Ok(())
-                        },
-                    }
-                },
-            }            
+            // Add the shop to the registries
+            owned_shops.push(shop.clone());
+            shops.push(shop.clone());
+            // Update blockchain 
+            ShopsOwned::<T>::insert(cid, &sender, owned_shops);
+            ShopOwner::<T>::insert(cid, &shop, &sender);
+            ShopRegistry::insert(cid, shops);  
+            // Emit an event that the shop was created
+            Self::deposit_event(RawEvent::ShopCreated(cid, sender, shop));
+            Ok(())                     
         }
 
-        /// Allow a user to remove their shop.
+        /// Allow a user to remove their shop
         #[weight = 10_000]
         pub fn remove_shop(origin, cid:CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer.
+            // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
             let mut shops = ShopRegistry::get(cid);
 
-            // Verify that the removal request is coming from the righteous owner.
+            // Verify that the removal request is coming from the righteous owner
             let shop_owner = ShopOwner::<T>::get(cid, &shop);
             ensure!(shop_owner == sender, Error::<T>::OnlyOwnerCanRemoveShop);
 
-            // Get the index of the shop in the owner list.
+            // Get the index of the shop in the owner list
             match owned_shops.binary_search(&shop) {
-                // If the search succeeds, delete the respective entry.
+                // Get the index of the shop registry
                 Ok(shop_registry_index) => {
                     match owned_shops.binary_search(&shop) {
-                        // If the search succeeds, delete the respective entry.
+                        // If the search succeeds, delete the respective entries
                         Ok(onwed_shops_index) => {
-                            // Remove the shop from the owned registry
+                            // Remove the shop from the local registries
                             owned_shops.remove(onwed_shops_index);
                             shops.remove(shop_registry_index);
                             // Update blockchain
                             ShopsOwned::<T>::insert(cid, &sender, owned_shops);    
                             ShopRegistry::insert(cid, shops);                             
                             ShopOwner::<T>::remove(cid, &shop);
-                            // Emit an event that the shop was removed.
+                            // Emit an event that the shop was removed
                             Self::deposit_event(RawEvent::ShopRemoved(cid, sender, shop));    
                             Ok(())       
                         },
-                        Err(_) => Err(Error::<T>::NoSuchShop.into()), // should not be possible
+                        // If the search fails, no such shop is owned
+                        Err(_) => Err(Error::<T>::NoSuchShop.into()),
                     }      
                 },
-                // If the search fails, no such shop is owned.
+                // If the search fails, no such shop is owned
                 Err(_) => Err(Error::<T>::NoSuchShop.into()),       
             }                   
         }
