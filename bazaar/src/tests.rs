@@ -33,13 +33,9 @@ use std::{cell::RefCell, collections::HashSet};
 use frame_support::traits::{Currency, FindAuthor, Get, LockIdentifier};
 use frame_support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
 use sp_keyring::AccountKeyring;
-use codec::{Decode, Encode};
 
 use fixed::traits::LossyFrom;
 use fixed::types::{I32F32, I9F23, I9F55};
-
-const NONE: u64 = 0;
-const REWARD: Balance = 1000;
 
 /// The signature type used by accounts/transactions.
 pub type Signature = sr25519::Signature;
@@ -131,15 +127,12 @@ impl balances::Trait for TestRuntime {
     type WeightInfo = ();
     type MaxLocks = ();   
 }
-pub type Balances = balances::Module<TestRuntime>;
-
-type AccountPublic = <Signature as Verify>::Signer;
 
 pub struct ExtBuilder;
 
 impl ExtBuilder {
     pub fn build() -> runtime_io::TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default()
+        let storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
         runtime_io::TestExternalities::from(storage)
@@ -149,12 +142,6 @@ impl ExtBuilder {
 impl_outer_origin! {
     pub enum Origin for TestRuntime {}
 }
-
-
-fn get_accountid(pair: &sr25519::Pair) -> AccountId {
-    AccountPublic::from(pair.public()).into_account()
-}
-
 
 /// register a simple test currency with 3 meetup locations and well known bootstrappers
 fn register_test_currency() -> CurrencyIdentifier {

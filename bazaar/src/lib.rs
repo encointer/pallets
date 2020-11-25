@@ -42,31 +42,12 @@ use codec::{Decode, Encode};
 
 use encointer_currencies::{CurrencyIdentifier};
 
-pub trait Trait: frame_system::Trait 
-  //  + encointer_currencies::Trait 
-   // + encointer_balances::Trait 
-   // + encointer_scheduler::Trait
-{
+pub trait Trait: frame_system::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
-    //type Public: IdentifyAccount<AccountId = Self::AccountId>;
-    //type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
 }
-// Logger target
-const LOG: &str = "encointer";
 
-pub type ShopIdentifier = u64; //URL
-pub type ArticleIdentifier = u64; //URL
-/*
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct ProofOfAttendance<Signature, AccountId> {
-    pub prover_public: AccountId,
-    pub ceremony_index: CeremonyIndexType,
-    pub currency_identifier: CurrencyIdentifier,
-    pub attendee_public: AccountId,
-    pub attendee_signature: Signature,
-}
-*/
-
+pub type ShopIdentifier = u64; 
+pub type ArticleIdentifier = u64; 
 
 decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
