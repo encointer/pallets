@@ -33,23 +33,14 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     storage::{StorageDoubleMap, StorageMap},
-    traits::Get,
     weights::{DispatchClass, Pays},
     debug
 };
 use rstd::prelude::*;
-use sp_core::RuntimeDebug;
 use frame_system::ensure_signed;
-use sp_timestamp::OnTimestampSet;
-
-use rstd::{cmp::min, convert::TryInto};
 use codec::{Decode, Encode};
-use sp_runtime::traits::{Saturating, CheckedAdd, CheckedDiv, Zero, IdentifyAccount, Member, Verify, CheckedSub};
-use rstd::ops::Rem;
 
-use encointer_currencies::{CurrencyIdentifier, Location, Degree, LossyInto};
-use encointer_balances::BalanceType;
-use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
+use encointer_currencies::{CurrencyIdentifier};
 
 pub trait Trait: frame_system::Trait 
   //  + encointer_currencies::Trait 
@@ -116,7 +107,6 @@ decl_error! {
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         // initialisation
-      //  type Error = Error<T>;
         fn deposit_event() = default;
 
         /// Allow a user to create a shop

@@ -33,6 +33,7 @@ use std::{cell::RefCell, collections::HashSet};
 use frame_support::traits::{Currency, FindAuthor, Get, LockIdentifier};
 use frame_support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
 use sp_keyring::AccountKeyring;
+use codec::{Decode, Encode};
 
 use fixed::traits::LossyFrom;
 use fixed::types::{I32F32, I9F23, I9F55};
