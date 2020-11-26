@@ -94,7 +94,7 @@ decl_module! {
 
         /// Allow a user to create a shop
         #[weight = 10_000]
-        pub fn upload_shop(origin, cid: CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
+        pub fn new_shop(origin, cid: CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
             // Check that the supplied currency is actually registered

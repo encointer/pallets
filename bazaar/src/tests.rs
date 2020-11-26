@@ -183,7 +183,7 @@ fn create_new_shop_works() {
         let alice_shop = 40; // for now URL validity is not checked (TODO: IPFS)
         
         // upload dummy store to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
@@ -205,7 +205,7 @@ fn create_new_shop_with_bad_cid_fails() {
         let cid = CurrencyIdentifier::from(blake2_256(&(0, alice).encode())); // fails to register cid
         
         // assert that upload fails
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_err());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop).is_err());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
@@ -226,7 +226,7 @@ fn removal_of_shop_works() {
         let alice_shop = 40; // for now URL validity is not checked (TODO: IPFS)
 
         // upload dummy store to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
 
         // get shops from blockchain
         let mut shops = EncointerBazaar::shop_registry(cid);
@@ -263,8 +263,8 @@ fn alices_store_are_differentiated() {
         let alice_shop_two = 50;
 
         // upload stores to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());
 
         // get shops from blockchain
         let mut shops = EncointerBazaar::shop_registry(cid);
@@ -296,7 +296,7 @@ fn alices_store_are_differentiated() {
 }
 
 #[test]
-fn stores_cannot_be_uploaded_twice() {
+fn stores_cannot_be_created_twice() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
         let cid = register_test_currency();
@@ -305,8 +305,8 @@ fn stores_cannot_be_uploaded_twice() {
         let alice_shop_two = 40;
 
         // upload stores to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_err());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_err());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
@@ -329,8 +329,8 @@ fn bob_cannot_remove_alices_store() {
         let bob_shop = 50;
 
         // upload stores to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
-        assert!(EncointerBazaar::upload_shop(Origin::signed(bob.clone()), cid, bob_shop).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(bob.clone()), cid, bob_shop).is_ok());
 
         // get shops from blockchain
         let mut shops = EncointerBazaar::shop_registry(cid);
