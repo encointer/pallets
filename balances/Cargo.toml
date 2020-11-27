@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-balances"
-version = "0.3.6"
+version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
