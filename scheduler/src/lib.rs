@@ -33,12 +33,11 @@ use frame_support::{
     weights::{DispatchClass, Pays},
     debug
 };
-use sp_core::RuntimeDebug;
 use frame_system::ensure_signed;
 use sp_timestamp::OnTimestampSet;
 use rstd::prelude::*;
 use codec::{Decode, Encode};
-use sp_runtime::traits::{Saturating, CheckedAdd, CheckedDiv, Zero};
+use sp_runtime::traits::{Saturating, CheckedAdd, CheckedDiv, Zero, One};
 use rstd::ops::Rem;
 
 #[cfg(feature = "std")]
@@ -89,7 +88,7 @@ decl_storage! {
         LastCeremonyBlock get(fn last_ceremony_block): T::BlockNumber;
         CurrentPhase get(fn current_phase) config(): CeremonyPhaseType = CeremonyPhaseType::REGISTERING;
         CeremonyMaster get(fn ceremony_master) config(): T::AccountId;
-        NextPhaseTimestamp get(fn next_phase_timestamp): T::Moment = T::Moment::from(0);
+        NextPhaseTimestamp get(fn next_phase_timestamp): T::Moment = T::Moment::zero();
         PhaseDurations get(fn phase_durations) config(): map hasher(blake2_128_concat) CeremonyPhaseType => T::Moment;
     }
 }
@@ -178,7 +177,7 @@ impl<T: Trait> Module<T> {
             let gap = now - tnext;
             let n = gap.checked_div(&cycle_duration).expect("invalid phase durations: may not be zero");
             tnext.saturating_add(
-                (cycle_duration).saturating_mul(n+T::Moment::from(1)))
+                (cycle_duration).saturating_mul(n+T::Moment::one()))
         } else {
             let gap = tnext- now;
             let n = gap.checked_div(&cycle_duration).expect("invalid phase durations: may not be zero");

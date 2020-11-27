@@ -144,7 +144,7 @@ impl<T: Trait> Module<T> {
 		let current_block = frame_system::Module::<T>::block_number();
 		let elapsed_time_block_number = current_block - entry.last_update;
 		let elapsed_time_u32: u32 = elapsed_time_block_number.try_into().ok()
-			.expect("blockchain will not exceed 2^32 blocks; qed").try_into().unwrap();
+			.expect("blockchain will not exceed 2^32 blocks; qed");
 		let elapsed_time = BalanceType::from_num(elapsed_time_u32);
 		let exponent : BalanceType = -demurrage * elapsed_time;
 		let exp_result : BalanceType = exp(exponent).unwrap();

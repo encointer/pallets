@@ -41,11 +41,10 @@ use frame_support::{
 use sp_core::RuntimeDebug;
 use frame_system::ensure_signed;
 
-use rstd::{cmp::min, convert::TryInto};
+use rstd::{cmp::min};
 use rstd::prelude::*;
 
 use sp_runtime::traits::{IdentifyAccount, Member, Verify, CheckedSub};
-
 use codec::{Decode, Encode};
 
 use encointer_currencies::{CurrencyIdentifier, Location, Degree, LossyInto};
@@ -620,16 +619,16 @@ impl<T: Trait> Module<T> {
         let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
         let mlocation = Self::get_meetup_location(&cid, meetup_idx)?;
         let day = T::MomentsPerDay::get(); 
-        let perdegree = day / T::Moment::from(360);
+        let perdegree = day / T::Moment::from(360u32);
         let start = next - duration;
         // rounding to the lower integer degree. Max error: 240s = 4min
-        let abs_lon: i64 = mlocation.lon.abs().lossy_into();
-        let abs_lon_time = T::Moment::from(abs_lon.try_into().unwrap()) * perdegree;
+        let abs_lon: i32 = mlocation.lon.abs().lossy_into();
+        let abs_lon_time = T::Moment::from(abs_lon as u32) * perdegree;
 
         if mlocation.lon < Degree::from_num(0) {
-            Some(start + day/T::Moment::from(2) + abs_lon_time)
+            Some(start + day/T::Moment::from(2u32) + abs_lon_time)
         } else {
-            Some(start + day/T::Moment::from(2) - abs_lon_time)
+            Some(start + day/T::Moment::from(2u32) - abs_lon_time)
         }
     }
 
