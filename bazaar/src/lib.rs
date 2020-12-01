@@ -48,8 +48,8 @@ pub trait Trait: frame_system::Trait
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
-pub type ShopIdentifier = u64; 
-pub type ArticleIdentifier = u64; 
+pub type ShopIdentifier = Vec<u8>; 
+pub type ArticleIdentifier = Vec<u8>; 
 
 decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
