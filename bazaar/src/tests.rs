@@ -180,7 +180,7 @@ fn create_new_shop_works() {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);        
-        let alice_shop: Vec<u8> = b"alice".to_vec();
+        let alice_shop = ShopIdentifier::from("alice");
         // upload dummy store to blockchain
         assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_ok());
 
@@ -200,7 +200,7 @@ fn create_new_shop_with_bad_cid_fails() {
     ExtBuilder::build().execute_with(|| {
         // initialisation      
         let alice = AccountId::from(AccountKeyring::Alice);        
-        let alice_shop: Vec<u8> = b"alice".to_vec();
+        let alice_shop = ShopIdentifier::from("alice");
         let cid = CurrencyIdentifier::from(blake2_256(&(0, alice).encode())); // fails to register cid
         
         // assert that upload fails
@@ -222,7 +222,7 @@ fn removal_of_shop_works() {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);      
-        let alice_shop: Vec<u8> = b"alice".to_vec();; // for now URL validity is not checked (TODO: IPFS)
+        let alice_shop = ShopIdentifier::from("alice"); // for now URL validity is not checked (TODO: IPFS)
 
         // upload dummy store to blockchain
         assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_ok());
@@ -258,8 +258,8 @@ fn alices_store_are_differentiated() {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop_one: Vec<u8> = b"alice".to_vec();
-        let alice_shop_two: Vec<u8> = b"alice_two".to_vec();
+        let alice_shop_one = ShopIdentifier::from("alice");
+        let alice_shop_two = ShopIdentifier::from("alice_two");
 
         // upload stores to blockchain
         assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_one.clone()).is_ok());
@@ -300,8 +300,10 @@ fn stores_cannot_be_created_twice() {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop_one: Vec<u8> = b"alice".to_vec();
-        let alice_shop_two: Vec<u8> = b"alice".to_vec();
+        let alice_shop_one = ShopIdentifier::from("alice");
+        let alice_shop_two = ShopIdentifier::from("alice");
+
+//let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()))
 
         // upload stores to blockchain
         assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_one.clone()).is_ok());
@@ -324,8 +326,8 @@ fn bob_cannot_remove_alices_store() {
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
-        let alice_shop: Vec<u8> = b"alice".to_vec();
-        let bob_shop: Vec<u8> = b"bob".to_vec();
+        let alice_shop = ShopIdentifier::from("alice");
+        let bob_shop = ShopIdentifier::from("bob");
 
         // upload stores to blockchain
         assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_ok());
