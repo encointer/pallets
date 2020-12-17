@@ -42,6 +42,10 @@ use codec::{Decode, Encode};
 
 use encointer_currencies::{CurrencyIdentifier};
 
+// Only valid for current hashing algorithm of IPFS (sha256)
+// string length: 46 characters (base-58)
+const MAX_HASH_SIZE: usize = 46; 
+
 pub trait Trait: frame_system::Trait 
     + encointer_currencies::Trait 
 {
@@ -85,7 +89,6 @@ decl_error! {
 	}
 }
 
-// TODO: Check if URL valid
 // TODO: Add Article Upload / Removal
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -102,7 +105,10 @@ decl_module! {
                 "CurrencyIdentifier not found");
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
-            let mut shops = ShopRegistry::get(cid);
+            let mut shops = ShopRegistry::get(cid);            
+
+            // Check the string length of the to be uploaded shop
+            ensure!(shop.len() <= MAX_HASH_SIZE, "oversized shop");
 
             // Verify that the specified shop has not already been created with fast search
             ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);   
@@ -158,7 +164,7 @@ decl_module! {
                 Err(_) => Err(Error::<T>::NoSuchShop.into()),       
             }                   
         }
-    }
+    }    
 }
 
 #[cfg(test)]
