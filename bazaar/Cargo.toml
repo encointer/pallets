@@ -51,7 +51,6 @@ git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
 
 [dev-dependencies.fixed]
-default-features = false
 git = "https://github.com/encointer/substrate-fixed"
 tag = "v0.5.4+sub_v0.1"
 package = "substrate-fixed"
@@ -62,25 +61,21 @@ git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
 
 [dev-dependencies.balances]
-default-features = false
 package = "pallet-balances"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
 [dev-dependencies.sp-core]
-default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
 [dev-dependencies.sp-runtime]
-default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
 [dev-dependencies.encointer-balances]
-default-features = false
 path = "../balances"
 package = "pallet-encointer-balances"
 
@@ -88,15 +83,10 @@ package = "pallet-encointer-balances"
 [features]
 default = ["std"]
 std = [
-	"runtime-io/std",
 	"rstd/std",
+	"codec/std",
+	"encointer-currencies/std",
+	"runtime-io/std",
 	"frame-support/std",
 	"frame-system/std",
-	"fixed/std",
-	"encointer-currencies/std",
-	"encointer-balances/std",
-	"balances/std",
-	"sp-runtime/std",
-	"sp-core/std",
-	"codec/std",
 ]
