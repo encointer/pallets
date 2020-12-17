@@ -42,14 +42,18 @@ use codec::{Decode, Encode};
 
 use encointer_currencies::{CurrencyIdentifier};
 
+// Only valid for current hashing algorithm of IPFS (sha256)
+// string length: 46 characters (base-58)
+const MAX_HASH_SIZE: usize = 46; 
+
 pub trait Trait: frame_system::Trait 
     + encointer_currencies::Trait 
 {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
-pub type ShopIdentifier = u64; 
-pub type ArticleIdentifier = u64; 
+pub type ShopIdentifier = Vec<u8>; 
+pub type ArticleIdentifier = Vec<u8>; 
 
 decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
@@ -85,7 +89,6 @@ decl_error! {
 	}
 }
 
-// TODO: Check if URL valid
 // TODO: Add Article Upload / Removal
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -94,7 +97,7 @@ decl_module! {
 
         /// Allow a user to create a shop
         #[weight = 10_000]
-        pub fn upload_shop(origin, cid: CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
+        pub fn new_shop(origin, cid: CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
             // Check that the supplied currency is actually registered
@@ -102,7 +105,10 @@ decl_module! {
                 "CurrencyIdentifier not found");
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
-            let mut shops = ShopRegistry::get(cid);
+            let mut shops = ShopRegistry::get(cid);            
+
+            // Check the string length of the to be uploaded shop
+            ensure!(shop.len() <= MAX_HASH_SIZE, "oversized shop");
 
             // Verify that the specified shop has not already been created with fast search
             ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);   
@@ -158,7 +164,7 @@ decl_module! {
                 Err(_) => Err(Error::<T>::NoSuchShop.into()),       
             }                   
         }
-    }
+    }    
 }
 
 #[cfg(test)]

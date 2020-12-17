@@ -180,10 +180,9 @@ fn create_new_shop_works() {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);        
-        let alice_shop = 40; // for now URL validity is not checked (TODO: IPFS)
-        
+        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
         // upload dummy store to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_ok());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
@@ -201,11 +200,11 @@ fn create_new_shop_with_bad_cid_fails() {
     ExtBuilder::build().execute_with(|| {
         // initialisation      
         let alice = AccountId::from(AccountKeyring::Alice);        
-        let alice_shop = 40;
+        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
         let cid = CurrencyIdentifier::from(blake2_256(&(0, alice).encode())); // fails to register cid
         
         // assert that upload fails
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_err());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_err());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
@@ -223,10 +222,10 @@ fn removal_of_shop_works() {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);      
-        let alice_shop = 40; // for now URL validity is not checked (TODO: IPFS)
+        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
 
         // upload dummy store to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_ok());
 
         // get shops from blockchain
         let mut shops = EncointerBazaar::shop_registry(cid);
@@ -238,7 +237,7 @@ fn removal_of_shop_works() {
         assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), alice);
 
         // remove shop from blockchain
-        assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
+        assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_ok());
 
         // update local shop list
         shops = EncointerBazaar::shop_registry(cid);
@@ -259,12 +258,12 @@ fn alices_store_are_differentiated() {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop_one = 40; 
-        let alice_shop_two = 50;
+        let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
+        let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
 
         // upload stores to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_one.clone()).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_two.clone()).is_ok());
 
         // get shops from blockchain
         let mut shops = EncointerBazaar::shop_registry(cid);
@@ -281,7 +280,7 @@ fn alices_store_are_differentiated() {
         assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop_two), alice);
 
         // delete shop two
-        assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_ok());   
+        assert!(EncointerBazaar::remove_shop(Origin::signed(alice.clone()), cid, alice_shop_two.clone()).is_ok());   
         
         // assert that shop two was removed and shop one still exisits
         shops = EncointerBazaar::shop_registry(cid);
@@ -296,17 +295,19 @@ fn alices_store_are_differentiated() {
 }
 
 #[test]
-fn stores_cannot_be_uploaded_twice() {
+fn stores_cannot_be_created_twice() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop_one = 40; 
-        let alice_shop_two = 40;
+        let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
+        let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
+
+//let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()))
 
         // upload stores to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_one).is_ok());
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop_two).is_err());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_one.clone()).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop_two.clone()).is_err());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);
@@ -325,12 +326,12 @@ fn bob_cannot_remove_alices_store() {
         let cid = register_test_currency();
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
-        let alice_shop = 40; 
-        let bob_shop = 50;
+        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
+        let bob_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfAgygTB");
 
         // upload stores to blockchain
-        assert!(EncointerBazaar::upload_shop(Origin::signed(alice.clone()), cid, alice_shop).is_ok());
-        assert!(EncointerBazaar::upload_shop(Origin::signed(bob.clone()), cid, bob_shop).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_ok());
+        assert!(EncointerBazaar::new_shop(Origin::signed(bob.clone()), cid, bob_shop.clone()).is_ok());
 
         // get shops from blockchain
         let mut shops = EncointerBazaar::shop_registry(cid);
@@ -348,7 +349,7 @@ fn bob_cannot_remove_alices_store() {
         assert_eq!(EncointerBazaar::shop_owner(&cid, &bob_shop), bob);
 
         // assert that bob can not delete alices shop
-        assert!(EncointerBazaar::remove_shop(Origin::signed(bob.clone()), cid, alice_shop).is_err()); 
+        assert!(EncointerBazaar::remove_shop(Origin::signed(bob.clone()), cid, alice_shop.clone()).is_err()); 
 
         // assert that shop has not been deleted
         alices_shops = EncointerBazaar::shops_owned(cid, alice);
@@ -356,5 +357,26 @@ fn bob_cannot_remove_alices_store() {
 
         assert!(alices_shops.contains(&alice_shop));
         assert!(shops.contains(&alice_shop));
+    });
+}
+
+#[test]
+fn create_oversized_shop_fails() {
+    ExtBuilder::build().execute_with(|| {
+        // initialisation      
+        let cid = register_test_currency();
+        let alice = AccountId::from(AccountKeyring::Alice);     
+        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTBB");  
+                
+        // assert that upload fails
+        assert!(EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone()).is_err());
+
+        // get shops from blockchain
+        let shops = EncointerBazaar::shop_registry(cid);
+        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        
+        // assert that shop was not added
+        assert_eq!(shops.contains(&alice_shop), false);
+        assert_eq!(alices_shops.contains(&alice_shop), false);
     });
 }

@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-bazaar"
-version = "0.3.6"
+version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
@@ -9,7 +9,8 @@ edition = "2018"
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dependencies.codec]
 default-features = false
@@ -25,21 +26,29 @@ package = "pallet-encointer-currencies"
 [dependencies.runtime-io]
 default-features = false
 package = "sp-io"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies]
 approx = "0.3.0"
 tempdir = "0.3.7"
+
+[dev-dependencies.externalities]
+package = "sp-externalities"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.fixed]
 default-features = false
@@ -47,28 +56,28 @@ git = "https://github.com/encointer/substrate-fixed"
 tag = "v0.5.4+sub_v0.1"
 package = "substrate-fixed"
 
-[dev-dependencies.externalities]
-package = "sp-externalities"
-version = "0.8.0"
-
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.balances]
 default-features = false
 package = "pallet-balances"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.sp-core]
 default-features = false
 package = "sp-core"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
-version = "2.0.0"
+git = "https://github.com/paritytech/substrate.git" 
+rev = "a208da16"
 
 [dev-dependencies.encointer-balances]
 default-features = false
