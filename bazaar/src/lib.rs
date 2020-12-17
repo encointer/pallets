@@ -33,12 +33,9 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     storage::{StorageDoubleMap, StorageMap},
-    weights::{DispatchClass, Pays},
-    debug
 };
 use rstd::prelude::*;
 use frame_system::ensure_signed;
-use codec::{Decode, Encode};
 
 use encointer_currencies::{CurrencyIdentifier};
 
