@@ -663,7 +663,7 @@ fn assigning_meetup_works() {
 }
 
 #[test]
-fn verify_attestation_signatue_works() {
+fn verify_attestation_signature_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_currency();
         let claimant = AccountKeyring::Alice.pair();

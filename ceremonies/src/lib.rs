@@ -149,6 +149,15 @@ decl_storage! {
     }
 }
 
+decl_event!(
+    pub enum Event<T>
+    where
+        AccountId = <T as frame_system::Trait>::AccountId,
+    {
+        ParticipantRegistered(AccountId),
+    }
+);
+
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
@@ -206,7 +215,7 @@ decl_module! {
             <ParticipantRegistry<T>>::insert((cid, cindex), &new_count, &sender);
             <ParticipantIndex<T>>::insert((cid, cindex), &sender, &new_count);
             <ParticipantCount>::insert((cid, cindex), new_count);
-            
+
             debug::debug!(target: LOG, "registered participant: {:?}", sender);
             Ok(())
         }
@@ -237,55 +246,55 @@ decl_module! {
                 { l } else { return Err(<Error<T>>::MeetupLocationNotFound.into()) };
             let mtime = if let Some(t) = Self::get_meetup_time(&cid, meetup_index)
                 { t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
-            debug::debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}", 
+            debug::debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
                 meetup_index, mlocation, mtime, cid);
             for w in 0..num_signed {
                 let attestation = &attestations[w];
                 let attestation_account = &attestations[w].public;
                 if meetup_participants.contains(attestation_account) == false {
-                    debug::warn!(target: LOG, 
-                        "ignoring attestation that isn't a meetup participant: {:?}", 
+                    debug::warn!(target: LOG,
+                        "ignoring attestation that isn't a meetup participant: {:?}",
                         attestation_account);
                     continue };
                 if attestation.claim.ceremony_index != cindex {
-                    debug::warn!(target: LOG, 
-                        "ignoring claim with wrong ceremony index: {}", 
+                    debug::warn!(target: LOG,
+                        "ignoring claim with wrong ceremony index: {}",
                         attestation.claim.ceremony_index);
                     continue };
                 if attestation.claim.currency_identifier != cid {
-                    debug::warn!(target: LOG, 
-                        "ignoring claim with wrong currency identifier: {:?}", 
+                    debug::warn!(target: LOG,
+                        "ignoring claim with wrong currency identifier: {:?}",
                         attestation.claim.currency_identifier);
                     continue };
                 if attestation.claim.meetup_index != meetup_index {
-                    debug::warn!(target: LOG, 
-                        "ignoring claim with wrong meetup index: {}", 
+                    debug::warn!(target: LOG,
+                        "ignoring claim with wrong meetup index: {}",
                         attestation.claim.meetup_index);
                     continue };
                 if !<encointer_currencies::Module<T>>::is_valid_geolocation(
                     &attestation.claim.location) {
-                        debug::warn!(target: LOG, 
-                            "ignoring claim with illegal geolocation: {:?}", 
+                        debug::warn!(target: LOG,
+                            "ignoring claim with illegal geolocation: {:?}",
                             attestation.claim.location);
-                        continue };   
+                        continue };
                 if <encointer_currencies::Module<T>>::haversine_distance(
                     &mlocation, &attestation.claim.location) > Self::location_tolerance() {
-                        debug::warn!(target: LOG, 
-                            "ignoring claim beyond location tolerance: {:?}", 
+                        debug::warn!(target: LOG,
+                            "ignoring claim beyond location tolerance: {:?}",
                             attestation.claim.location);
-                        continue };   
+                        continue };
                 if let Some(dt) = mtime.checked_sub(&attestation.claim.timestamp) {
                     if dt > Self::time_tolerance() {
-                        debug::warn!(target: LOG, 
-                            "ignoring claim beyond time tolerance (too early): {:?}", 
+                        debug::warn!(target: LOG,
+                            "ignoring claim beyond time tolerance (too early): {:?}",
                             attestation.claim.timestamp);
-                        continue }; 
+                        continue };
                 } else if let Some(dt) = attestation.claim.timestamp.checked_sub(&mtime) {
                     if dt > Self::time_tolerance() {
-                        debug::warn!(target: LOG, 
-                            "ignoring claim beyond time tolerance (too late): {:?}", 
+                        debug::warn!(target: LOG,
+                            "ignoring claim beyond time tolerance (too late): {:?}",
                             attestation.claim.timestamp);
-                        continue }; 
+                        continue };
                 }
                 if Self::verify_attestation_signature(attestation.clone()).is_err() {
                     debug::warn!(target: LOG, "ignoring attestation with bad signature for {:?}", sender);
@@ -312,8 +321,8 @@ decl_module! {
             <AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestation_accounts);
             <AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
             <MeetupParticipantCountVote<T>>::insert((cid, cindex), &sender, &claim_n_participants);
-            debug::debug!(target: LOG, 
-                "sucessfully registered {} attestations for {:?}", 
+            debug::debug!(target: LOG,
+                "sucessfully registered {} attestations for {:?}",
                 verified_attestation_accounts.len(), sender);
             Ok(())
         }
