@@ -282,7 +282,7 @@ fn new_currency_works() {
         assert_eq!(EncointerCurrencies::locations(&cid), loc);
         assert_eq!(EncointerCurrencies::bootstrappers(&cid), bs);
         for b in bs.iter() {
-         assert_eq!(EncointerCurrencies::bootstrapper_newcomer_tickets(&cid, b), INITIAL_NEWCOMER_TICKETS);
+         assert_eq!(EncointerCurrencies::bootstrapper_newby_tickets(&cid, b), INITIAL_NEWBY_TICKETS);
         }
     });
 }

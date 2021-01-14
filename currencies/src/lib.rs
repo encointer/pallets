@@ -93,13 +93,13 @@ const RADIANS_PER_DEGREE: U0F64 = U0F64::from_bits(0x0477D1A894A74E40);
 // in meters
 const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
 
-const INITIAL_NEWCOMER_TICKETS: u64 = 50;
+const INITIAL_NEWBY_TICKETS: u8 = 50;
 
 decl_storage! {
     trait Store for Module<T: Trait> as EncointerCurrencies {
         Locations get(fn locations): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<T::AccountId>;
-        BootstrapperNewcomerTickets get(fn bootstrapper_newcomer_tickets): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => u64;
+        BootstrapperNewbyTickets get(fn bootstrapper_newby_tickets): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => u8;
         CurrencyIdentifiers get(fn currency_identifiers): Vec<CurrencyIdentifier>;
         CurrencyProperties get(fn currency_properties): map hasher(blake2_128_concat) CurrencyIdentifier => CurrencyPropertiesType;
         // TODO: replace this with on-chain governance
@@ -158,7 +158,7 @@ decl_module! {
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
 
             bootstrappers.iter().for_each(
-                |b| <BootstrapperNewcomerTickets<T>>::insert(&cid, &b, INITIAL_NEWCOMER_TICKETS)
+                |b| <BootstrapperNewbyTickets<T>>::insert(&cid, &b, INITIAL_NEWBY_TICKETS)
             );
 
             <CurrencyProperties>::insert(&cid, 

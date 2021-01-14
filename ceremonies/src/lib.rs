@@ -125,6 +125,8 @@ decl_storage! {
         ParticipantIndex get(fn participant_index): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
         ParticipantCount get(fn participant_count): map hasher(blake2_128_concat) CurrencyCeremony => ParticipantIndexType;
         ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
+        // newbies granted a ticket from a bootstrapper for the next ceremony.
+        Endorsees get(fn endorsees): map hasher(blake2_128_concat) CurrencyCeremony => T::AccountId;
 
         // all meetups for each ceremony mapping to a vec of participants
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
@@ -315,17 +317,37 @@ decl_module! {
                 verified_attestation_accounts.len(), sender);
             Ok(())
         }
+
+        #[weight = 10_000]
+        pub fn endorse_newcomer(origin, cid: CurrencyIdentifier, newby: T::AccountId) -> DispatchResult {
+            debug::RuntimeLogger::init();
+            let sender = ensure_signed(origin)?;
+
+            // this is done to simplify the logic as a trade-off for UX, subject to change?
+            ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+                "endorsing participants can only be done during REGISTERING phase");
+
+            ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
+                "CurrencyIdentifier not found");
+
+            ensure!(<encointer_currencies::Module<T>>::bootstrappers(&cid).contains(&sender),
+            "only bootstrappers can endorse newbies");
+
+            ensure!(<encointer_currencies::Module<T>>::bootstrapper_newby_tickets(&cid, &sender) > 0,
+            "bootstrapper has run out of newby tickets");
+
+            let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+            ensure!(!<Endorsees<T>>::contains_key((cid, cindex)),
+            "newby is already endorsed");
+
+            <encointer_currencies::Module<T>>::bootstrapper_newby_tickets(&cid, sender).checked_sub(1)
+            .expect("we already checked that this bootstrapper has tickets > 0; qed");
+            <Endorsees<T>>::insert((cid, cindex), &newby);
+            debug::debug!(target: LOG, "endorsed newby: {:?}", newby);
+            Ok(())
+        }
     }
 }
-
-decl_event!(
-    pub enum Event<T>
-    where
-        AccountId = <T as frame_system::Trait>::AccountId,
-    {
-        ParticipantRegistered(AccountId),
-    }
-);
 
 decl_error! {
 	pub enum Error for Module<T: Trait> {
@@ -347,6 +369,7 @@ impl<T: Trait> Module<T> {
             <ParticipantRegistry<T>>::remove_prefix((cid, cindex));
             <ParticipantIndex<T>>::remove_prefix((cid, cindex));
             <ParticipantCount>::insert((cid, cindex), 0);
+            <Endorsees<T>>::remove((cid, cindex));
             <MeetupRegistry<T>>::remove_prefix((cid, cindex));
             <MeetupIndex<T>>::remove_prefix((cid, cindex));
             <MeetupCount>::insert((cid, cindex), 0);

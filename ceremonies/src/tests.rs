@@ -1327,6 +1327,21 @@ fn register_with_reputation_works() {
     });
 }
 
+#[test]
+fn endorsing_newby_works() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = perform_bootstrapping_ceremony();
+        let master = AccountId::from(AccountKeyring::Alice);
+        // a non-bootstrapper
+        let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+        assert_ok!(EncointerCeremonies::endorse_newcomer(
+            Origin::signed(master.clone()),
+            cid,
+            get_accountid(&zoran)
+        ));
+    });
+}
+
 /*
 #[test]
 fn test_random_permutation_works() {
