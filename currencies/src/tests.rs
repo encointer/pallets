@@ -281,6 +281,9 @@ fn new_currency_works() {
         assert!(cids.contains(&cid));
         assert_eq!(EncointerCurrencies::locations(&cid), loc);
         assert_eq!(EncointerCurrencies::bootstrappers(&cid), bs);
+        for b in bs.iter() {
+         assert_eq!(EncointerCurrencies::bootstrapper_newcomer_tickets(&cid, b), INITIAL_NEWCOMER_TICKETS);
+        }
     });
 }
 
