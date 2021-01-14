@@ -1331,15 +1331,112 @@ fn register_with_reputation_works() {
 fn endorsing_newby_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = perform_bootstrapping_ceremony();
-        let master = AccountId::from(AccountKeyring::Alice);
-        // a non-bootstrapper
+        let alice = AccountId::from(AccountKeyring::Alice);
+        // a newby
         let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
         assert_ok!(EncointerCeremonies::endorse_newcomer(
-            Origin::signed(master.clone()),
+            Origin::signed(alice.clone()),
             cid,
             get_accountid(&zoran)
         ));
     });
+}
+
+
+#[test]
+fn endorsing_newby_in_wrong_phase_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = register_test_currency();
+        let alice = AccountId::from(AccountKeyring::Alice);
+        run_to_next_phase();
+        assert_eq!(
+            EncointerScheduler::current_phase(),
+            CeremonyPhaseType::ASSIGNING
+        );
+        // a newby
+        let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+        assert!(EncointerCeremonies::endorse_newcomer(
+            Origin::signed(alice.clone()),
+            cid,
+            get_accountid(&zoran)
+        )
+            .is_err());
+    });
+}
+
+#[test]
+fn endorsing_newby_twice_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = perform_bootstrapping_ceremony();
+        let alice = AccountId::from(AccountKeyring::Alice);
+        // a newby
+        let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+        assert_ok!(EncointerCeremonies::endorse_newcomer(
+            Origin::signed(alice.clone()),
+            cid,
+            get_accountid(&zoran)
+        ));
+        assert!(EncointerCeremonies::endorse_newcomer(
+            Origin::signed(alice.clone()),
+            cid,
+            get_accountid(&zoran)
+        )
+            .is_err());
+    });
+}
+
+#[test]
+fn endorsing_two_newbies_works() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = perform_bootstrapping_ceremony();
+        let alice = AccountId::from(AccountKeyring::Alice);
+        // a newby
+        let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
+        let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+        assert_ok!(EncointerCeremonies::endorse_newcomer(
+            Origin::signed(alice.clone()),
+            cid,
+            get_accountid(&zoran)
+        ));
+        assert_ok!(EncointerCeremonies::endorse_newcomer(
+            Origin::signed(alice.clone()),
+            cid,
+            get_accountid(&yran)
+        ));
+    });
+}
+
+#[test]
+fn endorsing_newby_without_tickets_fails() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = perform_bootstrapping_ceremony();
+        let alice = AccountId::from(AccountKeyring::Alice);
+
+        // Fixme: is there a more elegant value to set the storage?
+        let mut key = sp_core::twox_128("EncointerCurrencies".as_bytes()).to_vec();
+        key.extend(&sp_core::twox_128("BootstrapperNewbyTickets".as_bytes()));
+        key.extend(blake2_128_concat(&cid));
+        key.extend(blake2_128_concat(&alice));
+        runtime_io::storage::set(&key, &0u8.encode());
+        // a newby
+        let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+        assert!(EncointerCeremonies::endorse_newcomer(
+            Origin::signed(alice.clone()),
+            cid,
+            get_accountid(&zoran)
+        )
+            .is_err());
+    });
+}
+
+fn blake2_128_concat<Key: Encode>(key: &Key) -> Vec<u8> {
+    let key_enc = key.encode();
+    let x: &[u8] = key_enc.as_slice();
+    sp_core::blake2_128(x)
+        .iter()
+        .chain(x.iter())
+        .cloned()
+        .collect::<Vec<_>>()
 }
 
 /*

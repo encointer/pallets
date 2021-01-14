@@ -126,7 +126,7 @@ decl_storage! {
         ParticipantCount get(fn participant_count): map hasher(blake2_128_concat) CurrencyCeremony => ParticipantIndexType;
         ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
         // newbies granted a ticket from a bootstrapper for the next ceremony.
-        Endorsees get(fn endorsees): map hasher(blake2_128_concat) CurrencyCeremony => T::AccountId;
+        Endorsees get(fn endorsees): map hasher(blake2_128_concat) CurrencyCeremony => Vec<T::AccountId>;
 
         // all meetups for each ceremony mapping to a vec of participants
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
@@ -148,15 +148,6 @@ decl_storage! {
         TimeTolerance get(fn time_tolerance) config(): T::Moment;
     }
 }
-
-decl_event!(
-    pub enum Event<T>
-    where
-        AccountId = <T as frame_system::Trait>::AccountId,
-    {
-        ParticipantRegistered(AccountId),
-    }
-);
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -346,17 +337,27 @@ decl_module! {
             "bootstrapper has run out of newby tickets");
 
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-            ensure!(!<Endorsees<T>>::contains_key((cid, cindex)),
+            ensure!(!<Endorsees<T>>::get((cid, cindex)).contains(&newby),
             "newby is already endorsed");
 
             <encointer_currencies::Module<T>>::bootstrapper_newby_tickets(&cid, sender).checked_sub(1)
             .expect("we already checked that this bootstrapper has tickets > 0; qed");
-            <Endorsees<T>>::insert((cid, cindex), &newby);
+
             debug::debug!(target: LOG, "endorsed newby: {:?}", newby);
+            <Endorsees<T>>::mutate((cid, cindex), |newbies| newbies.push(newby));
             Ok(())
         }
     }
 }
+
+decl_event!(
+    pub enum Event<T>
+    where
+        AccountId = <T as frame_system::Trait>::AccountId,
+    {
+        ParticipantRegistered(AccountId),
+    }
+);
 
 decl_error! {
 	pub enum Error for Module<T: Trait> {
@@ -426,6 +427,7 @@ impl<T: Trait> Module<T> {
                 if Self::participant_reputation((cid, cindex), &participant)
                     == Reputation::UnverifiedReputable
                     || <encointer_currencies::Module<T>>::bootstrappers(cid).contains(&participant)
+                    || <Endorsees<T>>::get((cid, cindex)).contains(&participant)
                 {
                     reputables.push(participant);
                 } else {
@@ -433,7 +435,7 @@ impl<T: Trait> Module<T> {
                 }
             }
             let mut n = reputables.len();
-            n += min(newbies.len(), n / 4);
+            n += min(newbies.len(), n / 3);
             let n_meetups = n / 12 + 1;
             let mut meetups = Vec::with_capacity(n_meetups);
             let mut meetup_n_rep = vec![0; n_meetups];
