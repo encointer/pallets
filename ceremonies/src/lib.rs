@@ -331,7 +331,6 @@ decl_module! {
             "bootstrapper has run out of newbie tickets");
 
             let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-                        // this is done to simplify the logic as a trade-off for UX, subject to change?
             if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
                 cindex += 1;
             }
