@@ -29,6 +29,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
+use codec::Encode;
 use std::{cell::RefCell, collections::HashSet};
 use frame_support::traits::{Currency, FindAuthor, Get, LockIdentifier};
 use frame_support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
