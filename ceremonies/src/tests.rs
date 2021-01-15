@@ -27,11 +27,7 @@ use externalities::set_and_run_with_externalities;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
 use sp_runtime::traits::{CheckedAdd, IdentifyAccount, Member, Verify};
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-    MultiSignature, Perbill,
-};
+use sp_runtime::{testing::Header, traits::{BlakeTwo256, IdentityLookup}, MultiSignature, Perbill, DispatchError};
 use inherents::ProvideInherent;
 use std::{cell::RefCell, collections::HashSet, ops::Rem};
 use frame_support::traits::{Currency, FindAuthor, Get, LockIdentifier, OnFinalize, OnInitialize, UnfilteredDispatchable};
@@ -1332,6 +1328,8 @@ fn endorsing_newbie_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = perform_bootstrapping_ceremony();
         let alice = AccountId::from(AccountKeyring::Alice);
+        let cindex = EncointerScheduler::current_ceremony_index();;
+
         // a newbie
         let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
         assert_ok!(EncointerCeremonies::endorse_newcomer(
@@ -1339,6 +1337,7 @@ fn endorsing_newbie_works() {
             cid,
             accountId(&zoran)
         ));
+        assert!(EncointerCeremonies::endorsees((cid, cindex)).contains(&accountId(&zoran)));
     });
 }
 
@@ -1350,6 +1349,7 @@ fn endorsing_newbie_for_second_next_ceremony_works() {
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();;
         run_to_next_phase();
+
         assert_eq!(
             EncointerScheduler::current_phase(),
             CeremonyPhaseType::ASSIGNING
@@ -1370,6 +1370,8 @@ fn endorsing_newbie_twice_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = perform_bootstrapping_ceremony();
         let alice = AccountId::from(AccountKeyring::Alice);
+        let cindex = EncointerScheduler::current_ceremony_index();;
+
         // a newbie
         let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
         assert_ok!(EncointerCeremonies::endorse_newcomer(
@@ -1377,12 +1379,12 @@ fn endorsing_newbie_twice_fails() {
             cid,
             accountId(&zoran)
         ));
-        assert!(EncointerCeremonies::endorse_newcomer(
+        assert!(EncointerCeremonies::endorsees((cid, cindex)).contains(&accountId(&zoran)));
+        assert_eq!(EncointerCeremonies::endorse_newcomer(
             Origin::signed(alice.clone()),
             cid,
             accountId(&zoran)
-        )
-            .is_err());
+        ).unwrap_err(), DispatchError::Other("newbie is already endorsed"));
     });
 }
 
@@ -1391,6 +1393,8 @@ fn endorsing_two_newbies_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = perform_bootstrapping_ceremony();
         let alice = AccountId::from(AccountKeyring::Alice);
+        let cindex = EncointerScheduler::current_ceremony_index();;
+
         // a newbie
         let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
         let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
@@ -1399,11 +1403,13 @@ fn endorsing_two_newbies_works() {
             cid,
             accountId(&zoran)
         ));
+        assert!(EncointerCeremonies::endorsees((cid, cindex)).contains(&accountId(&zoran)));
         assert_ok!(EncointerCeremonies::endorse_newcomer(
             Origin::signed(alice.clone()),
             cid,
             accountId(&yran)
         ));
+        assert!(EncointerCeremonies::endorsees((cid, cindex)).contains(&accountId(&yran)));
     });
 }
 
@@ -1421,12 +1427,11 @@ fn endorsing_newbie_without_tickets_fails() {
         runtime_io::storage::set(&key, &0u8.encode());
         // a newbie
         let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-        assert!(EncointerCeremonies::endorse_newcomer(
+        assert_eq!(EncointerCeremonies::endorse_newcomer(
             Origin::signed(alice.clone()),
             cid,
             accountId(&zoran)
-        )
-            .is_err());
+        ).unwrap_err(), DispatchError::Other("bootstrapper has run out of newbie tickets"));
     });
 }
 
