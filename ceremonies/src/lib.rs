@@ -218,7 +218,7 @@ decl_module! {
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
                 "registering attestations can only be done during ATTESTING phase");
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-            ensure!(attestations.len()>0, "empty attestations supplied");
+            ensure!(!attestations.is_empty(), "empty attestations supplied");
             let cid = attestations[0].claim.currency_identifier;
             ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
                 "CurrencyIdentifier not found");
@@ -228,8 +228,7 @@ decl_module! {
             ensure!(meetup_participants.contains(&sender), "origin not part of this meetup");
             meetup_participants.retain(|x| x != &sender);
             let num_registered = meetup_participants.len();
-            let num_signed = attestations.len();
-            ensure!(num_signed <= num_registered, "can\'t have more attestations than other meetup participants");
+            ensure!(attestations.len() <= num_registered, "can\'t have more attestations than other meetup participants");
             let mut verified_attestation_accounts = vec!();
             let mut claim_n_participants = 0u32;
 
@@ -239,10 +238,9 @@ decl_module! {
                 { t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
             debug::debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
                 meetup_index, mlocation, mtime, cid);
-            for w in 0..num_signed {
-                let attestation = &attestations[w];
-                let attestation_account = &attestations[w].public;
-                if meetup_participants.contains(attestation_account) == false {
+            for attestation in attestations.iter() {
+                let attestation_account = &attestation.public;
+                if !meetup_participants.contains(attestation_account) {
                     debug::warn!(target: LOG,
                         "ignoring attestation that isn't a meetup participant: {:?}",
                         attestation_account);
@@ -295,7 +293,7 @@ decl_module! {
                 // is it a problem if this number isn't equal for all claims? Guess not.
                 claim_n_participants = attestation.claim.number_of_participants_confirmed;
             }
-            if verified_attestation_accounts.len() == 0 {
+            if verified_attestation_accounts.is_empty() {
                 return Err(<Error<T>>::NoValidAttestations.into());
             }
 
@@ -583,7 +581,7 @@ impl<T: Trait> Module<T> {
                     debug::trace!(target: LOG, 
                         "participant merits reward: {:?}", 
                         p);
-                    if let Ok(_) = <encointer_balances::Module<T>>::issue(*cid, &p, reward) {
+                    if <encointer_balances::Module<T>>::issue(*cid, &p, reward).is_ok() {
                         <ParticipantReputation<T>>::insert(
                             (cid, cindex),
                             &p,
