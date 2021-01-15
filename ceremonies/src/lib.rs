@@ -82,6 +82,8 @@ pub enum Reputation {
     VerifiedUnlinked,
     // verified former attendance that has already been linked to a new registration
     VerifiedLinked,
+    // endorsed by a bootstrapper
+    Endorsed,
 }
 impl Default for Reputation {
     fn default() -> Self {
@@ -125,8 +127,6 @@ decl_storage! {
         ParticipantIndex get(fn participant_index): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
         ParticipantCount get(fn participant_count): map hasher(blake2_128_concat) CurrencyCeremony => ParticipantIndexType;
         ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
-        // newbies granted a ticket from a bootstrapper for the next ceremony.
-        Endorsees get(fn endorsees): map hasher(blake2_128_concat) CurrencyCeremony => Vec<T::AccountId>;
 
         // all meetups for each ceremony mapping to a vec of participants
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
@@ -337,14 +337,15 @@ decl_module! {
             "bootstrapper has run out of newbie tickets");
 
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-            ensure!(!<Endorsees<T>>::get((cid, cindex)).contains(&newbie),
-            "newbie is already endorsed");
+            ensure!(<ParticipantReputation<T>>::get((cid, cindex), &newbie) == Reputation::Unverified,
+            "newbie already has reputation");
 
-            <encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, sender).checked_sub(1)
+            <encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, &sender).checked_sub(1)
             .expect("we already checked that this bootstrapper has tickets > 0; qed");
 
             debug::debug!(target: LOG, "endorsed newbie: {:?}", newbie);
-            <Endorsees<T>>::mutate((cid, cindex), |newbies| newbies.push(newbie));
+             <ParticipantReputation<T>>::insert((cid, cindex),
+                    newbie, Reputation::Endorsed);
             Ok(())
         }
     }
@@ -379,7 +380,6 @@ impl<T: Trait> Module<T> {
             <ParticipantRegistry<T>>::remove_prefix((cid, cindex));
             <ParticipantIndex<T>>::remove_prefix((cid, cindex));
             <ParticipantCount>::insert((cid, cindex), 0);
-            <Endorsees<T>>::remove((cid, cindex));
             <MeetupRegistry<T>>::remove_prefix((cid, cindex));
             <MeetupIndex<T>>::remove_prefix((cid, cindex));
             <MeetupCount>::insert((cid, cindex), 0);
@@ -424,10 +424,10 @@ impl<T: Trait> Module<T> {
             // TODO: upfront random permutation
             for p in 1..=pcount {
                 let participant = <ParticipantRegistry<T>>::get((cid, cindex), &p);
-                if Self::participant_reputation((cid, cindex), &participant)
-                    == Reputation::UnverifiedReputable
+                let rep = Self::participant_reputation((cid, cindex), &participant);
+                if rep == Reputation::UnverifiedReputable
+                    || rep == Reputation::Endorsed
                     || <encointer_currencies::Module<T>>::bootstrappers(cid).contains(&participant)
-                    || <Endorsees<T>>::get((cid, cindex)).contains(&participant)
                 {
                     reputables.push(participant);
                 } else {
