@@ -231,10 +231,10 @@ impl<T: Trait> Module<T> {
     pub fn haversine_distance(a: &Location, b: &Location) -> u32 {
         type I = I32F32;
         let two = I::from_num(2);
-        let theta1 = I::from(a.lat) * I::lossy_from(RADIANS_PER_DEGREE);
-        let theta2 = I::from(b.lat) * I::lossy_from(RADIANS_PER_DEGREE);
+        let theta1 = a.lat * I::lossy_from(RADIANS_PER_DEGREE);
+        let theta2 = b.lat * I::lossy_from(RADIANS_PER_DEGREE);
         let delta_theta = theta1 - theta2;
-        let delta_lambda = I::from(a.lon - b.lon) * I::lossy_from(RADIANS_PER_DEGREE);
+        let delta_lambda = (a.lon - b.lon) * I::lossy_from(RADIANS_PER_DEGREE);
         let tmp0 = sin(delta_theta / two);
         let tmp1 = if let Ok(r) = powi::<I, I>(tmp0, 2) {
             r

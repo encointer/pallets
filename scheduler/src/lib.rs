@@ -77,7 +77,7 @@ pub trait OnCeremonyPhaseChange {
 }
 
 impl OnCeremonyPhaseChange for () {
-    fn on_ceremony_phase_change(_: CeremonyPhaseType) { () }
+    fn on_ceremony_phase_change(_: CeremonyPhaseType) { }
 }
 
 // This module's storage items.
