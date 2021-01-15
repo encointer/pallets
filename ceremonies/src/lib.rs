@@ -323,10 +323,6 @@ decl_module! {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
-            // this is done to simplify the logic as a trade-off for UX, subject to change?
-            ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
-                "endorsing participants can only be done during REGISTERING phase");
-
             ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
                 "CurrencyIdentifier not found");
 
@@ -336,7 +332,11 @@ decl_module! {
             ensure!(<encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, &sender) > 0,
             "bootstrapper has run out of newbie tickets");
 
-            let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+            let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+                        // this is done to simplify the logic as a trade-off for UX, subject to change?
+            if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+                cindex += 1;
+            }
             ensure!(!<Endorsees<T>>::get((cid, cindex)).contains(&newbie),
             "newbie is already endorsed");
 
