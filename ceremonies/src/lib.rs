@@ -319,7 +319,7 @@ decl_module! {
         }
 
         #[weight = 10_000]
-        pub fn endorse_newcomer(origin, cid: CurrencyIdentifier, newby: T::AccountId) -> DispatchResult {
+        pub fn endorse_newcomer(origin, cid: CurrencyIdentifier, newbie: T::AccountId) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
@@ -333,18 +333,18 @@ decl_module! {
             ensure!(<encointer_currencies::Module<T>>::bootstrappers(&cid).contains(&sender),
             "only bootstrappers can endorse newbies");
 
-            ensure!(<encointer_currencies::Module<T>>::bootstrapper_newby_tickets(&cid, &sender) > 0,
-            "bootstrapper has run out of newby tickets");
+            ensure!(<encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, &sender) > 0,
+            "bootstrapper has run out of newbie tickets");
 
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-            ensure!(!<Endorsees<T>>::get((cid, cindex)).contains(&newby),
-            "newby is already endorsed");
+            ensure!(!<Endorsees<T>>::get((cid, cindex)).contains(&newbie),
+            "newbie is already endorsed");
 
-            <encointer_currencies::Module<T>>::bootstrapper_newby_tickets(&cid, sender).checked_sub(1)
+            <encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, sender).checked_sub(1)
             .expect("we already checked that this bootstrapper has tickets > 0; qed");
 
-            debug::debug!(target: LOG, "endorsed newby: {:?}", newby);
-            <Endorsees<T>>::mutate((cid, cindex), |newbies| newbies.push(newby));
+            debug::debug!(target: LOG, "endorsed newbie: {:?}", newbie);
+            <Endorsees<T>>::mutate((cid, cindex), |newbies| newbies.push(newbie));
             Ok(())
         }
     }
