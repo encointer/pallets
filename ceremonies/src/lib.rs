@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-
 //! # Encointer Ceremonies Module
 //!
 //! The Encointer Ceremonies module provides functionality for
@@ -31,30 +30,30 @@
 extern crate approx;
 
 use frame_support::{
-    decl_event, decl_module, decl_storage, decl_error,
+    debug, decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::{StorageDoubleMap, StorageMap},
     traits::Get,
-    debug
 };
-use sp_core::RuntimeDebug;
 use frame_system::ensure_signed;
+use sp_core::RuntimeDebug;
 
-use rstd::{cmp::min};
+use rstd::cmp::min;
 use rstd::prelude::*;
 
-use sp_runtime::traits::{IdentifyAccount, Member, Verify, CheckedSub};
 use codec::{Decode, Encode};
+use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 
-use encointer_currencies::{CurrencyIdentifier, Location, Degree, LossyInto};
 use encointer_balances::BalanceType;
+use encointer_currencies::{CurrencyIdentifier, Degree, Location, LossyInto};
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
 
-pub trait Trait: frame_system::Trait 
+pub trait Trait:
+    frame_system::Trait
     + timestamp::Trait
-    + encointer_currencies::Trait 
-    + encointer_balances::Trait 
+    + encointer_currencies::Trait
+    + encointer_balances::Trait
     + encointer_scheduler::Trait
 {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
@@ -125,8 +124,9 @@ decl_storage! {
         ParticipantIndex get(fn participant_index): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
         ParticipantCount get(fn participant_count): map hasher(blake2_128_concat) CurrencyCeremony => ParticipantIndexType;
         ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
-        // newbies granted a ticket from a bootstrapper for the next ceremony.
-        Endorsees get(fn endorsees): map hasher(blake2_128_concat) CurrencyCeremony => Vec<T::AccountId>;
+        // newbies granted a ticket from a bootstrapper for the next ceremony. See https://substrate.dev/recipes/map-set.html for the rationale behind the double_map approach.
+        Endorsees get(fn endorsees): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => ();
+        EndorseesCount get(fn endorsees_count): map hasher(blake2_128_concat) CurrencyCeremony => u64;
 
         // all meetups for each ceremony mapping to a vec of participants
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
@@ -143,7 +143,7 @@ decl_storage! {
         MeetupParticipantCountVote get(fn meetup_participant_count_vote): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => u32;
         CeremonyReward get(fn ceremony_reward) config(): BalanceType;
         // [m] distance from assigned meetup location
-        LocationTolerance get(fn location_tolerance) config(): u32; 
+        LocationTolerance get(fn location_tolerance) config(): u32;
         // [ms] time tolerance for meetup moment
         TimeTolerance get(fn time_tolerance) config(): T::Moment;
     }
@@ -334,14 +334,15 @@ decl_module! {
             if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
                 cindex += 1;
             }
-            ensure!(!<Endorsees<T>>::get((cid, cindex)).contains(&newbie),
+            ensure!(!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
             "newbie is already endorsed");
 
             <encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, sender).checked_sub(1)
             .expect("we already checked that this bootstrapper has tickets > 0; qed");
 
             debug::debug!(target: LOG, "endorsed newbie: {:?}", newbie);
-            <Endorsees<T>>::mutate((cid, cindex), |newbies| newbies.push(newbie));
+            <Endorsees<T>>::insert((cid, cindex), newbie, ());
+            <EndorseesCount>::mutate((cid, cindex), |c| *c += 1);
             Ok(())
         }
     }
@@ -357,26 +358,25 @@ decl_event!(
 );
 
 decl_error! {
-	pub enum Error for Module<T: Trait> {
-		ParticipantAlreadyRegistered,
+    pub enum Error for Module<T: Trait> {
+        ParticipantAlreadyRegistered,
         BadProofOfAttendanceSignature,
         BadAttestationSignature,
         BadAttendeeSignature,
         MeetupLocationNotFound,
         MeetupTimeCalculationError,
         NoValidAttestations
-	}
+    }
 }
 
 impl<T: Trait> Module<T> {
-
     fn purge_registry(cindex: CeremonyIndexType) {
         let cids = <encointer_currencies::Module<T>>::currency_identifiers();
         for cid in cids.iter() {
             <ParticipantRegistry<T>>::remove_prefix((cid, cindex));
             <ParticipantIndex<T>>::remove_prefix((cid, cindex));
             <ParticipantCount>::insert((cid, cindex), 0);
-            <Endorsees<T>>::remove((cid, cindex));
+            <Endorsees<T>>::remove_prefix((cid, cindex));
             <MeetupRegistry<T>>::remove_prefix((cid, cindex));
             <MeetupIndex<T>>::remove_prefix((cid, cindex));
             <MeetupCount>::insert((cid, cindex), 0);
@@ -385,9 +385,7 @@ impl<T: Trait> Module<T> {
             <AttestationCount>::insert((cid, cindex), 0);
             <MeetupParticipantCountVote<T>>::remove_prefix((cid, cindex));
         }
-        debug::debug!(target: LOG, 
-            "purged registry for ceremony {}", 
-            cindex);           
+        debug::debug!(target: LOG, "purged registry for ceremony {}", cindex);
     }
 
     /* this is for a more recent revision of substrate....
@@ -414,8 +412,12 @@ impl<T: Trait> Module<T> {
         for cid in cids.iter() {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
             let pcount = <ParticipantCount>::get((cid, cindex));
+            let ecount = <EndorseesCount>::get((cid, cindex));
 
+            let mut bootstrappers =
+                Vec::with_capacity(<encointer_currencies::Module<T>>::bootstrappers(cid).len());
             let mut reputables = Vec::with_capacity(pcount as usize);
+            let mut endorsees = Vec::with_capacity(ecount as usize);
             let mut newbies = Vec::with_capacity(pcount as usize);
 
             // TODO: upfront random permutation
@@ -423,47 +425,53 @@ impl<T: Trait> Module<T> {
                 let participant = <ParticipantRegistry<T>>::get((cid, cindex), &p);
                 if Self::participant_reputation((cid, cindex), &participant)
                     == Reputation::UnverifiedReputable
-                    || <encointer_currencies::Module<T>>::bootstrappers(cid).contains(&participant)
-                    || <Endorsees<T>>::get((cid, cindex)).contains(&participant)
                 {
                     reputables.push(participant);
+                } else if <encointer_currencies::Module<T>>::bootstrappers(cid)
+                    .contains(&participant)
+                {
+                    bootstrappers.push(participant);
+                } else if <Endorsees<T>>::contains_key((cid, cindex), &participant) {
+                    endorsees.push(participant)
                 } else {
                     newbies.push(participant);
                 }
             }
-            let mut n = reputables.len();
+            let mut n = bootstrappers.len() + reputables.len();
             n += min(newbies.len(), n / 3);
+
+            let mut all_participants = bootstrappers
+                .into_iter()
+                .chain(reputables.into_iter())
+                .chain(endorsees.into_iter())
+                .chain(newbies.into_iter());
+
             let n_meetups = n / 12 + 1;
             let mut meetups = Vec::with_capacity(n_meetups);
-            let mut meetup_n_rep = vec![0; n_meetups];
             for _i in 0..n_meetups {
                 meetups.push(Vec::with_capacity(12))
             }
-            // first, evenly assign reputables to meetups
-            for (i, p) in reputables.iter().enumerate() {
+
+            // fill meetup slots one by one in this order: bootstrappers, reputables, endorsees, newbies
+            for (i, p) in all_participants.by_ref().take(n).enumerate() {
                 meetups[i % n_meetups].push(p);
-                meetup_n_rep[i % n_meetups] += 1;
             }
-            // now, distribute newbies, complying with newbie limit per meetup
-            // FIXME: stop after skipping n_meetups newbies
-            for (i, p) in newbies.iter().enumerate() {
-                let _idx = i % n_meetups;
-                if meetups[_idx].len() < meetup_n_rep[_idx] * 4 / 3 {
-                    meetups[i % n_meetups].push(p);
-                } else {
-                    debug::debug!(target: LOG, 
-                        "had to skip a newbie: {:?}", 
-                        p);
-                }
+
+            for p in all_participants {
+                debug::debug!(target: LOG, "had to skip a newbie: {:?}", p);
             }
             // purge meetups that are too small
             let mut toosmall = Vec::with_capacity(n_meetups);
             for (i, m) in meetups.iter().enumerate() {
                 if m.len() < 3 {
                     toosmall.push(i);
-                    debug::debug!(target: LOG, 
-                        "meetup {} can't take place because it has only {} participants. cid: {:?}", 
-                        i, m.len(), cid);                   
+                    debug::debug!(
+                        target: LOG,
+                        "meetup {} can't take place because it has only {} participants. cid: {:?}",
+                        i,
+                        m.len(),
+                        cid
+                    );
                 }
             }
             for i in toosmall {
@@ -482,9 +490,12 @@ impl<T: Trait> Module<T> {
                     <MeetupRegistry<T>>::insert((cid, cindex), &_idx, m.clone());
                 }
             };
-            debug::debug!(target: LOG, 
-                "assigned {} meetups for cid {:?}", 
-                meetups.len(), cid);
+            debug::debug!(
+                target: LOG,
+                "assigned {} meetups for cid {:?}",
+                meetups.len(),
+                cid
+            );
         }
         debug::debug!(target: LOG, "meetup assignments done");
     }
@@ -505,7 +516,9 @@ impl<T: Trait> Module<T> {
         }
     }
 
-    fn verify_attendee_signature(proof: ProofOfAttendance<T::Signature, T::AccountId>) -> DispatchResult {
+    fn verify_attendee_signature(
+        proof: ProofOfAttendance<T::Signature, T::AccountId>,
+    ) -> DispatchResult {
         match proof.attendee_signature.verify(
             &(proof.prover_public, proof.ceremony_index).encode()[..],
             &proof.attendee_public,
@@ -525,28 +538,32 @@ impl<T: Trait> Module<T> {
         }
         let cids = <encointer_currencies::Module<T>>::currency_identifiers();
         for cid in cids.iter() {
-            let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() -1;
+            let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
             let meetup_count = Self::meetup_count((cid, cindex));
             let reward = Self::ceremony_reward();
 
             for m in 1..=meetup_count {
                 // first, evaluate votes on how many participants showed up
-                let (n_confirmed, n_honest_participants) = match Self::ballot_meetup_n_votes(cid, cindex, m)
-                {
-                    Some(nn) => nn,
-                    _ => {
-                        debug::warn!(target: LOG, 
-                            "ignoring meetup {} because votes are not dependable", 
-                            m);
-                        continue;
-                    }
-                };
+                let (n_confirmed, n_honest_participants) =
+                    match Self::ballot_meetup_n_votes(cid, cindex, m) {
+                        Some(nn) => nn,
+                        _ => {
+                            debug::warn!(
+                                target: LOG,
+                                "ignoring meetup {} because votes are not dependable",
+                                m
+                            );
+                            continue;
+                        }
+                    };
                 let meetup_participants = Self::meetup_registry((cid, cindex), &m);
                 for p in meetup_participants {
                     if Self::meetup_participant_count_vote((cid, cindex), &p) != n_confirmed {
-                        debug::debug!(target: LOG, 
-                            "skipped participant because of wrong participant count vote: {:?}", 
-                            p);
+                        debug::debug!(
+                            target: LOG,
+                            "skipped participant because of wrong participant count vote: {:?}",
+                            p
+                        );
                         continue;
                     }
                     let attestations = Self::attestation_registry(
@@ -556,9 +573,12 @@ impl<T: Trait> Module<T> {
                     if attestations.len() < (n_honest_participants - 1) as usize
                         || attestations.is_empty()
                     {
-                        debug::debug!(target: LOG, 
-                            "skipped participant because of too few attestations ({}): {:?}", 
-                            attestations.len(), p);
+                        debug::debug!(
+                            target: LOG,
+                            "skipped participant because of too few attestations ({}): {:?}",
+                            attestations.len(),
+                            p
+                        );
                         continue;
                     }
                     let mut has_attested = 0u32;
@@ -572,14 +592,14 @@ impl<T: Trait> Module<T> {
                         }
                     }
                     if has_attested < (n_honest_participants - 1) {
-                        debug::debug!(target: LOG, 
-                            "skipped participant because didn't testify for honest peers: {:?}", 
-                            p);
+                        debug::debug!(
+                            target: LOG,
+                            "skipped participant because didn't testify for honest peers: {:?}",
+                            p
+                        );
                         continue;
                     }
-                    debug::trace!(target: LOG, 
-                        "participant merits reward: {:?}", 
-                        p);
+                    debug::trace!(target: LOG, "participant merits reward: {:?}", p);
                     if <encointer_balances::Module<T>>::issue(*cid, &p, reward).is_ok() {
                         <ParticipantReputation<T>>::insert(
                             (cid, cindex),
@@ -590,8 +610,7 @@ impl<T: Trait> Module<T> {
                 }
             }
         }
-        debug::info!(target: LOG, 
-            "issuing rewards completed");
+        debug::info!(target: LOG, "issuing rewards completed");
     }
 
     fn ballot_meetup_n_votes(
@@ -625,7 +644,7 @@ impl<T: Trait> Module<T> {
 
     pub fn get_meetup_location(
         cid: &CurrencyIdentifier,
-        meetup_idx: MeetupIndexType,        
+        meetup_idx: MeetupIndexType,
     ) -> Option<Location> {
         let locations = <encointer_currencies::Module<T>>::locations(&cid);
         if (meetup_idx > 0) && (meetup_idx <= locations.len() as MeetupIndexType) {
@@ -636,20 +655,18 @@ impl<T: Trait> Module<T> {
     }
 
     // this function only works during ATTESTING, so we're keeping it for private use
-    fn get_meetup_time(
-        cid: &CurrencyIdentifier,
-        meetup_idx: MeetupIndexType,
-    ) -> Option<T::Moment> {
+    fn get_meetup_time(cid: &CurrencyIdentifier, meetup_idx: MeetupIndexType) -> Option<T::Moment> {
         if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
             return None;
         }
         if meetup_idx == 0 {
             return None;
         }
-        let duration = <encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
+        let duration =
+            <encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
         let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
         let mlocation = Self::get_meetup_location(&cid, meetup_idx)?;
-        let day = T::MomentsPerDay::get(); 
+        let day = T::MomentsPerDay::get();
         let perdegree = day / T::Moment::from(360u32);
         let start = next - duration;
         // rounding to the lower integer degree. Max error: 240s = 4min
@@ -657,9 +674,9 @@ impl<T: Trait> Module<T> {
         let abs_lon_time = T::Moment::from(abs_lon as u32) * perdegree;
 
         if mlocation.lon < Degree::from_num(0) {
-            Some(start + day/T::Moment::from(2u32) + abs_lon_time)
+            Some(start + day / T::Moment::from(2u32) + abs_lon_time)
         } else {
-            Some(start + day/T::Moment::from(2u32) - abs_lon_time)
+            Some(start + day / T::Moment::from(2u32) - abs_lon_time)
         }
     }
 
@@ -671,17 +688,16 @@ impl<T: Trait> Module<T> {
 }
 
 impl<T: Trait> OnCeremonyPhaseChange for Module<T> {
-    fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) 
-    { 
+    fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
         match new_phase {
             CeremonyPhaseType::ASSIGNING => {
                 Self::assign_meetups();
             }
-            CeremonyPhaseType::ATTESTING => { }
-            CeremonyPhaseType::REGISTERING => { 
+            CeremonyPhaseType::ATTESTING => {}
+            CeremonyPhaseType::REGISTERING => {
                 Self::issue_rewards();
                 let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-                Self::purge_registry(cindex-1);
+                Self::purge_registry(cindex - 1);
             }
         }
     }
