@@ -1884,8 +1884,10 @@ fn grow_population_works() {
         // ASSIGNING
         assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
         let meetup3_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
+        let meetup3_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
         // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
         assert_eq!(meetup3_1.len(), 7);
+        assert_eq!(meetup3_2.len(), 6);
 
         run_to_next_phase();
         // WITNESSING
@@ -1919,7 +1921,11 @@ fn grow_population_works() {
         let meetup4_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
 
         // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-        assert!(meetup4_1.len() + meetup4_2.len() <= 15);
+        // Fixme: I do not agree with these numbers. According to my calculation we should have:
+        // |N| = (6B + 7R) + min(7N, floor(13/2)) = 19 Participants
+        // Is proof generation broken?
+        assert_eq!(meetup4_1.len(), 8);
+        assert_eq!(meetup4_2.len(), 7);
 
         run_to_next_phase();
         // WITNESSING
