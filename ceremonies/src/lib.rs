@@ -458,9 +458,6 @@ impl<T: Trait> Module<T> {
                 meetups[i % n_meetups].push(p);
             }
 
-            for p in all_participants {
-                debug::debug!(target: LOG, "had to skip a newbie: {:?}", p);
-            }
             // purge meetups that are too small
             let mut toosmall = Vec::with_capacity(n_meetups);
             for (i, m) in meetups.iter().enumerate() {

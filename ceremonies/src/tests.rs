@@ -1892,17 +1892,20 @@ fn grow_population_works() {
         run_to_next_phase();
         // WITNESSING
         fully_attest_meetup(cid, participants.clone(), 1);
+        fully_attest_meetup(cid, participants.clone(), 2);
 
         run_to_next_phase();
         // REGISTERING
 
         let cindex = EncointerScheduler::current_ceremony_index();
+        let mut proof_count = 0;
         for pair in participants.iter() {
             let proof = match EncointerCeremonies::participant_reputation(
                 (cid, cindex - 1),
                 account_id(&pair),
             ) {
                 Reputation::VerifiedUnlinked => {
+                    proof_count += 1;
                     Some(prove_attendance(account_id(&pair), cid, cindex - 1, &pair))
                 }
                 _ => None,
@@ -1916,16 +1919,14 @@ fn grow_population_works() {
         }
         run_to_next_phase();
         // ASSIGNING
+        assert_eq!(proof_count, 13); // Fixme: this fails
         assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
         let meetup4_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
         let meetup4_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
 
         // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-        // Fixme: I do not agree with these numbers. According to my calculation we should have:
-        // |N| = (6B + 7R) + min(7N, floor(13/2)) = 19 Participants
-        // Is proof generation broken?
-        assert_eq!(meetup4_1.len(), 8);
-        assert_eq!(meetup4_2.len(), 7);
+        assert_eq!(meetup4_1.len(), 10); // 7(B + R) + 2N
+        assert_eq!(meetup4_2.len(), 9); // 6(B + R) + 3N
 
         run_to_next_phase();
         // WITNESSING
