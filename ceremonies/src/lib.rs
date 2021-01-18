@@ -438,7 +438,8 @@ impl<T: Trait> Module<T> {
                 }
             }
             let mut n = bootstrappers.len() + reputables.len();
-            n += min(newbies.len(), n / 3);
+            n += min(newbies.len(), n / 2);
+            n += endorsees.len();
 
             let mut all_participants = bootstrappers
                 .into_iter()

@@ -1851,8 +1851,8 @@ fn grow_population_works() {
         assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
         let meetup2_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
 
-        // whitepaper III-B Rule 3: no more than 1/4 participants without reputation
-        assert_eq!(meetup2_1.len(), 8);
+        // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
+        assert_eq!(meetup2_1.len(), 9);
 
         run_to_next_phase();
         // WITNESSING
@@ -1882,10 +1882,10 @@ fn grow_population_works() {
         }
         run_to_next_phase();
         // ASSIGNING
-        assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
+        assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
         let meetup3_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
-        // whitepaper III-B Rule 3: no more than 1/4 participants without reputation
-        assert_eq!(meetup3_1.len(), 10);
+        // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
+        assert_eq!(meetup3_1.len(), 7);
 
         run_to_next_phase();
         // WITNESSING
@@ -1918,8 +1918,8 @@ fn grow_population_works() {
         let meetup4_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
         let meetup4_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
 
-        // whitepaper III-B Rule 3: no more than 1/4 participants without reputation
-        assert!(meetup4_1.len() + meetup4_2.len() <= 13);
+        // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
+        assert!(meetup4_1.len() + meetup4_2.len() <= 15);
 
         run_to_next_phase();
         // WITNESSING
