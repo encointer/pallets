@@ -447,7 +447,11 @@ impl<T: Trait> Module<T> {
                 .chain(endorsees.into_iter())
                 .chain(newbies.into_iter());
 
-            let n_meetups = n / 12 + 1;
+            let mut n_meetups = n / 12;
+            if n.rem_euclid(12) > 0 {
+                n_meetups += 1;
+            }
+
             let mut meetups = Vec::with_capacity(n_meetups);
             for _i in 0..n_meetups {
                 meetups.push(Vec::with_capacity(12))
