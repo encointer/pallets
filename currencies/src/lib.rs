@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-
 //! # Encointer Currencies Module
 //!
 //! provides functionality for
@@ -26,24 +25,21 @@
 
 // use host_calls::runtime_interfaces;
 use frame_support::{
-    decl_event, decl_module, decl_storage, decl_error,
+    debug, decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::{StorageMap, StorageValue},
-    debug
 };
-use sp_core::{RuntimeDebug, H256};
 use frame_system::ensure_signed;
+use sp_core::{RuntimeDebug, H256};
 
 use rstd::prelude::*;
 
 use codec::{Decode, Encode};
 pub use fixed::traits::{LossyFrom, LossyInto};
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
-use fixed::types::{I32F0, I32F32, U0F64, I64F64};
-use runtime_io::{
-    hashing::blake2_256,
-};
+use fixed::types::{I32F0, I32F32, I64F64, U0F64};
+use runtime_io::hashing::blake2_256;
 
 pub trait Trait: frame_system::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
@@ -93,13 +89,10 @@ const RADIANS_PER_DEGREE: U0F64 = U0F64::from_bits(0x0477D1A894A74E40);
 // in meters
 const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
 
-const INITIAL_NEWBIE_TICKETS: u8 = 50;
-
 decl_storage! {
     trait Store for Module<T: Trait> as EncointerCurrencies {
         Locations get(fn locations): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<T::AccountId>;
-        BootstrapperNewbieTickets get(fn bootstrapper_newbie_tickets): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => u8;
         CurrencyIdentifiers get(fn currency_identifiers): Vec<CurrencyIdentifier>;
         CurrencyProperties get(fn currency_properties): map hasher(blake2_128_concat) CurrencyIdentifier => CurrencyPropertiesType;
         // TODO: replace this with on-chain governance
@@ -131,22 +124,22 @@ decl_module! {
                 // prohibit proximity to poles
                 if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
                     || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to pole: {:?}", l1);    
+                    debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
                     return Err(<Error<T>>::MinimumDistanceViolationToPole.into());
                 }
                 // prohibit proximity to dateline
                 let dateline_proxy = Location { lat: l1.lat, lon: DATELINE_LON };
                 if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);                        
+                    debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
                     return Err(<Error<T>>::MinimumDistanceViolationToDateLine.into());
                 }
                 // test against all other currencies globally
                 for other in cids.iter() {
                     for l2 in Self::locations(other) {
                         if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
-                            debug::warn!(target: LOG, 
-                                "location {:?} too close to previously registered location {:?} with cid {:?}", 
-                                l1, l2, other);    
+                            debug::warn!(target: LOG,
+                                "location {:?} too close to previously registered location {:?} with cid {:?}",
+                                l1, l2, other);
                             return Err(<Error<T>>::MinimumDistanceViolationToOtherCurrency.into());
                         }
                     }
@@ -157,18 +150,14 @@ decl_module! {
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
 
-            bootstrappers.iter().for_each(
-                |b| <BootstrapperNewbieTickets<T>>::insert(&cid, &b, INITIAL_NEWBIE_TICKETS)
-            );
-
-            <CurrencyProperties>::insert(&cid, 
+            <CurrencyProperties>::insert(&cid,
                 CurrencyPropertiesType {
-                    name_utf8: b"encointer dummy".to_vec(), 
+                    name_utf8: b"encointer dummy".to_vec(),
                     demurrage_per_block: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128)
                 }
             );
             Self::deposit_event(RawEvent::CurrencyRegistered(sender, cid));
-            debug::info!(target: LOG, "registered currency with cid: {:?}", cid);                
+            debug::info!(target: LOG, "registered currency with cid: {:?}", cid);
             Ok(())
         }
     }
@@ -184,14 +173,14 @@ decl_event!(
 );
 
 decl_error! {
-	pub enum Error for Module<T: Trait> {
-		/// minimum distance violated towards pole
+    pub enum Error for Module<T: Trait> {
+        /// minimum distance violated towards pole
         MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
         /// minimum distance violated towards other currency's location
-		MinimumDistanceViolationToOtherCurrency,
-	}
+        MinimumDistanceViolationToOtherCurrency,
+    }
 }
 
 impl<T: Trait> Module<T> {

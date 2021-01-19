@@ -1427,23 +1427,29 @@ fn register_with_reputation_works() {
 }
 
 #[test]
-fn endorsing_newbie_works() {
+fn endorsing_newbie_works_until_no_more_tickets() {
     ExtBuilder::build().execute_with(|| {
         let cid = perform_bootstrapping_ceremony(None);
         let alice = AccountId::from(AccountKeyring::Alice);
-        let cindex = EncointerScheduler::current_ceremony_index();
 
-        // a newbie
-        let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-        assert_ok!(EncointerCeremonies::endorse_newcomer(
-            Origin::signed(alice.clone()),
-            cid,
-            account_id(&zoran)
-        ));
-        assert!(Endorsees::<TestRuntime>::contains_key(
-            (cid, cindex),
-            &account_id(&zoran)
-        ));
+        let endorsees = add_population((AMOUNT_NEWBIE_TICKETS + 1) as usize, 6);
+        for i in 0..AMOUNT_NEWBIE_TICKETS {
+            assert_ok!(EncointerCeremonies::endorse_newcomer(
+                Origin::signed(alice.clone()),
+                cid,
+                endorsees[i as usize].public()
+            ));
+        }
+
+        assert_eq!(
+            EncointerCeremonies::endorse_newcomer(
+                Origin::signed(alice.clone()),
+                cid,
+                endorsees[AMOUNT_NEWBIE_TICKETS as usize].public()
+            )
+            .unwrap_err(),
+            DispatchError::Other("bootstrapper has run out of newbie tickets")
+        );
     });
 }
 
@@ -1532,42 +1538,6 @@ fn endorsing_two_newbies_works() {
             &account_id(&yran)
         ));
     });
-}
-
-#[test]
-fn endorsing_newbie_without_tickets_fails() {
-    ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
-        let alice = AccountId::from(AccountKeyring::Alice);
-
-        // Fixme: is there a more elegant value to set the storage?
-        let mut key = sp_core::twox_128("EncointerCurrencies".as_bytes()).to_vec();
-        key.extend(&sp_core::twox_128("BootstrapperNewbieTickets".as_bytes()));
-        key.extend(blake2_128_concat(&cid));
-        key.extend(blake2_128_concat(&alice));
-        runtime_io::storage::set(&key, &0u8.encode());
-        // a newbie
-        let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-        assert_eq!(
-            EncointerCeremonies::endorse_newcomer(
-                Origin::signed(alice.clone()),
-                cid,
-                account_id(&zoran)
-            )
-            .unwrap_err(),
-            DispatchError::Other("bootstrapper has run out of newbie tickets")
-        );
-    });
-}
-
-fn blake2_128_concat<Key: Encode>(key: &Key) -> Vec<u8> {
-    let key_enc = key.encode();
-    let x: &[u8] = key_enc.as_slice();
-    sp_core::blake2_128(x)
-        .iter()
-        .chain(x.iter())
-        .cloned()
-        .collect::<Vec<_>>()
 }
 
 /*

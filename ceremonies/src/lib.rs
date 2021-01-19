@@ -63,6 +63,8 @@ pub trait Trait:
 
 const REPUTATION_LIFETIME: u32 = 1;
 
+const AMOUNT_NEWBIE_TICKETS: u8 = 50;
+
 // Logger target
 const LOG: &str = "encointer";
 
@@ -118,6 +120,8 @@ pub struct ProofOfAttendance<Signature, AccountId> {
 // This module's storage items.
 decl_storage! {
     trait Store for Module<T: Trait> as EncointerCeremonies {
+        BurnedBootstrapperNewbieTickets get(fn bootstrapper_newbie_tickets): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => u8;
+
         // everyone who registered for a ceremony
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
         ParticipantRegistry get(fn participant_registry): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
@@ -327,7 +331,7 @@ decl_module! {
             ensure!(<encointer_currencies::Module<T>>::bootstrappers(&cid).contains(&sender),
             "only bootstrappers can endorse newbies");
 
-            ensure!(<encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, &sender) > 0,
+            ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < AMOUNT_NEWBIE_TICKETS,
             "bootstrapper has run out of newbie tickets");
 
             let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
@@ -337,9 +341,7 @@ decl_module! {
             ensure!(!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
             "newbie is already endorsed");
 
-            <encointer_currencies::Module<T>>::bootstrapper_newbie_tickets(&cid, sender).checked_sub(1)
-            .expect("we already checked that this bootstrapper has tickets > 0; qed");
-
+            <BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender,|b| *b += 1);
             debug::debug!(target: LOG, "endorsed newbie: {:?}", newbie);
             <Endorsees<T>>::insert((cid, cindex), newbie, ());
             <EndorseesCount>::mutate((cid, cindex), |c| *c += 1);
@@ -439,6 +441,8 @@ impl<T: Trait> Module<T> {
                     newbies.push(participant);
                 }
             }
+
+            // n == amount of valid registrations
             let mut n = bootstrappers.len() + reputables.len();
             n += min(newbies.len(), n / 2);
             n += endorsees.len();
@@ -448,6 +452,7 @@ impl<T: Trait> Module<T> {
                 continue;
             }
 
+            // capping the amount a participants prevents assigning more meetups than there are locations.
             if n > max_participants {
                 debug::debug!(
                     target: LOG,
@@ -459,7 +464,7 @@ impl<T: Trait> Module<T> {
                 n = max_participants;
             }
 
-            let mut all_participants = bootstrappers
+            let all_participants = bootstrappers
                 .into_iter()
                 .chain(reputables.into_iter())
                 .chain(endorsees.into_iter())
@@ -476,7 +481,7 @@ impl<T: Trait> Module<T> {
             }
 
             // fill meetup slots one by one in this order: bootstrappers, reputables, endorsees, newbies
-            for (i, p) in all_participants.by_ref().take(n).enumerate() {
+            for (i, p) in all_participants.take(n).enumerate() {
                 meetups[i % n_meetups].push(p);
             }
 
