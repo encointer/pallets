@@ -25,6 +25,7 @@ use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::traits::{Get, OnFinalize, OnInitialize, UnfilteredDispatchable};
 use frame_support::{assert_ok, impl_outer_origin, parameter_types};
 use inherents::ProvideInherent;
+use rstest::*;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
 use sp_keyring::AccountKeyring;
@@ -1778,21 +1779,20 @@ fn grow_population_works() {
     });
 }
 
-#[test]
-fn assign_meetup_works() {
+#[rstest(n_bootstrappers, n_reputables, n_endorsees, n_newbies, exp_meetups,
+    case(3,7,3,3, vec![8,8])
+)]
+fn assign_meetup_works(
+    n_bootstrappers: usize,
+    n_reputables: usize,
+    n_endorsees: usize,
+    n_newbies: usize,
+    exp_meetups: Vec<usize>,
+) {
     ExtBuilder::build().execute_with(|| {
         let cid = perform_bootstrapping_ceremony();
         let mut participants: Vec<sr25519::Pair> = bootstrappers();
         let alice = bootstrappers()[0].clone();
-
-        let n_bootstrappers = 3;
-        let n_reputables = 7;
-        let n_endorsees = 3;
-        let n_newbies = 3;
-
-        let exp_amount_meetups = 2;
-        let exp_amount_m1_participants = 8;
-        let exp_amount_m2_participants = 8;
 
         // there is 6 bootstrappers
         if (n_bootstrappers + n_reputables) > 6 {
@@ -1822,19 +1822,15 @@ fn assign_meetup_works() {
         // ASSIGNING
         assert_eq!(
             EncointerCeremonies::meetup_count((cid, cindex)),
-            exp_amount_meetups
+            exp_meetups.len() as u64
         );
-        let meetup_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
-        let meetup_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
 
-        // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-        assert_eq!(meetup_1.len(), exp_amount_m1_participants);
-        assert_eq!(meetup_2.len(), exp_amount_m2_participants);
-
-        run_to_next_phase();
-        // WITNESSING
-        fully_attest_meetup(cid, participants.clone(), 1);
-        fully_attest_meetup(cid, participants.clone(), 2);
+        for (i, m) in exp_meetups.into_iter().enumerate() {
+            assert_eq!(
+                EncointerCeremonies::meetup_registry((cid, cindex), i as MeetupIndexType).len(),
+                m
+            );
+        }
     });
 }
 
