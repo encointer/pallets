@@ -414,6 +414,7 @@ impl<T: Trait> Module<T> {
         for cid in cids.iter() {
             let pcount = <ParticipantCount>::get((cid, cindex));
             let ecount = <EndorseesCount>::get((cid, cindex));
+            let max_participants = <encointer_currencies::Module<T>>::locations(cid).len() * 12;
 
             let mut bootstrappers =
                 Vec::with_capacity(<encointer_currencies::Module<T>>::bootstrappers(cid).len());
@@ -445,6 +446,17 @@ impl<T: Trait> Module<T> {
             if n < 3 {
                 debug::debug!(target: LOG, "no meetups assigned for cid {:?}", cid);
                 continue;
+            }
+
+            if n > max_participants {
+                debug::debug!(
+                    target: LOG,
+                    "Too many participants for cid: {:?}. Allowed: {}, Actual: {})",
+                    n,
+                    max_participants,
+                    cid
+                );
+                n = max_participants;
             }
 
             let mut all_participants = bootstrappers
