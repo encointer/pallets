@@ -543,33 +543,6 @@ fn registering_participant_in_wrong_phase_fails() {
     });
 }
 
-// #[test]
-// fn assigning_meetup_works() {
-//     ExtBuilder::build().execute_with(|| {
-//         let cid = register_test_currency(None);
-//         let alice = AccountId::from(AccountKeyring::Alice);
-//         let bob = AccountId::from(AccountKeyring::Bob);
-//         let ferdie = AccountId::from(AccountKeyring::Ferdie);
-//         let cindex = EncointerScheduler::current_ceremony_index();
-//         assert_ok!(register(alice.clone(), cid, None));
-//         assert_ok!(register(bob.clone(), cid, None));
-//         assert_ok!(register(ferdie.clone(), cid, None));
-//         assert_eq!(EncointerCeremonies::participant_count((cid, cindex)), 3);
-//         //omitting phase change here!
-//         EncointerCeremonies::assign_meetups();
-//         assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
-//         let meetup = EncointerCeremonies::meetup_registry((cid, cindex), 1);
-//         assert_eq!(meetup.len(), 3);
-//         assert!(meetup.contains(&alice));
-//         assert!(meetup.contains(&bob));
-//         assert!(meetup.contains(&ferdie));
-//
-//         assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &alice), 1);
-//         assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &bob), 1);
-//         assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &ferdie), 1);
-//     });
-// }
-
 #[test]
 fn verify_attestation_signature_works() {
     ExtBuilder::build().execute_with(|| {
