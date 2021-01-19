@@ -214,15 +214,6 @@ pub fn set_timestamp(t: u64) {
         .dispatch_bypass_filter(Origin::none());
 }
 
-/// Wrapper for EncointerCeremonies::register_participant that reduces boilerplate code.
-fn register(
-    account: AccountId,
-    cid: CurrencyIdentifier,
-    proof: Option<TestProofOfAttendance>,
-) -> DispatchResult {
-    EncointerCeremonies::register_participant(Origin::signed(account), cid, proof)
-}
-
 /// get correct meetup time for a certain cid and meetup
 fn correct_meetup_time(cid: &CurrencyIdentifier, mindex: MeetupIndexType) -> Moment {
     //assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
@@ -297,6 +288,15 @@ fn prove_attendance(
     }
 }
 
+/// Wrapper for EncointerCeremonies::register_participant that reduces boilerplate code.
+fn register(
+    account: AccountId,
+    cid: CurrencyIdentifier,
+    proof: Option<TestProofOfAttendance>,
+) -> DispatchResult {
+    EncointerCeremonies::register_participant(Origin::signed(account), cid, proof)
+}
+
 /// shortcut to register well-known keys for current ceremony
 fn register_alice_bob_ferdie(cid: CurrencyIdentifier) {
     assert_ok!(register(
@@ -325,6 +325,16 @@ fn register_charlie_dave_eve(cid: CurrencyIdentifier) {
         None
     ));
     assert_ok!(register(account_id(&AccountKeyring::Eve.pair()), cid, None));
+}
+
+fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519::Pair> {
+    let mut participants = Vec::with_capacity(amount);
+    for population_counter in 1..=amount {
+        let mut entropy = [0u8; 32];
+        entropy[0] = (current_popuplation_size + population_counter) as u8; // don't include bootstrappers
+        participants.push(sr25519::Pair::from_entropy(&entropy, None).0);
+    }
+    participants
 }
 
 /// shorthand for attesting one claimant by many attesters. register all attestation to chain
@@ -367,10 +377,7 @@ fn account_id(pair: &sr25519::Pair) -> AccountId {
 
 /// register a simple test currency with 3 meetup locations and well known bootstrappers
 fn register_test_currency() -> CurrencyIdentifier {
-    let bs: Vec<AccountId> = bootstrappers()
-        .into_iter()
-        .map(|b| AccountId::from(b))
-        .collect();
+    let bs: Vec<AccountId> = bootstrappers().into_iter().map(|b| b.public()).collect();
     let alice = bs[0];
 
     let a = Location::default(); // 0, 0
@@ -394,7 +401,7 @@ fn register_test_currency() -> CurrencyIdentifier {
 }
 
 /// All well-known keys are bootstrappers for easy testing afterwards
-fn bootstrappers() -> Vec<AccountKeyring> {
+fn bootstrappers() -> Vec<sr25519::Pair> {
     return vec![
         AccountKeyring::Alice,
         AccountKeyring::Bob,
@@ -402,7 +409,10 @@ fn bootstrappers() -> Vec<AccountKeyring> {
         AccountKeyring::Dave,
         AccountKeyring::Eve,
         AccountKeyring::Ferdie,
-    ];
+    ]
+    .iter()
+    .map(|k| k.pair())
+    .collect();
 }
 
 /// perform bootstrapping ceremony for test currency with well known bootstrappers
@@ -411,7 +421,7 @@ fn perform_bootstrapping_ceremony() -> CurrencyIdentifier {
     register_alice_bob_ferdie(cid);
     register_charlie_dave_eve(cid);
 
-    let bootstrappers: Vec<sr25519::Pair> = bootstrappers().into_iter().map(|b| b.pair()).collect();
+    let bootstrappers: Vec<sr25519::Pair> = bootstrappers();
 
     let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -1687,30 +1697,14 @@ fn assigning_meetup_at_phase_change_and_purge_works() {
 fn grow_population_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = perform_bootstrapping_ceremony();
-        // bootstrappers must register because only they have reputation now
-        register_alice_bob_ferdie(cid);
-        register_charlie_dave_eve(cid);
-        let mut participants = Vec::<sr25519::Pair>::with_capacity(64);
-        // add bootstrappers
-        participants.push(AccountKeyring::Alice.pair());
-        participants.push(AccountKeyring::Bob.pair());
-        participants.push(AccountKeyring::Charlie.pair());
-        participants.push(AccountKeyring::Dave.pair());
-        participants.push(AccountKeyring::Eve.pair());
-        participants.push(AccountKeyring::Ferdie.pair());
+        let mut participants = bootstrappers();
 
         // generate many keys and register all of them
         // they will use the same keys per participant throughout to following ceremonies
-        let mut population_counter = 6u8;
-        while population_counter < 20 {
-            let mut entropy = [0u8; 32];
-            entropy[0] = population_counter;
-            let pair = sr25519::Pair::from_entropy(&entropy, None).0;
-            participants.push(pair.clone());
-            EncointerCeremonies::register_participant(Origin::signed(account_id(&pair)), cid, None)
-                .unwrap();
-            population_counter += 1;
-        }
+        participants.extend(add_population(14, participants.len()));
+        participants
+            .iter()
+            .for_each(|p| register(p.public(), cid, None).unwrap());
 
         let cindex = EncointerScheduler::current_ceremony_index();
         run_to_next_phase();
@@ -1782,4 +1776,110 @@ fn grow_population_works() {
         // TODO: whitepaper III-B Rule 1: minimize the number of participants that have met at previous ceremony
         // TODO: whitepaper III-B Rule 2: maximize number of participants per meetup within 3<=N<=12
     });
+}
+
+#[test]
+fn assign_meetup_works() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = perform_bootstrapping_ceremony();
+        let mut participants: Vec<sr25519::Pair> = bootstrappers();
+        let alice = bootstrappers()[0].clone();
+
+        let n_bootstrappers = 3;
+        let n_reputables = 7;
+        let n_endorsees = 3;
+        let n_newbies = 3;
+
+        let exp_amount_meetups = 2;
+        let exp_amount_m1_participants = 8;
+        let exp_amount_m2_participants = 8;
+
+        // there is 6 bootstrappers
+        if (n_bootstrappers + n_reputables) > 6 {
+            // setup the community to be able to test assignment with given parameters
+            participants = grow_community(participants, cid, n_bootstrappers + n_reputables);
+        }
+
+        for _ in 0..n_endorsees {
+            participants.extend(add_population(1, participants.len()));
+            assert_ok!(EncointerCeremonies::endorse_newcomer(
+                Origin::signed(alice.public().clone()),
+                cid,
+                participants.last().unwrap().public()
+            ));
+        }
+
+        participants.extend(add_population(n_newbies, participants.len()));
+
+        // setup finished. Now registering all participants
+
+        let cindex = EncointerScheduler::current_ceremony_index();
+        participants
+            .iter()
+            .for_each(|p| register(p.public(), cid, get_proof(cid, cindex, p)).unwrap());
+
+        run_to_next_phase();
+        // ASSIGNING
+        assert_eq!(
+            EncointerCeremonies::meetup_count((cid, cindex)),
+            exp_amount_meetups
+        );
+        let meetup_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
+        let meetup_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
+
+        // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
+        assert_eq!(meetup_1.len(), exp_amount_m1_participants);
+        assert_eq!(meetup_2.len(), exp_amount_m2_participants);
+
+        run_to_next_phase();
+        // WITNESSING
+        fully_attest_meetup(cid, participants.clone(), 1);
+        fully_attest_meetup(cid, participants.clone(), 2);
+    });
+}
+
+/// Grows the community until the specified amount. Returns all the key pairs of the community.
+fn grow_community(
+    bootstrappers: Vec<sr25519::Pair>,
+    cid: CurrencyIdentifier,
+    amount: usize,
+) -> Vec<sr25519::Pair> {
+    assert!(bootstrappers.len() < amount as usize);
+
+    let mut participants = bootstrappers;
+    let curr_pop_size = participants.len();
+    participants.extend(add_population(amount - curr_pop_size, curr_pop_size));
+
+    let cindex = EncointerScheduler::current_ceremony_index();
+
+    let mut proofs: Vec<Option<TestProofOfAttendance>> = participants
+        .iter()
+        .map(|p| get_proof(cid, cindex - 1, p))
+        .collect();
+
+    // the amount of proofs we get is the current amount bootstrappers + reputables
+    while proofs.clone().iter().filter(|p| p.is_some()).count() < amount {
+        for (i, p) in participants.iter().enumerate() {
+            register(p.public(), cid, proofs[i].clone()).unwrap();
+        }
+
+        let cindex = EncointerScheduler::current_ceremony_index();
+        run_to_next_phase(); // ASSIGNING
+
+        let m_count = EncointerCeremonies::meetup_count((cid, cindex));
+        run_to_next_phase(); // WITNESSING
+
+        for i in 0..m_count {
+            fully_attest_meetup(cid, participants.clone(), i);
+        }
+
+        run_to_next_phase(); // REGISTERING
+        let cindex = EncointerScheduler::current_ceremony_index();
+        proofs = participants
+            .iter()
+            .map(|p| get_proof(cid, cindex - 1, p))
+            .collect();
+    }
+
+    participants
 }
