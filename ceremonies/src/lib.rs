@@ -409,8 +409,9 @@ impl<T: Trait> Module<T> {
     // currently the complexity is O(n) where n is the number of registered participants
     fn assign_meetups() {
         let cids = <encointer_currencies::Module<T>>::currency_identifiers();
+        let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+
         for cid in cids.iter() {
-            let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
             let pcount = <ParticipantCount>::get((cid, cindex));
             let ecount = <EndorseesCount>::get((cid, cindex));
 
