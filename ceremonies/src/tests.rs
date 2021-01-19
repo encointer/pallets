@@ -353,13 +353,11 @@ fn account_id(pair: &sr25519::Pair) -> AccountId {
 
 /// register a simple test currency with 3 meetup locations and well known bootstrappers
 fn register_test_currency() -> CurrencyIdentifier {
-    // all well-known keys are boottrappers for easy testen afterwards
-    let alice = AccountId::from(AccountKeyring::Alice);
-    let bob = AccountId::from(AccountKeyring::Bob);
-    let charlie = AccountId::from(AccountKeyring::Charlie);
-    let dave = AccountId::from(AccountKeyring::Dave);
-    let eve = AccountId::from(AccountKeyring::Eve);
-    let ferdie = AccountId::from(AccountKeyring::Ferdie);
+    let bs: Vec<AccountId> = bootstrappers()
+        .into_iter()
+        .map(|b| AccountId::from(b))
+        .collect();
+    let alice = bs[0];
 
     let a = Location::default(); // 0, 0
 
@@ -372,14 +370,7 @@ fn register_test_currency() -> CurrencyIdentifier {
         lon: Degree::from_num(2),
     };
     let loc = vec![a, b, c];
-    let bs = vec![
-        alice.clone(),
-        bob.clone(),
-        charlie.clone(),
-        dave.clone(),
-        eve.clone(),
-        ferdie.clone(),
-    ];
+
     assert_ok!(EncointerCurrencies::new_currency(
         Origin::signed(alice.clone()),
         loc.clone(),
@@ -388,18 +379,26 @@ fn register_test_currency() -> CurrencyIdentifier {
     CurrencyIdentifier::from(blake2_256(&(loc, bs).encode()))
 }
 
+/// All well-known keys are bootstrappers for easy testing afterwards
+fn bootstrappers() -> Vec<AccountKeyring> {
+    return vec![
+        AccountKeyring::Alice,
+        AccountKeyring::Bob,
+        AccountKeyring::Charlie,
+        AccountKeyring::Dave,
+        AccountKeyring::Eve,
+        AccountKeyring::Ferdie,
+    ];
+}
+
 /// perform bootstrapping ceremony for test currency with well known bootstrappers
 fn perform_bootstrapping_ceremony() -> CurrencyIdentifier {
     let cid = register_test_currency();
     register_alice_bob_ferdie(cid);
     register_charlie_dave_eve(cid);
-    let _master = AccountId::from(AccountKeyring::Alice);
-    let alice = AccountKeyring::Alice.pair();
-    let bob = AccountKeyring::Bob.pair();
-    let charlie = AccountKeyring::Charlie.pair();
-    let dave = AccountKeyring::Dave.pair();
-    let eve = AccountKeyring::Eve.pair();
-    let ferdie = AccountKeyring::Ferdie.pair();
+
+    let mut bootstrappers: Vec<sr25519::Pair> =
+        bootstrappers().into_iter().map(|b| b.pair()).collect();
 
     let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -409,102 +408,12 @@ fn perform_bootstrapping_ceremony() -> CurrencyIdentifier {
     // ATTESTING
     let loc = Location::default();
     let time = correct_meetup_time(&cid, 1);
-    gets_attested_by(
-        account_id(&alice),
-        vec![
-            bob.clone(),
-            charlie.clone(),
-            dave.clone(),
-            eve.clone(),
-            ferdie.clone(),
-        ],
-        cid,
-        cindex,
-        1,
-        loc,
-        time,
-        6,
-    );
-    gets_attested_by(
-        account_id(&bob),
-        vec![
-            alice.clone(),
-            charlie.clone(),
-            dave.clone(),
-            eve.clone(),
-            ferdie.clone(),
-        ],
-        cid,
-        cindex,
-        1,
-        loc,
-        time,
-        6,
-    );
-    gets_attested_by(
-        account_id(&charlie),
-        vec![
-            alice.clone(),
-            bob.clone(),
-            dave.clone(),
-            eve.clone(),
-            ferdie.clone(),
-        ],
-        cid,
-        cindex,
-        1,
-        loc,
-        time,
-        6,
-    );
-    gets_attested_by(
-        account_id(&dave),
-        vec![
-            alice.clone(),
-            bob.clone(),
-            charlie.clone(),
-            eve.clone(),
-            ferdie.clone(),
-        ],
-        cid,
-        cindex,
-        1,
-        loc,
-        time,
-        6,
-    );
-    gets_attested_by(
-        account_id(&eve),
-        vec![
-            alice.clone(),
-            bob.clone(),
-            charlie.clone(),
-            dave.clone(),
-            ferdie.clone(),
-        ],
-        cid,
-        cindex,
-        1,
-        loc,
-        time,
-        6,
-    );
-    gets_attested_by(
-        account_id(&ferdie),
-        vec![
-            alice.clone(),
-            bob.clone(),
-            charlie.clone(),
-            dave.clone(),
-            eve.clone(),
-        ],
-        cid,
-        cindex,
-        1,
-        loc,
-        time,
-        6,
-    );
+
+    for i in 0..6 {
+        let mut bs = bootstrappers.clone();
+        let claimant = bs.remove(i);
+        gets_attested_by(account_id(&claimant), bs, cid, cindex, 1, loc, time, 6);
+    }
 
     run_to_next_phase();
     // REGISTERING
