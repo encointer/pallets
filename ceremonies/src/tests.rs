@@ -535,32 +535,32 @@ fn registering_participant_in_wrong_phase_fails() {
     });
 }
 
-#[test]
-fn assigning_meetup_works() {
-    ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency();
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let bob = AccountId::from(AccountKeyring::Bob);
-        let ferdie = AccountId::from(AccountKeyring::Ferdie);
-        let cindex = EncointerScheduler::current_ceremony_index();
-        assert_ok!(register(alice.clone(), cid, None));
-        assert_ok!(register(bob.clone(), cid, None));
-        assert_ok!(register(ferdie.clone(), cid, None));
-        assert_eq!(EncointerCeremonies::participant_count((cid, cindex)), 3);
-        //omitting phase change here!
-        EncointerCeremonies::assign_meetups();
-        assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
-        let meetup = EncointerCeremonies::meetup_registry((cid, cindex), 1);
-        assert_eq!(meetup.len(), 3);
-        assert!(meetup.contains(&alice));
-        assert!(meetup.contains(&bob));
-        assert!(meetup.contains(&ferdie));
-
-        assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &alice), 1);
-        assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &bob), 1);
-        assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &ferdie), 1);
-    });
-}
+// #[test]
+// fn assigning_meetup_works() {
+//     ExtBuilder::build().execute_with(|| {
+//         let cid = register_test_currency();
+//         let alice = AccountId::from(AccountKeyring::Alice);
+//         let bob = AccountId::from(AccountKeyring::Bob);
+//         let ferdie = AccountId::from(AccountKeyring::Ferdie);
+//         let cindex = EncointerScheduler::current_ceremony_index();
+//         assert_ok!(register(alice.clone(), cid, None));
+//         assert_ok!(register(bob.clone(), cid, None));
+//         assert_ok!(register(ferdie.clone(), cid, None));
+//         assert_eq!(EncointerCeremonies::participant_count((cid, cindex)), 3);
+//         //omitting phase change here!
+//         EncointerCeremonies::assign_meetups();
+//         assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
+//         let meetup = EncointerCeremonies::meetup_registry((cid, cindex), 1);
+//         assert_eq!(meetup.len(), 3);
+//         assert!(meetup.contains(&alice));
+//         assert!(meetup.contains(&bob));
+//         assert!(meetup.contains(&ferdie));
+//
+//         assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &alice), 1);
+//         assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &bob), 1);
+//         assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &ferdie), 1);
+//     });
+// }
 
 #[test]
 fn verify_attestation_signature_works() {
@@ -1780,9 +1780,10 @@ fn grow_population_works() {
 }
 
 #[rstest(n_bootstrappers, n_reputables, n_endorsees, n_newbies, exp_meetups,
-    case(3,7,3,3, vec![8,8])
+    case(3,7,3,3, vec![8,8]),
+    case(3,7,4,3, vec![9,8]),
 )]
-fn assign_meetup_works(
+fn assigning_meetup_works(
     n_bootstrappers: usize,
     n_reputables: usize,
     n_endorsees: usize,
@@ -1798,6 +1799,7 @@ fn assign_meetup_works(
         if (n_bootstrappers + n_reputables) > 6 {
             // setup the community to be able to test assignment with given parameters
             participants = grow_community(participants, cid, n_bootstrappers + n_reputables);
+            assert_eq!(participants.len(), n_bootstrappers + n_reputables);
         }
 
         for _ in 0..n_endorsees {
@@ -1810,16 +1812,20 @@ fn assign_meetup_works(
         }
 
         participants.extend(add_population(n_newbies, participants.len()));
+        assert_eq!(
+            participants.len(),
+            n_bootstrappers + n_reputables + n_endorsees + n_newbies
+        );
 
         // setup finished. Now registering all participants
 
         let cindex = EncointerScheduler::current_ceremony_index();
         participants
             .iter()
-            .for_each(|p| register(p.public(), cid, get_proof(cid, cindex, p)).unwrap());
+            .for_each(|p| register(p.public(), cid, get_proof(cid, cindex - 1, p)).unwrap());
 
-        run_to_next_phase();
-        // ASSIGNING
+        run_to_next_phase(); // ASSIGNING
+
         assert_eq!(
             EncointerCeremonies::meetup_count((cid, cindex)),
             exp_meetups.len() as u64
@@ -1827,7 +1833,8 @@ fn assign_meetup_works(
 
         for (i, m) in exp_meetups.into_iter().enumerate() {
             assert_eq!(
-                EncointerCeremonies::meetup_registry((cid, cindex), i as MeetupIndexType).len(),
+                EncointerCeremonies::meetup_registry((cid, cindex), (i + 1) as MeetupIndexType)
+                    .len(),
                 m
             );
         }
@@ -1863,18 +1870,23 @@ fn grow_community(
         run_to_next_phase(); // ASSIGNING
 
         let m_count = EncointerCeremonies::meetup_count((cid, cindex));
+        assert!(m_count > 0);
         run_to_next_phase(); // WITNESSING
 
-        for i in 0..m_count {
+        for i in 1..=m_count {
             fully_attest_meetup(cid, participants.clone(), i);
         }
 
         run_to_next_phase(); // REGISTERING
+
         let cindex = EncointerScheduler::current_ceremony_index();
         proofs = participants
             .iter()
             .map(|p| get_proof(cid, cindex - 1, p))
             .collect();
+
+        // sanity check that everything worked
+        assert!(proofs.clone().iter().filter(|p| p.is_some()).count() > 0);
     }
 
     participants
