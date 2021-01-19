@@ -441,7 +441,7 @@ fn perform_bootstrapping_ceremony(
     let loc = Location::default();
     let time = correct_meetup_time(&cid, 1);
 
-    for i in 0..6 {
+    for i in 0..bootstrappers.len() {
         let mut bs = bootstrappers.clone();
         let claimant = bs.remove(i);
         gets_attested_by(account_id(&claimant), bs, cid, cindex, 1, loc, time, 6);
@@ -1788,8 +1788,11 @@ fn grow_population_works() {
 }
 
 #[rstest(n_bootstrappers, n_reputables, n_endorsees, n_newbies, exp_meetups,
+    case(8,0,0,4, vec![12]),
+    case(9,0,0,4, vec![7,6]),
     case(3,7,3,3, vec![8,8]),
     case(3,7,4,3, vec![9,8]),
+    case::do_not_assign_more_meetups_than_locations(3,7,50,0, vec![12,12,12])
 )]
 fn assigning_meetup_works(
     n_bootstrappers: usize,
@@ -1799,36 +1802,36 @@ fn assigning_meetup_works(
     exp_meetups: Vec<usize>,
 ) {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
-        let mut participants: Vec<sr25519::Pair> = bootstrappers();
-        let alice = bootstrappers()[0].clone();
+        let bs = add_population(n_bootstrappers, 0);
+        let alice = bs[0].clone();
+        let cid = perform_bootstrapping_ceremony(Some(bs.clone()));
+        let mut population: Vec<sr25519::Pair> = bs;
 
-        // there is 6 bootstrappers
-        if (n_bootstrappers + n_reputables) > 6 {
+        if n_reputables > 0 {
             // setup the community to be able to test assignment with given parameters
-            participants = grow_community(participants, cid, n_bootstrappers + n_reputables);
-            assert_eq!(participants.len(), n_bootstrappers + n_reputables);
+            population = grow_community(population, cid, n_bootstrappers + n_reputables);
+            assert_eq!(population.len(), n_bootstrappers + n_reputables);
         }
 
         for _ in 0..n_endorsees {
-            participants.extend(add_population(1, participants.len()));
+            population.extend(add_population(1, population.len()));
             assert_ok!(EncointerCeremonies::endorse_newcomer(
                 Origin::signed(alice.public().clone()),
                 cid,
-                participants.last().unwrap().public()
+                population.last().unwrap().public()
             ));
         }
 
-        participants.extend(add_population(n_newbies, participants.len()));
+        population.extend(add_population(n_newbies, population.len()));
         assert_eq!(
-            participants.len(),
+            population.len(),
             n_bootstrappers + n_reputables + n_endorsees + n_newbies
         );
 
         // setup finished. Now registering all participants
 
         let cindex = EncointerScheduler::current_ceremony_index();
-        participants
+        population
             .iter()
             .for_each(|p| register(p.public(), cid, get_proof(cid, cindex - 1, p)).unwrap());
 
