@@ -441,6 +441,11 @@ impl<T: Trait> Module<T> {
             n += min(newbies.len(), n / 2);
             n += endorsees.len();
 
+            if n < 3 {
+                debug::debug!(target: LOG, "no meetups assigned for cid {:?}", cid);
+                continue;
+            }
+
             let mut all_participants = bootstrappers
                 .into_iter()
                 .chain(reputables.into_iter())
@@ -461,25 +466,6 @@ impl<T: Trait> Module<T> {
             for (i, p) in all_participants.by_ref().take(n).enumerate() {
                 meetups[i % n_meetups].push(p);
             }
-
-            // purge meetups that are too small
-            let mut toosmall = Vec::with_capacity(n_meetups);
-            for (i, m) in meetups.iter().enumerate() {
-                if m.len() < 3 {
-                    toosmall.push(i);
-                    debug::debug!(
-                        target: LOG,
-                        "meetup {} can't take place because it has only {} participants. cid: {:?}",
-                        i,
-                        m.len(),
-                        cid
-                    );
-                }
-            }
-            for i in toosmall {
-                meetups.remove(i);
-            }
-            // FIXME: with nightly we could do: meetups.drain_filter(|x| x.len() < 3).collect::<Vec<_>>();
 
             if !meetups.is_empty() {
                 // commit result to state
