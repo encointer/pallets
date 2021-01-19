@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-
 //! # Encointer Bazaar Module
 //!
 //! provides functionality for
@@ -25,38 +24,35 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
-#[macro_use]
 extern crate approx;
 
 use frame_support::{
-    decl_event, decl_module, decl_storage, decl_error,
+    decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::{StorageDoubleMap, StorageMap},
 };
-use rstd::prelude::*;
 use frame_system::ensure_signed;
+use rstd::prelude::*;
 
-use encointer_currencies::{CurrencyIdentifier};
+use encointer_currencies::CurrencyIdentifier;
 
 // Only valid for current hashing algorithm of IPFS (sha256)
 // string length: 46 characters (base-58)
-const MAX_HASH_SIZE: usize = 46; 
+const MAX_HASH_SIZE: usize = 46;
 
-pub trait Trait: frame_system::Trait 
-    + encointer_currencies::Trait 
-{
+pub trait Trait: frame_system::Trait + encointer_currencies::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
-pub type ShopIdentifier = Vec<u8>; 
-pub type ArticleIdentifier = Vec<u8>; 
+pub type ShopIdentifier = Vec<u8>;
+pub type ArticleIdentifier = Vec<u8>;
 
 decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
-        // Maps the shop or article owner to the respective items 
+        // Maps the shop or article owner to the respective items
         pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ShopIdentifier>;
-        pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>; 
+        pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>;
         // Item owner
         pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
         pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
@@ -76,14 +72,14 @@ decl_event! {
 }
 
 decl_error! {
-	pub enum Error for Module<T: Trait> {
-		/// no such shop exisiting that could be deleted
+    pub enum Error for Module<T: Trait> {
+        /// no such shop exisiting that could be deleted
         NoSuchShop,
         /// shop can not be created twice
         ShopAlreadyCreated,
         /// shop can not be removed by anyone else than its owner
         OnlyOwnerCanRemoveShop,
-	}
+    }
 }
 
 // TODO: Add Article Upload / Removal
@@ -102,24 +98,24 @@ decl_module! {
                 "CurrencyIdentifier not found");
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
-            let mut shops = ShopRegistry::get(cid);            
+            let mut shops = ShopRegistry::get(cid);
 
             // Check the string length of the to be uploaded shop
             ensure!(shop.len() <= MAX_HASH_SIZE, "oversized shop");
 
             // Verify that the specified shop has not already been created with fast search
-            ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);   
-            
+            ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);
+
             // Add the shop to the registries
             owned_shops.push(shop.clone());
             shops.push(shop.clone());
-            // Update blockchain 
+            // Update blockchain
             ShopsOwned::<T>::insert(cid, &sender, owned_shops);
             ShopOwner::<T>::insert(cid, &shop, &sender);
-            ShopRegistry::insert(cid, shops);  
+            ShopRegistry::insert(cid, shops);
             // Emit an event that the shop was created
             Self::deposit_event(RawEvent::ShopCreated(cid, sender, shop));
-            Ok(())                     
+            Ok(())
         }
 
         /// Allow a user to remove their shop
@@ -146,22 +142,22 @@ decl_module! {
                             owned_shops.remove(onwed_shops_index);
                             shops.remove(shop_registry_index);
                             // Update blockchain
-                            ShopsOwned::<T>::insert(cid, &sender, owned_shops);    
-                            ShopRegistry::insert(cid, shops);                             
+                            ShopsOwned::<T>::insert(cid, &sender, owned_shops);
+                            ShopRegistry::insert(cid, shops);
                             ShopOwner::<T>::remove(cid, &shop);
                             // Emit an event that the shop was removed
-                            Self::deposit_event(RawEvent::ShopRemoved(cid, sender, shop));    
-                            Ok(())       
+                            Self::deposit_event(RawEvent::ShopRemoved(cid, sender, shop));
+                            Ok(())
                         },
                         // If the search fails, no such shop is owned
                         Err(_) => Err(Error::<T>::NoSuchShop.into()),
-                    }      
+                    }
                 },
                 // If the search fails, no such shop is owned
-                Err(_) => Err(Error::<T>::NoSuchShop.into()),       
-            }                   
+                Err(_) => Err(Error::<T>::NoSuchShop.into()),
+            }
         }
-    }    
+    }
 }
 
 #[cfg(test)]

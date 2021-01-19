@@ -442,7 +442,7 @@ impl<T: Trait> Module<T> {
                 }
             }
 
-            // n == amount of valid registrations
+            // n == amount of valid registrations that fit into the meetups
             let mut n = bootstrappers.len() + reputables.len();
             n += min(newbies.len(), n / 2);
             n += endorsees.len();

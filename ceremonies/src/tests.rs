@@ -1814,7 +1814,8 @@ fn grow_community(
         .map(|p| get_proof(cid, cindex - 1, p))
         .collect();
 
-    // the amount of proofs we get is the current amount bootstrappers + reputables
+    // the amount of proofs we get is the current amount bootstrappers + reputables (== whole community)
+    // if we assume that everyone participated in the last meetup.
     while proofs.clone().iter().filter(|p| p.is_some()).count() < amount {
         for (i, p) in participants.iter().enumerate() {
             register(p.public(), cid, proofs[i].clone()).unwrap();
