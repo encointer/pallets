@@ -17,7 +17,7 @@
 //! # Encointer Currencies Module
 //!
 //! provides functionality for
-//! - registering new currencies
+//! - registering new communities
 //! - modify currency characteristics
 //!
 
@@ -104,7 +104,7 @@ decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
         // FIXME: this function has complexity O(n^2)!
-        // where n is the number of all locations of all currencies
+        // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
         pub fn new_currency(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
@@ -116,7 +116,7 @@ decl_module! {
 
             for l1 in loc.iter() {
                 ensure!(Self::is_valid_geolocation(&l1), "invalid geolocation specified");
-                //test within this currencies' set
+                //test within this communities' set
                 for l2 in loc.iter() {
                     if l2 == l1 { continue }
                     ensure!(Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S, "minimum solar trip time violated within supplied locations");
@@ -133,7 +133,7 @@ decl_module! {
                     debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
                     return Err(<Error<T>>::MinimumDistanceViolationToDateLine.into());
                 }
-                // test against all other currencies globally
+                // test against all other communities globally
                 for other in cids.iter() {
                     for l2 in Self::locations(other) {
                         if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {

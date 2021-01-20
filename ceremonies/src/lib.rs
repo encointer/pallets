@@ -189,7 +189,7 @@ decl_module! {
             let new_count = count.checked_add(1).
                 ok_or("[EncointerCeremonies]: Overflow adding new participant to registry")?;
             if let Some(p) = proof {
-                // we accept proofs from other currencies as well. no need to ensure cid
+                // we accept proofs from other communities as well. no need to ensure cid
                 ensure!(sender == p.prover_public, "supplied proof is not proving sender");
                 ensure!(p.ceremony_index < cindex, "proof is acausal");
                 ensure!(p.ceremony_index >= cindex-REPUTATION_LIFETIME, "proof is outdated");
@@ -454,14 +454,10 @@ impl<T: Trait> Module<T> {
 
             // ensure that every meetup has at least one experienced participant
             n = min(n, (bootstrappers.len() + reputables.len()) * 12);
-            
+
             // capping the amount a participants prevents assigning more meetups than there are locations.
             if n > n_locations * 12 {
-                debug::warn!(
-                    target: LOG,
-                    "Meetup Locations exhausted for cid: {:?}",
-                    cid
-                );
+                debug::warn!(target: LOG, "Meetup Locations exhausted for cid: {:?}", cid);
                 n = n_locations * 12;
             }
 

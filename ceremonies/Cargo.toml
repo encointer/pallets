@@ -37,7 +37,7 @@ package = "pallet-encointer-scheduler"
 
 [dependencies.encointer-currencies]
 default-features = false
-path = "../currencies"
+path = "../communities"
 package = "pallet-encointer-currencies"
 
 [dependencies.encointer-balances]

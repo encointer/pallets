@@ -20,7 +20,7 @@ version = "1.3.0"
 
 [dependencies.encointer-currencies]
 default-features = false
-path = "../currencies"
+path = "../communities"
 package = "pallet-encointer-currencies"
 
 [dependencies.runtime-io]
