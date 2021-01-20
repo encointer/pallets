@@ -67,7 +67,7 @@ pub type EncointerBazaar = Module<TestRuntime>;
 impl encointer_communities::Trait for TestRuntime {
     type Event = ();
 }
-pub type EncointerCurrencies = encointer_communities::Module<TestRuntime>;
+pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -156,7 +156,7 @@ fn register_test_community() -> CommunityIdentifier {
     };
     let loc = vec![a, b, c];
     let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-    assert_ok!(EncointerCurrencies::new_community(
+    assert_ok!(EncointerCommunities::new_community(
         Origin::signed(alice.clone()),
         loc.clone(),
         bs.clone()

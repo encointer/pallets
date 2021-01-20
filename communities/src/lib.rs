@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Encointer Currencies Module
+//! # Encointer Communities Module
 //!
 //! provides functionality for
 //! - registering new communities
@@ -90,7 +90,7 @@ const RADIANS_PER_DEGREE: U0F64 = U0F64::from_bits(0x0477D1A894A74E40);
 const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
 
 decl_storage! {
-    trait Store for Module<T: Trait> as EncointerCurrencies {
+    trait Store for Module<T: Trait> as EncointerCommunities {
         Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;

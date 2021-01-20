@@ -23,8 +23,8 @@ use encointer_communities::CommunityIdentifier;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{
-    register_test_community, EncointerBalances, EncointerCurrencies, ExtBuilder, System, TestEvent,
-    TestRuntime, ALICE, BOB,
+    register_test_community, EncointerBalances, EncointerCommunities, ExtBuilder, System,
+    TestEvent, TestRuntime, ALICE, BOB,
 };
 
 #[test]
@@ -135,7 +135,7 @@ fn demurrage_should_work() {
         assert_eq!(
             EncointerBalances::balance(cid, &ALICE),
             exp::<BalanceType, BalanceType>(
-                -EncointerCurrencies::community_properties(cid).demurrage_per_block
+                -EncointerCommunities::community_properties(cid).demurrage_per_block
             )
             .unwrap()
         );

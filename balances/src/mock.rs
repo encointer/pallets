@@ -88,7 +88,7 @@ impl encointer_communities::Trait for TestRuntime {
     type Event = TestEvent;
 }
 
-pub type EncointerCurrencies = encointer_communities::Module<TestRuntime>;
+pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 
 impl Trait for TestRuntime {
     type Event = TestEvent;
@@ -145,7 +145,7 @@ pub fn register_test_community() -> CommunityIdentifier {
         eve.clone(),
         ferdie.clone(),
     ];
-    assert_ok!(EncointerCurrencies::new_community(
+    assert_ok!(EncointerCommunities::new_community(
         Origin::signed(alice.clone()),
         loc.clone(),
         bs.clone()

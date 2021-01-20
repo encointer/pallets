@@ -80,7 +80,7 @@ impl encointer_communities::Trait for TestRuntime {
     type Event = ();
 }
 
-pub type EncointerCurrencies = encointer_communities::Module<TestRuntime>;
+pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -398,7 +398,7 @@ fn register_test_community(
         })
     }
 
-    assert_ok!(EncointerCurrencies::new_community(
+    assert_ok!(EncointerCommunities::new_community(
         Origin::signed(prime.clone()),
         loc.clone(),
         bs.clone()
@@ -477,7 +477,7 @@ fn fully_attest_meetup(
             }
         }
         println!("  length of attestors: {}", others.len());
-        let loc = EncointerCurrencies::locations(&cid)[(mindex - 1) as usize];
+        let loc = EncointerCommunities::locations(&cid)[(mindex - 1) as usize];
         let time = correct_meetup_time(&cid, mindex);
         gets_attested_by(
             (*p).clone(),
