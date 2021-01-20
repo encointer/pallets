@@ -20,7 +20,7 @@
 
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
-use encointer_communities::{CurrencyIdentifier, Degree, Location};
+use encointer_communities::{CommunityIdentifier, Degree, Location};
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::traits::{Get, OnFinalize, OnInitialize, UnfilteredDispatchable};
 use frame_support::{assert_ok, impl_outer_origin, parameter_types};
@@ -216,7 +216,7 @@ pub fn set_timestamp(t: u64) {
 }
 
 /// get correct meetup time for a certain cid and meetup
-fn correct_meetup_time(cid: &CurrencyIdentifier, mindex: MeetupIndexType) -> Moment {
+fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Moment {
     //assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
     let cindex = EncointerScheduler::current_ceremony_index() as u64;
     let mlon: f64 = EncointerCeremonies::get_meetup_location(cid, mindex)
@@ -236,7 +236,7 @@ fn correct_meetup_time(cid: &CurrencyIdentifier, mindex: MeetupIndexType) -> Mom
 fn meetup_claim_sign(
     claimant: AccountId,
     attester: sr25519::Pair,
-    cid: CurrencyIdentifier,
+    cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
     mindex: MeetupIndexType,
     location: Location,
@@ -260,7 +260,7 @@ fn meetup_claim_sign(
 }
 
 fn get_proof(
-    cid: CurrencyIdentifier,
+    cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
     pair: &sr25519::Pair,
 ) -> Option<TestProofOfAttendance> {
@@ -275,7 +275,7 @@ fn get_proof(
 /// generate a proof of attendance based on previous reputation
 fn prove_attendance(
     prover: AccountId,
-    cid: CurrencyIdentifier,
+    cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
     attendee: &sr25519::Pair,
 ) -> TestProofOfAttendance {
@@ -292,14 +292,14 @@ fn prove_attendance(
 /// Wrapper for EncointerCeremonies::register_participant that reduces boilerplate code.
 fn register(
     account: AccountId,
-    cid: CurrencyIdentifier,
+    cid: CommunityIdentifier,
     proof: Option<TestProofOfAttendance>,
 ) -> DispatchResult {
     EncointerCeremonies::register_participant(Origin::signed(account), cid, proof)
 }
 
 /// shortcut to register well-known keys for current ceremony
-fn register_alice_bob_ferdie(cid: CurrencyIdentifier) {
+fn register_alice_bob_ferdie(cid: CommunityIdentifier) {
     assert_ok!(register(
         account_id(&AccountKeyring::Alice.pair()),
         cid,
@@ -314,7 +314,7 @@ fn register_alice_bob_ferdie(cid: CurrencyIdentifier) {
 }
 
 /// shortcut to register well-known keys for current ceremony
-fn register_charlie_dave_eve(cid: CurrencyIdentifier) {
+fn register_charlie_dave_eve(cid: CommunityIdentifier) {
     assert_ok!(register(
         account_id(&AccountKeyring::Charlie.pair()),
         cid,
@@ -343,7 +343,7 @@ fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519
 fn gets_attested_by(
     claimant: AccountId,
     attestors: Vec<sr25519::Pair>,
-    cid: CurrencyIdentifier,
+    cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
     mindex: MeetupIndexType,
     location: Location,
@@ -381,7 +381,7 @@ fn account_id(pair: &sr25519::Pair) -> AccountId {
 fn register_test_currency(
     custom_bootstrappers: Option<Vec<sr25519::Pair>>,
     n_locations: u32,
-) -> CurrencyIdentifier {
+) -> CommunityIdentifier {
     let bs: Vec<AccountId> = custom_bootstrappers
         .unwrap_or_else(|| bootstrappers())
         .into_iter()
@@ -403,7 +403,7 @@ fn register_test_currency(
         loc.clone(),
         bs.clone()
     ));
-    CurrencyIdentifier::from(blake2_256(&(loc, bs).encode()))
+    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }
 
 /// All well-known keys are bootstrappers for easy testing afterwards
@@ -425,7 +425,7 @@ fn bootstrappers() -> Vec<sr25519::Pair> {
 fn perform_bootstrapping_ceremony(
     custom_bootstrappers: Option<Vec<sr25519::Pair>>,
     n_locations: u32,
-) -> CurrencyIdentifier {
+) -> CommunityIdentifier {
     let bootstrappers: Vec<sr25519::Pair> = custom_bootstrappers.unwrap_or_else(|| bootstrappers());
     let cid = register_test_currency(Some(bootstrappers.clone()), n_locations);
     bootstrappers
@@ -453,7 +453,11 @@ fn perform_bootstrapping_ceremony(
 }
 
 /// perform full attestation of all participants for a given meetup
-fn fully_attest_meetup(cid: CurrencyIdentifier, keys: Vec<sr25519::Pair>, mindex: MeetupIndexType) {
+fn fully_attest_meetup(
+    cid: CommunityIdentifier,
+    keys: Vec<sr25519::Pair>,
+    mindex: MeetupIndexType,
+) {
     let cindex = EncointerScheduler::current_ceremony_index();
     let meetup = EncointerCeremonies::meetup_registry((cid, cindex), mindex);
     for p in meetup.iter() {
@@ -1800,7 +1804,7 @@ fn assigning_meetup_works(
 /// Grows the community until the specified amount. Returns all the key pairs of the community.
 fn grow_community(
     bootstrappers: Vec<sr25519::Pair>,
-    cid: CurrencyIdentifier,
+    cid: CommunityIdentifier,
     amount: usize,
 ) -> Vec<sr25519::Pair> {
     assert!(bootstrappers.len() < amount as usize);

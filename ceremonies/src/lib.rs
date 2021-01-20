@@ -46,7 +46,7 @@ use codec::{Decode, Encode};
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 
 use encointer_balances::BalanceType;
-use encointer_communities::{CurrencyIdentifier, Degree, Location, LossyInto};
+use encointer_communities::{CommunityIdentifier, Degree, Location, LossyInto};
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
 
 pub trait Trait:
@@ -71,7 +71,7 @@ const LOG: &str = "encointer";
 pub type ParticipantIndexType = u64;
 pub type MeetupIndexType = u64;
 pub type AttestationIndexType = u64;
-pub type CurrencyCeremony = (CurrencyIdentifier, CeremonyIndexType);
+pub type CurrencyCeremony = (CommunityIdentifier, CeremonyIndexType);
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum Reputation {
@@ -101,7 +101,7 @@ pub struct Attestation<Signature, AccountId, Moment> {
 pub struct ClaimOfAttendance<AccountId, Moment> {
     pub claimant_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
-    pub currency_identifier: CurrencyIdentifier,
+    pub currency_identifier: CommunityIdentifier,
     pub meetup_index: MeetupIndexType,
     pub location: Location,
     pub timestamp: Moment,
@@ -112,7 +112,7 @@ pub struct ClaimOfAttendance<AccountId, Moment> {
 pub struct ProofOfAttendance<Signature, AccountId> {
     pub prover_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
-    pub currency_identifier: CurrencyIdentifier,
+    pub currency_identifier: CommunityIdentifier,
     pub attendee_public: AccountId,
     pub attendee_signature: Signature,
 }
@@ -120,7 +120,7 @@ pub struct ProofOfAttendance<Signature, AccountId> {
 // This module's storage items.
 decl_storage! {
     trait Store for Module<T: Trait> as EncointerCeremonies {
-        BurnedBootstrapperNewbieTickets get(fn bootstrapper_newbie_tickets): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => u8;
+        BurnedBootstrapperNewbieTickets get(fn bootstrapper_newbie_tickets): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => u8;
 
         // everyone who registered for a ceremony
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
@@ -158,7 +158,7 @@ decl_module! {
         fn deposit_event() = default;
 
         #[weight = 10_000]
-        pub fn grant_reputation(origin, cid: CurrencyIdentifier, reputable: T::AccountId) -> DispatchResult {
+        pub fn grant_reputation(origin, cid: CommunityIdentifier, reputable: T::AccountId) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <encointer_scheduler::Module<T>>::ceremony_master(), "only the CeremonyMaster can call this function");
@@ -169,14 +169,14 @@ decl_module! {
         }
 
         #[weight = 10_000]
-        pub fn register_participant(origin, cid: CurrencyIdentifier, proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>) -> DispatchResult {
+        pub fn register_participant(origin, cid: CommunityIdentifier, proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
                 "registering participants can only be done during REGISTERING phase");
 
             ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
-                "CurrencyIdentifier not found");
+                "CommunityIdentifier not found");
 
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
@@ -225,7 +225,7 @@ decl_module! {
             ensure!(!attestations.is_empty(), "empty attestations supplied");
             let cid = attestations[0].claim.currency_identifier;
             ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
-                "CurrencyIdentifier not found");
+                "CommunityIdentifier not found");
 
             let meetup_index = Self::meetup_index((cid, cindex), &sender);
             let mut meetup_participants = Self::meetup_registry((cid, cindex), &meetup_index);
@@ -321,12 +321,12 @@ decl_module! {
         }
 
         #[weight = 10_000]
-        pub fn endorse_newcomer(origin, cid: CurrencyIdentifier, newbie: T::AccountId) -> DispatchResult {
+        pub fn endorse_newcomer(origin, cid: CommunityIdentifier, newbie: T::AccountId) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
             ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
-                "CurrencyIdentifier not found");
+                "CommunityIdentifier not found");
 
             ensure!(<encointer_communities::Module<T>>::bootstrappers(&cid).contains(&sender),
             "only bootstrappers can endorse newbies");
@@ -617,7 +617,7 @@ impl<T: Trait> Module<T> {
     }
 
     fn ballot_meetup_n_votes(
-        cid: &CurrencyIdentifier,
+        cid: &CommunityIdentifier,
         cindex: CeremonyIndexType,
         meetup_idx: MeetupIndexType,
     ) -> Option<(u32, u32)> {
@@ -646,7 +646,7 @@ impl<T: Trait> Module<T> {
     }
 
     pub fn get_meetup_location(
-        cid: &CurrencyIdentifier,
+        cid: &CommunityIdentifier,
         meetup_idx: MeetupIndexType,
     ) -> Option<Location> {
         let locations = <encointer_communities::Module<T>>::locations(&cid);
@@ -658,7 +658,10 @@ impl<T: Trait> Module<T> {
     }
 
     // this function only works during ATTESTING, so we're keeping it for private use
-    fn get_meetup_time(cid: &CurrencyIdentifier, meetup_idx: MeetupIndexType) -> Option<T::Moment> {
+    fn get_meetup_time(
+        cid: &CommunityIdentifier,
+        meetup_idx: MeetupIndexType,
+    ) -> Option<T::Moment> {
         if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
             return None;
         }

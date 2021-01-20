@@ -20,7 +20,7 @@ use super::*;
 //use crate::{GenesisConfig, Module, Trait};
 use crate::{Module, Trait};
 use codec::Encode;
-use encointer_communities::{CurrencyIdentifier, Degree, Location};
+use encointer_communities::{CommunityIdentifier, Degree, Location};
 use frame_support::traits::Get;
 use frame_support::{assert_ok, impl_outer_origin, parameter_types};
 use sp_core::{hashing::blake2_256, sr25519, H256};
@@ -138,7 +138,7 @@ impl_outer_origin! {
 }
 
 /// register a simple test currency with 3 meetup locations and well known bootstrappers
-fn register_test_currency() -> CurrencyIdentifier {
+fn register_test_currency() -> CommunityIdentifier {
     // all well-known keys are boottrappers for easy testen afterwards
     let alice = AccountId::from(AccountKeyring::Alice);
     let bob = AccountId::from(AccountKeyring::Bob);
@@ -161,7 +161,7 @@ fn register_test_currency() -> CurrencyIdentifier {
         loc.clone(),
         bs.clone()
     ));
-    CurrencyIdentifier::from(blake2_256(&(loc, bs).encode()))
+    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }
 
 #[test]
@@ -194,7 +194,7 @@ fn create_new_shop_with_bad_cid_fails() {
         // initialisation
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
-        let cid = CurrencyIdentifier::from(blake2_256(&(0, alice).encode())); // fails to register cid
+        let cid = CommunityIdentifier::from(blake2_256(&(0, alice).encode())); // fails to register cid
 
         // assert that upload fails
         assert!(
@@ -321,7 +321,7 @@ fn stores_cannot_be_created_twice() {
         let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
         let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
 
-        //let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()))
+        //let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()))
 
         // upload stores to blockchain
         assert!(EncointerBazaar::new_shop(

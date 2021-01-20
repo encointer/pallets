@@ -262,7 +262,7 @@ fn new_currency_works() {
             loc.clone(),
             bs.clone()
         ));
-        let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()));
+        let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()));
         let cids = EncointerCurrencies::currency_identifiers();
         assert!(cids.contains(&cid));
         assert_eq!(EncointerCurrencies::locations(&cid), loc);

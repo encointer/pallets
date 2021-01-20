@@ -17,7 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use encointer_communities::CurrencyIdentifier;
+use encointer_communities::CommunityIdentifier;
 use fixed::{transcendental::exp, types::I64F64};
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
@@ -66,8 +66,8 @@ pub trait Trait: frame_system::Trait + encointer_communities::Trait {
 
 decl_storage! {
     trait Store for Module<T: Trait> as EncointerBalances {
-        pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CurrencyIdentifier => BalanceEntry<T::BlockNumber>;
-        pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
+        pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CommunityIdentifier => BalanceEntry<T::BlockNumber>;
+        pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
         //pub DemurragePerBlock get(fn demurrage_per_block): BalanceType = DemurrageRate;
     }
 }
@@ -77,7 +77,7 @@ decl_event!(
         <T as frame_system::Trait>::AccountId,
     {
         /// Token transfer success (currency_id, from, to, amount)
-        Transferred(CurrencyIdentifier, AccountId, AccountId, BalanceType),
+        Transferred(CommunityIdentifier, AccountId, AccountId, BalanceType),
     }
 );
 
@@ -90,7 +90,7 @@ decl_module! {
         pub fn transfer(
             origin,
             dest: <T::Lookup as StaticLookup>::Source,
-            currency_id: CurrencyIdentifier,
+            currency_id: CommunityIdentifier,
             amount: BalanceType,
         ) -> DispatchResult {
             let from = ensure_signed(origin)?;
@@ -112,13 +112,13 @@ decl_error! {
 }
 
 impl<T: Trait> Module<T> {
-    pub fn balance(currency_id: CurrencyIdentifier, who: &T::AccountId) -> BalanceType {
+    pub fn balance(currency_id: CommunityIdentifier, who: &T::AccountId) -> BalanceType {
         Self::balance_entry_updated(currency_id, who).principal
     }
 
     /// get balance and apply demurrage. This is not a noop! It changes state.
     fn balance_entry_updated(
-        currency_id: CurrencyIdentifier,
+        currency_id: CommunityIdentifier,
         who: &T::AccountId,
     ) -> BalanceEntry<T::BlockNumber> {
         let entry = <Balance<T>>::get(currency_id, who);
@@ -129,13 +129,13 @@ impl<T: Trait> Module<T> {
         )
     }
 
-    pub fn total_issuance(currency_id: CurrencyIdentifier) -> BalanceType {
+    pub fn total_issuance(currency_id: CommunityIdentifier) -> BalanceType {
         Self::total_issuance_entry_updated(currency_id).principal
     }
 
     /// get total_issuance and apply demurrage. This is not a noop! It changes state.
     fn total_issuance_entry_updated(
-        currency_id: CurrencyIdentifier,
+        currency_id: CommunityIdentifier,
     ) -> BalanceEntry<T::BlockNumber> {
         let entry = <TotalIssuance<T>>::get(currency_id);
         Self::apply_demurrage(
@@ -170,7 +170,7 @@ impl<T: Trait> Module<T> {
     }
 
     fn transfer_(
-        currency_id: CurrencyIdentifier,
+        currency_id: CommunityIdentifier,
         from: &T::AccountId,
         to: &T::AccountId,
         amount: BalanceType,
@@ -191,7 +191,7 @@ impl<T: Trait> Module<T> {
     }
 
     pub fn issue(
-        currency_id: CurrencyIdentifier,
+        currency_id: CommunityIdentifier,
         who: &T::AccountId,
         amount: BalanceType,
     ) -> DispatchResult {
@@ -211,7 +211,7 @@ impl<T: Trait> Module<T> {
     }
 
     pub fn burn(
-        currency_id: CurrencyIdentifier,
+        currency_id: CommunityIdentifier,
         who: &T::AccountId,
         amount: BalanceType,
     ) -> DispatchResult {

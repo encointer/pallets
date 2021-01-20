@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use encointer_communities::CurrencyIdentifier;
+use encointer_communities::CommunityIdentifier;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{
@@ -30,7 +30,7 @@ use mock::{
 #[test]
 fn issue_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        let cid = CurrencyIdentifier::default();
+        let cid = CommunityIdentifier::default();
         assert_ok!(EncointerBalances::issue(
             cid,
             &ALICE,
@@ -50,7 +50,7 @@ fn issue_should_work() {
 #[test]
 fn burn_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        let cid = CurrencyIdentifier::default();
+        let cid = CommunityIdentifier::default();
         assert_ok!(EncointerBalances::issue(
             cid,
             &ALICE,
@@ -82,7 +82,7 @@ fn transfer_should_work() {
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
 
-        let cid = CurrencyIdentifier::default();
+        let cid = CommunityIdentifier::default();
         assert_ok!(EncointerBalances::issue(
             cid,
             &ALICE,

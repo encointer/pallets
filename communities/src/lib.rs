@@ -59,7 +59,7 @@ pub struct Location {
     pub lat: Degree,
     pub lon: Degree,
 }
-pub type CurrencyIdentifier = H256;
+pub type CommunityIdentifier = H256;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct CurrencyPropertiesType {
@@ -91,10 +91,10 @@ const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
 
 decl_storage! {
     trait Store for Module<T: Trait> as EncointerCurrencies {
-        Locations get(fn locations): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<Location>;
-        Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<T::AccountId>;
-        CurrencyIdentifiers get(fn currency_identifiers): Vec<CurrencyIdentifier>;
-        CurrencyProperties get(fn currency_properties): map hasher(blake2_128_concat) CurrencyIdentifier => CurrencyPropertiesType;
+        Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
+        Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
+        CommunityIdentifiers get(fn currency_identifiers): Vec<CommunityIdentifier>;
+        CurrencyProperties get(fn currency_properties): map hasher(blake2_128_concat) CommunityIdentifier => CurrencyPropertiesType;
         // TODO: replace this with on-chain governance
         CurrencyMaster get(fn currency_master) config(): T::AccountId;
     }
@@ -110,7 +110,7 @@ decl_module! {
         pub fn new_currency(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
-            let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
+            let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::currency_identifiers();
             ensure!(!cids.contains(&cid), "currency already registered");
 
@@ -146,7 +146,7 @@ decl_module! {
                 }
             }
 
-            <CurrencyIdentifiers>::mutate(|v| v.push(cid));
+            <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
 
@@ -168,7 +168,7 @@ decl_event!(
     where
         AccountId = <T as frame_system::Trait>::AccountId,
     {
-        CurrencyRegistered(AccountId, CurrencyIdentifier),
+        CurrencyRegistered(AccountId, CommunityIdentifier),
     }
 );
 

@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use encointer_communities::{CurrencyIdentifier, Degree, Location};
+use encointer_communities::{CommunityIdentifier, Degree, Location};
 use frame_support::assert_ok;
 use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
 use frame_system;
@@ -117,7 +117,7 @@ impl ExtBuilder {
 }
 
 /// register a simple test currency with 3 meetup locations and well known bootstrappers
-pub fn register_test_currency() -> CurrencyIdentifier {
+pub fn register_test_currency() -> CommunityIdentifier {
     // all well-known keys are boottrappers for easy testen afterwards
     let alice = 1;
     let bob = 2;
@@ -150,5 +150,5 @@ pub fn register_test_currency() -> CurrencyIdentifier {
         loc.clone(),
         bs.clone()
     ));
-    CurrencyIdentifier::from(blake2_256(&(loc, bs).encode()))
+    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }
