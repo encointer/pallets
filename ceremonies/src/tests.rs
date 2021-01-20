@@ -332,7 +332,6 @@ fn register_charlie_dave_eve(cid: CommunityIdentifier) {
 fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519::Pair> {
     let mut participants = Vec::with_capacity(amount);
     for population_counter in 1..=amount {
-        let mut entropy = [0u8; 32];
         let entropy = U256::from(current_popuplation_size + population_counter);
         participants.push(sr25519::Pair::from_entropy(&entropy.encode()[..], None).0);
     }
