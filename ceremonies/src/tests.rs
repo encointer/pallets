@@ -1732,7 +1732,8 @@ fn grow_population_works() {
     case(9,0,0,4,3, vec![7,6]),
     case(3,7,3,3,3, vec![8,8]),
     case(3,7,4,3,3, vec![9,8]),
-    case::do_not_assign_more_meetups_than_locations(3,7,50,0,3, vec![12,12,12])
+    case::do_not_assign_more_meetups_than_locations(3,7,50,0,3, vec![12,12,12]),
+    case::do_not_assign_more_meetups_than_there_are_experienced_participants(3,1,49,0,10, vec![12,12,12,12])
 )]
 fn assigning_meetup_works(
     n_bootstrappers: usize,

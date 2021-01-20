@@ -416,7 +416,7 @@ impl<T: Trait> Module<T> {
         for cid in cids.iter() {
             let pcount = <ParticipantCount>::get((cid, cindex));
             let ecount = <EndorseesCount>::get((cid, cindex));
-            let max_participants = <encointer_currencies::Module<T>>::locations(cid).len() * 12;
+            let n_locations = <encointer_currencies::Module<T>>::locations(cid).len();
 
             let mut bootstrappers =
                 Vec::with_capacity(<encointer_currencies::Module<T>>::bootstrappers(cid).len());
@@ -452,16 +452,17 @@ impl<T: Trait> Module<T> {
                 continue;
             }
 
+            // ensure that every meetup has at least one experienced participant
+            n = min(n, (bootstrappers.len() + reputables.len()) * 12);
+            
             // capping the amount a participants prevents assigning more meetups than there are locations.
-            if n > max_participants {
-                debug::debug!(
+            if n > n_locations * 12 {
+                debug::warn!(
                     target: LOG,
-                    "Too many participants for cid: {:?}. Allowed: {}, Actual: {})",
-                    n,
-                    max_participants,
+                    "Meetup Locations exhausted for cid: {:?}",
                     cid
                 );
-                n = max_participants;
+                n = n_locations * 12;
             }
 
             let all_participants = bootstrappers
