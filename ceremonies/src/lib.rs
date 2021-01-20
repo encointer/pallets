@@ -71,7 +71,7 @@ const LOG: &str = "encointer";
 pub type ParticipantIndexType = u64;
 pub type MeetupIndexType = u64;
 pub type AttestationIndexType = u64;
-pub type CurrencyCeremony = (CommunityIdentifier, CeremonyIndexType);
+pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum Reputation {
@@ -124,27 +124,27 @@ decl_storage! {
 
         // everyone who registered for a ceremony
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-        ParticipantRegistry get(fn participant_registry): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
-        ParticipantIndex get(fn participant_index): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
-        ParticipantCount get(fn participant_count): map hasher(blake2_128_concat) CurrencyCeremony => ParticipantIndexType;
-        ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
+        ParticipantRegistry get(fn participant_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
+        ParticipantIndex get(fn participant_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
+        ParticipantCount get(fn participant_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+        ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
         // newbies granted a ticket from a bootstrapper for the next ceremony. See https://substrate.dev/recipes/map-set.html for the rationale behind the double_map approach.
-        Endorsees get(fn endorsees): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => ();
-        EndorseesCount get(fn endorsees_count): map hasher(blake2_128_concat) CurrencyCeremony => u64;
+        Endorsees get(fn endorsees): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ();
+        EndorseesCount get(fn endorsees_count): map hasher(blake2_128_concat) CommunityCeremony => u64;
 
         // all meetups for each ceremony mapping to a vec of participants
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-        MeetupRegistry get(fn meetup_registry): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) MeetupIndexType => Vec<T::AccountId>;
-        MeetupIndex get(fn meetup_index): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => MeetupIndexType;
-        MeetupCount get(fn meetup_count): map hasher(blake2_128_concat) CurrencyCeremony => MeetupIndexType;
+        MeetupRegistry get(fn meetup_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) MeetupIndexType => Vec<T::AccountId>;
+        MeetupIndex get(fn meetup_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => MeetupIndexType;
+        MeetupCount get(fn meetup_count): map hasher(blake2_128_concat) CommunityCeremony => MeetupIndexType;
 
         // collect fellow meetup participants accounts who attested key account
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-        AttestationRegistry get(fn attestation_registry): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) AttestationIndexType => Vec<T::AccountId>;
-        AttestationIndex get(fn attestation_index): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => AttestationIndexType;
-        AttestationCount get(fn attestation_count): map hasher(blake2_128_concat) CurrencyCeremony => AttestationIndexType;
+        AttestationRegistry get(fn attestation_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) AttestationIndexType => Vec<T::AccountId>;
+        AttestationIndex get(fn attestation_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => AttestationIndexType;
+        AttestationCount get(fn attestation_count): map hasher(blake2_128_concat) CommunityCeremony => AttestationIndexType;
         // how many peers does each participants observe at their meetup
-        MeetupParticipantCountVote get(fn meetup_participant_count_vote): double_map hasher(blake2_128_concat) CurrencyCeremony, hasher(blake2_128_concat) T::AccountId => u32;
+        MeetupParticipantCountVote get(fn meetup_participant_count_vote): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => u32;
         CeremonyReward get(fn ceremony_reward) config(): BalanceType;
         // [m] distance from assigned meetup location
         LocationTolerance get(fn location_tolerance) config(): u32;
@@ -688,7 +688,7 @@ impl<T: Trait> Module<T> {
 
     #[cfg(test)]
     // only to be used by tests
-    fn fake_reputation(cidcindex: CurrencyCeremony, account: &T::AccountId, rep: Reputation) {
+    fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
         <ParticipantReputation<T>>::insert(&cidcindex, account, rep);
     }
 }
