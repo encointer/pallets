@@ -377,30 +377,26 @@ fn account_id(pair: &sr25519::Pair) -> AccountId {
     AccountId::from(pair.public()).into_account()
 }
 
-/// register a simple test currency with 3 meetup locations and well known bootstrappers
-fn register_test_currency(custom_bootstrappers: Option<Vec<sr25519::Pair>>) -> CurrencyIdentifier {
+/// register a simple test currency with N meetup locations and defined bootstrappers
+fn register_test_currency(custom_bootstrappers: Option<Vec<sr25519::Pair>>, n_locations: u32) -> CurrencyIdentifier {
     let bs: Vec<AccountId> = custom_bootstrappers
         .unwrap_or_else(|| bootstrappers())
         .into_iter()
         .map(|b| b.public())
         .collect();
 
-    let alice = bs[0];
-
-    let a = Location::default(); // 0, 0
-
-    let b = Location {
-        lat: Degree::from_num(1),
-        lon: Degree::from_num(1),
-    };
-    let c = Location {
-        lat: Degree::from_num(2),
-        lon: Degree::from_num(2),
-    };
-    let loc = vec![a, b, c];
+    let prime = bs[0];
+    
+    let mut loc = Vec::with_capacity(n_locations as usize);
+    for l in 0..n_locations {
+        loc.push(Location {
+            lat: Degree::from_num(l),
+            lon: Degree::from_num(l),
+        })
+    }
 
     assert_ok!(EncointerCurrencies::new_currency(
-        Origin::signed(alice.clone()),
+        Origin::signed(prime.clone()),
         loc.clone(),
         bs.clone()
     ));
@@ -425,9 +421,10 @@ fn bootstrappers() -> Vec<sr25519::Pair> {
 /// perform bootstrapping ceremony for test currency with either the supplied bootstrappers or the default bootstrappers
 fn perform_bootstrapping_ceremony(
     custom_bootstrappers: Option<Vec<sr25519::Pair>>,
+    n_locations: u32
 ) -> CurrencyIdentifier {
     let bootstrappers: Vec<sr25519::Pair> = custom_bootstrappers.unwrap_or_else(|| bootstrappers());
-    let cid = register_test_currency(Some(bootstrappers.clone()));
+    let cid = register_test_currency(Some(bootstrappers.clone()), n_locations);
     bootstrappers
         .iter()
         .for_each(|b| register(b.public(), cid, None).unwrap());
@@ -493,7 +490,7 @@ fn fully_attest_meetup(cid: CurrencyIdentifier, keys: Vec<sr25519::Pair>, mindex
 #[test]
 fn registering_participant_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let cindex = EncointerScheduler::current_ceremony_index();
@@ -522,7 +519,7 @@ fn registering_participant_works() {
 #[test]
 fn registering_participant_twice_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         assert_ok!(register(alice.clone(), cid, None));
         assert!(register(alice.clone(), cid, None).is_err());
@@ -532,7 +529,7 @@ fn registering_participant_twice_fails() {
 #[test]
 fn registering_participant_in_wrong_phase_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         run_to_next_phase();
         assert_eq!(
@@ -546,7 +543,7 @@ fn registering_participant_in_wrong_phase_fails() {
 #[test]
 fn verify_attestation_signature_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let claimant = AccountKeyring::Alice.pair();
         let attester = AccountKeyring::Bob.pair();
 
@@ -589,7 +586,7 @@ fn verify_attestation_signature_works() {
 #[test]
 fn register_attestations_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -653,7 +650,7 @@ fn register_attestations_works() {
 #[test]
 fn register_attestations_for_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let cindex = EncointerScheduler::current_ceremony_index();
@@ -682,7 +679,7 @@ fn register_attestations_for_non_participant_fails_silently() {
 #[test]
 fn register_attestations_for_non_participant_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
         let eve = AccountKeyring::Eve.pair();
@@ -731,7 +728,7 @@ fn register_attestations_for_non_participant_fails() {
 #[test]
 fn register_attestations_with_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let eve = AccountKeyring::Eve.pair();
@@ -760,7 +757,7 @@ fn register_attestations_with_non_participant_fails_silently() {
 #[test]
 fn register_attestations_with_wrong_meetup_index_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -807,7 +804,7 @@ fn register_attestations_with_wrong_meetup_index_fails() {
 #[test]
 fn register_attestations_with_wrong_ceremony_index_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -854,7 +851,7 @@ fn register_attestations_with_wrong_ceremony_index_fails() {
 #[test]
 fn register_attestations_with_wrong_timestamp_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -903,7 +900,7 @@ fn register_attestations_with_wrong_timestamp_fails() {
 #[test]
 fn register_attestations_with_wrong_location_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -951,7 +948,7 @@ fn register_attestations_with_wrong_location_fails() {
 #[test]
 fn ballot_meetup_n_votes_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -1162,7 +1159,7 @@ fn ballot_meetup_n_votes_works() {
 #[test]
 fn issue_reward_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -1293,7 +1290,7 @@ fn issue_reward_works() {
 #[test]
 fn bootstrapping_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
+        let cid = perform_bootstrapping_ceremony(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let charlie = AccountKeyring::Charlie.pair();
@@ -1333,7 +1330,7 @@ fn bootstrapping_works() {
 #[test]
 fn grant_reputation_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
+        let cid = perform_bootstrapping_ceremony(None, 1);
         let master = AccountId::from(AccountKeyring::Alice);
         // a non-bootstrapper
         let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
@@ -1348,7 +1345,7 @@ fn grant_reputation_works() {
 #[test]
 fn register_with_reputation_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
+        let cid = perform_bootstrapping_ceremony(None, 1);
 
         // a non-bootstrapper
         let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
@@ -1402,7 +1399,7 @@ fn register_with_reputation_works() {
 #[test]
 fn endorsing_newbie_works_until_no_more_tickets() {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
+        let cid = perform_bootstrapping_ceremony(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
 
         let endorsees = add_population((AMOUNT_NEWBIE_TICKETS + 1) as usize, 6);
@@ -1429,7 +1426,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 #[test]
 fn endorsing_newbie_for_second_next_ceremony_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
         run_to_next_phase();
@@ -1455,7 +1452,7 @@ fn endorsing_newbie_for_second_next_ceremony_works() {
 #[test]
 fn endorsing_newbie_twice_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
+        let cid = perform_bootstrapping_ceremony(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -1485,7 +1482,7 @@ fn endorsing_newbie_twice_fails() {
 #[test]
 fn endorsing_two_newbies_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
+        let cid = perform_bootstrapping_ceremony(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -1532,7 +1529,7 @@ fn get_meetup_time_works() {
         System::set_block_number(0);
         run_to_block(1);
 
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 3);
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -1586,7 +1583,7 @@ fn get_meetup_time_works() {
 #[test]
 fn ceremony_index_and_purging_registry_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
         assert_ok!(register(alice.clone(), cid, None));
@@ -1626,7 +1623,7 @@ fn ceremony_index_and_purging_registry_works() {
 #[test]
 fn assigning_meetup_at_phase_change_and_purge_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_currency(None);
+        let cid = register_test_currency(None, 1);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);
@@ -1648,7 +1645,7 @@ fn assigning_meetup_at_phase_change_and_purge_works() {
 #[test]
 fn grow_population_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = perform_bootstrapping_ceremony(None);
+        let cid = perform_bootstrapping_ceremony(None, 3);
         let mut participants = bootstrappers();
 
         // generate many keys and register all of them
@@ -1730,24 +1727,25 @@ fn grow_population_works() {
     });
 }
 
-#[rstest(n_bootstrappers, n_reputables, n_endorsees, n_newbies, exp_meetups,
-    case(8,0,0,4, vec![12]),
-    case(9,0,0,4, vec![7,6]),
-    case(3,7,3,3, vec![8,8]),
-    case(3,7,4,3, vec![9,8]),
-    case::do_not_assign_more_meetups_than_locations(3,7,50,0, vec![12,12,12])
+#[rstest(n_bootstrappers, n_reputables, n_endorsees, n_newbies, n_locations, exp_meetups,
+    case(8,0,0,4,3, vec![12]),
+    case(9,0,0,4,3, vec![7,6]),
+    case(3,7,3,3,3, vec![8,8]),
+    case(3,7,4,3,3, vec![9,8]),
+    case::do_not_assign_more_meetups_than_locations(3,7,50,0,3, vec![12,12,12])
 )]
 fn assigning_meetup_works(
     n_bootstrappers: usize,
     n_reputables: usize,
     n_endorsees: usize,
     n_newbies: usize,
+    n_locations: u32,
     exp_meetups: Vec<usize>,
 ) {
     ExtBuilder::build().execute_with(|| {
         let bs = add_population(n_bootstrappers, 0);
         let alice = bs[0].clone();
-        let cid = perform_bootstrapping_ceremony(Some(bs.clone()));
+        let cid = perform_bootstrapping_ceremony(Some(bs.clone()), n_locations);
         let mut population: Vec<sr25519::Pair> = bs;
 
         if n_reputables > 0 {
