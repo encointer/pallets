@@ -76,7 +76,7 @@ decl_event!(
     pub enum Event<T> where
         <T as frame_system::Trait>::AccountId,
     {
-        /// Token transfer success (currency_id, from, to, amount)
+        /// Token transfer success (community_id, from, to, amount)
         Transferred(CommunityIdentifier, AccountId, AccountId, BalanceType),
     }
 );
@@ -90,14 +90,14 @@ decl_module! {
         pub fn transfer(
             origin,
             dest: <T::Lookup as StaticLookup>::Source,
-            currency_id: CommunityIdentifier,
+            community_id: CommunityIdentifier,
             amount: BalanceType,
         ) -> DispatchResult {
             let from = ensure_signed(origin)?;
             let to = T::Lookup::lookup(dest)?;
-            Self::transfer_(currency_id, &from, &to, amount)?;
+            Self::transfer_(community_id, &from, &to, amount)?;
 
-            Self::deposit_event(RawEvent::Transferred(currency_id, from, to, amount));
+            Self::deposit_event(RawEvent::Transferred(community_id, from, to, amount));
             Ok(())
         }
     }
@@ -112,35 +112,35 @@ decl_error! {
 }
 
 impl<T: Trait> Module<T> {
-    pub fn balance(currency_id: CommunityIdentifier, who: &T::AccountId) -> BalanceType {
-        Self::balance_entry_updated(currency_id, who).principal
+    pub fn balance(community_id: CommunityIdentifier, who: &T::AccountId) -> BalanceType {
+        Self::balance_entry_updated(community_id, who).principal
     }
 
     /// get balance and apply demurrage. This is not a noop! It changes state.
     fn balance_entry_updated(
-        currency_id: CommunityIdentifier,
+        community_id: CommunityIdentifier,
         who: &T::AccountId,
     ) -> BalanceEntry<T::BlockNumber> {
-        let entry = <Balance<T>>::get(currency_id, who);
+        let entry = <Balance<T>>::get(community_id, who);
         Self::apply_demurrage(
             entry,
-            <encointer_communities::Module<T>>::currency_properties(currency_id)
+            <encointer_communities::Module<T>>::community_properties(community_id)
                 .demurrage_per_block,
         )
     }
 
-    pub fn total_issuance(currency_id: CommunityIdentifier) -> BalanceType {
-        Self::total_issuance_entry_updated(currency_id).principal
+    pub fn total_issuance(community_id: CommunityIdentifier) -> BalanceType {
+        Self::total_issuance_entry_updated(community_id).principal
     }
 
     /// get total_issuance and apply demurrage. This is not a noop! It changes state.
     fn total_issuance_entry_updated(
-        currency_id: CommunityIdentifier,
+        community_id: CommunityIdentifier,
     ) -> BalanceEntry<T::BlockNumber> {
-        let entry = <TotalIssuance<T>>::get(currency_id);
+        let entry = <TotalIssuance<T>>::get(community_id);
         Self::apply_demurrage(
             entry,
-            <encointer_communities::Module<T>>::currency_properties(currency_id)
+            <encointer_communities::Module<T>>::community_properties(community_id)
                 .demurrage_per_block,
         )
     }
@@ -170,53 +170,53 @@ impl<T: Trait> Module<T> {
     }
 
     fn transfer_(
-        currency_id: CommunityIdentifier,
+        community_id: CommunityIdentifier,
         from: &T::AccountId,
         to: &T::AccountId,
         amount: BalanceType,
     ) -> DispatchResult {
-        let mut entry_from = Self::balance_entry_updated(currency_id, from);
+        let mut entry_from = Self::balance_entry_updated(community_id, from);
         ensure!(entry_from.principal >= amount, Error::<T>::BalanceTooLow);
         //FIXME: delete account if it falls below existential deposit
         if from != to {
-            let mut entry_to = Self::balance_entry_updated(currency_id, to);
+            let mut entry_to = Self::balance_entry_updated(community_id, to);
             entry_from.principal -= amount;
             entry_to.principal += amount;
-            <Balance<T>>::insert(currency_id, from, entry_from);
-            <Balance<T>>::insert(currency_id, to, entry_to);
+            <Balance<T>>::insert(community_id, from, entry_from);
+            <Balance<T>>::insert(community_id, to, entry_to);
         } else {
-            <Balance<T>>::insert(currency_id, from, entry_from);
+            <Balance<T>>::insert(community_id, from, entry_from);
         }
         Ok(())
     }
 
     pub fn issue(
-        currency_id: CommunityIdentifier,
+        community_id: CommunityIdentifier,
         who: &T::AccountId,
         amount: BalanceType,
     ) -> DispatchResult {
         debug::RuntimeLogger::init();
-        let mut entry_who = Self::balance_entry_updated(currency_id, who);
-        let mut entry_tot = Self::total_issuance_entry_updated(currency_id);
+        let mut entry_who = Self::balance_entry_updated(community_id, who);
+        let mut entry_tot = Self::total_issuance_entry_updated(community_id);
         ensure!(
             entry_tot.principal.checked_add(amount).is_some(),
             Error::<T>::TotalIssuanceOverflow,
         );
         entry_who.principal += amount;
         entry_tot.principal += amount;
-        <TotalIssuance<T>>::insert(currency_id, entry_tot);
-        <Balance<T>>::insert(currency_id, who, entry_who);
+        <TotalIssuance<T>>::insert(community_id, entry_tot);
+        <Balance<T>>::insert(community_id, who, entry_who);
         debug::debug!(target: LOG, "issue {:?} for {:?}", amount, who);
         Ok(())
     }
 
     pub fn burn(
-        currency_id: CommunityIdentifier,
+        community_id: CommunityIdentifier,
         who: &T::AccountId,
         amount: BalanceType,
     ) -> DispatchResult {
-        let mut entry_who = Self::balance_entry_updated(currency_id, who);
-        let mut entry_tot = Self::total_issuance_entry_updated(currency_id);
+        let mut entry_who = Self::balance_entry_updated(community_id, who);
+        let mut entry_tot = Self::total_issuance_entry_updated(community_id);
         entry_who.principal = if let Some(res) = entry_who.principal.checked_sub(amount) {
             ensure!(res >= 0, Error::<T>::BalanceTooLow);
             res
@@ -226,8 +226,8 @@ impl<T: Trait> Module<T> {
         entry_tot.principal -= amount;
         //FIXME: delete account if it falls below existential deposit
 
-        <TotalIssuance<T>>::insert(currency_id, entry_tot);
-        <Balance<T>>::insert(currency_id, who, entry_who);
+        <TotalIssuance<T>>::insert(community_id, entry_tot);
+        <Balance<T>>::insert(community_id, who, entry_who);
         Ok(())
     }
 }

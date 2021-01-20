@@ -116,8 +116,8 @@ impl ExtBuilder {
     }
 }
 
-/// register a simple test currency with 3 meetup locations and well known bootstrappers
-pub fn register_test_currency() -> CommunityIdentifier {
+/// register a simple test community with 3 meetup locations and well known bootstrappers
+pub fn register_test_community() -> CommunityIdentifier {
     // all well-known keys are boottrappers for easy testen afterwards
     let alice = 1;
     let bob = 2;
@@ -145,7 +145,7 @@ pub fn register_test_currency() -> CommunityIdentifier {
         eve.clone(),
         ferdie.clone(),
     ];
-    assert_ok!(EncointerCurrencies::new_currency(
+    assert_ok!(EncointerCurrencies::new_community(
         Origin::signed(alice.clone()),
         loc.clone(),
         bs.clone()

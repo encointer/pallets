@@ -18,7 +18,7 @@
 //!
 //! provides functionality for
 //! - registering new communities
-//! - modify currency characteristics
+//! - modify community characteristics
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -93,10 +93,10 @@ decl_storage! {
     trait Store for Module<T: Trait> as EncointerCurrencies {
         Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
-        CommunityIdentifiers get(fn currency_identifiers): Vec<CommunityIdentifier>;
-        CurrencyProperties get(fn currency_properties): map hasher(blake2_128_concat) CommunityIdentifier => CurrencyPropertiesType;
+        CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
+        CurrencyProperties get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CurrencyPropertiesType;
         // TODO: replace this with on-chain governance
-        CurrencyMaster get(fn currency_master) config(): T::AccountId;
+        CurrencyMaster get(fn community_master) config(): T::AccountId;
     }
 }
 
@@ -107,12 +107,12 @@ decl_module! {
         // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
-        pub fn new_currency(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
+        pub fn new_community(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
-            let cids = Self::currency_identifiers();
-            ensure!(!cids.contains(&cid), "currency already registered");
+            let cids = Self::community_identifiers();
+            ensure!(!cids.contains(&cid), "community already registered");
 
             for l1 in loc.iter() {
                 ensure!(Self::is_valid_geolocation(&l1), "invalid geolocation specified");
@@ -157,7 +157,7 @@ decl_module! {
                 }
             );
             Self::deposit_event(RawEvent::CurrencyRegistered(sender, cid));
-            debug::info!(target: LOG, "registered currency with cid: {:?}", cid);
+            debug::info!(target: LOG, "registered community with cid: {:?}", cid);
             Ok(())
         }
     }
@@ -178,7 +178,7 @@ decl_error! {
         MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
-        /// minimum distance violated towards other currency's location
+        /// minimum distance violated towards other community's location
         MinimumDistanceViolationToOtherCurrency,
     }
 }

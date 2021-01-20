@@ -56,7 +56,7 @@ decl_storage! {
         // Item owner
         pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
         pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
-        // The set of all shops and articles per currency (community)
+        // The set of all shops and articles per community (community)
         pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ShopIdentifier>;
         pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ArticleIdentifier>;
     }
@@ -64,9 +64,9 @@ decl_storage! {
 
 decl_event! {
     pub enum Event<T> where AccountId = <T as frame_system::Trait>::AccountId {
-        /// Event emitted when a shop is uploaded. [currency, who, shop]
+        /// Event emitted when a shop is uploaded. [community, who, shop]
         ShopCreated(CommunityIdentifier, AccountId, ShopIdentifier),
-        /// Event emitted when a shop is removed by the owner. [currency, who, shop]
+        /// Event emitted when a shop is removed by the owner. [community, who, shop]
         ShopRemoved(CommunityIdentifier, AccountId, ShopIdentifier),
     }
 }
@@ -93,8 +93,8 @@ decl_module! {
         pub fn new_shop(origin, cid: CommunityIdentifier, shop: ShopIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
-            // Check that the supplied currency is actually registered
-            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 "CommunityIdentifier not found");
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);

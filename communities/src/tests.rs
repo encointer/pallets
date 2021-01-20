@@ -120,7 +120,7 @@ impl ExtBuilder {
             .assimilate_storage(&mut storage)
             .unwrap();
         GenesisConfig::<TestRuntime> {
-            currency_master: get_accountid(&AccountKeyring::Alice.pair()),
+            community_master: get_accountid(&AccountKeyring::Alice.pair()),
         }
         .assimilate_storage(&mut storage)
         .unwrap();
@@ -238,7 +238,7 @@ fn haversine_distance_works() {
 }
 
 #[test]
-fn new_currency_works() {
+fn new_community_works() {
     ExtBuilder::build().execute_with(|| {
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
@@ -257,13 +257,13 @@ fn new_currency_works() {
         println!("north pole at {:?}", NORTH_POLE);
         let loc = vec![a, b];
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        assert_ok!(EncointerCurrencies::new_currency(
+        assert_ok!(EncointerCurrencies::new_community(
             Origin::signed(alice.clone()),
             loc.clone(),
             bs.clone()
         ));
         let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()));
-        let cids = EncointerCurrencies::currency_identifiers();
+        let cids = EncointerCurrencies::community_identifiers();
         assert!(cids.contains(&cid));
         assert_eq!(EncointerCurrencies::locations(&cid), loc);
         assert_eq!(EncointerCurrencies::bootstrappers(&cid), bs);
@@ -271,7 +271,7 @@ fn new_currency_works() {
 }
 
 #[test]
-fn new_currency_with_too_close_inner_locations_fails() {
+fn new_community_with_too_close_inner_locations_fails() {
     ExtBuilder::build().execute_with(|| {
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
@@ -288,12 +288,14 @@ fn new_currency_with_too_close_inner_locations_fails() {
         let loc = vec![a, b];
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
 
-        assert!(EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs).is_err());
+        assert!(
+            EncointerCurrencies::new_community(Origin::signed(alice.clone()), loc, bs).is_err()
+        );
     });
 }
 
 #[test]
-fn new_currency_too_close_to_existing_currency_fails() {
+fn new_community_too_close_to_existing_community_fails() {
     ExtBuilder::build().execute_with(|| {
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
@@ -308,13 +310,13 @@ fn new_currency_too_close_to_existing_currency_fails() {
         };
         let loc = vec![a, b];
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        assert_ok!(EncointerCurrencies::new_currency(
+        assert_ok!(EncointerCurrencies::new_community(
             Origin::signed(alice.clone()),
             loc.clone(),
             bs.clone()
         ));
 
-        // second currency
+        // second community
         let a = Location {
             lat: T::from_num(1.000001_f64),
             lon: T::from_num(1.000001_f64),
@@ -324,7 +326,7 @@ fn new_currency_too_close_to_existing_currency_fails() {
             lon: T::from_num(2.000001_f64),
         };
         let loc = vec![a, b];
-        assert!(EncointerCurrencies::new_currency(
+        assert!(EncointerCurrencies::new_community(
             Origin::signed(alice.clone()),
             loc.clone(),
             bs.clone()
@@ -334,7 +336,7 @@ fn new_currency_too_close_to_existing_currency_fails() {
 }
 
 #[test]
-fn new_currency_with_near_pole_locations_fails() {
+fn new_community_with_near_pole_locations_fails() {
     ExtBuilder::build().execute_with(|| {
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
@@ -351,7 +353,7 @@ fn new_currency_with_near_pole_locations_fails() {
         };
         let loc = vec![a, b];
         assert!(
-            EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs.clone())
+            EncointerCurrencies::new_community(Origin::signed(alice.clone()), loc, bs.clone())
                 .is_err()
         );
 
@@ -364,12 +366,14 @@ fn new_currency_with_near_pole_locations_fails() {
             lon: T::from_num(-60),
         };
         let loc = vec![a, b];
-        assert!(EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs).is_err());
+        assert!(
+            EncointerCurrencies::new_community(Origin::signed(alice.clone()), loc, bs).is_err()
+        );
     });
 }
 
 #[test]
-fn new_currency_near_dateline_fails() {
+fn new_community_near_dateline_fails() {
     ExtBuilder::build().execute_with(|| {
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
@@ -386,7 +390,7 @@ fn new_currency_near_dateline_fails() {
         };
         let loc = vec![a, b];
         assert!(
-            EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs.clone())
+            EncointerCurrencies::new_community(Origin::signed(alice.clone()), loc, bs.clone())
                 .is_err()
         );
     });

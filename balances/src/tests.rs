@@ -23,7 +23,7 @@ use encointer_communities::CommunityIdentifier;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{
-    register_test_currency, EncointerBalances, EncointerCurrencies, ExtBuilder, System, TestEvent,
+    register_test_community, EncointerBalances, EncointerCurrencies, ExtBuilder, System, TestEvent,
     TestRuntime, ALICE, BOB,
 };
 
@@ -124,7 +124,7 @@ fn transfer_should_work() {
 #[test]
 fn demurrage_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        let cid = register_test_currency();
+        let cid = register_test_community();
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,
@@ -135,7 +135,7 @@ fn demurrage_should_work() {
         assert_eq!(
             EncointerBalances::balance(cid, &ALICE),
             exp::<BalanceType, BalanceType>(
-                -EncointerCurrencies::currency_properties(cid).demurrage_per_block
+                -EncointerCurrencies::community_properties(cid).demurrage_per_block
             )
             .unwrap()
         );
@@ -151,7 +151,7 @@ fn demurrage_should_work() {
 #[test]
 fn transfer_with_demurrage_exceeding_amount_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
-        let cid = register_test_currency();
+        let cid = register_test_community();
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,

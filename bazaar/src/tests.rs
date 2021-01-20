@@ -137,8 +137,8 @@ impl_outer_origin! {
     pub enum Origin for TestRuntime {}
 }
 
-/// register a simple test currency with 3 meetup locations and well known bootstrappers
-fn register_test_currency() -> CommunityIdentifier {
+/// register a simple test community with 3 meetup locations and well known bootstrappers
+fn register_test_community() -> CommunityIdentifier {
     // all well-known keys are boottrappers for easy testen afterwards
     let alice = AccountId::from(AccountKeyring::Alice);
     let bob = AccountId::from(AccountKeyring::Bob);
@@ -156,7 +156,7 @@ fn register_test_currency() -> CommunityIdentifier {
     };
     let loc = vec![a, b, c];
     let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-    assert_ok!(EncointerCurrencies::new_currency(
+    assert_ok!(EncointerCurrencies::new_community(
         Origin::signed(alice.clone()),
         loc.clone(),
         bs.clone()
@@ -168,7 +168,7 @@ fn register_test_currency() -> CommunityIdentifier {
 fn create_new_shop_works() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_currency();
+        let cid = register_test_community();
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
         // upload dummy store to blockchain
@@ -216,7 +216,7 @@ fn create_new_shop_with_bad_cid_fails() {
 fn removal_of_shop_works() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_currency();
+        let cid = register_test_community();
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
 
@@ -259,7 +259,7 @@ fn removal_of_shop_works() {
 fn alices_store_are_differentiated() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_currency();
+        let cid = register_test_community();
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
         let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
@@ -316,7 +316,7 @@ fn alices_store_are_differentiated() {
 fn stores_cannot_be_created_twice() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_currency();
+        let cid = register_test_community();
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
         let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
@@ -351,7 +351,7 @@ fn stores_cannot_be_created_twice() {
 fn bob_cannot_remove_alices_store() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_currency();
+        let cid = register_test_community();
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
@@ -400,7 +400,7 @@ fn bob_cannot_remove_alices_store() {
 fn create_oversized_shop_fails() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_currency();
+        let cid = register_test_community();
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTBB");
 

@@ -101,7 +101,7 @@ pub struct Attestation<Signature, AccountId, Moment> {
 pub struct ClaimOfAttendance<AccountId, Moment> {
     pub claimant_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
-    pub currency_identifier: CommunityIdentifier,
+    pub community_identifier: CommunityIdentifier,
     pub meetup_index: MeetupIndexType,
     pub location: Location,
     pub timestamp: Moment,
@@ -112,7 +112,7 @@ pub struct ClaimOfAttendance<AccountId, Moment> {
 pub struct ProofOfAttendance<Signature, AccountId> {
     pub prover_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
-    pub currency_identifier: CommunityIdentifier,
+    pub community_identifier: CommunityIdentifier,
     pub attendee_public: AccountId,
     pub attendee_signature: Signature,
 }
@@ -175,7 +175,7 @@ decl_module! {
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
                 "registering participants can only be done during REGISTERING phase");
 
-            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 "CommunityIdentifier not found");
 
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
@@ -193,7 +193,7 @@ decl_module! {
                 ensure!(sender == p.prover_public, "supplied proof is not proving sender");
                 ensure!(p.ceremony_index < cindex, "proof is acausal");
                 ensure!(p.ceremony_index >= cindex-REPUTATION_LIFETIME, "proof is outdated");
-                ensure!(Self::participant_reputation(&(p.currency_identifier, p.ceremony_index),
+                ensure!(Self::participant_reputation(&(p.community_identifier, p.ceremony_index),
                     &p.attendee_public) == Reputation::VerifiedUnlinked,
                     "former attendance has not been verified or has already been linked to other account");
                 if Self::verify_attendee_signature(p.clone()).is_err() {
@@ -201,7 +201,7 @@ decl_module! {
                 };
 
                 // this reputation must now be burned so it can not be used again
-                <ParticipantReputation<T>>::insert(&(p.currency_identifier, p.ceremony_index),
+                <ParticipantReputation<T>>::insert(&(p.community_identifier, p.ceremony_index),
                     &p.attendee_public, Reputation::VerifiedLinked);
                 // register participant as reputable
                 <ParticipantReputation<T>>::insert((cid, cindex),
@@ -223,8 +223,8 @@ decl_module! {
                 "registering attestations can only be done during ATTESTING phase");
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
             ensure!(!attestations.is_empty(), "empty attestations supplied");
-            let cid = attestations[0].claim.currency_identifier;
-            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
+            let cid = attestations[0].claim.community_identifier;
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 "CommunityIdentifier not found");
 
             let meetup_index = Self::meetup_index((cid, cindex), &sender);
@@ -254,10 +254,10 @@ decl_module! {
                         "ignoring claim with wrong ceremony index: {}",
                         attestation.claim.ceremony_index);
                     continue };
-                if attestation.claim.currency_identifier != cid {
+                if attestation.claim.community_identifier != cid {
                     debug::warn!(target: LOG,
-                        "ignoring claim with wrong currency identifier: {:?}",
-                        attestation.claim.currency_identifier);
+                        "ignoring claim with wrong community identifier: {:?}",
+                        attestation.claim.community_identifier);
                     continue };
                 if attestation.claim.meetup_index != meetup_index {
                     debug::warn!(target: LOG,
@@ -325,7 +325,7 @@ decl_module! {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
-            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 "CommunityIdentifier not found");
 
             ensure!(<encointer_communities::Module<T>>::bootstrappers(&cid).contains(&sender),
@@ -373,7 +373,7 @@ decl_error! {
 
 impl<T: Trait> Module<T> {
     fn purge_registry(cindex: CeremonyIndexType) {
-        let cids = <encointer_communities::Module<T>>::currency_identifiers();
+        let cids = <encointer_communities::Module<T>>::community_identifiers();
         for cid in cids.iter() {
             <ParticipantRegistry<T>>::remove_prefix((cid, cindex));
             <ParticipantIndex<T>>::remove_prefix((cid, cindex));
@@ -410,7 +410,7 @@ impl<T: Trait> Module<T> {
     // this function is expensive, so it should later be processed off-chain within SubstraTEE-worker
     // currently the complexity is O(n) where n is the number of registered participants
     fn assign_meetups() {
-        let cids = <encointer_communities::Module<T>>::currency_identifiers();
+        let cids = <encointer_communities::Module<T>>::community_identifiers();
         let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
         for cid in cids.iter() {
@@ -539,7 +539,7 @@ impl<T: Trait> Module<T> {
         if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
             return;
         }
-        let cids = <encointer_communities::Module<T>>::currency_identifiers();
+        let cids = <encointer_communities::Module<T>>::community_identifiers();
         for cid in cids.iter() {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
             let meetup_count = Self::meetup_count((cid, cindex));
