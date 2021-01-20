@@ -27,7 +27,7 @@ use frame_support::{assert_ok, impl_outer_origin, parameter_types};
 use inherents::ProvideInherent;
 use rstest::*;
 use sp_core::crypto::Ss58Codec;
-use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
+use sp_core::{hashing::blake2_256, sr25519, Pair, H256, U256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::{
@@ -333,8 +333,8 @@ fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519
     let mut participants = Vec::with_capacity(amount);
     for population_counter in 1..=amount {
         let mut entropy = [0u8; 32];
-        entropy[0] = (current_popuplation_size + population_counter) as u8;
-        participants.push(sr25519::Pair::from_entropy(&entropy, None).0);
+        let entropy = U256::from(current_popuplation_size + population_counter);
+        participants.push(sr25519::Pair::from_entropy(&entropy.encode()[..], None).0);
     }
     participants
 }
@@ -1733,7 +1733,8 @@ fn grow_population_works() {
     case(3,7,3,3,3, vec![8,8]),
     case(3,7,4,3,3, vec![9,8]),
     case::do_not_assign_more_meetups_than_locations(3,7,50,0,3, vec![12,12,12]),
-    case::do_not_assign_more_meetups_than_there_are_experienced_participants(3,1,49,0,10, vec![12,12,12,12])
+    case::do_not_assign_more_meetups_than_there_are_experienced_participants(3,1,49,0,10, vec![12,12,12,12]),
+    case(12,48,12*AMOUNT_NEWBIE_TICKETS as usize,0,55, [12; 55].to_vec()),
 )]
 fn assigning_meetup_works(
     n_bootstrappers: usize,
@@ -1745,9 +1746,8 @@ fn assigning_meetup_works(
 ) {
     ExtBuilder::build().execute_with(|| {
         let bs = add_population(n_bootstrappers, 0);
-        let alice = bs[0].clone();
         let cid = perform_bootstrapping_ceremony(Some(bs.clone()), n_locations);
-        let mut population: Vec<sr25519::Pair> = bs;
+        let mut population: Vec<sr25519::Pair> = bs.clone();
 
         if n_reputables > 0 {
             // setup the community to be able to test assignment with given parameters
@@ -1755,10 +1755,10 @@ fn assigning_meetup_works(
             assert_eq!(population.len(), n_bootstrappers + n_reputables);
         }
 
-        for _ in 0..n_endorsees {
+        for e in 0..n_endorsees {
             population.extend(add_population(1, population.len()));
             assert_ok!(EncointerCeremonies::endorse_newcomer(
-                Origin::signed(alice.public().clone()),
+                Origin::signed(bs[e % n_bootstrappers].public().clone()),
                 cid,
                 population.last().unwrap().public()
             ));
