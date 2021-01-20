@@ -14,73 +14,72 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-
 //! Mocks for the tokens module.
 
 #![cfg(test)]
 
-use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
-use frame_support::{assert_noop, assert_ok};
-use frame_system;
-use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
-use sp_core::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
-use encointer_currencies::{CurrencyIdentifier, Location, Degree};
 use super::*;
+use encointer_currencies::{CurrencyIdentifier, Degree, Location};
+use frame_support::assert_ok;
+use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
+use frame_system;
+use sp_core::{hashing::blake2_256, H256};
+use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 
 impl_outer_origin! {
-	pub enum Origin for TestRuntime {}
+    pub enum Origin for TestRuntime {}
 }
 
 mod tokens {
-	pub use crate::Event;
+    pub use crate::Event;
 }
 mod currencies {
-	pub use encointer_currencies::Event;
+    pub use encointer_currencies::Event;
 }
 impl_outer_event! {
-	pub enum TestEvent for TestRuntime {
-		tokens<T>,
-		currencies<T>,
-		frame_system<T>,
-	}
+    pub enum TestEvent for TestRuntime {
+        tokens<T>,
+        currencies<T>,
+        frame_system<T>,
+    }
 }
 
 // Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const MaximumBlockWeight: u32 = 1024;
-	pub const MaximumBlockLength: u32 = 2 * 1024;
-	pub const AvailableBlockRatio: Perbill = Perbill::one();
+    pub const BlockHashCount: u64 = 250;
+    pub const MaximumBlockWeight: u32 = 1024;
+    pub const MaximumBlockLength: u32 = 2 * 1024;
+    pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
 
 type AccountId = u64;
 impl frame_system::Trait for TestRuntime {
-    type BaseCallFilter = ();    
-	type Origin = Origin;
-	type Index = u64;
-	type Call = ();
-	type BlockNumber = u64;
-	type Hash = H256;
-	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type AccountId = AccountId;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = TestEvent;
-	type BlockHashCount = BlockHashCount;
+    type BaseCallFilter = ();
+    type Origin = Origin;
+    type Index = u64;
+    type Call = ();
+    type BlockNumber = u64;
+    type Hash = H256;
+    type Hashing = ::sp_runtime::traits::BlakeTwo256;
+    type AccountId = AccountId;
+    type Lookup = IdentityLookup<Self::AccountId>;
+    type Header = Header;
+    type Event = TestEvent;
+    type BlockHashCount = BlockHashCount;
     type MaximumBlockWeight = MaximumBlockWeight;
-	type DbWeight = ();
-	type BlockExecutionWeight = ();
-	type ExtrinsicBaseWeight = ();    
+    type DbWeight = ();
+    type BlockExecutionWeight = ();
+    type ExtrinsicBaseWeight = ();
     type MaximumBlockLength = MaximumBlockLength;
     type MaximumExtrinsicWeight = MaximumBlockWeight;
-	type AvailableBlockRatio = AvailableBlockRatio;
+    type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
-	type AccountData = ();
-	type OnNewAccount = ();
-    type OnKilledAccount = ();   
-    type SystemWeightInfo = (); 
+    type AccountData = ();
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+    type SystemWeightInfo = ();
     type PalletInfo = ();
 }
 pub type System = frame_system::Module<TestRuntime>;
@@ -92,7 +91,7 @@ impl encointer_currencies::Trait for TestRuntime {
 pub type EncointerCurrencies = encointer_currencies::Module<TestRuntime>;
 
 impl Trait for TestRuntime {
-	type Event = TestEvent;
+    type Event = TestEvent;
 }
 
 pub type EncointerBalances = Module<TestRuntime>;
@@ -100,23 +99,21 @@ pub type EncointerBalances = Module<TestRuntime>;
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
 
-pub struct ExtBuilder {
-}
+pub struct ExtBuilder {}
 
 impl Default for ExtBuilder {
-	fn default() -> Self {
-		Self {}
-	}
+    fn default() -> Self {
+        Self {}
+    }
 }
 
 impl ExtBuilder {
-
-	pub fn build(self) -> runtime_io::TestExternalities {
-		let t = frame_system::GenesisConfig::default()
-			.build_storage::<TestRuntime>()
-			.unwrap();
-		t.into()
-	}
+    pub fn build(self) -> runtime_io::TestExternalities {
+        let t = frame_system::GenesisConfig::default()
+            .build_storage::<TestRuntime>()
+            .unwrap();
+        t.into()
+    }
 }
 
 /// register a simple test currency with 3 meetup locations and well known bootstrappers
@@ -128,9 +125,9 @@ pub fn register_test_currency() -> CurrencyIdentifier {
     let dave = 4;
     let eve = 5;
     let ferdie = 6;
-    
+
     let a = Location::default(); // 0, 0
-    
+
     let b = Location {
         lat: Degree::from_num(1),
         lon: Degree::from_num(1),

@@ -14,33 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
-use externalities::set_and_run_with_externalities;
-use sp_core::{hashing::blake2_256, sr25519, Blake2Hasher, Pair, Public, H256};
-use sp_runtime::traits::{CheckedAdd, IdentifyAccount, Member, Verify};
+use frame_support::traits::Get;
+use frame_support::{assert_ok, impl_outer_origin, parameter_types};
+use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
+use sp_keyring::AccountKeyring;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
-use std::{cell::RefCell, collections::HashSet};
-use frame_support::traits::{Currency, FindAuthor, Get, LockIdentifier};
-use frame_support::{assert_ok, impl_outer_event, impl_outer_origin, parameter_types};
-use sp_keyring::AccountKeyring;
-
-use fixed::traits::LossyFrom;
-use fixed::types::{I32F32, I9F23, I9F55};
-
-const NONE: u64 = 0;
-const REWARD: Balance = 1000;
+use std::cell::RefCell;
 
 /// The signature type used by accounts/transactions.
 pub type Signature = sr25519::Signature;
 /// An identifier for an account on this system.
 pub type AccountId = <Signature as Verify>::Signer;
-
 
 thread_local! {
     static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(1);
@@ -71,7 +62,7 @@ parameter_types! {
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
 impl frame_system::Trait for TestRuntime {
-    type BaseCallFilter = ();       
+    type BaseCallFilter = ();
     type Origin = Origin;
     type Index = u64;
     type Call = ();
@@ -84,18 +75,18 @@ impl frame_system::Trait for TestRuntime {
     type Event = ();
     type BlockHashCount = BlockHashCount;
     type MaximumBlockWeight = MaximumBlockWeight;
-	type DbWeight = ();
-	type BlockExecutionWeight = ();
-	type ExtrinsicBaseWeight = ();    
+    type DbWeight = ();
+    type BlockExecutionWeight = ();
+    type ExtrinsicBaseWeight = ();
     type MaximumBlockLength = MaximumBlockLength;
-    type MaximumExtrinsicWeight = MaximumBlockWeight;    
+    type MaximumExtrinsicWeight = MaximumBlockWeight;
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
-	type AccountData = balances::AccountData<u64>;
-	type OnNewAccount = ();
-    type OnKilledAccount = ();  
-    type SystemWeightInfo = (); 
-    type PalletInfo = ();     
+    type AccountData = balances::AccountData<u64>;
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+    type SystemWeightInfo = ();
+    type PalletInfo = ();
 }
 
 pub type System = frame_system::Module<TestRuntime>;
@@ -113,9 +104,8 @@ impl balances::Trait for TestRuntime {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type WeightInfo = ();
-    type MaxLocks = ();   
+    type MaxLocks = ();
 }
-pub type Balances = balances::Module<TestRuntime>;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -126,11 +116,9 @@ impl ExtBuilder {
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
-        balances::GenesisConfig::<TestRuntime> {
-            balances: vec![],
-        }
-        .assimilate_storage(&mut storage)
-        .unwrap();
+        balances::GenesisConfig::<TestRuntime> { balances: vec![] }
+            .assimilate_storage(&mut storage)
+            .unwrap();
         GenesisConfig::<TestRuntime> {
             currency_master: get_accountid(&AccountKeyring::Alice.pair()),
         }
@@ -154,7 +142,6 @@ type T = Degree;
 fn testdata_lat_long() {
     println!(" {} : {:x?} ", 1.1, Degree::from_num(1.1));
 }
-
 
 #[test]
 fn solar_trip_time_works() {
@@ -253,7 +240,6 @@ fn haversine_distance_works() {
 #[test]
 fn new_currency_works() {
     ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let charlie = AccountId::from(AccountKeyring::Charlie);
@@ -287,7 +273,6 @@ fn new_currency_works() {
 #[test]
 fn new_currency_with_too_close_inner_locations_fails() {
     ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let charlie = AccountId::from(AccountKeyring::Charlie);
@@ -302,7 +287,6 @@ fn new_currency_with_too_close_inner_locations_fails() {
         // a and b roughly 11cm apart
         let loc = vec![a, b];
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        let cid = CurrencyIdentifier::default();
 
         assert!(EncointerCurrencies::new_currency(Origin::signed(alice.clone()), loc, bs).is_err());
     });
@@ -311,7 +295,6 @@ fn new_currency_with_too_close_inner_locations_fails() {
 #[test]
 fn new_currency_too_close_to_existing_currency_fails() {
     ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let charlie = AccountId::from(AccountKeyring::Charlie);
@@ -353,12 +336,10 @@ fn new_currency_too_close_to_existing_currency_fails() {
 #[test]
 fn new_currency_with_near_pole_locations_fails() {
     ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let charlie = AccountId::from(AccountKeyring::Charlie);
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        let cid = CurrencyIdentifier::default();
 
         let a = Location {
             lat: T::from_num(89),
@@ -390,12 +371,10 @@ fn new_currency_with_near_pole_locations_fails() {
 #[test]
 fn new_currency_near_dateline_fails() {
     ExtBuilder::build().execute_with(|| {
-        let master = AccountId::from(AccountKeyring::Alice);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let charlie = AccountId::from(AccountKeyring::Charlie);
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-        let cid = CurrencyIdentifier::default();
 
         let a = Location {
             lat: T::from_num(10),

@@ -83,6 +83,7 @@ rev = "a208da16"
 [dev-dependencies]
 approx = "0.3.0"
 tempdir = "0.3.7"
+rstest = "0.6.4"
 
 [dev-dependencies.inherents]
 package = "sp-inherents"

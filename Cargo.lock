@@ -1197,6 +1197,7 @@ dependencies = [
  "pallet-encointer-scheduler",
  "pallet-timestamp",
  "parity-scale-codec",
+ "rstest",
  "sc-keystore",
  "serde",
  "sp-application-crypto",
@@ -1796,6 +1797,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "rstest"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dec448bc157977efdc0a71369cf923915b0c4806b1b2449c3fb011071d6f7c38"
+dependencies = [
+ "cfg-if 0.1.10",
+ "proc-macro2",
+ "quote",
+ "rustc_version",
+ "syn",
 ]
 
 [[package]]
