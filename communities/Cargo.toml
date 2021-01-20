@@ -1,5 +1,5 @@
 [package]
-name = "pallet-encointer-currencies"
+name = "pallet-encointer-communities"
 version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"

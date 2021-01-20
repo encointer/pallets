@@ -35,13 +35,13 @@ use frame_support::{
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 
-use encointer_currencies::CurrencyIdentifier;
+use encointer_communities::CommunityIdentifier;
 
 // Only valid for current hashing algorithm of IPFS (sha256)
 // string length: 46 characters (base-58)
 const MAX_HASH_SIZE: usize = 46;
 
-pub trait Trait: frame_system::Trait + encointer_currencies::Trait {
+pub trait Trait: frame_system::Trait + encointer_communities::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
@@ -51,23 +51,23 @@ pub type ArticleIdentifier = Vec<u8>;
 decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
         // Maps the shop or article owner to the respective items
-        pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ShopIdentifier>;
-        pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>;
+        pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ShopIdentifier>;
+        pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>;
         // Item owner
-        pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
-        pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CurrencyIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
-        // The set of all shops and articles per currency (community)
-        pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<ShopIdentifier>;
-        pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<ArticleIdentifier>;
+        pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
+        pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
+        // The set of all shops and articles per community (community)
+        pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ShopIdentifier>;
+        pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ArticleIdentifier>;
     }
 }
 
 decl_event! {
     pub enum Event<T> where AccountId = <T as frame_system::Trait>::AccountId {
-        /// Event emitted when a shop is uploaded. [currency, who, shop]
-        ShopCreated(CurrencyIdentifier, AccountId, ShopIdentifier),
-        /// Event emitted when a shop is removed by the owner. [currency, who, shop]
-        ShopRemoved(CurrencyIdentifier, AccountId, ShopIdentifier),
+        /// Event emitted when a shop is uploaded. [community, who, shop]
+        ShopCreated(CommunityIdentifier, AccountId, ShopIdentifier),
+        /// Event emitted when a shop is removed by the owner. [community, who, shop]
+        ShopRemoved(CommunityIdentifier, AccountId, ShopIdentifier),
     }
 }
 
@@ -90,12 +90,12 @@ decl_module! {
 
         /// Allow a user to create a shop
         #[weight = 10_000]
-        pub fn new_shop(origin, cid: CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
+        pub fn new_shop(origin, cid: CommunityIdentifier, shop: ShopIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
-            // Check that the supplied currency is actually registered
-            ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
-                "CurrencyIdentifier not found");
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+                "CommunityIdentifier not found");
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
             let mut shops = ShopRegistry::get(cid);
@@ -120,7 +120,7 @@ decl_module! {
 
         /// Allow a user to remove their shop
         #[weight = 10_000]
-        pub fn remove_shop(origin, cid:CurrencyIdentifier, shop: ShopIdentifier) -> DispatchResult {
+        pub fn remove_shop(origin, cid:CommunityIdentifier, shop: ShopIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
 

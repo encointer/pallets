@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use encointer_currencies::{CurrencyIdentifier, Degree, Location};
+use encointer_communities::{CommunityIdentifier, Degree, Location};
 use frame_support::assert_ok;
 use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
 use frame_system;
@@ -33,13 +33,13 @@ impl_outer_origin! {
 mod tokens {
     pub use crate::Event;
 }
-mod currencies {
-    pub use encointer_currencies::Event;
+mod communities {
+    pub use encointer_communities::Event;
 }
 impl_outer_event! {
     pub enum TestEvent for TestRuntime {
         tokens<T>,
-        currencies<T>,
+        communities<T>,
         frame_system<T>,
     }
 }
@@ -84,11 +84,11 @@ impl frame_system::Trait for TestRuntime {
 }
 pub type System = frame_system::Module<TestRuntime>;
 
-impl encointer_currencies::Trait for TestRuntime {
+impl encointer_communities::Trait for TestRuntime {
     type Event = TestEvent;
 }
 
-pub type EncointerCurrencies = encointer_currencies::Module<TestRuntime>;
+pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 
 impl Trait for TestRuntime {
     type Event = TestEvent;
@@ -116,8 +116,8 @@ impl ExtBuilder {
     }
 }
 
-/// register a simple test currency with 3 meetup locations and well known bootstrappers
-pub fn register_test_currency() -> CurrencyIdentifier {
+/// register a simple test community with 3 meetup locations and well known bootstrappers
+pub fn register_test_community() -> CommunityIdentifier {
     // all well-known keys are boottrappers for easy testen afterwards
     let alice = 1;
     let bob = 2;
@@ -145,10 +145,10 @@ pub fn register_test_currency() -> CurrencyIdentifier {
         eve.clone(),
         ferdie.clone(),
     ];
-    assert_ok!(EncointerCurrencies::new_currency(
+    assert_ok!(EncointerCommunities::new_community(
         Origin::signed(alice.clone()),
         loc.clone(),
         bs.clone()
     ));
-    CurrencyIdentifier::from(blake2_256(&(loc, bs).encode()))
+    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }

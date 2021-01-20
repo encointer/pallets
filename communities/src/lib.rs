@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Encointer Currencies Module
+//! # Encointer Communities Module
 //!
 //! provides functionality for
-//! - registering new currencies
-//! - modify currency characteristics
+//! - registering new communities
+//! - modify community characteristics
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -48,7 +48,7 @@ pub trait Trait: frame_system::Trait {
 // Logger target
 const LOG: &str = "encointer";
 
-pub type CurrencyIndexType = u32;
+pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I32F32;
 pub type Demurrage = I64F64;
@@ -59,10 +59,10 @@ pub struct Location {
     pub lat: Degree,
     pub lon: Degree,
 }
-pub type CurrencyIdentifier = H256;
+pub type CommunityIdentifier = H256;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct CurrencyPropertiesType {
+pub struct CommunityPropertiesType {
     pub name_utf8: Vec<u8>,
     pub demurrage_per_block: Demurrage,
 }
@@ -90,13 +90,13 @@ const RADIANS_PER_DEGREE: U0F64 = U0F64::from_bits(0x0477D1A894A74E40);
 const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
 
 decl_storage! {
-    trait Store for Module<T: Trait> as EncointerCurrencies {
-        Locations get(fn locations): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<Location>;
-        Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CurrencyIdentifier => Vec<T::AccountId>;
-        CurrencyIdentifiers get(fn currency_identifiers): Vec<CurrencyIdentifier>;
-        CurrencyProperties get(fn currency_properties): map hasher(blake2_128_concat) CurrencyIdentifier => CurrencyPropertiesType;
+    trait Store for Module<T: Trait> as EncointerCommunities {
+        Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
+        Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
+        CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
+        CommunityProperties get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CommunityPropertiesType;
         // TODO: replace this with on-chain governance
-        CurrencyMaster get(fn currency_master) config(): T::AccountId;
+        CommunityMaster get(fn community_master) config(): T::AccountId;
     }
 }
 
@@ -104,19 +104,19 @@ decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
         // FIXME: this function has complexity O(n^2)!
-        // where n is the number of all locations of all currencies
+        // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
-        pub fn new_currency(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
+        pub fn new_community(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
-            let cid = CurrencyIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
-            let cids = Self::currency_identifiers();
-            ensure!(!cids.contains(&cid), "currency already registered");
+            let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
+            let cids = Self::community_identifiers();
+            ensure!(!cids.contains(&cid), "community already registered");
 
             for l1 in loc.iter() {
                 ensure!(Self::is_valid_geolocation(&l1), "invalid geolocation specified");
-                //test within this currencies' set
+                //test within this communities' set
                 for l2 in loc.iter() {
                     if l2 == l1 { continue }
                     ensure!(Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S, "minimum solar trip time violated within supplied locations");
@@ -133,31 +133,31 @@ decl_module! {
                     debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
                     return Err(<Error<T>>::MinimumDistanceViolationToDateLine.into());
                 }
-                // test against all other currencies globally
+                // test against all other communities globally
                 for other in cids.iter() {
                     for l2 in Self::locations(other) {
                         if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
                             debug::warn!(target: LOG,
                                 "location {:?} too close to previously registered location {:?} with cid {:?}",
                                 l1, l2, other);
-                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCurrency.into());
+                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity.into());
                         }
                     }
                 }
             }
 
-            <CurrencyIdentifiers>::mutate(|v| v.push(cid));
+            <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
 
-            <CurrencyProperties>::insert(&cid,
-                CurrencyPropertiesType {
+            <CommunityProperties>::insert(&cid,
+                CommunityPropertiesType {
                     name_utf8: b"encointer dummy".to_vec(),
                     demurrage_per_block: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128)
                 }
             );
-            Self::deposit_event(RawEvent::CurrencyRegistered(sender, cid));
-            debug::info!(target: LOG, "registered currency with cid: {:?}", cid);
+            Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
+            debug::info!(target: LOG, "registered community with cid: {:?}", cid);
             Ok(())
         }
     }
@@ -168,7 +168,7 @@ decl_event!(
     where
         AccountId = <T as frame_system::Trait>::AccountId,
     {
-        CurrencyRegistered(AccountId, CurrencyIdentifier),
+        CommunityRegistered(AccountId, CommunityIdentifier),
     }
 );
 
@@ -178,8 +178,8 @@ decl_error! {
         MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
-        /// minimum distance violated towards other currency's location
-        MinimumDistanceViolationToOtherCurrency,
+        /// minimum distance violated towards other community's location
+        MinimumDistanceViolationToOtherCommunity,
     }
 }
 

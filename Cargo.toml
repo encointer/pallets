@@ -2,7 +2,7 @@
 members = [
     'scheduler',
     'balances',
-    'currencies',
+    'communities',
     'ceremonies',
     'bazaar',
 ]
