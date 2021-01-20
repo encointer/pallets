@@ -33,13 +33,13 @@ impl_outer_origin! {
 mod tokens {
     pub use crate::Event;
 }
-mod currencies {
+mod communities {
     pub use encointer_communities::Event;
 }
 impl_outer_event! {
     pub enum TestEvent for TestRuntime {
         tokens<T>,
-        currencies<T>,
+        communities<T>,
         frame_system<T>,
     }
 }
