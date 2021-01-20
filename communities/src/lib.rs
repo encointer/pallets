@@ -48,7 +48,7 @@ pub trait Trait: frame_system::Trait {
 // Logger target
 const LOG: &str = "encointer";
 
-pub type CurrencyIndexType = u32;
+pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I32F32;
 pub type Demurrage = I64F64;
@@ -62,7 +62,7 @@ pub struct Location {
 pub type CommunityIdentifier = H256;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct CurrencyPropertiesType {
+pub struct CommunityPropertiesType {
     pub name_utf8: Vec<u8>,
     pub demurrage_per_block: Demurrage,
 }
@@ -94,9 +94,9 @@ decl_storage! {
         Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
-        CurrencyProperties get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CurrencyPropertiesType;
+        CommunityProperties get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CommunityPropertiesType;
         // TODO: replace this with on-chain governance
-        CurrencyMaster get(fn community_master) config(): T::AccountId;
+        CommunityMaster get(fn community_master) config(): T::AccountId;
     }
 }
 
@@ -140,7 +140,7 @@ decl_module! {
                             debug::warn!(target: LOG,
                                 "location {:?} too close to previously registered location {:?} with cid {:?}",
                                 l1, l2, other);
-                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCurrency.into());
+                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity.into());
                         }
                     }
                 }
@@ -150,13 +150,13 @@ decl_module! {
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
 
-            <CurrencyProperties>::insert(&cid,
-                CurrencyPropertiesType {
+            <CommunityProperties>::insert(&cid,
+                CommunityPropertiesType {
                     name_utf8: b"encointer dummy".to_vec(),
                     demurrage_per_block: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128)
                 }
             );
-            Self::deposit_event(RawEvent::CurrencyRegistered(sender, cid));
+            Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
             Ok(())
         }
@@ -168,7 +168,7 @@ decl_event!(
     where
         AccountId = <T as frame_system::Trait>::AccountId,
     {
-        CurrencyRegistered(AccountId, CommunityIdentifier),
+        CommunityRegistered(AccountId, CommunityIdentifier),
     }
 );
 
@@ -179,7 +179,7 @@ decl_error! {
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
         /// minimum distance violated towards other community's location
-        MinimumDistanceViolationToOtherCurrency,
+        MinimumDistanceViolationToOtherCommunity,
     }
 }
 
