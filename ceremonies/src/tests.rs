@@ -20,7 +20,7 @@
 
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
-use encointer_currencies::{CurrencyIdentifier, Degree, Location};
+use encointer_communities::{CurrencyIdentifier, Degree, Location};
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::traits::{Get, OnFinalize, OnInitialize, UnfilteredDispatchable};
 use frame_support::{assert_ok, impl_outer_origin, parameter_types};
@@ -76,11 +76,11 @@ impl Trait for TestRuntime {
 
 pub type EncointerCeremonies = Module<TestRuntime>;
 
-impl encointer_currencies::Trait for TestRuntime {
+impl encointer_communities::Trait for TestRuntime {
     type Event = ();
 }
 
-pub type EncointerCurrencies = encointer_currencies::Module<TestRuntime>;
+pub type EncointerCurrencies = encointer_communities::Module<TestRuntime>;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -155,7 +155,7 @@ impl ExtBuilder {
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
-        encointer_currencies::GenesisConfig::<TestRuntime> {
+        encointer_communities::GenesisConfig::<TestRuntime> {
             currency_master: AccountId::from(AccountKeyring::Alice),
         }
         .assimilate_storage(&mut storage)
@@ -378,7 +378,10 @@ fn account_id(pair: &sr25519::Pair) -> AccountId {
 }
 
 /// register a simple test currency with N meetup locations and defined bootstrappers
-fn register_test_currency(custom_bootstrappers: Option<Vec<sr25519::Pair>>, n_locations: u32) -> CurrencyIdentifier {
+fn register_test_currency(
+    custom_bootstrappers: Option<Vec<sr25519::Pair>>,
+    n_locations: u32,
+) -> CurrencyIdentifier {
     let bs: Vec<AccountId> = custom_bootstrappers
         .unwrap_or_else(|| bootstrappers())
         .into_iter()
@@ -386,7 +389,7 @@ fn register_test_currency(custom_bootstrappers: Option<Vec<sr25519::Pair>>, n_lo
         .collect();
 
     let prime = bs[0];
-    
+
     let mut loc = Vec::with_capacity(n_locations as usize);
     for l in 0..n_locations {
         loc.push(Location {
@@ -421,7 +424,7 @@ fn bootstrappers() -> Vec<sr25519::Pair> {
 /// perform bootstrapping ceremony for test currency with either the supplied bootstrappers or the default bootstrappers
 fn perform_bootstrapping_ceremony(
     custom_bootstrappers: Option<Vec<sr25519::Pair>>,
-    n_locations: u32
+    n_locations: u32,
 ) -> CurrencyIdentifier {
     let bootstrappers: Vec<sr25519::Pair> = custom_bootstrappers.unwrap_or_else(|| bootstrappers());
     let cid = register_test_currency(Some(bootstrappers.clone()), n_locations);

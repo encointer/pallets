@@ -20,7 +20,7 @@ use super::*;
 //use crate::{GenesisConfig, Module, Trait};
 use crate::{Module, Trait};
 use codec::Encode;
-use encointer_currencies::{CurrencyIdentifier, Degree, Location};
+use encointer_communities::{CurrencyIdentifier, Degree, Location};
 use frame_support::traits::Get;
 use frame_support::{assert_ok, impl_outer_origin, parameter_types};
 use sp_core::{hashing::blake2_256, sr25519, H256};
@@ -64,10 +64,10 @@ impl encointer_balances::Trait for TestRuntime {
 
 pub type EncointerBazaar = Module<TestRuntime>;
 
-impl encointer_currencies::Trait for TestRuntime {
+impl encointer_communities::Trait for TestRuntime {
     type Event = ();
 }
-pub type EncointerCurrencies = encointer_currencies::Module<TestRuntime>;
+pub type EncointerCurrencies = encointer_communities::Module<TestRuntime>;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;

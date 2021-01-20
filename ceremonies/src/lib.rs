@@ -46,13 +46,13 @@ use codec::{Decode, Encode};
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 
 use encointer_balances::BalanceType;
-use encointer_currencies::{CurrencyIdentifier, Degree, Location, LossyInto};
+use encointer_communities::{CurrencyIdentifier, Degree, Location, LossyInto};
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
 
 pub trait Trait:
     frame_system::Trait
     + timestamp::Trait
-    + encointer_currencies::Trait
+    + encointer_communities::Trait
     + encointer_balances::Trait
     + encointer_scheduler::Trait
 {
@@ -175,7 +175,7 @@ decl_module! {
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
                 "registering participants can only be done during REGISTERING phase");
 
-            ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
+            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
                 "CurrencyIdentifier not found");
 
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
@@ -224,7 +224,7 @@ decl_module! {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
             ensure!(!attestations.is_empty(), "empty attestations supplied");
             let cid = attestations[0].claim.currency_identifier;
-            ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
+            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
                 "CurrencyIdentifier not found");
 
             let meetup_index = Self::meetup_index((cid, cindex), &sender);
@@ -264,13 +264,13 @@ decl_module! {
                         "ignoring claim with wrong meetup index: {}",
                         attestation.claim.meetup_index);
                     continue };
-                if !<encointer_currencies::Module<T>>::is_valid_geolocation(
+                if !<encointer_communities::Module<T>>::is_valid_geolocation(
                     &attestation.claim.location) {
                         debug::warn!(target: LOG,
                             "ignoring claim with illegal geolocation: {:?}",
                             attestation.claim.location);
                         continue };
-                if <encointer_currencies::Module<T>>::haversine_distance(
+                if <encointer_communities::Module<T>>::haversine_distance(
                     &mlocation, &attestation.claim.location) > Self::location_tolerance() {
                         debug::warn!(target: LOG,
                             "ignoring claim beyond location tolerance: {:?}",
@@ -325,10 +325,10 @@ decl_module! {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
-            ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
+            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
                 "CurrencyIdentifier not found");
 
-            ensure!(<encointer_currencies::Module<T>>::bootstrappers(&cid).contains(&sender),
+            ensure!(<encointer_communities::Module<T>>::bootstrappers(&cid).contains(&sender),
             "only bootstrappers can endorse newbies");
 
             ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < AMOUNT_NEWBIE_TICKETS,
@@ -373,7 +373,7 @@ decl_error! {
 
 impl<T: Trait> Module<T> {
     fn purge_registry(cindex: CeremonyIndexType) {
-        let cids = <encointer_currencies::Module<T>>::currency_identifiers();
+        let cids = <encointer_communities::Module<T>>::currency_identifiers();
         for cid in cids.iter() {
             <ParticipantRegistry<T>>::remove_prefix((cid, cindex));
             <ParticipantIndex<T>>::remove_prefix((cid, cindex));
@@ -410,16 +410,16 @@ impl<T: Trait> Module<T> {
     // this function is expensive, so it should later be processed off-chain within SubstraTEE-worker
     // currently the complexity is O(n) where n is the number of registered participants
     fn assign_meetups() {
-        let cids = <encointer_currencies::Module<T>>::currency_identifiers();
+        let cids = <encointer_communities::Module<T>>::currency_identifiers();
         let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
         for cid in cids.iter() {
             let pcount = <ParticipantCount>::get((cid, cindex));
             let ecount = <EndorseesCount>::get((cid, cindex));
-            let n_locations = <encointer_currencies::Module<T>>::locations(cid).len();
+            let n_locations = <encointer_communities::Module<T>>::locations(cid).len();
 
             let mut bootstrappers =
-                Vec::with_capacity(<encointer_currencies::Module<T>>::bootstrappers(cid).len());
+                Vec::with_capacity(<encointer_communities::Module<T>>::bootstrappers(cid).len());
             let mut reputables = Vec::with_capacity(pcount as usize);
             let mut endorsees = Vec::with_capacity(ecount as usize);
             let mut newbies = Vec::with_capacity(pcount as usize);
@@ -431,7 +431,7 @@ impl<T: Trait> Module<T> {
                     == Reputation::UnverifiedReputable
                 {
                     reputables.push(participant);
-                } else if <encointer_currencies::Module<T>>::bootstrappers(cid)
+                } else if <encointer_communities::Module<T>>::bootstrappers(cid)
                     .contains(&participant)
                 {
                     bootstrappers.push(participant);
@@ -539,7 +539,7 @@ impl<T: Trait> Module<T> {
         if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
             return;
         }
-        let cids = <encointer_currencies::Module<T>>::currency_identifiers();
+        let cids = <encointer_communities::Module<T>>::currency_identifiers();
         for cid in cids.iter() {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
             let meetup_count = Self::meetup_count((cid, cindex));
@@ -649,7 +649,7 @@ impl<T: Trait> Module<T> {
         cid: &CurrencyIdentifier,
         meetup_idx: MeetupIndexType,
     ) -> Option<Location> {
-        let locations = <encointer_currencies::Module<T>>::locations(&cid);
+        let locations = <encointer_communities::Module<T>>::locations(&cid);
         if (meetup_idx > 0) && (meetup_idx <= locations.len() as MeetupIndexType) {
             Some(locations[(meetup_idx - 1) as usize])
         } else {

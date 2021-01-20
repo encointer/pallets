@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use encointer_currencies::{CurrencyIdentifier, Degree, Location};
+use encointer_communities::{CurrencyIdentifier, Degree, Location};
 use frame_support::assert_ok;
 use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
 use frame_system;
@@ -34,7 +34,7 @@ mod tokens {
     pub use crate::Event;
 }
 mod currencies {
-    pub use encointer_currencies::Event;
+    pub use encointer_communities::Event;
 }
 impl_outer_event! {
     pub enum TestEvent for TestRuntime {
@@ -84,11 +84,11 @@ impl frame_system::Trait for TestRuntime {
 }
 pub type System = frame_system::Module<TestRuntime>;
 
-impl encointer_currencies::Trait for TestRuntime {
+impl encointer_communities::Trait for TestRuntime {
     type Event = TestEvent;
 }
 
-pub type EncointerCurrencies = encointer_currencies::Module<TestRuntime>;
+pub type EncointerCurrencies = encointer_communities::Module<TestRuntime>;
 
 impl Trait for TestRuntime {
     type Event = TestEvent;

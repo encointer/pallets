@@ -35,13 +35,13 @@ use frame_support::{
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 
-use encointer_currencies::CurrencyIdentifier;
+use encointer_communities::CurrencyIdentifier;
 
 // Only valid for current hashing algorithm of IPFS (sha256)
 // string length: 46 characters (base-58)
 const MAX_HASH_SIZE: usize = 46;
 
-pub trait Trait: frame_system::Trait + encointer_currencies::Trait {
+pub trait Trait: frame_system::Trait + encointer_communities::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
@@ -94,7 +94,7 @@ decl_module! {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
             // Check that the supplied currency is actually registered
-            ensure!(<encointer_currencies::Module<T>>::currency_identifiers().contains(&cid),
+            ensure!(<encointer_communities::Module<T>>::currency_identifiers().contains(&cid),
                 "CurrencyIdentifier not found");
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
