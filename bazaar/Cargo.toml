@@ -18,10 +18,10 @@ package = "parity-scale-codec"
 features = ["derive"]
 version = "1.3.0"
 
-[dependencies.encointer-currencies]
+[dependencies.encointer-communities]
 default-features = false
 path = "../communities"
-package = "pallet-encointer-currencies"
+package = "pallet-encointer-communities"
 
 [dependencies.runtime-io]
 default-features = false
@@ -85,7 +85,7 @@ default = ["std"]
 std = [
 	"rstd/std",
 	"codec/std",
-	"encointer-currencies/std",
+	"encointer-communities/std",
 	"runtime-io/std",
 	"frame-support/std",
 	"frame-system/std",

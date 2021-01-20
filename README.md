@@ -7,7 +7,7 @@ All application-specific pallets for [encointer](https://encointer.org)
 ## pallet-encointer-ceremonies
 a substrate pallet to perform encointer ceremonies
 
-## pallet-encointer-currencies
+## pallet-encointer-communities
 A substrate pallet for encointer currencies and managing their meetup locations
 
 ## pallet-encointer-ceremonies

@@ -35,10 +35,10 @@ default-features = false
 path = "../scheduler"
 package = "pallet-encointer-scheduler"
 
-[dependencies.encointer-currencies]
+[dependencies.encointer-communities]
 default-features = false
 path = "../communities"
-package = "pallet-encointer-currencies"
+package = "pallet-encointer-communities"
 
 [dependencies.encointer-balances]
 default-features = false
@@ -123,7 +123,7 @@ std = [
 	"timestamp/std",
 	"frame-support/std",
 	"frame-system/std",
-	"encointer-currencies/std",
+	"encointer-communities/std",
 	"encointer-scheduler/std",
 	"encointer-balances/std"
 ]

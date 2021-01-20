@@ -1149,7 +1149,7 @@ dependencies = [
  "frame-system",
  "impl-trait-for-tuples",
  "num-traits",
- "pallet-encointer-currencies",
+ "pallet-encointer-communities",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "safe-mix",
@@ -1172,7 +1172,7 @@ dependencies = [
  "frame-system",
  "pallet-balances",
  "pallet-encointer-balances",
- "pallet-encointer-currencies",
+ "pallet-encointer-communities",
  "parity-scale-codec",
  "sp-core",
  "sp-externalities",
@@ -1193,7 +1193,7 @@ dependencies = [
  "frame-system",
  "pallet-balances",
  "pallet-encointer-balances",
- "pallet-encointer-currencies",
+ "pallet-encointer-communities",
  "pallet-encointer-scheduler",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -1212,7 +1212,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-currencies"
+name = "pallet-encointer-communities"
 version = "0.3.7"
 dependencies = [
  "approx",
