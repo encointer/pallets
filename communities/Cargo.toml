@@ -76,6 +76,9 @@ package = "sp-keyring"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
+[dev-dependencies.test-utils]
+path = "../test-utils"
+
 [features]
 default = ["std"]
 std = [

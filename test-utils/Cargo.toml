@@ -1,0 +1,80 @@
+[package]
+name = "test-utils"
+version = "0.3.7"
+authors = ["encointer.org <alain@encointer.org>"]
+edition = "2018"
+
+[dependencies.encointer-ceremonies]
+path = "../ceremonies"
+package = "pallet-encointer-ceremonies"
+
+[dependencies.encointer-communities]
+path = "../communities"
+package = "pallet-encointer-communities"
+
+[dependencies.codec]
+package = "parity-scale-codec"
+features = ["derive"]
+version = "1.3.6"
+
+[dependencies.rstd]
+package = "sp-std"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.frame-system]
+package = "frame-system"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.frame-support]
+package = "frame-support"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.sp-core]
+package = "sp-core"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.sp-runtime]
+package = "sp-runtime"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.xcm]
+git = "https://github.com/paritytech/polkadot"
+rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
+
+[dependencies.balances]
+package = "pallet-balances"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.sp-keyring]
+package = "sp-keyring"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.sp-io]
+package = "sp-io"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.inherents]
+package = "sp-inherents"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dependencies.encointer-scheduler]
+path = "../scheduler"
+package = "pallet-encointer-scheduler"
+
+[dependencies.encointer-balances]
+path = "../balances"
+package = "pallet-encointer-balances"
+
+[dependencies.timestamp]
+package = "pallet-timestamp"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"

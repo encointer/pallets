@@ -1209,6 +1209,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "tempdir",
+ "test-utils",
 ]
 
 [[package]]
@@ -1228,6 +1229,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "substrate-fixed",
+ "test-utils",
 ]
 
 [[package]]
@@ -1260,8 +1262,11 @@ dependencies = [
  "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
  "parity-scale-codec",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
+ "test-utils",
  "xcm",
 ]
 
@@ -2471,6 +2476,28 @@ checksum = "15f2b5fb00ccdf689e0149d1b1b3c03fead81c2b37735d812fa8bddbbf41b6d8"
 dependencies = [
  "rand 0.4.6",
  "remove_dir_all",
+]
+
+[[package]]
+name = "test-utils"
+version = "0.3.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-encointer-balances",
+ "pallet-encointer-ceremonies",
+ "pallet-encointer-communities",
+ "pallet-encointer-scheduler",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
 ]
 
 [[package]]
