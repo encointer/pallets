@@ -55,6 +55,7 @@ pub type Timestamp = timestamp::Module<TestRuntime>;
 test_runtime!(TestRuntime, EncointerScheduler);
 
 impl_encointer_communities!(TestRuntime);
+impl_encointer_balances!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime, Module);
 
 // the tested crate needs to implemented directly

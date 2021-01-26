@@ -66,9 +66,9 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_frame_system {
     ($t:ident) => {
-        impl_frame_system($t, ())
+        impl_frame_system!($t, ());
     };
-    ($t:ident, $event:ident) => {
+    ($t:ident, $event:ty) => {
         impl frame_system::Trait for $t {
             type BaseCallFilter = ();
             type Origin = Origin;
