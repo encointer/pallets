@@ -1257,7 +1257,10 @@ version = "0.3.7"
 dependencies = [
  "frame-support",
  "frame-system",
+ "pallet-encointer-ceremonies",
+ "pallet-encointer-communities",
  "parity-scale-codec",
+ "sp-runtime",
  "sp-std",
  "xcm",
 ]

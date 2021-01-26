@@ -4,7 +4,16 @@ version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
-[dependencies]
+[dependencies.encointer-ceremonies]
+default-features = false
+path = "../ceremonies"
+package = "pallet-encointer-ceremonies"
+
+[dependencies.encointer-communities]
+default-features = false
+path = "../communities"
+package = "pallet-encointer-communities"
+
 [dependencies.codec]
 default-features = false
 package = "parity-scale-codec"
@@ -29,6 +38,12 @@ package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
 
+[dependencies.sp-runtime]
+default-features = false
+package = "sp-runtime"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
 [dependencies.xcm]
 default-features = false
 git = "https://github.com/paritytech/polkadot"
@@ -42,4 +57,6 @@ std = [
     "frame-system/std",
     "frame-support/std",
     "xcm/std",
+    "encointer-ceremonies/std",
+    "encointer-communities/std"
 ]
