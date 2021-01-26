@@ -33,7 +33,13 @@ use encointer_ceremonies::{ProofOfAttendance, Reputation};
 
 const LOG: &str = "encointer";
 
-pub trait Trait: frame_system::Trait + encointer_ceremonies::Trait {
+pub trait Trait:
+    frame_system::Trait
+    + encointer_ceremonies::Trait
+    + encointer_scheduler::Trait
+    + encointer_balances::Trait
+    + encointer_communities::Trait
+{
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
     /// The XCM sender module.
@@ -60,7 +66,6 @@ decl_module! {
                 Ok(()) => Self::deposit_event(RawEvent::RecordSentSuccess(sender)),
                 Err(e) => Self::deposit_event(RawEvent::RecordSentFailure(sender, e)),
             }
-            ()
         }
 
         #[weight = 5_000_000]

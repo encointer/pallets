@@ -4,6 +4,11 @@ version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
+[dependencies.encointer-balances]
+default-features = false
+path = "../balances"
+package = "pallet-encointer-balances"
+
 [dependencies.encointer-ceremonies]
 default-features = false
 path = "../ceremonies"
@@ -13,6 +18,11 @@ package = "pallet-encointer-ceremonies"
 default-features = false
 path = "../communities"
 package = "pallet-encointer-communities"
+
+[dependencies.encointer-scheduler]
+default-features = false
+path = "../scheduler"
+package = "pallet-encointer-scheduler"
 
 [dependencies.codec]
 default-features = false
@@ -50,6 +60,12 @@ package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
 
+[dependencies.timestamp]
+default-features = false
+package = "pallet-timestamp"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
 [dependencies.xcm]
 default-features = false
 git = "https://github.com/paritytech/polkadot"
@@ -57,6 +73,11 @@ rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as t
 
 [dependencies.sp-io]
 package = "sp-io"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dev-dependencies.sp-keyring]
+package = "sp-keyring"
 git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
 
@@ -72,5 +93,8 @@ std = [
     "frame-support/std",
     "xcm/std",
     "encointer-ceremonies/std",
-    "encointer-communities/std"
+    "encointer-communities/std",
+    "encointer-scheduler/std",
+    "encointer-balances/std",
+    "timestamp/std"
 ]
