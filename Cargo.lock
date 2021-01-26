@@ -1161,6 +1161,7 @@ dependencies = [
  "sp-runtime-interface",
  "sp-std",
  "substrate-fixed",
+ "test-utils",
 ]
 
 [[package]]

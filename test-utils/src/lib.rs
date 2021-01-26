@@ -28,6 +28,7 @@ use std::cell::RefCell;
 
 pub use balances;
 pub use sp_core::H256;
+pub use sp_runtime::traits::BlakeTwo256;
 
 pub const NONE: u64 = 0;
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
@@ -65,6 +66,9 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_frame_system {
     ($t:ident) => {
+        impl_frame_system($t, ())
+    };
+    ($t:ident, $event:ident) => {
         impl frame_system::Trait for $t {
             type BaseCallFilter = ();
             type Origin = Origin;
@@ -76,7 +80,7 @@ macro_rules! impl_frame_system {
             type AccountId = AccountId;
             type Lookup = IdentityLookup<Self::AccountId>;
             type Header = Header;
-            type Event = ();
+            type Event = $event;
             type BlockHashCount = BlockHashCount;
             type MaximumBlockWeight = MaximumBlockWeight;
             type DbWeight = ();
