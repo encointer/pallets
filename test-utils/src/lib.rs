@@ -26,6 +26,7 @@ use sp_runtime::traits::Verify;
 use sp_runtime::Perbill;
 use std::cell::RefCell;
 
+pub use balances;
 pub use sp_core::H256;
 
 pub const NONE: u64 = 0;

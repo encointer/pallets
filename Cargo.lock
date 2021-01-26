@@ -1251,6 +1251,7 @@ dependencies = [
  "sp-std",
  "sp-timestamp",
  "tempdir",
+ "test-utils",
 ]
 
 [[package]]
