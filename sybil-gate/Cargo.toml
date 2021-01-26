@@ -38,6 +38,12 @@ package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
 
+[dependencies.sp-core]
+default-features = false
+package = "sp-core"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
@@ -48,6 +54,14 @@ rev = "a208da16"
 default-features = false
 git = "https://github.com/paritytech/polkadot"
 rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
+
+[dependencies.sp-io]
+package = "sp-io"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
+[dev-dependencies.test-utils]
+path = "../test-utils"
 
 [features]
 default = ["std"]

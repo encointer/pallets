@@ -26,25 +26,12 @@ use sp_core::H256;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
 };
 use std::ops::Rem;
 
 use test_utils::*;
 
 type AccountId = u64;
-
-// Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct TestRuntime;
-
-pub type System = frame_system::Module<TestRuntime>;
-pub type Timestamp = timestamp::Module<TestRuntime>;
-pub type EncointerScheduler = Module<TestRuntime>;
-
-impl_frame_system!(TestRuntime);
-impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_outer_origin_for_runtime!(TestRuntime);
 
 mod simple_event {
     pub use crate::Event;
@@ -56,6 +43,18 @@ impl_outer_event! {
         frame_system<T>,
     }
 }
+
+// Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct TestRuntime;
+
+pub type System = frame_system::Module<TestRuntime>;
+pub type Timestamp = timestamp::Module<TestRuntime>;
+pub type EncointerScheduler = Module<TestRuntime>;
+
+impl_frame_system!(TestRuntime, TestEvent);
+impl_timestamp!(TestRuntime, EncointerScheduler);
+impl_outer_origin_for_runtime!(TestRuntime);
 
 impl Trait for TestRuntime {
     type Event = TestEvent;

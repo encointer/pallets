@@ -22,13 +22,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{decl_event, decl_module, dispatch::DispatchResult, ensure};
+use frame_support::{debug, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
 use rstd::prelude::*;
+// use sp_core::RuntimeDebug;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_ceremonies::{ProofOfAttendance, Reputation};
+
+const LOG: &str = "encointer";
 
 pub trait Trait: frame_system::Trait + encointer_ceremonies::Trait {
     /// The overarching event type.
@@ -42,6 +45,32 @@ pub trait Trait: frame_system::Trait + encointer_ceremonies::Trait {
     type Signature: Verify<Signer = <Self as Trait>::Public> + Member + Decode + Encode;
 }
 
+decl_module! {
+    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+        fn deposit_event() = default;
+
+        #[weight = 5_000_000]
+        // fn record(origin, parachain_id: u32, record: T::Record) {
+        fn request_proof_of_personhood_confidence(origin, parachain_id: u32) {
+            let sender = ensure_signed(origin)?;
+            let location = Junction::Parachain { id: parachain_id };
+            let call = Call::<T>::send_proof_of_personhood_confidence(parachain_id);
+            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
+            match T::XcmSender::send_xcm(location.into(), message.into()) {
+                Ok(()) => Self::deposit_event(RawEvent::RecordSentSuccess(sender)),
+                Err(e) => Self::deposit_event(RawEvent::RecordSentFailure(sender, e)),
+            }
+            ()
+        }
+
+        #[weight = 5_000_000]
+        fn send_proof_of_personhood_confidence(origin, parachain_id: u32) {
+           debug::debug!(target: LOG, "received proof of personhood request from parachain: {:?}", parachain_id);
+           ()
+        }
+    }
+}
+
 decl_event! {
     pub enum Event<T>
     where AccountId = <T as frame_system::Trait>::AccountId,
@@ -50,26 +79,6 @@ decl_event! {
         RecordSentSuccess(AccountId),
         /// Record didn't send, error attached.
         RecordSentFailure(AccountId, XcmError),
-    }
-}
-
-decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        fn deposit_event() = default;
-
-        #[weight = 5_000_000]
-        // fn record(origin, parachain_id: u32, record: T::Record) {
-        fn record(origin, parachain_id: u32) {
-            let sender = ensure_signed(origin)?;
-            let location = Junction::Parachain { id: parachain_id };
-            // let call: <T as Trait>::Call = datalog::Call::<T>::record(record).into();
-            // let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
-            // match T::XcmSender::send_xcm(location.into(), message.into()) {
-            //     Ok(()) => Self::deposit_event(RawEvent::RecordSentSuccess(sender)),
-            //     Err(e) => Self::deposit_event(RawEvent::RecordSentFailure(sender, e)),
-            // }
-            ()
-        }
     }
 }
 
@@ -98,3 +107,6 @@ impl<T: Trait> Module<T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests;
