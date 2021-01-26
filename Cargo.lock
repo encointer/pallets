@@ -1252,6 +1252,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-sybil-gate"
+version = "0.3.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
 name = "pallet-timestamp"
 version = "2.0.0"
 source = "git+https://github.com/paritytech/substrate.git?rev=a208da16#a208da1608712c1bec40fb4a3878187b0a5ea404"
@@ -1300,9 +1311,9 @@ dependencies = [
 
 [[package]]
 name = "parity-scale-codec"
-version = "1.3.5"
+version = "1.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c740e5fbcb6847058b40ac7e5574766c6388f585e184d769910fe0d3a2ca861"
+checksum = "79602888a81ace83e3d1d4b2873286c1f5f906c84db667594e8db8da3506c383"
 dependencies = [
  "arrayvec 0.5.2",
  "bitvec",
@@ -2850,6 +2861,14 @@ name = "winapi-x86_64-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+
+[[package]]
+name = "xcm"
+version = "0.8.22"
+source = "git+https://github.com/paritytech/polkadot?rev=4a94b71ed7abdba231de8a03a7a22975cab6a079#4a94b71ed7abdba231de8a03a7a22975cab6a079"
+dependencies = [
+ "parity-scale-codec",
+]
 
 [[package]]
 name = "zeroize"
