@@ -57,11 +57,11 @@ decl_module! {
 
         #[weight = 5_000_000]
         // fn record(origin, parachain_id: u32, record: T::Record) {
-        fn request_proof_of_personhood_confidence(origin, parachain_id: u32) {
+        fn request_proof_of_personhood_confidence(origin, parachain_id: u32, pallet_sybil_gate_index: u8) {
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
             let call = Call::<T>::send_proof_of_personhood_confidence(parachain_id);
-            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
+            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: (pallet_sybil_gate_index, call).encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::RecordSentSuccess(sender)),
                 Err(e) => Self::deposit_event(RawEvent::RecordSentFailure(sender, e)),
