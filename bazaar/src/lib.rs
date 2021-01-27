@@ -35,7 +35,7 @@ use frame_support::{
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 
-use encointer_communities::CommunityIdentifier;
+use encointer_primitives::communities::CommunityIdentifier;
 
 // Only valid for current hashing algorithm of IPFS (sha256)
 // string length: 46 characters (base-58)

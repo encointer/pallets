@@ -20,15 +20,15 @@
 
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
-use encointer_communities::{CommunityIdentifier, Degree, Location};
-use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType};
+use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
+use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::assert_ok;
 use frame_support::traits::{OnFinalize, OnInitialize, UnfilteredDispatchable};
 use inherents::ProvideInherent;
 use rstest::*;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{hashing::blake2_256, sr25519, Pair, U256};
-use sp_keyring::AccountKeyring;
+use sp_keyring::AccountKeyring;cd
 use sp_runtime::traits::IdentifyAccount;
 use sp_runtime::{
     testing::Header,

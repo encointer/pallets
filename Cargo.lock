@@ -422,6 +422,7 @@ name = "encointer-primitives"
 version = "0.1.0"
 dependencies = [
  "parity-scale-codec",
+ "serde",
  "sp-core",
  "substrate-fixed",
 ]
@@ -1179,6 +1180,7 @@ name = "pallet-encointer-bazaar"
 version = "0.3.8"
 dependencies = [
  "approx",
+ "encointer-primitives",
  "frame-support",
  "frame-system",
  "pallet-balances",
@@ -1250,6 +1252,7 @@ dependencies = [
 name = "pallet-encointer-scheduler"
 version = "0.3.7"
 dependencies = [
+ "encointer-primitives",
  "frame-support",
  "frame-system",
  "pallet-timestamp",

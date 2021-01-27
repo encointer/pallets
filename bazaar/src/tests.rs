@@ -19,7 +19,7 @@
 use super::*;
 use crate::{Module, Trait};
 use codec::Encode;
-use encointer_communities::{CommunityIdentifier, Degree, Location};
+use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::assert_ok;
 use sp_core::{hashing::blake2_256, H256};
 use sp_keyring::AccountKeyring;

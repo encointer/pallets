@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use encointer_communities::{CommunityIdentifier, Degree, Location};
+use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::assert_ok;
 use frame_support::impl_outer_event;
 use frame_system;

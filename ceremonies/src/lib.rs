@@ -37,7 +37,6 @@ use frame_support::{
     traits::Get,
 };
 use frame_system::ensure_signed;
-use sp_core::RuntimeDebug;
 
 use rstd::cmp::min;
 use rstd::prelude::*;
@@ -46,8 +45,14 @@ use codec::{Decode, Encode};
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 
 use encointer_balances::BalanceType;
+use encointer_primitives::ceremonies::consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME};
+use encointer_primitives::ceremonies::*;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location, LossyInto};
-use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
+use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
+use encointer_scheduler::OnCeremonyPhaseChange;
+
+// Logger target
+const LOG: &str = "encointer";
 
 pub trait Trait:
     frame_system::Trait
@@ -59,62 +64,6 @@ pub trait Trait:
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
-}
-
-const REPUTATION_LIFETIME: u32 = 1;
-
-const AMOUNT_NEWBIE_TICKETS: u8 = 50;
-
-// Logger target
-const LOG: &str = "encointer";
-
-pub type ParticipantIndexType = u64;
-pub type MeetupIndexType = u64;
-pub type AttestationIndexType = u64;
-pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
-pub enum Reputation {
-    // no attestations for attendance claim
-    Unverified,
-    // no attestation yet but linked to reputation
-    UnverifiedReputable,
-    // verified former attendance that has not yet been linked to a new registration
-    VerifiedUnlinked,
-    // verified former attendance that has already been linked to a new registration
-    VerifiedLinked,
-}
-impl Default for Reputation {
-    fn default() -> Self {
-        Reputation::Unverified
-    }
-}
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct Attestation<Signature, AccountId, Moment> {
-    pub claim: ClaimOfAttendance<AccountId, Moment>,
-    pub signature: Signature,
-    pub public: AccountId,
-}
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct ClaimOfAttendance<AccountId, Moment> {
-    pub claimant_public: AccountId,
-    pub ceremony_index: CeremonyIndexType,
-    pub community_identifier: CommunityIdentifier,
-    pub meetup_index: MeetupIndexType,
-    pub location: Location,
-    pub timestamp: Moment,
-    pub number_of_participants_confirmed: u32,
-}
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct ProofOfAttendance<Signature, AccountId> {
-    pub prover_public: AccountId,
-    pub ceremony_index: CeremonyIndexType,
-    pub community_identifier: CommunityIdentifier,
-    pub attendee_public: AccountId,
-    pub attendee_signature: Signature,
 }
 
 // This module's storage items.

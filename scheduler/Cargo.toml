@@ -4,7 +4,9 @@ version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
-[dependencies]
+[dependencies.encointer-primitives]
+package = "encointer-primitives"
+path = "../primitives"
 
 [dependencies.rstd]
 default-features = false

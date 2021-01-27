@@ -23,6 +23,10 @@ default-features = false
 path = "../communities"
 package = "pallet-encointer-communities"
 
+[dependencies.encointer-primitives]
+package = "encointer-primitives"
+path = "../primitives"
+
 [dependencies.runtime-io]
 default-features = false
 package = "sp-io"
