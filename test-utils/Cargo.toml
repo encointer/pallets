@@ -12,6 +12,10 @@ package = "pallet-encointer-ceremonies"
 path = "../communities"
 package = "pallet-encointer-communities"
 
+[dependencies.encointer-primitives]
+package = "encointer-primitives"
+path = "../primitives"
+
 [dependencies.codec]
 package = "parity-scale-codec"
 features = ["derive"]

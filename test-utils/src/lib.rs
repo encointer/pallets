@@ -18,7 +18,7 @@
 //extern crate test_client;
 //extern crate node_primitives;
 
-use encointer_balances::BalanceType;
+use encointer_primitives::balances::BalanceType;
 use frame_support::parameter_types;
 use frame_support::traits::Get;
 use sp_core::sr25519;

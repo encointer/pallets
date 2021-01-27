@@ -44,7 +44,7 @@ use rstd::prelude::*;
 use codec::{Decode, Encode};
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 
-use encointer_balances::BalanceType;
+use encointer_primitives::balances::BalanceType;
 use encointer_primitives::ceremonies::consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME};
 use encointer_primitives::ceremonies::*;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location, LossyInto};

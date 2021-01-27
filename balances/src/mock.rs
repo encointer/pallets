@@ -19,6 +19,7 @@
 #![cfg(test)]
 
 use super::*;
+use codec::Encode;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::assert_ok;
 use frame_support::impl_outer_event;
