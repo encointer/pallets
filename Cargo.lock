@@ -1257,15 +1257,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-sybil-proof-issuer"
+name = "pallet-encointer-sybil-gate"
 version = "0.3.7"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-encointer-balances",
- "pallet-encointer-ceremonies",
- "pallet-encointer-communities",
- "pallet-encointer-scheduler",
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-core",
@@ -1278,11 +1274,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-sybil-proof-request"
+name = "pallet-encointer-sybil-proof-issuer"
 version = "0.3.7"
 dependencies = [
  "frame-support",
  "frame-system",
+ "pallet-encointer-balances",
+ "pallet-encointer-ceremonies",
+ "pallet-encointer-communities",
+ "pallet-encointer-scheduler",
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-core",

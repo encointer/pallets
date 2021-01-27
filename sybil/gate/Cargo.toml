@@ -1,5 +1,5 @@
 [package]
-name = "pallet-encointer-sybil-proof-request"
+name = "pallet-encointer-sybil-gate"
 version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"

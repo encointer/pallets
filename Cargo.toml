@@ -5,7 +5,7 @@ members = [
     'communities',
     'ceremonies',
     'bazaar',
-    'sybil-gate/proof-request',
-    'sybil-gate/proof-issuer',
+    'sybil/gate',
+    'sybil/proof-issuer',
     'test-utils'
 ]
