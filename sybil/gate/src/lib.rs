@@ -22,10 +22,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{debug, decl_event, decl_module, decl_storage, RuntimeDebug};
+use encointer_primitives::sybil::{ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest};
+use frame_support::{debug, decl_event, decl_module, decl_storage};
 use frame_system::ensure_signed;
 use rstd::prelude::*;
-use sp_core::H256;
+use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 const LOG: &str = "encointer";
@@ -37,15 +38,9 @@ pub trait Trait: frame_system::Trait {
     type XcmSender: SendXcm;
     /// Runtime Call type, used for cross-messaging calls.
     type Call: Encode + From<<Self as frame_system::Trait>::Call>;
-}
 
-pub type ProofOfPersonhoodRequest = Vec<(H256, Vec<u8>)>; // Todo: Replace with ProofOfAttendance Type
-pub type IssueProofOfPersonhoodCall = ([u8; 2], ProofOfPersonhoodRequest);
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct ProofOfPersonhoodConfidence {
-    attested: u8,
-    last_n_ceremonies: u8,
+    type Public: IdentifyAccount<AccountId = Self::AccountId>;
+    type Signature: Verify<Signer = <Self as Trait>::Public> + Member + Decode + Encode;
 }
 
 decl_storage! {
@@ -73,13 +68,14 @@ decl_module! {
             origin,
             parachain_id: u32,
             pallet_sybil_proof_issuer_index: u8,
-            request: ProofOfPersonhoodRequest
+            request: ProofOfPersonhoodRequest<T::Signature, T::AccountId>
         ) {
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
             // Todo: use actual call_index from proof issuer
-            let call: IssueProofOfPersonhoodCall = ([pallet_sybil_proof_issuer_index, 0], vec![]);
+            let call = ([pallet_sybil_proof_issuer_index, 0], request);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
+            debug::debug!(target: LOG, "sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender)),
                 Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentFailure(sender, e)),
@@ -93,6 +89,7 @@ decl_module! {
             confidence: ProofOfPersonhoodConfidence
         ) {
             let sender = ensure_signed(origin)?;
+            debug::debug!(target: LOG, "set ProofofPersonhood Confidence for account: {:?}", account);
             <ProofOfPersonhood<T>>::insert(account, confidence);
             Self::deposit_event(RawEvent::StoredProofOfPersonHoodConfidence(sender))
         }

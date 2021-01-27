@@ -22,15 +22,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{
-    debug, decl_event, decl_module, dispatch::DispatchResult, ensure, RuntimeDebug,
-};
+use frame_support::{debug, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
-use encointer_primitives::ceremonies::{ProofOfAttendance, Reputation};
+use encointer_primitives::{
+    ceremonies::{ProofOfAttendance, Reputation},
+    sybil::ProofOfPersonhoodConfidence,
+};
 
 const LOG: &str = "encointer";
 
@@ -51,12 +52,6 @@ pub trait Trait:
 }
 
 pub type SetProofOfPersonhoodCall = ([u8; 2], ProofOfPersonhoodConfidence);
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct ProofOfPersonhoodConfidence {
-    attested: u8,
-    last_m_ceremonies: u8,
-}
 
 decl_event! {
     pub enum Event<T>
@@ -79,8 +74,10 @@ decl_module! {
         proof_of_person_hood_request: Vec<u8>
         ) {
             debug::debug!(target: LOG, "received proof of personhood request from parachain: {:?}", sender_parachain_id);
+            debug::debug!(target: LOG, "request: {:?}", proof_of_person_hood_request);
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: sender_parachain_id };
+            // Todo: Actually verify request
             // Todo: use actual call_index from sybil gate
             let call: SetProofOfPersonhoodCall = ([pallet_sybil_gate_index, 0], ProofOfPersonhoodConfidence::default());
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };

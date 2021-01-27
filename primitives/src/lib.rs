@@ -5,3 +5,4 @@ pub mod bazaar;
 pub mod ceremonies;
 pub mod communities;
 pub mod scheduler;
+pub mod sybil;

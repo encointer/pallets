@@ -1270,6 +1270,7 @@ dependencies = [
 name = "pallet-encointer-sybil-gate"
 version = "0.3.7"
 dependencies = [
+ "encointer-primitives",
  "frame-support",
  "frame-system",
  "pallet-timestamp",
