@@ -1257,7 +1257,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-sybil-gate"
+name = "pallet-encointer-sybil-request"
 version = "0.3.7"
 dependencies = [
  "frame-support",
