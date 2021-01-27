@@ -16,8 +16,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use encointer_primitives::balances::{BalanceEntry, BalanceType};
-use encointer_primitives::communities::CommunityIdentifier;
+use encointer_primitives::{
+    balances::{BalanceEntry, BalanceType},
+    communities::CommunityIdentifier,
+};
 use fixed::transcendental::exp;
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,

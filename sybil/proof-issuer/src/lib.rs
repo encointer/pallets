@@ -30,7 +30,7 @@ use rstd::prelude::*;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
-use encointer_ceremonies::{ProofOfAttendance, Reputation};
+use encointer_primitives::ceremonies::{ProofOfAttendance, Reputation};
 
 const LOG: &str = "encointer";
 

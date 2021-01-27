@@ -32,12 +32,6 @@ package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
-[dependencies.balances]
-default-features = false
-package = "pallet-balances"
-git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
-
 [dependencies.codec]
 default-features = false
 package = "parity-scale-codec"
@@ -85,7 +79,6 @@ path = "../test-utils"
 [features]
 default = ["std"]
 std = [
-	"balances/std",
 	"codec/std",
 	"rstd/std",
 	"runtime-io/std",

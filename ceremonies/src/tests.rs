@@ -20,8 +20,10 @@
 
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
-use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
+use encointer_primitives::{
+    communities::{CommunityIdentifier, Degree, Location},
+    scheduler::{CeremonyIndexType, CeremonyPhaseType},
+};
 use frame_support::assert_ok;
 use frame_support::traits::{OnFinalize, OnInitialize, UnfilteredDispatchable};
 use inherents::ProvideInherent;

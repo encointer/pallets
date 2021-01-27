@@ -1161,13 +1161,10 @@ dependencies = [
  "impl-trait-for-tuples",
  "num-traits",
  "pallet-encointer-communities",
- "pallet-transaction-payment",
  "parity-scale-codec",
- "safe-mix",
  "serde",
  "sp-core",
  "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-runtime-interface",
  "sp-std",
@@ -1206,7 +1203,6 @@ dependencies = [
  "encointer-primitives",
  "frame-support",
  "frame-system",
- "pallet-balances",
  "pallet-encointer-balances",
  "pallet-encointer-communities",
  "pallet-encointer-scheduler",
@@ -1235,7 +1231,6 @@ dependencies = [
  "encointer-primitives",
  "frame-support",
  "frame-system",
- "pallet-balances",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -1292,6 +1287,7 @@ dependencies = [
 name = "pallet-encointer-sybil-proof-issuer"
 version = "0.3.7"
 dependencies = [
+ "encointer-primitives",
  "frame-support",
  "frame-system",
  "pallet-encointer-balances",
@@ -1324,36 +1320,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-timestamp",
-]
-
-[[package]]
-name = "pallet-transaction-payment"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate.git?rev=a208da16#a208da1608712c1bec40fb4a3878187b0a5ea404"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-transaction-payment-rpc-runtime-api",
- "parity-scale-codec",
- "serde",
- "smallvec",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-transaction-payment-rpc-runtime-api"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/substrate.git?rev=a208da16#a208da1608712c1bec40fb4a3878187b0a5ea404"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "serde",
- "sp-api",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -1902,15 +1868,6 @@ name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
-
-[[package]]
-name = "safe-mix"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d3d055a2582e6b00ed7a31c1524040aa391092bf636328350813f3a0605215c"
-dependencies = [
- "rustc_version",
-]
 
 [[package]]
 name = "sc-keystore"

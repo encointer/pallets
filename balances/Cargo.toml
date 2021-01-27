@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0.101", optional = true }
-safe-mix = { version = "1.0.0", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false, features = ["derive"] }
 num-traits = { version = "0.2.8", default-features = false }
 impl-trait-for-tuples = "0.1.3"
@@ -65,18 +64,8 @@ rev = "a208da16"
 [dev-dependencies]
 approx = "0.3.0"
 
-[dev-dependencies.sp-keyring]
-package = "sp-keyring"
-git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
-
 [dev-dependencies.runtime-io]
 package = "sp-io"
-git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
-
-[dev-dependencies.transaction-payment]
-package = "pallet-transaction-payment"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
@@ -93,7 +82,6 @@ path = "../test-utils"
 default = ["std"]
 std = [
 	"serde",
-	"safe-mix/std",
 	"num-traits/std",
 	"codec/std",
 	"rstd/std",

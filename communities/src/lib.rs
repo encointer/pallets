@@ -39,8 +39,7 @@ use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use fixed::types::I32F32;
 use runtime_io::hashing::blake2_256;
 
-use encointer_primitives::communities::consts::*;
-use encointer_primitives::communities::*;
+use encointer_primitives::{communities::consts::*, communities::*};
 
 pub trait Trait: frame_system::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;

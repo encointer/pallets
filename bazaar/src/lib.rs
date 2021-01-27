@@ -35,8 +35,10 @@ use frame_support::{
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 
-use encointer_primitives::bazaar::{consts::MAX_HASH_SIZE, ArticleIdentifier, ShopIdentifier};
-use encointer_primitives::communities::CommunityIdentifier;
+use encointer_primitives::{
+    bazaar::{consts::MAX_HASH_SIZE, ArticleIdentifier, ShopIdentifier},
+    communities::CommunityIdentifier,
+};
 
 pub trait Trait: frame_system::Trait + encointer_communities::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
