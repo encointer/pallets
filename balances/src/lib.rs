@@ -17,7 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use encointer_communities::CommunityIdentifier;
+use encointer_primitives::communities::CommunityIdentifier;
 use fixed::{transcendental::exp, types::I64F64};
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,

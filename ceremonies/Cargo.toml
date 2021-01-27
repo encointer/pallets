@@ -45,6 +45,10 @@ default-features = false
 path = "../balances"
 package = "pallet-encointer-balances"
 
+[dependencies.encointer-primitives]
+package = "encointer-primitives"
+path = "../primitives"
+
 [dependencies.codec]
 default-features = false
 package = "parity-scale-codec"

@@ -418,6 +418,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
+name = "encointer-primitives"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "substrate-fixed",
+]
+
+[[package]]
 name = "environmental"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1145,6 +1154,7 @@ name = "pallet-encointer-balances"
 version = "0.3.7"
 dependencies = [
  "approx",
+ "encointer-primitives",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
@@ -1191,6 +1201,7 @@ name = "pallet-encointer-ceremonies"
 version = "0.3.7"
 dependencies = [
  "approx",
+ "encointer-primitives",
  "frame-support",
  "frame-system",
  "pallet-balances",
@@ -1219,6 +1230,7 @@ name = "pallet-encointer-communities"
 version = "0.3.7"
 dependencies = [
  "approx",
+ "encointer-primitives",
  "frame-support",
  "frame-system",
  "pallet-balances",

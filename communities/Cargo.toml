@@ -4,6 +4,10 @@ version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
+[dependencies.encointer-primitives]
+package = "encointer-primitives"
+path = "../primitives"
+
 [dependencies.fixed]
 default-features = false
 git = "https://github.com/encointer/substrate-fixed"
@@ -25,12 +29,6 @@ rev = "a208da16"
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
-
-[dependencies.sp-core]
-default-features = false
-package = "sp-core"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
@@ -71,6 +69,11 @@ package = "sp-externalities"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
+[dev-dependencies.sp-core]
+package = "sp-core"
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
 git = "https://github.com/paritytech/substrate.git" 
@@ -89,7 +92,6 @@ std = [
 	"serde",
 	"sp-runtime/std",
 	"frame-support/std",
-	"sp-core/std",
 	"frame-system/std",
 	"fixed/std",
 ]

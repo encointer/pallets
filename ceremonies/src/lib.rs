@@ -46,7 +46,7 @@ use codec::{Decode, Encode};
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 
 use encointer_balances::BalanceType;
-use encointer_communities::{CommunityIdentifier, Degree, Location, LossyInto};
+use encointer_primitives::communities::{CommunityIdentifier, Degree, Location, LossyInto};
 use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType, OnCeremonyPhaseChange};
 
 pub trait Trait:
