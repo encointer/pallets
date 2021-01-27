@@ -114,6 +114,14 @@ macro_rules! impl_timestamp {
             type WeightInfo = ();
         }
     };
+    ($t:ident) => {
+        impl timestamp::Trait for $t {
+            type Moment = Moment;
+            type OnTimestampSet = ();
+            type MinimumPeriod = MinimumPeriod;
+            type WeightInfo = ();
+        }
+    };
 }
 
 parameter_types! {

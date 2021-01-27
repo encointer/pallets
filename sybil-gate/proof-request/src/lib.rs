@@ -14,41 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Encointer SybilGate Module
+//! # Encointer Sybil Proof Request Module
 //!
 //! provides functionality for
-//! - issuing and verifying digital proof of personhood confidence aka anti-sybil confidence
+//! - requesting digital proof of personhood confidence aka anti-sybil confidence
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
-use frame_support::{debug, decl_event, decl_module, dispatch::DispatchResult, ensure};
+use codec::Encode;
+use frame_support::{debug, decl_event, decl_module};
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 // use sp_core::RuntimeDebug;
-use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
-
-use encointer_ceremonies::{ProofOfAttendance, Reputation};
 
 const LOG: &str = "encointer";
 
-pub trait Trait:
-    frame_system::Trait
-    + encointer_ceremonies::Trait
-    + encointer_scheduler::Trait
-    + encointer_balances::Trait
-    + encointer_communities::Trait
-{
+pub trait Trait: frame_system::Trait {
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
     /// The XCM sender module.
     type XcmSender: SendXcm;
     /// Runtime Call type, used for cross-messaging calls.
     type Call: Encode + From<<Self as frame_system::Trait>::Call>;
-
-    type Public: IdentifyAccount<AccountId = Self::AccountId>;
-    type Signature: Verify<Signer = <Self as Trait>::Public> + Member + Decode + Encode;
 }
 
 decl_module! {
@@ -67,12 +55,6 @@ decl_module! {
                 Err(e) => Self::deposit_event(RawEvent::RecordSentFailure(sender, e)),
             }
         }
-
-        #[weight = 5_000_000]
-        fn send_proof_of_personhood_confidence(origin, parachain_id: u32) {
-           debug::debug!(target: LOG, "received proof of personhood request from parachain: {:?}", parachain_id);
-           ()
-        }
     }
 }
 
@@ -84,32 +66,6 @@ decl_event! {
         RecordSentSuccess(AccountId),
         /// Record didn't send, error attached.
         RecordSentFailure(AccountId, XcmError),
-    }
-}
-
-impl<T: Trait> Module<T> {
-    fn verify(p: ProofOfAttendance<<T as Trait>::Signature, T::AccountId>) -> DispatchResult {
-        ensure!(
-            <encointer_ceremonies::Module<T>>::participant_reputation(
-                &(p.community_identifier, p.ceremony_index),
-                &p.attendee_public
-            ) == Reputation::VerifiedUnlinked,
-            "former attendance has not been verified or has already been linked to other account"
-        );
-        Self::verify_attendee_signature(p)
-    }
-
-    fn verify_attendee_signature(
-        proof: ProofOfAttendance<<T as Trait>::Signature, T::AccountId>,
-    ) -> DispatchResult {
-        ensure!(
-            proof.attendee_signature.verify(
-                &(proof.prover_public, proof.ceremony_index).encode()[..],
-                &proof.attendee_public,
-            ),
-            "bad attendee signature"
-        );
-        Ok(())
     }
 }
 

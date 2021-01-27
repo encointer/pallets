@@ -1257,7 +1257,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-sybil-request"
+name = "pallet-encointer-sybil-proof-issuer"
 version = "0.3.7"
 dependencies = [
  "frame-support",
@@ -1266,6 +1266,23 @@ dependencies = [
  "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
  "pallet-encointer-scheduler",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+ "xcm",
+]
+
+[[package]]
+name = "pallet-encointer-sybil-proof-request"
+version = "0.3.7"
+dependencies = [
+ "frame-support",
+ "frame-system",
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-core",

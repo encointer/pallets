@@ -29,25 +29,14 @@ use test_utils::*;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
-pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
-
-use encointer_ceremonies::Module as CeremoniesModule;
-
 impl_frame_system!(TestRuntime);
-impl_timestamp!(TestRuntime, EncointerScheduler);
+impl_timestamp!(TestRuntime);
 impl_outer_origin_for_runtime!(TestRuntime);
-
-impl_encointer_balances!(TestRuntime);
-impl_encointer_scheduler!(TestRuntime, CeremoniesModule);
-impl_encointer_ceremonies!(TestRuntime);
-impl_encointer_communities!(TestRuntime);
 
 impl Trait for TestRuntime {
     type Event = ();
     type XcmSender = ();
     type Call = ();
-    type Public = AccountId;
-    type Signature = Signature;
 }
 
 fn new_test_ext() -> sp_io::TestExternalities {
