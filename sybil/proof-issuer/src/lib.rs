@@ -54,7 +54,7 @@ pub trait Trait:
     type Signature: Verify<Signer = <Self as Ceremonies>::Public> + Member + Decode + Encode;
 }
 
-pub type SetProofOfPersonhoodCall = ([u8; 2], ProofOfPersonhoodConfidence);
+pub type SetProofOfPersonhoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPersonhoodConfidence);
 
 decl_event! {
     pub enum Event<T>
@@ -84,7 +84,7 @@ decl_module! {
             let confidence = Self::verify(proof_of_person_hood_request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 
             // Todo: use actual call_index from sybil gate
-            let call: SetProofOfPersonhoodCall = ([pallet_sybil_gate_index, 0], confidence);
+            let call: SetProofOfPersonhoodCall<T::AccountId> = ([pallet_sybil_gate_index, 1], sender.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(sender)),
