@@ -5,6 +5,7 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies.encointer-primitives]
+default-features = false
 package = "encointer-primitives"
 path = "../../primitives"
 
@@ -76,6 +77,7 @@ git = "https://github.com/paritytech/polkadot"
 rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
 
 [dependencies.sp-io]
+default-features = false
 package = "sp-io"
 git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
@@ -96,9 +98,13 @@ std = [
     "frame-system/std",
     "frame-support/std",
     "xcm/std",
+    "sp-core/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "timestamp/std",
     "encointer-ceremonies/std",
     "encointer-communities/std",
     "encointer-scheduler/std",
     "encointer-balances/std",
-    "timestamp/std"
+    "encointer-primitives/std",
 ]

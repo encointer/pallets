@@ -5,6 +5,7 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies.encointer-primitives]
+default-features = false
 package = "encointer-primitives"
 path = "../primitives"
 
@@ -87,6 +88,7 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"fixed/std",
+	"encointer-primitives/std",
 ]
 
 #[patch."https://github.com/encointer/substrate-fixed"]

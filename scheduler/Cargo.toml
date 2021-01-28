@@ -5,6 +5,7 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies.encointer-primitives]
+default-features = false
 package = "encointer-primitives"
 path = "../primitives"
 
@@ -106,4 +107,5 @@ std = [
 	"sp-core/std",
 	"frame-support/std",
 	"frame-system/std",
+	"encointer-primitives/std",
 ]

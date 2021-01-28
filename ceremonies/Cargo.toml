@@ -40,6 +40,7 @@ path = "../balances"
 package = "pallet-encointer-balances"
 
 [dependencies.encointer-primitives]
+default-features = false
 package = "encointer-primitives"
 path = "../primitives"
 
@@ -125,7 +126,8 @@ std = [
 	"frame-system/std",
 	"encointer-communities/std",
 	"encointer-scheduler/std",
-	"encointer-balances/std"
+	"encointer-balances/std",
+	"encointer-primitives/std",
 ]
 
 #[patch."https://github.com/encointer/substrate-fixed"]

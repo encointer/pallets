@@ -24,6 +24,7 @@ path = "../communities"
 package = "pallet-encointer-communities"
 
 [dependencies.encointer-primitives]
+default-features = false
 package = "encointer-primitives"
 path = "../primitives"
 

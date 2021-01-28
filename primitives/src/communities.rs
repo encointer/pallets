@@ -1,5 +1,6 @@
 use codec::{Decode, Encode};
 use fixed::types::{I32F32, I64F64};
+use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 
 pub use fixed::traits::{LossyFrom, LossyInto};

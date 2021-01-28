@@ -1,3 +1,5 @@
+use rstd::vec::Vec;
+
 pub type ShopIdentifier = Vec<u8>;
 pub type ArticleIdentifier = Vec<u8>;
 

@@ -1,4 +1,5 @@
 use codec::{Decode, Encode};
+use rstd::vec::Vec;
 use sp_core::RuntimeDebug;
 
 use crate::ceremonies::ProofOfAttendance;
