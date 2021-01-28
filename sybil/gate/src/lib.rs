@@ -78,8 +78,11 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
 
-            // todo: use get the runtime configuration's specific pallet index
-            let sender_pallet_sybil_gate_index = 1;
+            // todo: use get the runtime configuration's specific pallet index. Currently, this corresponds
+            // to the index given in our encointer parachain because we declare the module like this in
+            // construct runtime:
+            // `EncointerSybilGate: encointer_sybil_gate::{Module, Call, Storage, Event<T>} = 2,`
+            let sender_pallet_sybil_gate_index = 15u8;
             // Todo: use actual call_index from proof issuer
             let call = ([pallet_sybil_proof_issuer_index, 0], sender_pallet_sybil_gate_index, request);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
