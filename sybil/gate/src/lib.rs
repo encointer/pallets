@@ -36,8 +36,6 @@ pub trait Trait: frame_system::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
     /// The XCM sender module.
     type XcmSender: SendXcm;
-    /// Runtime Call type, used for cross-messaging calls.
-    type Call: Encode + From<<Self as frame_system::Trait>::Call>;
 
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = <Self as Trait>::Public> + Member + Decode + Encode;
