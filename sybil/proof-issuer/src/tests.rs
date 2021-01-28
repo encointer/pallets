@@ -16,6 +16,7 @@
 
 use super::*;
 use crate::{Module, Trait};
+use encointer_ceremonies::Module as EncointerCeremoniesModule;
 use frame_support::assert_ok;
 use sp_core::H256;
 use sp_keyring::AccountKeyring;
@@ -24,19 +25,27 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
 };
 
+use encointer_primitives::sybil::ProofOfPersonhoodRequest;
+
 use test_utils::*;
+
+pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
 impl_frame_system!(TestRuntime);
+impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_outer_origin_for_runtime!(TestRuntime);
+
+impl_encointer_ceremonies!(TestRuntime);
+impl_encointer_communities!(TestRuntime);
+impl_encointer_balances!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime, EncointerCeremoniesModule);
 
 impl Trait for TestRuntime {
     type Event = ();
     type XcmSender = ();
-    type Call = ();
-    type Public = AccountId;
     type Signature = Signature;
 }
 
@@ -52,7 +61,7 @@ type SybilGate = Module<TestRuntime>;
 #[test]
 fn test_store_data() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SybilGate::request_proof_of_personhood_confidence(
+        assert_ok!(SybilGate::issue_proof_of_personhood_confidence(
             Origin::signed(AccountKeyring::Alice.into()),
             2,
             1,

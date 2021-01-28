@@ -64,6 +64,13 @@ decl_module! {
         fn deposit_event() = default;
 
         #[weight = 5_000_000]
+        /// ### Proof of PersonhoodRequest
+        ///
+        /// Request a ProofOfPersonHood from an encointer-parachain.
+        ///
+        /// The `pallet_sybil_proof_issuer_index` is the pallet index of the respective encointer-parachain's
+        /// `pallet-encointer-sybil-proof-issuer` pallet to query. It was decided to put that as an argument,
+        /// as there might be more than one encointer-chain running.
         fn request_proof_of_personhood_confidence(
             origin,
             parachain_id: u32,
@@ -72,8 +79,11 @@ decl_module! {
         ) {
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
+
+            // todo: use get the runtime configuration's specific pallet index
+            let sender_pallet_sybil_gate_index = 1;
             // Todo: use actual call_index from proof issuer
-            let call = ([pallet_sybil_proof_issuer_index, 0], request);
+            let call = ([pallet_sybil_proof_issuer_index, 0], sender_pallet_sybil_gate_index, request);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             debug::debug!(target: LOG, "sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(location.into(), message.into()) {
@@ -89,7 +99,7 @@ decl_module! {
             confidence: ProofOfPersonhoodConfidence
         ) {
             let sender = ensure_signed(origin)?;
-            debug::debug!(target: LOG, "set ProofofPersonhood Confidence for account: {:?}", account);
+            debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
             <ProofOfPersonhood<T>>::insert(account, confidence);
             Self::deposit_event(RawEvent::StoredProofOfPersonHoodConfidence(sender))
         }

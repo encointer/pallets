@@ -12,3 +12,12 @@ pub struct ProofOfPersonhoodConfidence {
     attested: u8,
     last_n_ceremonies: u8,
 }
+
+impl ProofOfPersonhoodConfidence {
+    pub fn new(attested: u8, last_n_ceremonies: u8) -> Self {
+        Self {
+            attested,
+            last_n_ceremonies,
+        }
+    }
+}

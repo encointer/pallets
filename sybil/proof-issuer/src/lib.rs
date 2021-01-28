@@ -25,19 +25,23 @@ use codec::{Decode, Encode};
 use frame_support::{debug, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
 use rstd::prelude::*;
-use sp_runtime::traits::{IdentifyAccount, Member, Verify};
+use sp_runtime::traits::{Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
-    sybil::ProofOfPersonhoodConfidence,
+    sybil::{ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest},
 };
 
 const LOG: &str = "encointer";
 
+use encointer_ceremonies::Trait as Ceremonies;
+use sp_runtime::sp_std::cmp::min;
+use sp_runtime::DispatchError;
+
 pub trait Trait:
     frame_system::Trait
-    + encointer_ceremonies::Trait
+    + Ceremonies
     + encointer_scheduler::Trait
     + encointer_balances::Trait
     + encointer_communities::Trait
@@ -47,8 +51,7 @@ pub trait Trait:
     /// The XCM sender module.
     type XcmSender: SendXcm;
 
-    type Public: IdentifyAccount<AccountId = Self::AccountId>;
-    type Signature: Verify<Signer = <Self as Trait>::Public> + Member + Decode + Encode;
+    type Signature: Verify<Signer = <Self as Ceremonies>::Public> + Member + Decode + Encode;
 }
 
 pub type SetProofOfPersonhoodCall = ([u8; 2], ProofOfPersonhoodConfidence);
@@ -71,15 +74,17 @@ decl_module! {
         origin,
         sender_parachain_id: u32,
         pallet_sybil_gate_index: u8,
-        proof_of_person_hood_request: Vec<u8>
+        proof_of_person_hood_request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>
         ) {
             debug::debug!(target: LOG, "received proof of personhood request from parachain: {:?}", sender_parachain_id);
             debug::debug!(target: LOG, "request: {:?}", proof_of_person_hood_request);
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: sender_parachain_id };
-            // Todo: Actually verify request
+
+            let confidence = Self::verify(proof_of_person_hood_request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
+
             // Todo: use actual call_index from sybil gate
-            let call: SetProofOfPersonhoodCall = ([pallet_sybil_gate_index, 0], ProofOfPersonhoodConfidence::default());
+            let call: SetProofOfPersonhoodCall = ([pallet_sybil_gate_index, 0], confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(sender)),
@@ -90,7 +95,32 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
-    fn verify(p: ProofOfAttendance<<T as Trait>::Signature, T::AccountId>) -> DispatchResult {
+    fn verify(
+        request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>,
+    ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
+        let mut c_index_min = 1;
+        let mut n_attested = 0;
+        for (cid, poa) in request.iter() {
+            if !<encointer_communities::Module<T>>::community_identifiers().contains(&cid) {
+                continue;
+            }
+            if Self::verify_proof_of_attendance(&poa).is_ok() {
+                c_index_min = min(poa.ceremony_index, c_index_min);
+                n_attested += 1;
+            }
+        }
+        let last_n_ceremonies: u8 =
+            (<encointer_scheduler::Module<T>>::current_ceremony_index() - c_index_min) as u8;
+
+        Ok(ProofOfPersonhoodConfidence::new(
+            n_attested,
+            last_n_ceremonies,
+        ))
+    }
+
+    fn verify_proof_of_attendance(
+        p: &ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>,
+    ) -> DispatchResult {
         ensure!(
             <encointer_ceremonies::Module<T>>::participant_reputation(
                 &(p.community_identifier, p.ceremony_index),
@@ -102,11 +132,11 @@ impl<T: Trait> Module<T> {
     }
 
     fn verify_attendee_signature(
-        proof: ProofOfAttendance<<T as Trait>::Signature, T::AccountId>,
+        proof: &ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>,
     ) -> DispatchResult {
         ensure!(
             proof.attendee_signature.verify(
-                &(proof.prover_public, proof.ceremony_index).encode()[..],
+                &(proof.prover_public.clone(), proof.ceremony_index.clone()).encode()[..],
                 &proof.attendee_public,
             ),
             "bad attendee signature"
@@ -114,3 +144,6 @@ impl<T: Trait> Module<T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests;
