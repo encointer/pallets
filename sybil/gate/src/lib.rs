@@ -22,7 +22,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use encointer_primitives::sybil::{ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest};
+use encointer_primitives::sybil::{
+    IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest,
+};
 use frame_support::{debug, decl_event, decl_module, decl_storage};
 use frame_system::ensure_signed;
 use rstd::prelude::*;
@@ -75,6 +77,7 @@ decl_module! {
             pallet_sybil_proof_issuer_index: u8,
             request: ProofOfPersonhoodRequest<T::Signature, T::AccountId>
         ) {
+            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
 
@@ -84,10 +87,10 @@ decl_module! {
             // `EncointerSybilGate: encointer_sybil_gate::{Module, Call, Storage, Event<T>} = 2,`
             let sender_pallet_sybil_gate_index = 15u8;
             // Todo: use actual call_index from proof issuer
-            let call = ([pallet_sybil_proof_issuer_index, 0], sender_pallet_sybil_gate_index, request);
+            let call: IssueProofOfPersonhoodConfidenceCall<T::Signature, T::AccountId> = ([pallet_sybil_proof_issuer_index, 0], parachain_id, sender_pallet_sybil_gate_index, request);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             debug::debug!(target: LOG, "sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
-            match T::XcmSender::send_xcm(location.into(), message.into()) {
+            match T::XcmSender::send_xcm(location.into(), message) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender)),
                 Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentFailure(sender, e)),
             }
@@ -99,6 +102,7 @@ decl_module! {
             account: T::AccountId,
             confidence: ProofOfPersonhoodConfidence
         ) {
+            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
             <ProofOfPersonhood<T>>::insert(account, confidence);

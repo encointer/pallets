@@ -30,7 +30,7 @@ use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
-    sybil::{ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest},
+    sybil::{ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest, SetProofOfPersonHoodCall},
 };
 
 const LOG: &str = "encointer";
@@ -60,6 +60,7 @@ decl_event! {
     pub enum Event<T>
     where AccountId = <T as frame_system::Trait>::AccountId,
     {
+        ProofOfPersonHoodRequestReceived(AccountId),
         ProofOfPersonHoodSentSuccess(AccountId),
         ProofOfPersonHoodSentFailure(AccountId, XcmError),
     }
@@ -76,15 +77,18 @@ decl_module! {
         pallet_sybil_gate_index: u8,
         proof_of_person_hood_request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>
         ) {
+            debug::RuntimeLogger::init();
             debug::debug!(target: LOG, "received proof of personhood request from parachain: {:?}", sender_parachain_id);
             debug::debug!(target: LOG, "request: {:?}", proof_of_person_hood_request);
             let sender = ensure_signed(origin)?;
+            Self::deposit_event(RawEvent::ProofOfPersonHoodRequestReceived(sender.clone()));
+
             let location = Junction::Parachain { id: sender_parachain_id };
 
             let confidence = Self::verify(proof_of_person_hood_request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 
             // Todo: use actual call_index from sybil gate
-            let call: SetProofOfPersonhoodCall<T::AccountId> = ([pallet_sybil_gate_index, 1], sender.clone(), confidence);
+            let call: SetProofOfPersonHoodCall<T::AccountId> = ([pallet_sybil_gate_index, 1u8], sender.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(sender)),

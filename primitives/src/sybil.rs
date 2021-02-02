@@ -8,6 +8,15 @@ use crate::communities::CommunityIdentifier;
 pub type ProofOfPersonhoodRequest<Signature, AccountId> =
     Vec<(CommunityIdentifier, ProofOfAttendance<Signature, AccountId>)>;
 
+pub type IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> = (
+    [u8; 2],
+    u32,
+    u8,
+    ProofOfPersonhoodRequest<Signature, AccountId>,
+);
+
+pub type SetProofOfPersonHoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPersonhoodConfidence);
+
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct ProofOfPersonhoodConfidence {
     attested: u8,
