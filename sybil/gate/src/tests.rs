@@ -35,7 +35,6 @@ impl_outer_origin_for_runtime!(TestRuntime);
 impl Trait for TestRuntime {
     type Event = ();
     type XcmSender = ();
-    type Call = ();
     type Public = AccountId;
     type Signature = Signature;
 }
@@ -59,4 +58,16 @@ fn test_store_data() {
             ProofOfPersonhoodRequest::default()
         ));
     })
+}
+
+#[test]
+fn test_data() {
+    let request: ProofOfPersonhoodRequest<Signature, AccountId> =
+        ProofOfPersonhoodRequest::default();
+
+    println!("Default ProofOfPersonhoodRequest: {:?}", request);
+    println!(
+        "Default ProofOfPersonhoodRequest: {:?}",
+        hex::encode(request.encode())
+    );
 }

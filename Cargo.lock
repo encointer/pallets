@@ -1274,6 +1274,7 @@ dependencies = [
  "encointer-primitives",
  "frame-support",
  "frame-system",
+ "hex",
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-core",
