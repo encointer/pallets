@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Encointer Sybil Proof Issuer Module
+//! # Encointer Sybil Proof Issuer Module (WIP, untested)
 //!
 //! provides functionality for
 //! - issuing and verifying digital proof of personhood confidence aka anti-sybil confidence

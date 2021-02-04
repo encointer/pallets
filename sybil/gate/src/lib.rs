@@ -14,7 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Encointer Sybil Proof Request Module
+//! # Encointer Sybil Proof Request Module (WIP)
+//!
+//! Note: This is a wip, we were able to successfully send XCMP messages and decode them
+//! on the receiving parachain. However, we currently get a `XCMPERROR::BadOrigin` when executing
+//! the XCM.
 //!
 //! provides functionality for
 //! - requesting digital proof of personhood confidence aka anti-sybil confidence
