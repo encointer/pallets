@@ -183,23 +183,17 @@ impl<T: Trait> Module<T> {
         let theta2 = b.lat * I::lossy_from(RADIANS_PER_DEGREE);
         let delta_theta = theta1 - theta2;
         let delta_lambda = (a.lon - b.lon) * I::lossy_from(RADIANS_PER_DEGREE);
+
         let tmp0 = sin(delta_theta / two);
-        let tmp1 = if let Ok(r) = powi::<I, I>(tmp0, 2) {
-            r
-        } else {
-            I::from_num(0)
-        };
+        let tmp1 = powi::<I, I>(tmp0, 2).unwrap_or_default();
         let tmp2 = cos(theta1) * cos(theta2);
         let tmp3 = sin(delta_lambda / two);
-        let tmp4 = if let Ok(r) = powi::<I, I>(tmp3, 2) {
-            r
-        } else {
-            I::from_num(0)
-        };
+        let tmp4 = powi::<I, I>(tmp3, 2).unwrap_or_default();
+
         let aa = tmp1 + tmp2 * tmp4;
         // Fixme: Here we fail in the test: new_currency_with_problematic_location_works
         // as sqrt(0.0000000002) returns an error.
-        let c: I = two * asin(sqrt::<I, I>(aa).unwrap());
+        let c: I = two * asin(sqrt::<I, I>(aa).unwrap_or_default());
         let d = I::from(MEAN_EARTH_RADIUS) * c;
         let d: i64 = d.lossy_into();
         d as u32
