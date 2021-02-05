@@ -161,16 +161,11 @@ impl<T: Trait> Module<T> {
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
-        if loc.lat > NORTH_POLE.lat {
-            return false;
-        }
-        if loc.lat < SOUTH_POLE.lat {
-            return false;
-        }
-        if loc.lon > DATELINE_LON {
-            return false;
-        }
-        if loc.lon < -DATELINE_LON {
+        if (loc.lat > NORTH_POLE.lat)
+            | (loc.lat < SOUTH_POLE.lat)
+            | (loc.lon > DATELINE_LON)
+            | (loc.lon < -DATELINE_LON)
+        {
             return false;
         }
         true
