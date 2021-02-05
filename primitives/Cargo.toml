@@ -26,7 +26,7 @@ rev = "a208da16"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
-branch = "rococo-v1"
+rev = "a208da16"
 
 [dependencies.serde]
 features = ["derive"]
