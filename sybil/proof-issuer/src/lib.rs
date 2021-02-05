@@ -102,7 +102,7 @@ impl<T: Trait> Module<T> {
     fn verify(
         request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>,
     ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
-        let mut c_index_min = 1;
+        let mut c_index_min = 0;
         let mut n_attested = 0;
         for (cid, poa) in request.iter() {
             if !<encointer_communities::Module<T>>::community_identifiers().contains(&cid) {
@@ -113,8 +113,9 @@ impl<T: Trait> Module<T> {
                 n_attested += 1;
             }
         }
-        let last_n_ceremonies: u8 =
-            (<encointer_scheduler::Module<T>>::current_ceremony_index() - c_index_min) as u8;
+        let last_n_ceremonies = <encointer_scheduler::Module<T>>::current_ceremony_index()
+            .checked_sub(c_index_min)
+            .expect("Proofs can't not be valid, with bogus ceremony index; qed");
 
         Ok(ProofOfPersonhoodConfidence::new(
             n_attested,

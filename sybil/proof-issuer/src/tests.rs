@@ -59,7 +59,7 @@ fn new_test_ext() -> sp_io::TestExternalities {
 type SybilGate = Module<TestRuntime>;
 
 #[test]
-fn test_store_data() {
+fn issue_proof_of_personhood_is_ok() {
     new_test_ext().execute_with(|| {
         assert_ok!(SybilGate::issue_proof_of_personhood_confidence(
             Origin::signed(AccountKeyring::Alice.into()),

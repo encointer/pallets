@@ -4,6 +4,7 @@ use sp_core::RuntimeDebug;
 
 use crate::ceremonies::ProofOfAttendance;
 use crate::communities::CommunityIdentifier;
+use crate::scheduler::CeremonyIndexType;
 
 pub type ProofOfPersonhoodRequest<Signature, AccountId> =
     Vec<(CommunityIdentifier, ProofOfAttendance<Signature, AccountId>)>;
@@ -19,12 +20,12 @@ pub type SetProofOfPersonHoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPerso
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct ProofOfPersonhoodConfidence {
-    attested: u8,
-    last_n_ceremonies: u8,
+    attested: CeremonyIndexType,
+    last_n_ceremonies: CeremonyIndexType,
 }
 
 impl ProofOfPersonhoodConfidence {
-    pub fn new(attested: u8, last_n_ceremonies: u8) -> Self {
+    pub fn new(attested: CeremonyIndexType, last_n_ceremonies: CeremonyIndexType) -> Self {
         Self {
             attested,
             last_n_ceremonies,
