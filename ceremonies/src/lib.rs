@@ -44,12 +44,11 @@ use rstd::prelude::*;
 use codec::{Decode, Encode};
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 
-use encointer_primitives::communities::LossyFrom;
 use encointer_primitives::{
     balances::BalanceType,
     ceremonies::consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
     ceremonies::*,
-    communities::{CommunityIdentifier, Degree, Location},
+    communities::{CommunityIdentifier, Degree, Location, LossyFrom},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
