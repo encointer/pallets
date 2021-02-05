@@ -23,6 +23,11 @@ default-features = false
 path = "../communities"
 package = "pallet-encointer-communities"
 
+[dependencies.encointer-primitives]
+default-features = false
+package = "encointer-primitives"
+path = "../primitives"
+
 [dependencies.runtime-io]
 default-features = false
 package = "sp-io"
@@ -79,6 +84,8 @@ rev = "a208da16"
 path = "../balances"
 package = "pallet-encointer-balances"
 
+[dev-dependencies.test-utils]
+path = "../test-utils"
 
 [features]
 default = ["std"]

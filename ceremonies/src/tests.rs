@@ -20,133 +20,52 @@
 
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
-use encointer_communities::{CommunityIdentifier, Degree, Location};
-use encointer_scheduler::{CeremonyIndexType, CeremonyPhaseType};
-use frame_support::traits::{Get, OnFinalize, OnInitialize, UnfilteredDispatchable};
-use frame_support::{assert_ok, impl_outer_origin, parameter_types};
+use encointer_primitives::{
+    communities::{CommunityIdentifier, Degree, Location},
+    scheduler::{CeremonyIndexType, CeremonyPhaseType},
+};
+use frame_support::assert_ok;
+use frame_support::traits::{OnFinalize, OnInitialize, UnfilteredDispatchable};
 use inherents::ProvideInherent;
 use rstest::*;
 use sp_core::crypto::Ss58Codec;
-use sp_core::{hashing::blake2_256, sr25519, Pair, H256, U256};
+use sp_core::{hashing::blake2_256, sr25519, Pair, U256};
 use sp_keyring::AccountKeyring;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::traits::IdentifyAccount;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    DispatchError, Perbill,
+    DispatchError,
 };
-use std::{cell::RefCell, ops::Rem};
-
-const NONE: u64 = 0;
-const GENESIS_TIME: u64 = 1_585_058_843_000;
-const ONE_DAY: u64 = 86_400_000;
-const BLOCKTIME: u64 = 3_600_000; //1h per block
-const TIME_TOLERANCE: u64 = 600000; // [ms]
-const LOCATION_TOLERANCE: u32 = 1000; // [m]
-const ZERO: BalanceType = BalanceType::from_bits(0x0);
-
-thread_local! {
-    static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
-}
-/// The signature type used by accounts/transactions.
-pub type Signature = sr25519::Signature;
-/// An identifier for an account on this system.
-pub type AccountId = <Signature as Verify>::Signer;
-
-pub type BlockNumber = u64;
+use std::ops::Rem;
 
 type TestAttestation = Attestation<Signature, AccountId, Moment>;
 type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
-pub struct ExistentialDeposit;
-impl Get<u64> for ExistentialDeposit {
-    fn get() -> u64 {
-        EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
-    }
-}
+use test_utils::*;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
+pub type System = frame_system::Module<TestRuntime>;
+pub type EncointerCeremonies = Module<TestRuntime>;
+pub type EncointerBalances = encointer_balances::Module<TestRuntime>;
+pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
+pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
+pub type Timestamp = timestamp::Module<TestRuntime>;
+
+test_runtime!(TestRuntime, EncointerScheduler);
+
+impl_encointer_communities!(TestRuntime);
+impl_encointer_balances!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime, Module);
+
+// the tested crate needs to implemented directly
 impl Trait for TestRuntime {
     type Event = ();
     type Public = AccountId;
     type Signature = Signature;
 }
-
-pub type EncointerCeremonies = Module<TestRuntime>;
-
-impl encointer_communities::Trait for TestRuntime {
-    type Event = ();
-}
-
-pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
-
-parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: u32 = 1024;
-    pub const MaximumBlockLength: u32 = 2 * 1024;
-    pub const AvailableBlockRatio: Perbill = Perbill::one();
-}
-impl frame_system::Trait for TestRuntime {
-    type BaseCallFilter = ();
-    type Origin = Origin;
-    type Index = u64;
-    type Call = ();
-    type BlockNumber = BlockNumber;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = ();
-    type BlockHashCount = BlockHashCount;
-    type MaximumBlockWeight = MaximumBlockWeight;
-    type DbWeight = ();
-    type BlockExecutionWeight = ();
-    type ExtrinsicBaseWeight = ();
-    type MaximumBlockLength = MaximumBlockLength;
-    type MaximumExtrinsicWeight = MaximumBlockWeight;
-    type AvailableBlockRatio = AvailableBlockRatio;
-    type Version = ();
-    type AccountData = balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type PalletInfo = ();
-}
-
-pub type System = frame_system::Module<TestRuntime>;
-
-impl encointer_balances::Trait for TestRuntime {
-    type Event = ();
-}
-
-pub type EncointerBalances = encointer_balances::Module<TestRuntime>;
-
-parameter_types! {
-    pub const MomentsPerDay: u64 = 86_400_000; // [ms/d]
-}
-impl encointer_scheduler::Trait for TestRuntime {
-    type Event = ();
-    type OnCeremonyPhaseChange = Module<TestRuntime>; //OnCeremonyPhaseChange;
-    type MomentsPerDay = MomentsPerDay;
-}
-pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
-
-type Moment = u64;
-parameter_types! {
-    pub const MinimumPeriod: Moment = 1;
-}
-impl timestamp::Trait for TestRuntime {
-    type Moment = Moment;
-    type OnTimestampSet = EncointerScheduler;
-    type MinimumPeriod = MinimumPeriod;
-    type WeightInfo = ();
-}
-pub type Timestamp = timestamp::Module<TestRuntime>;
-
-//type AccountPublic = <Signature as Verify>::Signer;
 
 pub struct ExtBuilder;
 
@@ -179,12 +98,8 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut storage)
         .unwrap();
-        runtime_io::TestExternalities::from(storage)
+        storage.into()
     }
-}
-
-impl_outer_origin! {
-    pub enum Origin for TestRuntime {}
 }
 
 /// Run until a particular block.

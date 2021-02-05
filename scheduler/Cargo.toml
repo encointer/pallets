@@ -4,7 +4,10 @@ version = "0.3.7"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
-[dependencies]
+[dependencies.encointer-primitives]
+default-features = false
+package = "encointer-primitives"
+path = "../primitives"
 
 [dependencies.rstd]
 default-features = false
@@ -88,6 +91,9 @@ package = "sp-externalities"
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
 
+[dev-dependencies.test-utils]
+path = "../test-utils"
+
 [features]
 default = ["std"]
 std = [
@@ -101,4 +107,5 @@ std = [
 	"sp-core/std",
 	"frame-support/std",
 	"frame-system/std",
+	"encointer-primitives/std",
 ]

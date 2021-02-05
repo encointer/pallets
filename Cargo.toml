@@ -5,4 +5,8 @@ members = [
     'communities',
     'ceremonies',
     'bazaar',
+    'sybil/gate',
+    'sybil/proof-issuer',
+    'primitives',
+    'test-utils'
 ]

@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-
 //! # Encointer Scheduler Module
 //!
 //! provides functionality for
@@ -24,27 +23,22 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
-    decl_event, decl_module, decl_storage,
+    debug, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::StorageValue,
     traits::Get,
     weights::{DispatchClass, Pays},
-    debug
 };
 use frame_system::ensure_signed;
-use sp_timestamp::OnTimestampSet;
-use rstd::prelude::*;
-use codec::{Decode, Encode};
-use sp_runtime::traits::{Saturating, CheckedAdd, CheckedDiv, Zero, One};
 use rstd::ops::Rem;
+use rstd::prelude::*;
+use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
+use sp_timestamp::OnTimestampSet;
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
-pub trait Trait: frame_system::Trait  + timestamp::Trait
-{
+pub trait Trait: frame_system::Trait + timestamp::Trait {
     type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
     type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
     type MomentsPerDay: Get<Self::Moment>;
@@ -53,31 +47,13 @@ pub trait Trait: frame_system::Trait  + timestamp::Trait
 // Logger target
 const LOG: &str = "encointer";
 
-pub type CeremonyIndexType = u32;
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum CeremonyPhaseType {
-    REGISTERING,
-    ASSIGNING,
-    ATTESTING,
-}
-
-impl Default for CeremonyPhaseType {
-    fn default() -> Self {
-        CeremonyPhaseType::REGISTERING
-    }
-}
-
 /// An event handler for when the ceremony phase changes.
 pub trait OnCeremonyPhaseChange {
-	fn on_ceremony_phase_change(
-		new_phase: CeremonyPhaseType,
-	);
+    fn on_ceremony_phase_change(new_phase: CeremonyPhaseType);
 }
 
 impl OnCeremonyPhaseChange for () {
-    fn on_ceremony_phase_change(_: CeremonyPhaseType) { }
+    fn on_ceremony_phase_change(_: CeremonyPhaseType) {}
 }
 
 // This module's storage items.
@@ -130,25 +106,21 @@ decl_event!(
 
 impl<T: Trait> Module<T> {
     // implicitly assuming Moment to be unix epoch!
-  
+
     fn progress_phase() -> DispatchResult {
         let current_phase = <CurrentPhase>::get();
         let current_ceremony_index = <CurrentCeremonyIndex>::get();
-        
+
         let last_phase_timestamp = Self::next_phase_timestamp();
 
         let next_phase = match current_phase {
-            CeremonyPhaseType::REGISTERING => {
-                    CeremonyPhaseType::ASSIGNING
-            },
-            CeremonyPhaseType::ASSIGNING => {
-                    CeremonyPhaseType::ATTESTING
-            },
+            CeremonyPhaseType::REGISTERING => CeremonyPhaseType::ASSIGNING,
+            CeremonyPhaseType::ASSIGNING => CeremonyPhaseType::ATTESTING,
             CeremonyPhaseType::ATTESTING => {
-                    let next_ceremony_index = current_ceremony_index.saturating_add(1);
-                    <CurrentCeremonyIndex>::put(next_ceremony_index);
-                    CeremonyPhaseType::REGISTERING
-            },
+                let next_ceremony_index = current_ceremony_index.saturating_add(1);
+                <CurrentCeremonyIndex>::put(next_ceremony_index);
+                CeremonyPhaseType::REGISTERING
+            }
         };
 
         let next = last_phase_timestamp
@@ -159,9 +131,8 @@ impl<T: Trait> Module<T> {
         <CurrentPhase>::put(next_phase);
         T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
         Self::deposit_event(Event::PhaseChangedTo(next_phase));
-        debug::info!(target: LOG, "phase changed to: {:?}", next_phase);  
+        debug::info!(target: LOG, "phase changed to: {:?}", next_phase);
         Ok(())
-
     }
 
     // we need to resync in two situations:
@@ -175,23 +146,25 @@ impl<T: Trait> Module<T> {
 
         let tnext = if tnext < now {
             let gap = now - tnext;
-            let n = gap.checked_div(&cycle_duration).expect("invalid phase durations: may not be zero");
-            tnext.saturating_add(
-                (cycle_duration).saturating_mul(n+T::Moment::one()))
+            let n = gap
+                .checked_div(&cycle_duration)
+                .expect("invalid phase durations: may not be zero");
+            tnext.saturating_add((cycle_duration).saturating_mul(n + T::Moment::one()))
         } else {
-            let gap = tnext- now;
-            let n = gap.checked_div(&cycle_duration).expect("invalid phase durations: may not be zero");
-            tnext.saturating_sub(
-                cycle_duration.saturating_mul(n))
+            let gap = tnext - now;
+            let n = gap
+                .checked_div(&cycle_duration)
+                .expect("invalid phase durations: may not be zero");
+            tnext.saturating_sub(cycle_duration.saturating_mul(n))
         };
         <NextPhaseTimestamp<T>>::put(tnext);
-        debug::info!(target: LOG, "next phase change at: {:?}", tnext);            
+        debug::info!(target: LOG, "next phase change at: {:?}", tnext);
         Ok(())
     }
 
-	fn on_timestamp_set(now: T::Moment) {
+    fn on_timestamp_set(now: T::Moment) {
         if Self::next_phase_timestamp() == T::Moment::zero() {
-            // only executed in first block after genesis. 
+            // only executed in first block after genesis.
             // set phase start to 0:00 UTC on the day of genesis
             let next = (now - now.rem(T::MomentsPerDay::get()))
                 .checked_add(&<PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING))
@@ -204,9 +177,9 @@ impl<T: Trait> Module<T> {
 }
 
 impl<T: Trait> OnTimestampSet<T::Moment> for Module<T> {
-	fn on_timestamp_set(moment: T::Moment) {
-		Self::on_timestamp_set(moment)
-	}
+    fn on_timestamp_set(moment: T::Moment) {
+        Self::on_timestamp_set(moment)
+    }
 }
 
 #[cfg(test)]

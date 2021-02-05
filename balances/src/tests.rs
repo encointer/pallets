@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use encointer_communities::CommunityIdentifier;
+use encointer_primitives::communities::CommunityIdentifier;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{

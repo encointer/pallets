@@ -16,35 +16,16 @@
 
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
-use frame_support::traits::Get;
-use frame_support::{assert_ok, impl_outer_origin, parameter_types};
+use frame_support::assert_ok;
 use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
 use sp_keyring::AccountKeyring;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::traits::IdentifyAccount;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
 };
-use std::cell::RefCell;
 
-/// The signature type used by accounts/transactions.
-pub type Signature = sr25519::Signature;
-/// An identifier for an account on this system.
-pub type AccountId = <Signature as Verify>::Signer;
-
-thread_local! {
-    static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(1);
-}
-pub type BlockNumber = u64;
-pub type Balance = u64;
-
-pub struct ExistentialDeposit;
-impl Get<u64> for ExistentialDeposit {
-    fn get() -> u64 {
-        EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
-    }
-}
+use test_utils::*;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
@@ -53,61 +34,12 @@ impl Trait for TestRuntime {
     type Event = ();
 }
 
+pub type System = frame_system::Module<TestRuntime>;
 pub type EncointerCommunities = Module<TestRuntime>;
 
-parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: u32 = 1024;
-    pub const MaximumBlockLength: u32 = 2 * 1024;
-    pub const AvailableBlockRatio: Perbill = Perbill::one();
-}
-impl frame_system::Trait for TestRuntime {
-    type BaseCallFilter = ();
-    type Origin = Origin;
-    type Index = u64;
-    type Call = ();
-    type BlockNumber = BlockNumber;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = AccountId;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = ();
-    type BlockHashCount = BlockHashCount;
-    type MaximumBlockWeight = MaximumBlockWeight;
-    type DbWeight = ();
-    type BlockExecutionWeight = ();
-    type ExtrinsicBaseWeight = ();
-    type MaximumBlockLength = MaximumBlockLength;
-    type MaximumExtrinsicWeight = MaximumBlockWeight;
-    type AvailableBlockRatio = AvailableBlockRatio;
-    type Version = ();
-    type AccountData = balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
-    type PalletInfo = ();
-}
-
-pub type System = frame_system::Module<TestRuntime>;
-
-parameter_types! {
-    pub const TransferFee: Balance = 0;
-    pub const CreationFee: Balance = 0;
-    pub const TransactionBaseFee: u64 = 0;
-    pub const TransactionByteFee: u64 = 0;
-}
-impl balances::Trait for TestRuntime {
-    type Balance = Balance;
-    type Event = ();
-    type DustRemoval = ();
-    type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = System;
-    type WeightInfo = ();
-    type MaxLocks = ();
-}
-
-type AccountPublic = <Signature as Verify>::Signer;
+impl_frame_system!(TestRuntime);
+impl_balances!(TestRuntime);
+impl_outer_origin_for_runtime!(TestRuntime);
 
 pub struct ExtBuilder;
 
@@ -128,12 +60,8 @@ impl ExtBuilder {
     }
 }
 
-impl_outer_origin! {
-    pub enum Origin for TestRuntime {}
-}
-
 fn get_accountid(pair: &sr25519::Pair) -> AccountId {
-    AccountPublic::from(pair.public()).into_account()
+    AccountId::from(pair.public()).into_account()
 }
 
 type T = Degree;

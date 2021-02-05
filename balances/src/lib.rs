@@ -16,28 +16,23 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
-use encointer_communities::CommunityIdentifier;
-use fixed::{transcendental::exp, types::I64F64};
+use encointer_primitives::{
+    balances::{BalanceEntry, BalanceType},
+    communities::CommunityIdentifier,
+};
+use fixed::transcendental::exp;
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
 };
 use frame_system::{self as frame_system, ensure_signed};
 use rstd::convert::TryInto;
-use sp_core::RuntimeDebug;
 use sp_runtime::traits::StaticLookup;
-
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 
 mod mock;
 mod tests;
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
-
-// We're working with fixpoint here.
-pub type BalanceType = I64F64;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -50,15 +45,6 @@ const LOG: &str = "encointer";
 /// This needs to be negated in the formula!
 // FIXME: how to define negative hex literal?
 //pub const DemurrageRate: BalanceType = BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
-
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Copy)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct BalanceEntry<BlockNumber> {
-    /// The balance of the account after last manual adjustment
-    pub principal: BalanceType,
-    /// The time (block height) at which the balance was last adjusted
-    pub last_update: BlockNumber,
-}
 
 pub trait Trait: frame_system::Trait + encointer_communities::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;

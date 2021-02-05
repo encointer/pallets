@@ -35,18 +35,14 @@ use frame_support::{
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 
-use encointer_communities::CommunityIdentifier;
-
-// Only valid for current hashing algorithm of IPFS (sha256)
-// string length: 46 characters (base-58)
-const MAX_HASH_SIZE: usize = 46;
+use encointer_primitives::{
+    bazaar::{consts::MAX_HASH_SIZE, ArticleIdentifier, ShopIdentifier},
+    communities::CommunityIdentifier,
+};
 
 pub trait Trait: frame_system::Trait + encointer_communities::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
-
-pub type ShopIdentifier = Vec<u8>;
-pub type ArticleIdentifier = Vec<u8>;
 
 decl_storage! {
     trait Store for Module<T: Trait> as Bazaar {
