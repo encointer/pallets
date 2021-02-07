@@ -48,10 +48,11 @@ use encointer_primitives::{
     balances::BalanceType,
     ceremonies::consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
     ceremonies::*,
-    communities::{CommunityIdentifier, Degree, Location, LossyInto},
+    communities::{CommunityIdentifier, Degree, Location, LossyFrom},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
+use sp_runtime::SaturatedConversion;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -627,8 +628,8 @@ impl<T: Trait> Module<T> {
         let perdegree = day / T::Moment::from(360u32);
         let start = next - duration;
         // rounding to the lower integer degree. Max error: 240s = 4min
-        let abs_lon: i32 = mlocation.lon.abs().lossy_into();
-        let abs_lon_time = T::Moment::from(abs_lon as u32) * perdegree;
+        let abs_lon: u32 = i64::lossy_from(mlocation.lon.abs()).saturated_into();
+        let abs_lon_time = T::Moment::from(abs_lon) * perdegree;
 
         if mlocation.lon < Degree::from_num(0) {
             Some(start + day / T::Moment::from(2u32) + abs_lon_time)

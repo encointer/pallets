@@ -36,10 +36,10 @@ use rstd::prelude::*;
 
 use codec::Encode;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
-use fixed::types::I32F32;
 use runtime_io::hashing::blake2_256;
 
 use encointer_primitives::{communities::consts::*, communities::*};
+use sp_runtime::SaturatedConversion;
 
 pub trait Trait: frame_system::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
@@ -156,51 +156,39 @@ impl<T: Trait> Module<T> {
             .checked_mul(Degree::from_num(240))
             .unwrap(); // 24h * 3600s / 360° = 240s/°
         let tflight = d.checked_div(MAX_SPEED_MPS).unwrap();
-        let dt: i32 = dt.abs().lossy_into();
+        let dt: i32 = i64::lossy_from(dt.abs()).saturated_into();
         tflight - dt
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
-        if loc.lat > NORTH_POLE.lat {
-            return false;
-        }
-        if loc.lat < SOUTH_POLE.lat {
-            return false;
-        }
-        if loc.lon > DATELINE_LON {
-            return false;
-        }
-        if loc.lon < -DATELINE_LON {
+        if (loc.lat > NORTH_POLE.lat)
+            | (loc.lat < SOUTH_POLE.lat)
+            | (loc.lon > DATELINE_LON)
+            | (loc.lon < -DATELINE_LON)
+        {
             return false;
         }
         true
     }
 
     pub fn haversine_distance(a: &Location, b: &Location) -> u32 {
-        type I = I32F32;
-        let two = I::from_num(2);
-        let theta1 = a.lat * I::lossy_from(RADIANS_PER_DEGREE);
-        let theta2 = b.lat * I::lossy_from(RADIANS_PER_DEGREE);
+        type D = Degree;
+        let two = D::from_num(2);
+        let theta1 = a.lat * D::lossy_from(RADIANS_PER_DEGREE);
+        let theta2 = b.lat * D::lossy_from(RADIANS_PER_DEGREE);
         let delta_theta = theta1 - theta2;
-        let delta_lambda = (a.lon - b.lon) * I::lossy_from(RADIANS_PER_DEGREE);
+        let delta_lambda = (a.lon - b.lon) * D::lossy_from(RADIANS_PER_DEGREE);
+
         let tmp0 = sin(delta_theta / two);
-        let tmp1 = if let Ok(r) = powi::<I, I>(tmp0, 2) {
-            r
-        } else {
-            I::from_num(0)
-        };
+        let tmp1 = powi::<D, D>(tmp0, 2).unwrap_or_default();
         let tmp2 = cos(theta1) * cos(theta2);
         let tmp3 = sin(delta_lambda / two);
-        let tmp4 = if let Ok(r) = powi::<I, I>(tmp3, 2) {
-            r
-        } else {
-            I::from_num(0)
-        };
+        let tmp4 = powi::<D, D>(tmp3, 2).unwrap_or_default();
+
         let aa = tmp1 + tmp2 * tmp4;
-        let c: I = two * asin(sqrt::<I, I>(aa).unwrap());
-        let d = I::from(MEAN_EARTH_RADIUS) * c;
-        let d: i64 = d.lossy_into();
-        d as u32
+        let c: D = two * asin(sqrt::<D, D>(aa).unwrap_or_default());
+        let d = D::from(MEAN_EARTH_RADIUS) * c;
+        i64::lossy_from(d).saturated_into()
     }
 }
 

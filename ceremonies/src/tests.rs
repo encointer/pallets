@@ -21,7 +21,7 @@
 use super::*;
 use crate::{GenesisConfig, Module, Trait};
 use encointer_primitives::{
-    communities::{CommunityIdentifier, Degree, Location},
+    communities::{CommunityIdentifier, Degree, Location, LossyInto},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::assert_ok;
