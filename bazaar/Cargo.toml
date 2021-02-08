@@ -93,6 +93,7 @@ std = [
 	"rstd/std",
 	"codec/std",
 	"encointer-communities/std",
+	"encointer-primitives/std",
 	"runtime-io/std",
 	"frame-support/std",
 	"frame-system/std",
