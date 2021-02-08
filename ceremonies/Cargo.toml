@@ -129,6 +129,3 @@ std = [
 	"encointer-balances/std",
 	"encointer-primitives/std",
 ]
-
-#[patch."https://github.com/encointer/substrate-fixed"]
-#substrate-fixed = { path = "../substrate-fixed" }
