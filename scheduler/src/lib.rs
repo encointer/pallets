@@ -38,8 +38,8 @@ use rstd::prelude::*;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
 use sp_timestamp::OnTimestampSet;
 
-pub trait Trait: frame_system::Trait + timestamp::Trait {
-    type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
+pub trait Config: frame_system::Config + timestamp::Config {
+    type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
     type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
     type MomentsPerDay: Get<Self::Moment>;
 }
@@ -58,7 +58,7 @@ impl OnCeremonyPhaseChange for () {
 
 // This module's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as EncointerScheduler {
+    trait Store for Module<T: Config> as EncointerScheduler {
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
         CurrentCeremonyIndex get(fn current_ceremony_index) config(): CeremonyIndexType;
         LastCeremonyBlock get(fn last_ceremony_block): T::BlockNumber;
@@ -70,7 +70,7 @@ decl_storage! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         const MomentsPerDay: T::Moment = T::MomentsPerDay::get();
 
         fn deposit_event() = default;
@@ -104,7 +104,7 @@ decl_event!(
     }
 );
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     // implicitly assuming Moment to be unix epoch!
 
     fn progress_phase() -> DispatchResult {
@@ -176,7 +176,7 @@ impl<T: Trait> Module<T> {
     }
 }
 
-impl<T: Trait> OnTimestampSet<T::Moment> for Module<T> {
+impl<T: Config> OnTimestampSet<T::Moment> for Module<T> {
     fn on_timestamp_set(moment: T::Moment) {
         Self::on_timestamp_set(moment)
     }

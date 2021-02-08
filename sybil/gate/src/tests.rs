@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::{Module, Trait};
+use crate::{Module, Config};
 use frame_support::assert_ok;
 use sp_core::H256;
 use sp_keyring::AccountKeyring;
@@ -32,7 +32,7 @@ pub struct TestRuntime;
 impl_frame_system!(TestRuntime);
 impl_outer_origin_for_runtime!(TestRuntime);
 
-impl Trait for TestRuntime {
+impl Config for TestRuntime {
     type Event = ();
     type XcmSender = ();
     type Public = AccountId;

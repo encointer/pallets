@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::{GenesisConfig, Module, Trait};
+use crate::{GenesisConfig, Module, Config};
 use frame_support::assert_ok;
 use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
 use sp_keyring::AccountKeyring;
@@ -30,7 +30,7 @@ use test_utils::*;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
-impl Trait for TestRuntime {
+impl Config for TestRuntime {
     type Event = ();
 }
 

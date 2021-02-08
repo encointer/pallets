@@ -57,21 +57,21 @@ use sp_runtime::SaturatedConversion;
 // Logger target
 const LOG: &str = "encointer";
 
-pub trait Trait:
-    frame_system::Trait
-    + timestamp::Trait
-    + encointer_communities::Trait
-    + encointer_balances::Trait
-    + encointer_scheduler::Trait
+pub trait Config:
+    frame_system::Config
+    + timestamp::Config
+    + encointer_communities::Config
+    + encointer_balances::Config
+    + encointer_scheduler::Config
 {
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
 }
 
 // This module's storage items.
 decl_storage! {
-    trait Store for Module<T: Trait> as EncointerCeremonies {
+    trait Store for Module<T: Config> as EncointerCeremonies {
         BurnedBootstrapperNewbieTickets get(fn bootstrapper_newbie_tickets): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => u8;
 
         // everyone who registered for a ceremony
@@ -106,7 +106,7 @@ decl_storage! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
         #[weight = 10_000]
@@ -305,14 +305,14 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as frame_system::Trait>::AccountId,
+        AccountId = <T as frame_system::Config>::AccountId,
     {
         ParticipantRegistered(AccountId),
     }
 );
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         ParticipantAlreadyRegistered,
         BadProofOfAttendanceSignature,
         BadAttestationSignature,
@@ -323,7 +323,7 @@ decl_error! {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     fn purge_registry(cindex: CeremonyIndexType) {
         let cids = <encointer_communities::Module<T>>::community_identifiers();
         for cid in cids.iter() {
@@ -645,7 +645,7 @@ impl<T: Trait> Module<T> {
     }
 }
 
-impl<T: Trait> OnCeremonyPhaseChange for Module<T> {
+impl<T: Config> OnCeremonyPhaseChange for Module<T> {
     fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
         match new_phase {
             CeremonyPhaseType::ASSIGNING => {

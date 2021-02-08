@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::{Module, Trait};
+use crate::{Module, Config};
 use encointer_ceremonies::Module as EncointerCeremoniesModule;
 use frame_support::assert_ok;
 use sp_core::H256;
@@ -43,7 +43,7 @@ impl_encointer_communities!(TestRuntime);
 impl_encointer_balances!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime, EncointerCeremoniesModule);
 
-impl Trait for TestRuntime {
+impl Config for TestRuntime {
     type Event = ();
     type XcmSender = ();
     type Signature = Signature;

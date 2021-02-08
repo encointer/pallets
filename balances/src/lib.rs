@@ -46,12 +46,12 @@ const LOG: &str = "encointer";
 // FIXME: how to define negative hex literal?
 //pub const DemurrageRate: BalanceType = BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 
-pub trait Trait: frame_system::Trait + encointer_communities::Trait {
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+pub trait Config: frame_system::Config + encointer_communities::Config {
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as EncointerBalances {
+    trait Store for Module<T: Config> as EncointerBalances {
         pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CommunityIdentifier => BalanceEntry<T::BlockNumber>;
         pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
         //pub DemurragePerBlock get(fn demurrage_per_block): BalanceType = DemurrageRate;
@@ -60,7 +60,7 @@ decl_storage! {
 
 decl_event!(
     pub enum Event<T> where
-        <T as frame_system::Trait>::AccountId,
+        <T as frame_system::Config>::AccountId,
     {
         /// Token transfer success (community_id, from, to, amount)
         Transferred(CommunityIdentifier, AccountId, AccountId, BalanceType),
@@ -68,7 +68,7 @@ decl_event!(
 );
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
         /// Transfer some balance to another account.
@@ -91,13 +91,13 @@ decl_module! {
 
 decl_error! {
     /// Error for token module.
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         BalanceTooLow,
         TotalIssuanceOverflow,
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     pub fn balance(community_id: CommunityIdentifier, who: &T::AccountId) -> BalanceType {
         Self::balance_entry_updated(community_id, who).principal
     }

@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-bazaar"
-version = "0.3.8"
+version = "0.3.9"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
@@ -10,7 +10,7 @@ edition = "2018"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dependencies.codec]
 default-features = false
@@ -32,19 +32,19 @@ path = "../primitives"
 default-features = false
 package = "sp-io"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dev-dependencies]
 approx = "0.3.0"
@@ -53,7 +53,7 @@ tempdir = "0.3.7"
 [dev-dependencies.externalities]
 package = "sp-externalities"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dev-dependencies.fixed]
 git = "https://github.com/encointer/substrate-fixed"
@@ -63,22 +63,22 @@ package = "substrate-fixed"
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dev-dependencies.balances]
 package = "pallet-balances"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dev-dependencies.sp-core]
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dev-dependencies.sp-runtime]
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
+rev = "38f723bf"
 
 [dev-dependencies.encointer-balances]
 path = "../balances"

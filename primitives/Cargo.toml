@@ -1,6 +1,6 @@
 [package]
 name = "encointer-primitives"
-version = "0.1.0"
+version = "0.3.9"
 authors = ["Christian Langenbacher <christian.langenbacher91@gmail.com>"]
 edition = "2018"
 
@@ -20,13 +20,13 @@ package = "substrate-fixed"
 default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
-rev = "a208da16"
+rev = "38f723bf"
 
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
-rev = "a208da16"
+rev = "38f723bf"
 
 [dependencies.serde]
 features = ["derive"]

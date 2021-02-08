@@ -69,7 +69,7 @@ macro_rules! impl_frame_system {
         impl_frame_system!($t, ());
     };
     ($t:ident, $event:ty) => {
-        impl frame_system::Trait for $t {
+        impl frame_system::Config for $t {
             type BaseCallFilter = ();
             type Origin = Origin;
             type Call = ();
@@ -82,19 +82,16 @@ macro_rules! impl_frame_system {
             type Header = Header;
             type Event = $event;
             type BlockHashCount = BlockHashCount;
-            type MaximumBlockWeight = MaximumBlockWeight;
             type DbWeight = ();
-            type BlockExecutionWeight = ();
-            type ExtrinsicBaseWeight = ();
-            type MaximumExtrinsicWeight = MaximumBlockWeight;
-            type MaximumBlockLength = MaximumBlockLength;
-            type AvailableBlockRatio = AvailableBlockRatio;
             type Version = ();
             type PalletInfo = ();
             type AccountData = balances::AccountData<u64>;
             type OnNewAccount = ();
             type OnKilledAccount = ();
             type SystemWeightInfo = ();
+            type BlockWeights = ();
+            type BlockLength = ();
+            type SS58Prefix = ();   
         }
     };
 }
@@ -107,7 +104,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_timestamp {
     ($t:ident, $scheduler:ident) => {
-        impl timestamp::Trait for $t {
+        impl timestamp::Config for $t {
             type Moment = Moment;
             type OnTimestampSet = $scheduler;
             type MinimumPeriod = MinimumPeriod;
@@ -115,7 +112,7 @@ macro_rules! impl_timestamp {
         }
     };
     ($t:ident) => {
-        impl timestamp::Trait for $t {
+        impl timestamp::Config for $t {
             type Moment = Moment;
             type OnTimestampSet = ();
             type MinimumPeriod = MinimumPeriod;
@@ -134,7 +131,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_balances {
     ($t:ident) => {
-        impl balances::Trait for $t {
+        impl balances::Config for $t {
             type Balance = Balance;
             type Event = ();
             type DustRemoval = ();
@@ -149,7 +146,7 @@ macro_rules! impl_balances {
 #[macro_export]
 macro_rules! impl_encointer_balances {
     ($t:ident) => {
-        impl encointer_balances::Trait for $t {
+        impl encointer_balances::Config for $t {
             type Event = ();
         }
     };
@@ -158,7 +155,7 @@ macro_rules! impl_encointer_balances {
 #[macro_export]
 macro_rules! impl_encointer_communities {
     ($t:ident) => {
-        impl encointer_communities::Trait for $t {
+        impl encointer_communities::Config for $t {
             type Event = ();
         }
     };
@@ -177,7 +174,7 @@ macro_rules! test_runtime {
 #[macro_export]
 macro_rules! impl_encointer_ceremonies {
     ($t:ident) => {
-        impl encointer_ceremonies::Trait for $t {
+        impl encointer_ceremonies::Config for $t {
             type Event = ();
             type Public = AccountId;
             type Signature = Signature;
@@ -192,7 +189,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
     ($t:ident, $module:ident) => {
-        impl encointer_scheduler::Trait for $t {
+        impl encointer_scheduler::Config for $t {
             type Event = ();
             type OnCeremonyPhaseChange = $module<$t>; //OnCeremonyPhaseChange;
             type MomentsPerDay = MomentsPerDay;

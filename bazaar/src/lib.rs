@@ -40,12 +40,12 @@ use encointer_primitives::{
     communities::CommunityIdentifier,
 };
 
-pub trait Trait: frame_system::Trait + encointer_communities::Trait {
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+pub trait Config: frame_system::Config + encointer_communities::Config {
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as Bazaar {
+    trait Store for Module<T: Config> as Bazaar {
         // Maps the shop or article owner to the respective items
         pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ShopIdentifier>;
         pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>;
@@ -59,7 +59,7 @@ decl_storage! {
 }
 
 decl_event! {
-    pub enum Event<T> where AccountId = <T as frame_system::Trait>::AccountId {
+    pub enum Event<T> where AccountId = <T as frame_system::Config>::AccountId {
         /// Event emitted when a shop is uploaded. [community, who, shop]
         ShopCreated(CommunityIdentifier, AccountId, ShopIdentifier),
         /// Event emitted when a shop is removed by the owner. [community, who, shop]
@@ -68,7 +68,7 @@ decl_event! {
 }
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// no such shop exisiting that could be deleted
         NoSuchShop,
         /// shop can not be created twice
@@ -80,7 +80,7 @@ decl_error! {
 
 // TODO: Add Article Upload / Removal
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         // initialisation
         fn deposit_event() = default;
 

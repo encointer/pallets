@@ -56,11 +56,11 @@ pub type System = frame_system::Module<TestRuntime>;
 pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 pub type EncointerBalances = Module<TestRuntime>;
 
-impl encointer_communities::Trait for TestRuntime {
+impl encointer_communities::Config for TestRuntime {
     type Event = TestEvent;
 }
 
-impl Trait for TestRuntime {
+impl Config for TestRuntime {
     type Event = TestEvent;
 }
 

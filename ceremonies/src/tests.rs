@@ -19,7 +19,7 @@
 //extern crate node_primitives;
 
 use super::*;
-use crate::{GenesisConfig, Module, Trait};
+use crate::{GenesisConfig, Module, Config};
 use encointer_primitives::{
     communities::{CommunityIdentifier, Degree, Location, LossyInto},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -61,7 +61,7 @@ impl_encointer_balances!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime, Module);
 
 // the tested crate needs to implemented directly
-impl Trait for TestRuntime {
+impl Config for TestRuntime {
     type Event = ();
     type Public = AccountId;
     type Signature = Signature;

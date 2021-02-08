@@ -17,7 +17,7 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use crate::{Module, Trait};
+use crate::{Module, Config};
 use codec::Encode;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::assert_ok;
@@ -38,7 +38,7 @@ impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
 impl_outer_origin_for_runtime!(TestRuntime);
 
-impl Trait for TestRuntime {
+impl Config for TestRuntime {
     type Event = ();
 }
 

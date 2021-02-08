@@ -41,15 +41,15 @@ use runtime_io::hashing::blake2_256;
 use encointer_primitives::{communities::consts::*, communities::*};
 use sp_runtime::SaturatedConversion;
 
-pub trait Trait: frame_system::Trait {
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+pub trait Config: frame_system::Config {
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 // Logger target
 const LOG: &str = "encointer";
 
 decl_storage! {
-    trait Store for Module<T: Trait> as EncointerCommunities {
+    trait Store for Module<T: Config> as EncointerCommunities {
         Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
@@ -60,7 +60,7 @@ decl_storage! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
         // FIXME: this function has complexity O(n^2)!
         // where n is the number of all locations of all communities
@@ -125,14 +125,14 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as frame_system::Trait>::AccountId,
+        AccountId = <T as frame_system::Config>::AccountId,
     {
         CommunityRegistered(AccountId, CommunityIdentifier),
     }
 );
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// minimum distance violated towards pole
         MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
@@ -142,7 +142,7 @@ decl_error! {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     fn solar_trip_time(from: &Location, to: &Location) -> i32 {
         // FIXME: replace by fixpoint implementation within runtime.
         let d = Module::<T>::haversine_distance(&from, &to) as i32;

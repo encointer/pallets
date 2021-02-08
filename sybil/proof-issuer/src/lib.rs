@@ -35,19 +35,19 @@ use encointer_primitives::{
 
 const LOG: &str = "encointer";
 
-use encointer_ceremonies::Trait as Ceremonies;
+use encointer_ceremonies::Config as Ceremonies;
 use sp_runtime::sp_std::cmp::min;
 use sp_runtime::DispatchError;
 
-pub trait Trait:
-    frame_system::Trait
+pub trait Config:
+    frame_system::Config
     + Ceremonies
-    + encointer_scheduler::Trait
-    + encointer_balances::Trait
-    + encointer_communities::Trait
+    + encointer_scheduler::Config
+    + encointer_balances::Config
+    + encointer_communities::Config
 {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     /// The XCM sender module.
     type XcmSender: SendXcm;
 
@@ -58,7 +58,7 @@ pub type SetProofOfPersonhoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPerso
 
 decl_event! {
     pub enum Event<T>
-    where AccountId = <T as frame_system::Trait>::AccountId,
+    where AccountId = <T as frame_system::Config>::AccountId,
     {
         ProofOfPersonHoodRequestReceived(AccountId),
         ProofOfPersonHoodSentSuccess(AccountId),
@@ -67,7 +67,7 @@ decl_event! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
         #[weight = 5_000_000]
@@ -98,7 +98,7 @@ decl_module! {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     fn verify(
         request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>,
     ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
