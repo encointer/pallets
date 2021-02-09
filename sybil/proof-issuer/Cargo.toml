@@ -39,66 +39,66 @@ version = "1.3.6"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.polkadot-parachain]
 default-features = false
 git = "https://github.com/paritytech/polkadot"
-rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
+branch = "master"
 
 [dependencies.sp-core]
 default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.timestamp]
 default-features = false
 package = "pallet-timestamp"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.xcm]
 default-features = false
 git = "https://github.com/paritytech/polkadot"
-rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
+branch = "master"
 
 [dependencies.sp-io]
 default-features = false
 package = "sp-io"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dev-dependencies.xcm-builder]
 git = "https://github.com/paritytech/polkadot.git"
-rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
+branch = "master"
 
 [dev-dependencies.xcm-executor]
 git = "https://github.com/paritytech/polkadot.git"
-rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
+branch = "master"
 
 [dev-dependencies.test-utils]
 path = "../../test-utils"
