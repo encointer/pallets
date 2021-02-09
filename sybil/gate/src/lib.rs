@@ -99,7 +99,7 @@ decl_module! {
             debug::debug!(target: LOG, "sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(location.into(), message) {
                 Ok(()) => {
-                    PendingRequests::insert(parachain_id, ());
+                    <PendingRequests<T>>::insert(&sender, ());
                     Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender))
                 },
                 Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentFailure(sender, e)),
@@ -117,15 +117,15 @@ decl_module! {
             debug::RuntimeLogger::init();
             debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
 
-            let para_id: u32 = Sibling::try_from_account(&sender)
-                .ok_or("[EncointerSybilGate]: Could not get paraId from sender")?
-                .into();
+            if Sibling::try_from_account(&sender).is_none() {
+                Err("[EncointerSybilGate]: set_proof_of_personhood only allows calls from other parachains")?
+            }
 
-            ensure!(PendingRequests::contains_key(&account),
+            ensure!(<PendingRequests<T>>::contains_key(&account),
                 "[EncointerSybilGate]: Received unexpected PoP Response");
 
-            <ProofOfPersonhood<T>>::insert(account, confidence);
-            PendingRequests::remove(&account);
+            <ProofOfPersonhood<T>>::insert(&account, confidence);
+            <PendingRequests<T>>::remove(&account);
             Self::deposit_event(RawEvent::StoredProofOfPersonHoodConfidence(account))
         }
     }

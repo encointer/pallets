@@ -23,6 +23,7 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
+use xcm_executor::traits::LocationConversion;
 
 use test_utils::*;
 
@@ -35,7 +36,7 @@ impl_outer_origin_for_runtime!(TestRuntime);
 impl Config for TestRuntime {
     type Event = ();
     type XcmSender = ();
-    type Public = AccountId;
+    type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
 }
 
@@ -61,13 +62,16 @@ fn request_proof_of_person_hood_confidence_is_ok() {
 }
 
 #[test]
-fn test_data() {
-    let request: ProofOfPersonhoodRequest<Signature, AccountId> =
-        ProofOfPersonhoodRequest::default();
+fn set_proof_of_personhood_confidence_returns_err_for_unexpected_account() {
+    let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
+    let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
 
-    println!("Default ProofOfPersonhoodRequest: {:?}", request);
-    println!(
-        "Default ProofOfPersonhoodRequest: {:?}",
-        hex::encode(request.encode())
-    );
+    new_test_ext().execute_with(|| {
+        assert!(SybilGate::set_proof_of_personhood_confidence(
+            Origin::signed(account),
+            AccountKeyring::Alice.into(),
+            ProofOfPersonhoodConfidence::default()
+        )
+        .is_err());
+    })
 }

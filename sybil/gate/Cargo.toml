@@ -72,6 +72,10 @@ package = "sp-keyring"
 git = "https://github.com/paritytech/substrate.git"
 rev = "38f723bf"
 
+[dev-dependencies.xcm-executor]
+git = "https://github.com/paritytech/polkadot.git"
+branch = "rococo-v1"
+
 [dev-dependencies.test-utils]
 path = "../../test-utils"
 
