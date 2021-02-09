@@ -31,7 +31,6 @@ use rstest::*;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{hashing::blake2_256, sr25519, Pair, U256};
 use sp_keyring::AccountKeyring;
-use sp_runtime::traits::IdentifyAccount;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -63,7 +62,7 @@ impl_encointer_scheduler!(TestRuntime, Module);
 // the tested crate needs to implemented directly
 impl Config for TestRuntime {
     type Event = ();
-    type Public = AccountId;
+    type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
 }
 
@@ -288,7 +287,7 @@ fn gets_attested_by(
 
 /// shorthand to convert Pair to AccountId
 fn account_id(pair: &sr25519::Pair) -> AccountId {
-    AccountId::from(pair.public()).into_account()
+    pair.public().into()
 }
 
 /// register a simple test community with N meetup locations and defined bootstrappers
@@ -299,10 +298,10 @@ fn register_test_community(
     let bs: Vec<AccountId> = custom_bootstrappers
         .unwrap_or_else(|| bootstrappers())
         .into_iter()
-        .map(|b| b.public())
+        .map(|b| account_id(&b))
         .collect();
 
-    let prime = bs[0];
+    let prime = &bs[0];
 
     let mut loc = Vec::with_capacity(n_locations as usize);
     for l in 0..n_locations {
@@ -344,7 +343,7 @@ fn perform_bootstrapping_ceremony(
     let cid = register_test_community(Some(bootstrappers.clone()), n_locations);
     bootstrappers
         .iter()
-        .for_each(|b| register(b.public(), cid, None).unwrap());
+        .for_each(|b| register(b.public().into(), cid, None).unwrap());
 
     let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -1328,7 +1327,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
             assert_ok!(EncointerCeremonies::endorse_newcomer(
                 Origin::signed(alice.clone()),
                 cid,
-                endorsees[i as usize].public()
+                account_id(&endorsees[i as usize])
             ));
         }
 
@@ -1336,7 +1335,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
             EncointerCeremonies::endorse_newcomer(
                 Origin::signed(alice.clone()),
                 cid,
-                endorsees[AMOUNT_NEWBIE_TICKETS as usize].public()
+                account_id(&endorsees[AMOUNT_NEWBIE_TICKETS as usize])
             )
             .unwrap_err(),
             DispatchError::Other("bootstrapper has run out of newbie tickets")
@@ -1574,7 +1573,7 @@ fn grow_population_works() {
         participants.extend(add_population(14, participants.len()));
         participants
             .iter()
-            .for_each(|p| register(p.public(), cid, None).unwrap());
+            .for_each(|p| register(account_id(&p), cid, None).unwrap());
 
         let cindex = EncointerScheduler::current_ceremony_index();
         run_to_next_phase();
@@ -1679,9 +1678,9 @@ fn assigning_meetup_works(
         for e in 0..n_endorsees {
             population.extend(add_population(1, population.len()));
             assert_ok!(EncointerCeremonies::endorse_newcomer(
-                Origin::signed(bs[e % n_bootstrappers].public().clone()),
+                Origin::signed(account_id(&bs[e % n_bootstrappers]).clone()),
                 cid,
-                population.last().unwrap().public()
+                account_id(&population.last().unwrap())
             ));
         }
 
@@ -1696,7 +1695,7 @@ fn assigning_meetup_works(
         let cindex = EncointerScheduler::current_ceremony_index();
         population
             .iter()
-            .for_each(|p| register(p.public(), cid, get_proof(cid, cindex - 1, p)).unwrap());
+            .for_each(|p| register(account_id(&p), cid, get_proof(cid, cindex - 1, p)).unwrap());
 
         run_to_next_phase(); // ASSIGNING
 
@@ -1738,7 +1737,7 @@ fn grow_community(
     // if we assume that everyone participated in the last meetup.
     while proofs.clone().iter().filter(|p| p.is_some()).count() < amount {
         for (i, p) in participants.iter().enumerate() {
-            register(p.public(), cid, proofs[i].clone()).unwrap();
+            register(account_id(&p), cid, proofs[i].clone()).unwrap();
         }
 
         let cindex = EncointerScheduler::current_ceremony_index();

@@ -19,7 +19,6 @@ use crate::{GenesisConfig, Module, Config};
 use frame_support::assert_ok;
 use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
 use sp_keyring::AccountKeyring;
-use sp_runtime::traits::IdentifyAccount;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -61,7 +60,7 @@ impl ExtBuilder {
 }
 
 fn get_accountid(pair: &sr25519::Pair) -> AccountId {
-    AccountId::from(pair.public()).into_account()
+    AccountId::from(pair.public()).into()
 }
 
 type T = Degree;
