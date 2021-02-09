@@ -39,18 +39,18 @@ use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 const LOG: &str = "encointer";
 
-pub trait Config: frame_system::Config {
+pub trait Trait: frame_system::Trait {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
     /// The XCM sender module.
     type XcmSender: SendXcm;
 
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
-    type Signature: Verify<Signer = <Self as Config>::Public> + Member + Decode + Encode;
+    type Signature: Verify<Signer = <Self as Trait>::Public> + Member + Decode + Encode;
 }
 
 decl_storage! {
-    trait Store for Module<T: Config> as EncointerSybilGate {
+    trait Store for Module<T: Trait> as EncointerSybilGate {
         ProofOfPersonhood get(fn proof_of_personhood_confidence): map hasher(blake2_128_concat) T::AccountId => ProofOfPersonhoodConfidence;
         PendingRequests get(fn pending_requests): map hasher(blake2_128_concat) T::AccountId => ();
     }
@@ -58,7 +58,7 @@ decl_storage! {
 
 decl_event! {
     pub enum Event<T>
-    where AccountId = <T as frame_system::Config>::AccountId,
+    where AccountId = <T as frame_system::Trait>::AccountId,
     {
         ProofOfPersonHoodRequestSentSuccess(AccountId),
         ProofOfPersonHoodRequestSentFailure(AccountId, XcmError),
@@ -67,7 +67,7 @@ decl_event! {
 }
 
 decl_module! {
-    pub struct Module<T: Config> for enum Call where origin: T::Origin {
+    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
         #[weight = 5_000_000]

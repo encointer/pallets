@@ -44,7 +44,7 @@ impl_encointer_communities!(TestRuntime);
 impl_encointer_balances!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime, EncointerCeremoniesModule);
 
-impl Config for TestRuntime {
+impl Trait for TestRuntime {
     type Event = ();
     type XcmSender = ();
 }
