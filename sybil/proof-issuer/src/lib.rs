@@ -73,32 +73,28 @@ decl_module! {
         #[weight = 5_000_000]
         fn issue_proof_of_personhood_confidence(
         origin,
-        pallet_sybil_gate_index: u8,
-        proof_of_person_hood_request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>
+        requester: T::AccountId,
+        proof_of_person_hood_request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>,
+        sender_sybil_gate: u8
         ) {
             debug::RuntimeLogger::init();
-            debug::debug!(target: LOG, "received proof of personhood request: {:?}", proof_of_person_hood_request);
             let sender = ensure_signed(origin)?;
-            debug::debug!(target: LOG, "sender: {:?}", &sender);
-
-            Self::deposit_event(RawEvent::ProofOfPersonHoodRequestReceived(sender.clone()));
-
             let para_id: u32 = Sibling::try_from_account(&sender)
-                .ok_or("[EncointerSybilGate]: Could not get ParaId from sender")?
+                .ok_or("[EncointerSybilGate]: Can only call `issue_proof_of_personhood` from another parachain")?
                 .into();
 
-            debug::debug!(target: LOG, "Received Call from paraId: {:?}", para_id);
-            let location = Junction::Parachain { id: para_id };
-
+            debug::debug!(target: LOG, "received proof of personhood from parachain: {:?}", para_id);
+            debug::debug!(target: LOG, "received proof of personhood request: {:?}", proof_of_person_hood_request);
 
             let confidence = Self::verify(proof_of_person_hood_request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 
-            // Todo: use actual call_index from sybil gate
-            let call: SetProofOfPersonHoodCall<T::AccountId> = ([pallet_sybil_gate_index, 1], sender.clone(), confidence);
+            let location = Junction::Parachain { id: para_id };
+            // Todo: Don't use hardcoded 1 here
+            let call: SetProofOfPersonHoodCall<T::AccountId> = ([sender_sybil_gate, 1], requester.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
-                Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(sender)),
-                Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentFailure(sender, e)),
+                Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(requester)),
+                Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentFailure(requester, e)),
             }
         }
     }
@@ -121,7 +117,7 @@ impl<T: Config> Module<T> {
         }
         let last_n_ceremonies = <encointer_scheduler::Module<T>>::current_ceremony_index()
             .checked_sub(c_index_min)
-            .expect("Proofs can't not be valid, with bogus ceremony index; qed");
+            .expect("Proofs can't be valid with bogus ceremony index; qed");
 
         Ok(ProofOfPersonhoodConfidence::new(
             n_attested,

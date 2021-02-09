@@ -9,8 +9,29 @@ use crate::scheduler::CeremonyIndexType;
 pub type ProofOfPersonhoodRequest<Signature, AccountId> =
     Vec<(CommunityIdentifier, ProofOfAttendance<Signature, AccountId>)>;
 
-pub type IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> =
-    ([u8; 2], u8, ProofOfPersonhoodRequest<Signature, AccountId>);
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+pub struct IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> {
+    call_index: [u8; 2],
+    requester: AccountId,
+    request: ProofOfPersonhoodRequest<Signature, AccountId>,
+    sender_pallet_index: u8,
+}
+
+impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> {
+    pub fn new(
+        call_index: [u8; 2],
+        requester: AccountId,
+        request: ProofOfPersonhoodRequest<Signature, AccountId>,
+        sender_pallet_index: u8,
+    ) -> Self {
+        Self {
+            call_index,
+            requester,
+            request,
+            sender_pallet_index,
+        }
+    }
+}
 
 pub type SetProofOfPersonHoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPersonhoodConfidence);
 

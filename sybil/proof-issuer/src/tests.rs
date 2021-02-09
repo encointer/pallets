@@ -18,6 +18,7 @@ use super::*;
 use crate::{Config, Module};
 use frame_support::assert_ok;
 use sp_core::H256;
+use sp_keyring::AccountKeyring;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
@@ -64,8 +65,9 @@ fn issue_proof_of_personhood_is_ok() {
         let account_id = LocationConverter::from_location(&sibling.into()).unwrap();
         assert_ok!(SybilGate::issue_proof_of_personhood_confidence(
             Origin::signed(account_id),
+            AccountKeyring::Alice.public().into(),
+            ProofOfPersonhoodRequest::default(),
             1,
-            ProofOfPersonhoodRequest::default()
         ));
     })
 }
