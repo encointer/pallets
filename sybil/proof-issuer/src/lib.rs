@@ -21,11 +21,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::Encode;
 use frame_support::{debug, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
+use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
-use sp_runtime::traits::{Member, Verify};
+use sp_runtime::traits::AccountIdConversion;
+use sp_runtime::traits::Verify;
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
@@ -50,8 +52,6 @@ pub trait Config:
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     /// The XCM sender module.
     type XcmSender: SendXcm;
-
-    type Signature: Verify<Signer = <Self as Ceremonies>::Public> + Member + Decode + Encode;
 }
 
 pub type SetProofOfPersonhoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPersonhoodConfidence);
@@ -73,22 +73,28 @@ decl_module! {
         #[weight = 5_000_000]
         fn issue_proof_of_personhood_confidence(
         origin,
-        sender_parachain_id: u32,
         pallet_sybil_gate_index: u8,
         proof_of_person_hood_request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>
         ) {
             debug::RuntimeLogger::init();
-            debug::debug!(target: LOG, "received proof of personhood request from parachain: {:?}", sender_parachain_id);
-            debug::debug!(target: LOG, "request: {:?}", proof_of_person_hood_request);
+            debug::debug!(target: LOG, "received proof of personhood request: {:?}", proof_of_person_hood_request);
             let sender = ensure_signed(origin)?;
+            debug::debug!(target: LOG, "sender: {:?}", &sender);
+
             Self::deposit_event(RawEvent::ProofOfPersonHoodRequestReceived(sender.clone()));
 
-            let location = Junction::Parachain { id: sender_parachain_id };
+            let para_id: u32 = Sibling::try_from_account(&sender)
+                .ok_or("[EncointerSybilGate]: Could not get ParaId from sender")?
+                .into();
+
+            debug::debug!(target: LOG, "Received Call from paraId: {:?}", para_id);
+            let location = Junction::Parachain { id: para_id };
+
 
             let confidence = Self::verify(proof_of_person_hood_request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 
             // Todo: use actual call_index from sybil gate
-            let call: SetProofOfPersonHoodCall<T::AccountId> = ([pallet_sybil_gate_index, 1u8], sender.clone(), confidence);
+            let call: SetProofOfPersonHoodCall<T::AccountId> = ([pallet_sybil_gate_index, 1], sender.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(sender)),

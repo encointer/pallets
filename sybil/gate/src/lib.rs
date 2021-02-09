@@ -29,9 +29,11 @@ use codec::{Decode, Encode};
 use encointer_primitives::sybil::{
     IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest,
 };
-use frame_support::{debug, decl_event, decl_module, decl_storage};
+use frame_support::{debug, decl_event, decl_module, decl_storage, ensure};
 use frame_system::ensure_signed;
+use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
+use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
@@ -50,6 +52,7 @@ pub trait Config: frame_system::Config {
 decl_storage! {
     trait Store for Module<T: Config> as EncointerSybilGate {
         ProofOfPersonhood get(fn proof_of_personhood_confidence): map hasher(blake2_128_concat) T::AccountId => ProofOfPersonhoodConfidence;
+        PendingRequests get(fn pending_requests): map hasher(blake2_128_concat) T::AccountId => ();
     }
 }
 
@@ -85,17 +88,20 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
 
-            // todo: use get the runtime configuration's specific pallet index. Currently, this corresponds
+            // todo: get the runtime configuration's specific pallet index. Currently, this corresponds
             // to the index given in our encointer parachain because we declare the module like this in
             // construct runtime:
             // `EncointerSybilGate: encointer_sybil_gate::{Module, Call, Storage, Event<T>} = 2,`
             let sender_pallet_sybil_gate_index = 15u8;
             // Todo: use actual call_index from proof issuer
-            let call: IssueProofOfPersonhoodConfidenceCall<T::Signature, T::AccountId> = ([pallet_sybil_proof_issuer_index, 0], parachain_id, sender_pallet_sybil_gate_index, request);
+            let call: IssueProofOfPersonhoodConfidenceCall<T::Signature, T::AccountId> = ([pallet_sybil_proof_issuer_index, 0], sender_pallet_sybil_gate_index, request);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             debug::debug!(target: LOG, "sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(location.into(), message) {
-                Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender)),
+                Ok(()) => {
+                    PendingRequests::insert(parachain_id, ());
+                    Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender))
+                },
                 Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentFailure(sender, e)),
             }
         }
@@ -106,11 +112,21 @@ decl_module! {
             account: T::AccountId,
             confidence: ProofOfPersonhoodConfidence
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
+
+            debug::RuntimeLogger::init();
             debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
+
+            let para_id: u32 = Sibling::try_from_account(&sender)
+                .ok_or("[EncointerSybilGate]: Could not get paraId from sender")?
+                .into();
+
+            ensure!(PendingRequests::contains_key(&account),
+                "[EncointerSybilGate]: Received unexpected PoP Response");
+
             <ProofOfPersonhood<T>>::insert(account, confidence);
-            Self::deposit_event(RawEvent::StoredProofOfPersonHoodConfidence(sender))
+            PendingRequests::remove(&account);
+            Self::deposit_event(RawEvent::StoredProofOfPersonHoodConfidence(account))
         }
     }
 }
