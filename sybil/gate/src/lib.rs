@@ -29,12 +29,11 @@ use codec::{Decode, Encode};
 use encointer_primitives::sybil::{
     IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest,
 };
-use frame_support::{debug, decl_event, decl_module, decl_storage, ensure};
+use frame_support::{debug, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo};
 use frame_system::ensure_signed;
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
-use sp_runtime::traits::AccountIdConversion;
-use sp_runtime::traits::{IdentifyAccount, Member, Verify};
+use sp_runtime::traits::{AccountIdConversion, CheckedConversion, IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 const LOG: &str = "encointer";
@@ -88,15 +87,15 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
 
-            // todo: get the runtime configuration's specific pallet index. Currently, this corresponds
-            // to the index given in our encointer parachain because we declare the module like this in
-            // construct runtime:
-            // `EncointerSybilGate: encointer_sybil_gate::{Module, Call, Storage, Event<T>} = 2,`
-            let sender_pallet_sybil_gate_index = 15u8;
-            // Todo: use actual call_index from proof issuer
+            // Get this pallet's runtime configuration specific module index.
+            let sender_pallet_sybil_gate_index = <T as frame_system::Config>::PalletInfo::index::<Self>()
+                .map(|i| i.checked_into::<u8>())
+                .flatten()
+                .ok_or("[EncointerSybilGate]: PalletIndex does not fix into u8. Consider giving it a smaller index.")?;
+
             let call = IssueProofOfPersonhoodConfidenceCall::new(pallet_sybil_proof_issuer_index, sender.clone(), request, sender_pallet_sybil_gate_index);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
-            debug::debug!(target: LOG, "sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
+            debug::debug!(target: LOG, "[EncointerSybilGate]: Sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(location.into(), message) {
                 Ok(()) => {
                     <PendingRequests<T>>::insert(&sender, ());

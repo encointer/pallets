@@ -89,7 +89,7 @@ decl_module! {
             let confidence = Self::verify(proof_of_person_hood_request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 
             let location = Junction::Parachain { id: para_id };
-            // Todo: Don't use hardcoded 1 here
+
             let call =  SetProofOfPersonHoodCall::new(sender_sybil_gate, requester.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
