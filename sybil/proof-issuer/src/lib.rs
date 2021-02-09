@@ -90,7 +90,7 @@ decl_module! {
 
             let location = Junction::Parachain { id: para_id };
             // Todo: Don't use hardcoded 1 here
-            let call: SetProofOfPersonHoodCall<T::AccountId> = ([sender_sybil_gate, 1], requester.clone(), confidence);
+            let call =  SetProofOfPersonHoodCall::new(sender_sybil_gate, requester.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(requester)),

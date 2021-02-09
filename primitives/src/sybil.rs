@@ -19,13 +19,13 @@ pub struct IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> {
 
 impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> {
     pub fn new(
-        call_index: [u8; 2],
+        sybil_proof_issuer_index: u8,
         requester: AccountId,
         request: ProofOfPersonhoodRequest<Signature, AccountId>,
         sender_pallet_index: u8,
     ) -> Self {
         Self {
-            call_index,
+            call_index: [sybil_proof_issuer_index, 0], // is the first call in proof-issuer pallet
             requester,
             request,
             sender_pallet_index,
@@ -33,7 +33,26 @@ impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, Accou
     }
 }
 
-pub type SetProofOfPersonHoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPersonhoodConfidence);
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+pub struct SetProofOfPersonHoodCall<AccountId> {
+    call_index: [u8; 2],
+    account: AccountId,
+    confidence: ProofOfPersonhoodConfidence,
+}
+
+impl<AccountId> SetProofOfPersonHoodCall<AccountId> {
+    pub fn new(
+        sybil_gate_index: u8,
+        account: AccountId,
+        confidence: ProofOfPersonhoodConfidence,
+    ) -> Self {
+        Self {
+            call_index: [sybil_gate_index, 1],
+            account,
+            confidence,
+        }
+    }
+}
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct ProofOfPersonhoodConfidence {

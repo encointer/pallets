@@ -94,7 +94,7 @@ decl_module! {
             // `EncointerSybilGate: encointer_sybil_gate::{Module, Call, Storage, Event<T>} = 2,`
             let sender_pallet_sybil_gate_index = 15u8;
             // Todo: use actual call_index from proof issuer
-            let call = IssueProofOfPersonhoodConfidenceCall::new([pallet_sybil_proof_issuer_index, 0], sender.clone(), request, sender_pallet_sybil_gate_index);
+            let call = IssueProofOfPersonhoodConfidenceCall::new(pallet_sybil_proof_issuer_index, sender.clone(), request, sender_pallet_sybil_gate_index);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             debug::debug!(target: LOG, "sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(location.into(), message) {
