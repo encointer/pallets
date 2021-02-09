@@ -21,9 +21,8 @@
 use encointer_primitives::balances::BalanceType;
 use frame_support::parameter_types;
 use frame_support::traits::Get;
-use sp_core::sr25519;
-use sp_runtime::traits::Verify;
-use sp_runtime::Perbill;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{MultiSignature, Perbill};
 use std::cell::RefCell;
 
 pub use balances;
@@ -42,9 +41,9 @@ thread_local! {
     static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
 }
 /// The signature type used by accounts/transactions.
-pub type Signature = sr25519::Signature;
+pub type Signature = MultiSignature;
 /// An identifier for an account on this system.
-pub type AccountId = <Signature as Verify>::Signer;
+pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 pub type BlockNumber = u64;
 pub type Balance = u64;
@@ -176,7 +175,7 @@ macro_rules! impl_encointer_ceremonies {
     ($t:ident) => {
         impl encointer_ceremonies::Config for $t {
             type Event = ();
-            type Public = AccountId;
+            type Public = <Signature as Verify>::Signer;
             type Signature = Signature;
         }
     };
