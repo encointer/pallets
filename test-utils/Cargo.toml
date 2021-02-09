@@ -50,19 +50,19 @@ rev = "38f723bf"
 [dependencies.polkadot-parachain]
 default-features = false
 git = "https://github.com/paritytech/polkadot"
-rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
+rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
 
 [dependencies.xcm]
 git = "https://github.com/paritytech/polkadot"
-rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
+rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
 
 [dependencies.xcm-builder]
 git = "https://github.com/paritytech/polkadot.git"
-rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
+rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
 
 [dependencies.xcm-executor]
 git = "https://github.com/paritytech/polkadot.git"
-rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
+rev = "ab606e14603610d364d0e4bddabd6e9209347b68" # commit from the same day as the substrate commit we use
 
 [dependencies.balances]
 package = "pallet-balances"

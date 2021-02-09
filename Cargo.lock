@@ -2724,7 +2724,7 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 [[package]]
 name = "xcm"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?rev=4a94b71ed7abdba231de8a03a7a22975cab6a079#4a94b71ed7abdba231de8a03a7a22975cab6a079"
+source = "git+https://github.com/paritytech/polkadot?rev=ab606e14603610d364d0e4bddabd6e9209347b68#ab606e14603610d364d0e4bddabd6e9209347b68"
 dependencies = [
  "parity-scale-codec",
 ]
