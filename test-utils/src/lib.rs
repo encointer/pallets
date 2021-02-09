@@ -21,13 +21,16 @@
 use encointer_primitives::balances::BalanceType;
 use frame_support::parameter_types;
 use frame_support::traits::Get;
+use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::{MultiSignature, Perbill};
 use std::cell::RefCell;
+use xcm::v0::NetworkId;
 
 pub use balances;
 pub use sp_core::H256;
 pub use sp_runtime::traits::BlakeTwo256;
+use xcm_builder::SiblingParachainConvertsVia;
 
 pub const NONE: u64 = 0;
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
@@ -204,3 +207,9 @@ macro_rules! impl_outer_origin_for_runtime {
         }
     };
 }
+
+parameter_types! {
+    pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+}
+
+pub type LocationConverter = SiblingParachainConvertsVia<Sibling, AccountId>;

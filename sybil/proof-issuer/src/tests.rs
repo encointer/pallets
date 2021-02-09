@@ -15,18 +15,18 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::{Module, Config};
-use encointer_ceremonies::Module as EncointerCeremoniesModule;
+use crate::{Config, Module};
 use frame_support::assert_ok;
 use sp_core::H256;
-use sp_keyring::AccountKeyring;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
+// use xcm_builder::{AccountId32Aliases, ParentIsDefault, SiblingParachainConvertsVia};
+use xcm_executor::traits::LocationConversion;
 
+use encointer_ceremonies::Module as EncointerCeremoniesModule;
 use encointer_primitives::sybil::ProofOfPersonhoodRequest;
-
 use test_utils::*;
 
 pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
@@ -46,7 +46,6 @@ impl_encointer_scheduler!(TestRuntime, EncointerCeremoniesModule);
 impl Config for TestRuntime {
     type Event = ();
     type XcmSender = ();
-    type Signature = Signature;
 }
 
 fn new_test_ext() -> sp_io::TestExternalities {
@@ -61,11 +60,24 @@ type SybilGate = Module<TestRuntime>;
 #[test]
 fn issue_proof_of_personhood_is_ok() {
     new_test_ext().execute_with(|| {
+        let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
+        let account_id = LocationConverter::from_location(&sibling.into()).unwrap();
         assert_ok!(SybilGate::issue_proof_of_personhood_confidence(
-            Origin::signed(AccountKeyring::Alice.into()),
-            2,
+            Origin::signed(account_id),
             1,
             ProofOfPersonhoodRequest::default()
         ));
     })
+}
+
+#[test]
+fn account_id_conversion_works() {
+    new_test_ext().execute_with(|| {
+        let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
+        let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
+        assert_eq!(
+            LocationConverter::try_into_location(account).unwrap(),
+            sibling.into()
+        );
+    });
 }
