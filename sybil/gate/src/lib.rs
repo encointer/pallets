@@ -29,7 +29,9 @@ use codec::{Decode, Encode};
 use encointer_primitives::sybil::{
     IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest,
 };
-use frame_support::{debug, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo};
+use frame_support::{
+    debug, decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
+};
 use frame_system::ensure_signed;
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
@@ -68,6 +70,7 @@ decl_event! {
 decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
+        type Error = Error<T>;
 
         #[weight = 5_000_000]
         /// ### Proof of PersonhoodRequest
@@ -112,21 +115,29 @@ decl_module! {
             confidence: ProofOfPersonhoodConfidence
         ) {
             let sender = ensure_signed(origin)?;
+            Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
 
             debug::RuntimeLogger::init();
             debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
 
-            if Sibling::try_from_account(&sender).is_none() {
-                Err("[EncointerSybilGate]: set_proof_of_personhood only allows calls from other parachains")?
-            }
-
             ensure!(<PendingRequests<T>>::contains_key(&account),
-                "[EncointerSybilGate]: Received unexpected PoP Response");
+                <Error<T>>::UnexpectedAccount);
 
             <ProofOfPersonhood<T>>::insert(&account, confidence);
             <PendingRequests<T>>::remove(&account);
             Self::deposit_event(RawEvent::StoredProofOfPersonHoodConfidence(account))
         }
+    }
+}
+
+decl_error! {
+    pub enum Error for Module<T: Config> {
+        /// Your ProofOfPersonhood is to weak
+        ProofOfPersonhoodToWeak,
+        /// Only other parachains can call this function
+        OnlyParachainsAllowed,
+        /// This account has no pending SybilGate requests
+        UnexpectedAccount,
     }
 }
 
