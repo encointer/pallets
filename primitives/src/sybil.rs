@@ -35,13 +35,13 @@ impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, Accou
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct SetProofOfPersonHoodCall<AccountId> {
+pub struct FaucetCall<AccountId> {
     call_index: [u8; 2],
     account: AccountId,
     confidence: ProofOfPersonhoodConfidence,
 }
 
-impl<AccountId> SetProofOfPersonHoodCall<AccountId> {
+impl<AccountId> FaucetCall<AccountId> {
     pub fn new(
         sybil_gate_index: u8,
         account: AccountId,

@@ -82,6 +82,11 @@ branch = "master"
 git = "https://github.com/paritytech/polkadot.git"
 branch = "master"
 
+[dev-dependencies.balances]
+package = "pallet-balances"
+git = "https://github.com/paritytech/substrate.git"
+branch = "rococo-v1"
+
 [dev-dependencies.test-utils]
 path = "../../test-utils"
 

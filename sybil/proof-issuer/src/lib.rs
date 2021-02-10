@@ -32,7 +32,7 @@ use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
-    sybil::{ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest, SetProofOfPersonHoodCall},
+    sybil::{FaucetCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest},
 };
 
 const LOG: &str = "encointer";
@@ -90,7 +90,7 @@ decl_module! {
 
             let location = Junction::Parachain { id: para_id };
 
-            let call =  SetProofOfPersonHoodCall::new(sender_sybil_gate, requester.clone(), confidence);
+            let call =  FaucetCall::new(sender_sybil_gate, requester.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
                 Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(requester)),

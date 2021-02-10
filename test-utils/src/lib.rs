@@ -132,7 +132,7 @@ parameter_types! {
 
 #[macro_export]
 macro_rules! impl_balances {
-    ($t:ident) => {
+    ($t:ident, $system:ident) => {
         impl balances::Config for $t {
             type Balance = Balance;
             type Event = ();

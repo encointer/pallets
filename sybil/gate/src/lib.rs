@@ -30,6 +30,7 @@ use encointer_primitives::sybil::{
     IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest,
 };
 use fixed::types::I16F16;
+use frame_support::traits::Currency;
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
 };
@@ -47,13 +48,14 @@ pub trait Config: frame_system::Config {
     /// The XCM sender module.
     type XcmSender: SendXcm;
 
+    type Currency: Currency<<Self as frame_system::Config>::AccountId>;
+
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = <Self as Config>::Public> + Member + Decode + Encode;
 }
 
 decl_storage! {
     trait Store for Module<T: Config> as EncointerSybilGate {
-        ProofOfPersonhood get(fn proof_of_personhood_confidence): map hasher(blake2_128_concat) T::AccountId => ProofOfPersonhoodConfidence;
         PendingRequests get(fn pending_requests): map hasher(blake2_128_concat) T::AccountId => ();
     }
 }
@@ -64,7 +66,8 @@ decl_event! {
     {
         ProofOfPersonHoodRequestSentSuccess(AccountId),
         ProofOfPersonHoodRequestSentFailure(AccountId, XcmError),
-        StoredProofOfPersonHoodConfidence(AccountId),
+        FautetDrippedTo(AccountId),
+        FaucetRejectedDueToWeakProofofPersonhood(AccountId),
     }
 }
 
@@ -110,7 +113,7 @@ decl_module! {
         }
 
         #[weight = 5_000_000]
-        fn set_proof_of_personhood_confidence(
+        fn faucet(
             origin,
             account: T::AccountId,
             confidence: ProofOfPersonhoodConfidence
@@ -121,16 +124,15 @@ decl_module! {
             debug::RuntimeLogger::init();
             debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
 
-            ensure!(<PendingRequests<T>>::contains_key(&account),
-                <Error<T>>::UnexpectedAccount);
+            ensure!(<PendingRequests<T>>::contains_key(&account), <Error<T>>::UnexpectedAccount);
+            <PendingRequests<T>>::remove(&account);
 
             if confidence.as_ratio::<I16F16>() < I16F16::from_num(0.5) {
-                 Err(<Error<T>>::ProofOfPersonhoodToWeak)?
+                Self::deposit_event(RawEvent::FaucetRejectedDueToWeakProofofPersonhood(account))
+            } else {
+                T::Currency::deposit_creating(&account, 1u32.into());
+                Self::deposit_event(RawEvent::FautetDrippedTo(account))
             }
-
-            <ProofOfPersonhood<T>>::insert(&account, confidence);
-            <PendingRequests<T>>::remove(&account);
-            Self::deposit_event(RawEvent::StoredProofOfPersonHoodConfidence(account))
         }
     }
 }

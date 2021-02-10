@@ -30,12 +30,16 @@ use test_utils::*;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
+pub type System = frame_system::Module<TestRuntime>;
+
 impl_frame_system!(TestRuntime);
+impl_balances!(TestRuntime, System);
 impl_outer_origin_for_runtime!(TestRuntime);
 
 impl Config for TestRuntime {
     type Event = ();
     type XcmSender = ();
+    type Currency = balances::Module<TestRuntime>;
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
 }
@@ -70,7 +74,7 @@ fn set_proof_of_personhood_confidence_works() {
     new_test_ext().execute_with(|| {
         PendingRequests::<TestRuntime>::insert(&alice, ());
 
-        assert_ok!(SybilGate::set_proof_of_personhood_confidence(
+        assert_ok!(SybilGate::faucet(
             Origin::signed(account),
             alice,
             ProofOfPersonhoodConfidence::default()
@@ -84,7 +88,7 @@ fn set_proof_of_personhood_confidence_returns_err_for_unexpected_account() {
     let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
 
     new_test_ext().execute_with(|| {
-        assert!(SybilGate::set_proof_of_personhood_confidence(
+        assert!(SybilGate::faucet(
             Origin::signed(account),
             AccountKeyring::Alice.into(),
             ProofOfPersonhoodConfidence::default()
