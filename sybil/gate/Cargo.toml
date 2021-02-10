@@ -9,6 +9,12 @@ default-features = false
 package = "encointer-primitives"
 path = "../../primitives"
 
+[dependencies.fixed]
+default-features = false
+git = "https://github.com/encointer/substrate-fixed"
+tag = "v0.5.4+sub_v0.1"
+package = "substrate-fixed"
+
 [dependencies.codec]
 default-features = false
 package = "parity-scale-codec"
@@ -87,6 +93,7 @@ default = ["std"]
 std = [
     "codec/std",
     "rstd/std",
+    "fixed/std",
     "frame-system/std",
     "frame-support/std",
     "xcm/std",

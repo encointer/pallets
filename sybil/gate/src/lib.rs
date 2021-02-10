@@ -29,6 +29,7 @@ use codec::{Decode, Encode};
 use encointer_primitives::sybil::{
     IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest,
 };
+use fixed::types::I16F16;
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
 };
@@ -122,6 +123,10 @@ decl_module! {
 
             ensure!(<PendingRequests<T>>::contains_key(&account),
                 <Error<T>>::UnexpectedAccount);
+
+            if confidence.as_ratio::<I16F16>() < I16F16::from_num(0.5) {
+                 Err(<Error<T>>::ProofOfPersonhoodToWeak)?
+            }
 
             <ProofOfPersonhood<T>>::insert(&account, confidence);
             <PendingRequests<T>>::remove(&account);

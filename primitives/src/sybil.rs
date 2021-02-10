@@ -1,4 +1,5 @@
 use codec::{Decode, Encode};
+use fixed::traits::Fixed;
 use rstd::vec::Vec;
 use sp_core::RuntimeDebug;
 
@@ -66,5 +67,11 @@ impl ProofOfPersonhoodConfidence {
             attested,
             last_n_ceremonies,
         }
+    }
+
+    pub fn as_ratio<F: Fixed>(&self) -> F {
+        return F::from_num(self.attested)
+            .checked_div(F::from_num(self.last_n_ceremonies))
+            .unwrap_or_default();
     }
 }
