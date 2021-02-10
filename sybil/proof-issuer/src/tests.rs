@@ -67,6 +67,7 @@ fn issue_proof_of_personhood_is_ok() {
             AccountKeyring::Alice.public().into(),
             Default::default(),
             1,
+            1,
         ));
     })
 }

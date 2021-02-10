@@ -60,7 +60,8 @@ fn request_proof_of_person_hood_confidence_works() {
             Origin::signed(AccountKeyring::Alice.into()),
             2,
             1,
-            Default::default()
+            Default::default(),
+            RequestedSybilResponse::default()
         ));
     })
 }
@@ -95,4 +96,9 @@ fn set_proof_of_personhood_confidence_returns_err_for_unexpected_account() {
         )
         .is_err());
     })
+}
+
+#[test]
+fn test_enum_encode() {
+    assert_eq!(RequestedSybilResponse::Faucet as u8, 1);
 }

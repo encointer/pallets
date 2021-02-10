@@ -28,7 +28,9 @@
 use codec::{Decode, Encode};
 use encointer_primitives::{
     ceremonies::ProofOfAttendance,
-    sybil::{IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence},
+    sybil::{
+        IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, RequestedSybilResponse,
+    },
 };
 use fixed::types::I16F16;
 use frame_support::traits::Currency;
@@ -89,7 +91,8 @@ decl_module! {
             origin,
             parachain_id: u32,
             pallet_sybil_proof_issuer_index: u8,
-            request: Vec<Vec<u8>>
+            request: Vec<Vec<u8>>,
+            requested_response: RequestedSybilResponse
         ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
@@ -104,7 +107,14 @@ decl_module! {
                 .flatten()
                 .ok_or("[EncointerSybilGate]: PalletIndex does not fix into u8. Consider giving it a smaller index.")?;
 
-            let call = IssueProofOfPersonhoodConfidenceCall::new(pallet_sybil_proof_issuer_index, sender.clone(), request, sender_pallet_sybil_gate_index);
+            let call = IssueProofOfPersonhoodConfidenceCall::new(
+                pallet_sybil_proof_issuer_index,
+                sender.clone(),
+                request,
+                requested_response,
+                sender_pallet_sybil_gate_index
+            );
+
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             debug::debug!(target: LOG, "[EncointerSybilGate]: Sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(location.into(), message) {
