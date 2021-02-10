@@ -53,7 +53,7 @@ pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
 pub type Timestamp = timestamp::Module<TestRuntime>;
 
-test_runtime!(TestRuntime, EncointerScheduler);
+test_runtime!(TestRuntime, System, EncointerScheduler);
 
 impl_encointer_communities!(TestRuntime);
 impl_encointer_balances!(TestRuntime);

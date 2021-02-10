@@ -165,9 +165,9 @@ macro_rules! impl_encointer_communities {
 
 #[macro_export]
 macro_rules! test_runtime {
-    ($t:ident, $scheduler:ident) => {
+    ($t:ident, $system:ident, $scheduler:ident) => {
         impl_frame_system!($t);
-        impl_balances!($t);
+        impl_balances!($t, $system);
         impl_timestamp!($t, $scheduler);
         impl_outer_origin_for_runtime!($t);
     };
