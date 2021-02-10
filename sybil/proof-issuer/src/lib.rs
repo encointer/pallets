@@ -32,7 +32,7 @@ use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
-    sybil::{FaucetCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest},
+    sybil::{FaucetCall, ProofOfPersonhoodConfidence},
 };
 
 const LOG: &str = "encointer";
@@ -74,7 +74,7 @@ decl_module! {
         fn issue_proof_of_personhood_confidence(
         origin,
         requester: T::AccountId,
-        proof_of_person_hood_request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>,
+        proof_of_person_hood_request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
         sender_sybil_gate: u8
         ) {
             debug::RuntimeLogger::init();
@@ -102,16 +102,18 @@ decl_module! {
 
 impl<T: Config> Module<T> {
     fn verify(
-        request: ProofOfPersonhoodRequest<<T as Ceremonies>::Signature, T::AccountId>,
+        request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
     ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
         let mut c_index_min = 0;
         let mut n_attested = 0;
-        for (cid, poa) in request.iter() {
-            if !<encointer_communities::Module<T>>::community_identifiers().contains(&cid) {
+        for proof in request.iter() {
+            if !<encointer_communities::Module<T>>::community_identifiers()
+                .contains(&proof.community_identifier)
+            {
                 continue;
             }
-            if Self::verify_proof_of_attendance(&poa).is_ok() {
-                c_index_min = min(poa.ceremony_index, c_index_min);
+            if Self::verify_proof_of_attendance(&proof).is_ok() {
+                c_index_min = min(proof.ceremony_index, c_index_min);
                 n_attested += 1;
             }
         }

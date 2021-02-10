@@ -27,7 +27,6 @@ use sp_runtime::{
 use xcm_executor::traits::LocationConversion;
 
 use encointer_ceremonies::Module as EncointerCeremoniesModule;
-use encointer_primitives::sybil::ProofOfPersonhoodRequest;
 use test_utils::*;
 
 pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
@@ -66,7 +65,7 @@ fn issue_proof_of_personhood_is_ok() {
         assert_ok!(SybilGate::issue_proof_of_personhood_confidence(
             Origin::signed(account_id),
             AccountKeyring::Alice.public().into(),
-            ProofOfPersonhoodRequest::default(),
+            Default::default(),
             1,
         ));
     })

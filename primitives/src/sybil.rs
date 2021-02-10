@@ -4,17 +4,13 @@ use rstd::vec::Vec;
 use sp_core::RuntimeDebug;
 
 use crate::ceremonies::ProofOfAttendance;
-use crate::communities::CommunityIdentifier;
 use crate::scheduler::CeremonyIndexType;
-
-pub type ProofOfPersonhoodRequest<Signature, AccountId> =
-    Vec<(CommunityIdentifier, ProofOfAttendance<Signature, AccountId>)>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> {
     call_index: [u8; 2],
     requester: AccountId,
-    request: ProofOfPersonhoodRequest<Signature, AccountId>,
+    request: Vec<ProofOfAttendance<Signature, AccountId>>,
     sender_pallet_index: u8,
 }
 
@@ -22,7 +18,7 @@ impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, Accou
     pub fn new(
         sybil_proof_issuer_index: u8,
         requester: AccountId,
-        request: ProofOfPersonhoodRequest<Signature, AccountId>,
+        request: Vec<ProofOfAttendance<Signature, AccountId>>,
         sender_pallet_index: u8,
     ) -> Self {
         Self {

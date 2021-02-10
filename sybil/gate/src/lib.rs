@@ -26,8 +26,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use encointer_primitives::sybil::{
-    IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest,
+use encointer_primitives::{
+    ceremonies::ProofOfAttendance,
+    sybil::{IssueProofOfPersonhoodConfidenceCall, ProofOfPersonhoodConfidence},
 };
 use fixed::types::I16F16;
 use frame_support::traits::Currency;
@@ -88,11 +89,14 @@ decl_module! {
             origin,
             parachain_id: u32,
             pallet_sybil_proof_issuer_index: u8,
-            request: ProofOfPersonhoodRequest<T::Signature, T::AccountId>
+            request: Vec<Vec<u8>>
         ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
+
+            let request: Vec<ProofOfAttendance<T::Signature, T::AccountId>> =
+                request.into_iter().map(|proof| Decode::decode(&mut proof.as_slice()).unwrap()).collect();
 
             // Get this pallet's runtime configuration specific module index.
             let sender_pallet_sybil_gate_index = <T as frame_system::Config>::PalletInfo::index::<Self>()

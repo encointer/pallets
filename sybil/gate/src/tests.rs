@@ -60,7 +60,7 @@ fn request_proof_of_person_hood_confidence_works() {
             Origin::signed(AccountKeyring::Alice.into()),
             2,
             1,
-            ProofOfPersonhoodRequest::default()
+            Default::default()
         ));
     })
 }
