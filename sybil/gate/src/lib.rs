@@ -138,6 +138,10 @@ decl_module! {
         }
 
         #[weight = 5_000_000]
+        /// ### Faucet
+        ///
+        /// Faucet that funds accounts. Currently, this can only be called from other parachains, as
+        /// the ProofOfPersonhood can otherwise not be verified.
         fn faucet(
             origin,
             account: T::AccountId,
@@ -155,6 +159,8 @@ decl_module! {
             for proof in confidence.proofs() {
                 if BurndedProofs::contains_key(RequestedSybilResponse::Faucet, proof) {
                     Self::deposit_event(RawEvent::FaucetRejectedDueToProofReuse(account));
+                    // Even if the rest of the proofs have not been used, we return here, as the
+                    // attested/last_n_ceremonies ratio might not be correct any more.
                     return Err(<Error<T>>::RequestContainsBurnedProofs)?;
                 }
             }

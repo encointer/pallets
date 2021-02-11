@@ -102,6 +102,7 @@ decl_module! {
 }
 
 impl<T: Config> Module<T> {
+    /// Verifies ProofOfAttendances and Returns a ProofOfPersonhoodUponSuccess
     pub fn verify(
         request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
     ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
