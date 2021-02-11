@@ -73,15 +73,15 @@ decl_event! {
     pub enum Event<T>
     where AccountId = <T as frame_system::Config>::AccountId,
     {
-        /// An account has successfully sent a request to another parachain
+        /// An account has successfully sent a request to another parachain \[requester, parachain\]
         ProofOfPersonHoodRequestSentSuccess(AccountId, u32),
-        /// Failed to send request to another parachain
+        /// Failed to send request to another parachain \[requester, xcm error\]
         ProofOfPersonHoodRequestSentFailure(AccountId, XcmError),
-        /// Faucet dripped some funds to account
+        /// Faucet dripped some funds to account \[funded recipient\]
         FautetDrippedTo(AccountId),
-        /// Faucet rejected dripping funds due to weak ProofOfPersonhood
+        /// Faucet rejected dripping funds due to weak ProofOfPersonhood \[rejected account\]
         FaucetRejectedDueToWeakProofofPersonhood(AccountId),
-        /// Faucet rejected dripping funds due to reuse of ProofOfAttendances
+        /// Faucet rejected dripping funds due to reuse of ProofOfAttendances \[rejected account\]
         FaucetRejectedDueToProofReuse(AccountId),
     }
 }
