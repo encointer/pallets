@@ -85,7 +85,7 @@ branch = "master"
 [dev-dependencies.balances]
 package = "pallet-balances"
 git = "https://github.com/paritytech/substrate.git"
-branch = "rococo-v1"
+branch = "master"
 
 [dev-dependencies.test-utils]
 path = "../../test-utils"
