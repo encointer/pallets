@@ -103,6 +103,9 @@ branch = "master"
 [dev-dependencies.test-utils]
 path = "../../test-utils"
 
+[dev-dependencies]
+hex = { version = "*" }
+
 [features]
 default = ["std"]
 std = [

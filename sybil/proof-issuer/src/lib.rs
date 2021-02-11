@@ -102,10 +102,10 @@ decl_module! {
 }
 
 impl<T: Config> Module<T> {
-    fn verify(
+    pub fn verify(
         request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
     ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
-        let mut c_index_min = 0;
+        let mut c_index_min = <encointer_scheduler::Module<T>>::current_ceremony_index();
         let mut n_attested = 0;
         let mut attested = Vec::new();
 
@@ -113,6 +113,11 @@ impl<T: Config> Module<T> {
             if !<encointer_communities::Module<T>>::community_identifiers()
                 .contains(&proof.community_identifier)
             {
+                debug::warn!(
+                    target: LOG,
+                    "Received ProofOfAttendance for unknown cid: {:?}",
+                    proof.community_identifier
+                );
                 continue;
             }
             if Self::verify_proof_of_attendance(&proof).is_ok() {

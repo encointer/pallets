@@ -54,7 +54,7 @@ fn new_test_ext() -> sp_io::TestExternalities {
 type SybilGate = Module<TestRuntime>;
 
 #[test]
-fn request_proof_of_person_hood_confidence_works() {
+fn faucet_works() {
     new_test_ext().execute_with(|| {
         assert_ok!(SybilGate::request_proof_of_personhood_confidence(
             Origin::signed(AccountKeyring::Alice.into()),
@@ -67,7 +67,7 @@ fn request_proof_of_person_hood_confidence_works() {
 }
 
 #[test]
-fn set_proof_of_personhood_confidence_works() {
+fn faucet_returns_err_if_proof_too_weak() {
     let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
     let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
     let alice: AccountId = AccountKeyring::Alice.into();
@@ -75,16 +75,20 @@ fn set_proof_of_personhood_confidence_works() {
     new_test_ext().execute_with(|| {
         PendingRequests::<TestRuntime>::insert(&alice, ());
 
-        assert_ok!(SybilGate::faucet(
-            Origin::signed(account),
-            alice,
-            ProofOfPersonhoodConfidence::default()
-        ));
+        assert_eq!(
+            SybilGate::faucet(
+                Origin::signed(account),
+                alice,
+                ProofOfPersonhoodConfidence::default()
+            )
+            .unwrap_err(),
+            Error::<TestRuntime>::ProofOfPersonhoodTooWeak.into()
+        );
     })
 }
 
 #[test]
-fn set_proof_of_personhood_confidence_returns_err_for_unexpected_account() {
+fn faucet_returns_err_for_unexpected_account() {
     let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
     let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
 

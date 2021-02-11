@@ -1297,6 +1297,7 @@ dependencies = [
  "encointer-primitives",
  "frame-support",
  "frame-system",
+ "hex",
  "pallet-encointer-balances",
  "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
