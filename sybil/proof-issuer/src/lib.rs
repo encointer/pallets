@@ -107,6 +107,8 @@ impl<T: Config> Module<T> {
     ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
         let mut c_index_min = 0;
         let mut n_attested = 0;
+        let mut attested = Vec::new();
+
         for proof in request.iter() {
             if !<encointer_communities::Module<T>>::community_identifiers()
                 .contains(&proof.community_identifier)
@@ -116,6 +118,7 @@ impl<T: Config> Module<T> {
             if Self::verify_proof_of_attendance(&proof).is_ok() {
                 c_index_min = min(proof.ceremony_index, c_index_min);
                 n_attested += 1;
+                attested.push(proof.hash())
             }
         }
         let last_n_ceremonies = <encointer_scheduler::Module<T>>::current_ceremony_index()
@@ -125,6 +128,7 @@ impl<T: Config> Module<T> {
         Ok(ProofOfPersonhoodConfidence::new(
             n_attested,
             last_n_ceremonies,
+            attested,
         ))
     }
 

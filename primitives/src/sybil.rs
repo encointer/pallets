@@ -1,7 +1,7 @@
 use codec::{Decode, Encode};
 use fixed::traits::Fixed;
 use rstd::vec::Vec;
-use sp_core::RuntimeDebug;
+use sp_core::{RuntimeDebug, H256};
 
 use crate::ceremonies::ProofOfAttendance;
 use crate::scheduler::CeremonyIndexType;
@@ -46,7 +46,7 @@ impl Default for RequestedSybilResponse {
     }
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct SybilResponseCall<AccountId> {
     call_index: [u8; 2],
     account: AccountId,
@@ -68,18 +68,28 @@ impl<AccountId> SybilResponseCall<AccountId> {
     }
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct ProofOfPersonhoodConfidence {
     attested: CeremonyIndexType,
     last_n_ceremonies: CeremonyIndexType,
+    proofs: Vec<H256>,
 }
 
 impl ProofOfPersonhoodConfidence {
-    pub fn new(attested: CeremonyIndexType, last_n_ceremonies: CeremonyIndexType) -> Self {
+    pub fn new(
+        attested: CeremonyIndexType,
+        last_n_ceremonies: CeremonyIndexType,
+        proofs: Vec<H256>,
+    ) -> Self {
         Self {
             attested,
             last_n_ceremonies,
+            proofs,
         }
+    }
+
+    pub fn proofs(&self) -> Vec<H256> {
+        self.proofs.clone()
     }
 
     pub fn as_ratio<F: Fixed>(&self) -> F {

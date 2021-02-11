@@ -22,6 +22,12 @@ package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
+[dependencies.sp-runtime]
+default-features = false
+package = "sp-runtime"
+git = "https://github.com/paritytech/substrate.git"
+branch = "rococo-v1"
+
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
@@ -41,4 +47,5 @@ std = [
     "rstd/std",
     "serde",
     "sp-core/std",
+    "sp-runtime/std",
 ]

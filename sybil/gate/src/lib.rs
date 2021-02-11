@@ -40,6 +40,7 @@ use frame_support::{
 use frame_system::ensure_signed;
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
+use sp_core::H256;
 use sp_runtime::traits::{AccountIdConversion, CheckedConversion, IdentifyAccount, Member, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
@@ -60,6 +61,9 @@ pub trait Config: frame_system::Config {
 decl_storage! {
     trait Store for Module<T: Config> as EncointerSybilGate {
         PendingRequests get(fn pending_requests): map hasher(blake2_128_concat) T::AccountId => ();
+        /// The proof of attendances that have already been used in a previous request
+        /// Membership checks are faster with maps that with vecs, see: https://substrate.dev/recipes/map-set.html
+        BurndedProofs get(fn burned_proofs): double_map hasher(blake2_128_concat) RequestedSybilResponse, hasher(blake2_128_concat) H256 => ();
     }
 }
 
@@ -141,10 +145,20 @@ decl_module! {
             ensure!(<PendingRequests<T>>::contains_key(&account), <Error<T>>::UnexpectedAccount);
             <PendingRequests<T>>::remove(&account);
 
+            for proof in confidence.proofs() {
+                ensure!(
+                    !BurndedProofs::contains_key(RequestedSybilResponse::Faucet, proof),
+                    <Error<T>>::RequestContainsBurnedProofs
+               )
+            }
+
             if confidence.as_ratio::<I16F16>() < I16F16::from_num(0.5) {
                 Self::deposit_event(RawEvent::FaucetRejectedDueToWeakProofofPersonhood(account))
             } else {
                 T::Currency::deposit_creating(&account, 1u32.into());
+                confidence.proofs().into_iter().for_each( |p|
+                    BurndedProofs::insert(RequestedSybilResponse::Faucet, p, ())
+               );
                 Self::deposit_event(RawEvent::FautetDrippedTo(account))
             }
         }
@@ -155,6 +169,8 @@ decl_error! {
     pub enum Error for Module<T: Config> {
         /// Your ProofOfPersonhood is to weak
         ProofOfPersonhoodToWeak,
+        /// The ProofOfPersonHoodRequest contains ProofOfAttendances that have already been used
+        RequestContainsBurnedProofs,
         /// Only other parachains can call this function
         OnlyParachainsAllowed,
         /// This account has no pending SybilGate requests
