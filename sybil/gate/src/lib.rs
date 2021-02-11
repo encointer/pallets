@@ -16,12 +16,11 @@
 
 //! # Encointer Sybil Proof Request Module (WIP)
 //!
-//! Note: This is a wip, we were able to successfully send XCMP messages and decode them
-//! on the receiving parachain. However, we currently get a `XCMPERROR::BadOrigin` when executing
-//! the XCM.
-//!
 //! provides functionality for
 //! - requesting digital proof of personhood confidence aka anti-sybil confidence
+//! -
+//!
+//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -60,9 +59,12 @@ pub trait Config: frame_system::Config {
 
 decl_storage! {
     trait Store for Module<T: Config> as EncointerSybilGate {
+        /// XCM ProofOfPersonhood requests sent to another parachain that have yielded a response yet
         PendingRequests get(fn pending_requests): map hasher(blake2_128_concat) T::AccountId => ();
         /// The proof of attendances that have already been used in a previous request
-        /// Membership checks are faster with maps that with vecs, see: https://substrate.dev/recipes/map-set.html
+        /// Membership checks are faster with maps that with vecs, see: https://substrate.dev/recipes/map-set.html.
+        ///
+        /// This is a double_map, as more requests might be added, and ProofOfAttendances are allowed to be used per request
         BurndedProofs get(fn burned_proofs): double_map hasher(blake2_128_concat) RequestedSybilResponse, hasher(blake2_128_concat) H256 => ();
     }
 }
@@ -71,10 +73,16 @@ decl_event! {
     pub enum Event<T>
     where AccountId = <T as frame_system::Config>::AccountId,
     {
-        ProofOfPersonHoodRequestSentSuccess(AccountId),
+        /// An account has successfully sent a request to another parachain
+        ProofOfPersonHoodRequestSentSuccess(AccountId, u32),
+        /// Failed to send request to another parachain
         ProofOfPersonHoodRequestSentFailure(AccountId, XcmError),
+        /// Faucet dripped some funds to account
         FautetDrippedTo(AccountId),
+        /// Faucet rejected dripping funds due to weak ProofOfPersonhood
         FaucetRejectedDueToWeakProofofPersonhood(AccountId),
+        /// Faucet rejected dripping funds due to reuse of ProofOfAttendances
+        FaucetRejectedDueToProofReuse(AccountId),
     }
 }
 
@@ -88,9 +96,8 @@ decl_module! {
         ///
         /// Request a ProofOfPersonHood from an encointer-parachain.
         ///
-        /// The `pallet_sybil_proof_issuer_index` is the pallet index of the respective encointer-parachain's
-        /// `pallet-encointer-sybil-proof-issuer` pallet to query. It was decided to put that as an argument,
-        /// as there might be more than one encointer-chain running.
+        /// The `pallet_sybil_proof_issuer_index` is the pallet's module index of the respective encointer-parachain's
+        /// `pallet-encointer-sybil-proof-issuer` pallet to query.
         fn request_proof_of_personhood_confidence(
             origin,
             parachain_id: u32,
@@ -124,7 +131,7 @@ decl_module! {
             match T::XcmSender::send_xcm(location.into(), message) {
                 Ok(()) => {
                     <PendingRequests<T>>::insert(&sender, ());
-                    Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender))
+                    Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender, parachain_id))
                 },
                 Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentFailure(sender, e)),
             }
@@ -146,14 +153,15 @@ decl_module! {
             <PendingRequests<T>>::remove(&account);
 
             for proof in confidence.proofs() {
-                ensure!(
-                    !BurndedProofs::contains_key(RequestedSybilResponse::Faucet, proof),
-                    <Error<T>>::RequestContainsBurnedProofs
-               )
+                if BurndedProofs::contains_key(RequestedSybilResponse::Faucet, proof) {
+                    Self::deposit_event(RawEvent::FaucetRejectedDueToProofReuse(account));
+                    return Err(<Error<T>>::RequestContainsBurnedProofs)?;
+                }
             }
 
             if confidence.as_ratio::<I16F16>() < I16F16::from_num(0.5) {
-                Self::deposit_event(RawEvent::FaucetRejectedDueToWeakProofofPersonhood(account))
+                Self::deposit_event(RawEvent::FaucetRejectedDueToWeakProofofPersonhood(account));
+                return Err(<Error<T>>::ProofOfPersonhoodTooWeak)?;
             } else {
                 T::Currency::deposit_creating(&account, 1u32.into());
                 confidence.proofs().into_iter().for_each( |p|
@@ -168,7 +176,7 @@ decl_module! {
 decl_error! {
     pub enum Error for Module<T: Config> {
         /// Your ProofOfPersonhood is to weak
-        ProofOfPersonhoodToWeak,
+        ProofOfPersonhoodTooWeak,
         /// The ProofOfPersonHoodRequest contains ProofOfAttendances that have already been used
         RequestContainsBurnedProofs,
         /// Only other parachains can call this function
