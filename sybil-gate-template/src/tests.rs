@@ -71,14 +71,15 @@ fn faucet_returns_err_if_proof_too_weak() {
     let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
     let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
     let alice: AccountId = AccountKeyring::Alice.into();
+    let request_hash = H256::default();
 
     new_test_ext().execute_with(|| {
-        PendingRequests::<TestRuntime>::insert(&alice, ());
+        PendingRequests::<TestRuntime>::insert(request_hash, &alice);
 
         assert_eq!(
             SybilGate::faucet(
                 Origin::signed(account),
-                alice,
+                request_hash,
                 ProofOfPersonhoodConfidence::default()
             )
             .unwrap_err(),

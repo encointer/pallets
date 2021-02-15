@@ -60,7 +60,7 @@ pub trait Config: frame_system::Config {
 decl_storage! {
     trait Store for Module<T: Config> as EncointerSybilGate {
         /// XCM ProofOfPersonhood requests sent to another parachain that have yielded a response yet
-        PendingRequests get(fn pending_requests): map hasher(blake2_128_concat) T::AccountId => ();
+        PendingRequests get(fn pending_requests): map hasher(identity) H256 => T::AccountId;
         /// The proof of attendances that have already been used in a previous request
         /// Membership checks are faster with maps that with vecs, see: https://substrate.dev/recipes/map-set.html.
         ///
@@ -73,10 +73,10 @@ decl_event! {
     pub enum Event<T>
     where AccountId = <T as frame_system::Config>::AccountId,
     {
-        /// An account has successfully sent a request to another parachain \[requester, parachain\]
-        ProofOfPersonHoodRequestSentSuccess(AccountId, u32),
-        /// Failed to send request to another parachain \[requester, xcm error\]
-        ProofOfPersonHoodRequestSentFailure(AccountId, XcmError),
+        /// An account has successfully sent a request to another parachain \[requester, request_hash, parachain\]
+        ProofOfPersonHoodRequestSentSuccess(AccountId, H256, u32),
+        /// Failed to send request to another parachain \[requester, request_hash, xcm error\]
+        ProofOfPersonHoodRequestSentFailure(AccountId, H256, XcmError),
         /// Faucet dripped some funds to account \[funded recipient\]
         FautetDrippedTo(AccountId),
         /// Faucet rejected dripping funds due to weak ProofOfPersonhood \[rejected account\]
@@ -107,7 +107,6 @@ decl_module! {
         ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
-            let location = Junction::Parachain { id: parachain_id };
 
             let request =
                 request.into_iter().map(|proof| Decode::decode(&mut proof.as_slice()).unwrap())
@@ -126,15 +125,16 @@ decl_module! {
                 requested_response,
                 sender_pallet_sybil_gate_index
             );
+            let request_hash = call.request_hash();
 
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             debug::debug!(target: LOG, "[EncointerSybilGate]: Sending ProofOfPersonhoodRequest to chain: {:?}", parachain_id);
-            match T::XcmSender::send_xcm(location.into(), message) {
+            match T::XcmSender::send_xcm(Junction::Parachain { id: parachain_id }.into(), message) {
                 Ok(()) => {
-                    <PendingRequests<T>>::insert(&sender, ());
-                    Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender, parachain_id))
+                    <PendingRequests<T>>::insert(&request_hash, &sender);
+                    Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentSuccess(sender, request_hash, parachain_id))
                 },
-                Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentFailure(sender, e)),
+                Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodRequestSentFailure(sender, request_hash, e)),
             }
         }
 
@@ -145,17 +145,17 @@ decl_module! {
         /// the ProofOfPersonhood can otherwise not be verified.
         fn faucet(
             origin,
-            account: T::AccountId,
+            request_hash: H256,
             confidence: ProofOfPersonhoodConfidence
         ) {
             let sender = ensure_signed(origin)?;
             Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
 
             debug::RuntimeLogger::init();
-            debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
 
-            ensure!(<PendingRequests<T>>::contains_key(&account), <Error<T>>::UnexpectedAccount);
-            <PendingRequests<T>>::remove(&account);
+            ensure!(<PendingRequests<T>>::contains_key(&request_hash), <Error<T>>::UnexpectedResponse);
+            let account = <PendingRequests<T>>::take(&request_hash);
+            debug::debug!(target: LOG, "set ProofOfPersonhood Confidence for account: {:?}", account);
 
             for proof in confidence.proofs() {
                 if BurndedProofs::contains_key(RequestedSybilResponse::Faucet, proof) {
@@ -188,8 +188,8 @@ decl_error! {
         RequestContainsBurnedProofs,
         /// Only other parachains can call this function
         OnlyParachainsAllowed,
-        /// This account has no pending SybilGate requests
-        UnexpectedAccount,
+        /// This received response to an unknown request
+        UnexpectedResponse,
     }
 }
 
