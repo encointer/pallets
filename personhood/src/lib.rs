@@ -54,8 +54,6 @@ pub trait Config:
     type XcmSender: SendXcm;
 }
 
-pub type SetProofOfPersonhoodCall<AccountId> = ([u8; 2], AccountId, ProofOfPersonhoodConfidence);
-
 decl_event! {
     pub enum Event<T>
     where AccountId = <T as frame_system::Config>::AccountId,
