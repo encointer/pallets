@@ -60,11 +60,11 @@ type ProofOfAttendanceOf<T> =
 decl_event! {
     pub enum Event
     {
-        /// Received PersonhoodUniquenessRating request \[hash, parachain\]
+        /// Received PersonhoodUniquenessRating request \[request_hash, parachain\]
         PersonhoodUniquenessRatingRequestReceived(H256, u32),
-        /// Successfully sent PersonhoodUniquenessRating response \[hash, parachain\]
+        /// Successfully sent PersonhoodUniquenessRating response \[request_hash, parachain\]
         PersonhoodUniquenessRatingSentSuccess(H256, u32),
-        /// Failed to send PersonhoodUniquenessRating response \[hash, parachain\]
+        /// Failed to send PersonhoodUniquenessRating response \[request_hash, parachain\]
         PersonhoodUniquenessRatingSentFailure(H256, u32, XcmError),
     }
 }

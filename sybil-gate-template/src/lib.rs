@@ -73,11 +73,11 @@ decl_event! {
         PersonhoodUniquenessRatingRequestSentSuccess(AccountId, H256, u32),
         /// Failed to send request to another parachain \[requester, request_hash, xcm error\]
         PersonhoodUniquenessRatingRequestSentFailure(AccountId, H256, XcmError),
-        /// Faucet dripped some funds to account \[funded recipient\]
+        /// Faucet dripped some funds to account \[funded_account\]
         FautetDrippedTo(AccountId),
-        /// Faucet rejected dripping funds due to weak PersonhoodUniquenessRating \[rejected account\]
+        /// Faucet rejected dripping funds due to weak PersonhoodUniquenessRating \[rejected_account\]
         FaucetRejectedDueToWeakPersonhoodUniquenessRating(AccountId),
-        /// Faucet rejected dripping funds due to reuse of ProofOfAttendances \[rejected account\]
+        /// Faucet rejected dripping funds due to reuse of ProofOfAttendances \[rejected_account\]
         FaucetRejectedDueToProofReuse(AccountId),
     }
 }
