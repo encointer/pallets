@@ -12,7 +12,7 @@ path = "../primitives"
 [dependencies.fixed]
 default-features = false
 git = "https://github.com/encointer/substrate-fixed"
-tag = "v0.5.4+sub_v0.1"
+tag = "v0.5.5"
 package = "substrate-fixed"
 
 [dependencies.codec]

@@ -2526,8 +2526,8 @@ dependencies = [
 
 [[package]]
 name = "substrate-fixed"
-version = "0.5.4"
-source = "git+https://github.com/encointer/substrate-fixed?tag=v0.5.4+sub_v0.1#2c52170fa02507dc5b52c516061302670860869a"
+version = "0.5.5"
+source = "git+https://github.com/encointer/substrate-fixed?tag=v0.5.5#310e0d3a4c498b16ab7f790e99bbf6cf06e87a43"
 dependencies = [
  "parity-scale-codec",
  "serde",
