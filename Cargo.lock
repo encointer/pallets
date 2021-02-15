@@ -1268,7 +1268,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-sybil-gate"
+name = "pallet-encointer-sybil-gate-template"
 version = "0.3.9"
 dependencies = [
  "encointer-primitives",
