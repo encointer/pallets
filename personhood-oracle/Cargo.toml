@@ -1,5 +1,5 @@
 [package]
-name = "pallet-encointer-sybil-proof-issuer"
+name = "pallet-encointer-personhood-oracle"
 version = "0.3.9"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
@@ -7,26 +7,26 @@ edition = "2018"
 [dependencies.encointer-primitives]
 default-features = false
 package = "encointer-primitives"
-path = "../../primitives"
+path = "../primitives"
 
 [dependencies.encointer-balances]
 default-features = false
-path = "../../balances"
+path = "../balances"
 package = "pallet-encointer-balances"
 
 [dependencies.encointer-ceremonies]
 default-features = false
-path = "../../ceremonies"
+path = "../ceremonies"
 package = "pallet-encointer-ceremonies"
 
 [dependencies.encointer-communities]
 default-features = false
-path = "../../communities"
+path = "../communities"
 package = "pallet-encointer-communities"
 
 [dependencies.encointer-scheduler]
 default-features = false
-path = "../../scheduler"
+path = "../scheduler"
 package = "pallet-encointer-scheduler"
 
 [dependencies.codec]
@@ -39,56 +39,72 @@ version = "1.3.6"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
+
+[dependencies.polkadot-parachain]
+default-features = false
+git = "https://github.com/paritytech/polkadot"
+branch = "master"
 
 [dependencies.sp-core]
 default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.timestamp]
 default-features = false
 package = "pallet-timestamp"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dependencies.xcm]
 default-features = false
 git = "https://github.com/paritytech/polkadot"
-rev = "4a94b71ed7abdba231de8a03a7a22975cab6a079" # commit from the same day as the substrate commit we use
+branch = "master"
 
 [dependencies.sp-io]
 default-features = false
 package = "sp-io"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
 
 [dev-dependencies.sp-keyring]
 package = "sp-keyring"
 git = "https://github.com/paritytech/substrate.git"
-rev = "38f723bf"
+branch = "master"
+
+[dev-dependencies.xcm-builder]
+git = "https://github.com/paritytech/polkadot.git"
+branch = "master"
+
+[dev-dependencies.xcm-executor]
+git = "https://github.com/paritytech/polkadot.git"
+branch = "master"
 
 [dev-dependencies.test-utils]
-path = "../../test-utils"
+path = "../test-utils"
+
+[dev-dependencies]
+hex = { version = "*" }
 
 [features]
 default = ["std"]
@@ -107,4 +123,5 @@ std = [
     "encointer-scheduler/std",
     "encointer-balances/std",
     "encointer-primitives/std",
+    "polkadot-parachain/std"
 ]

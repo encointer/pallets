@@ -21,14 +21,18 @@
 use encointer_primitives::balances::BalanceType;
 use frame_support::parameter_types;
 use frame_support::traits::Get;
-use sp_core::sr25519;
-use sp_runtime::traits::Verify;
-use sp_runtime::Perbill;
+use polkadot_parachain::primitives::Sibling;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{MultiSignature, Perbill};
 use std::cell::RefCell;
+use xcm::v0::NetworkId;
+use xcm_builder::SiblingParachainConvertsVia;
 
 pub use balances;
 pub use sp_core::H256;
 pub use sp_runtime::traits::BlakeTwo256;
+
+pub mod storage;
 
 pub const NONE: u64 = 0;
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
@@ -42,9 +46,9 @@ thread_local! {
     static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
 }
 /// The signature type used by accounts/transactions.
-pub type Signature = sr25519::Signature;
+pub type Signature = MultiSignature;
 /// An identifier for an account on this system.
-pub type AccountId = <Signature as Verify>::Signer;
+pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 pub type BlockNumber = u64;
 pub type Balance = u64;
@@ -130,7 +134,7 @@ parameter_types! {
 
 #[macro_export]
 macro_rules! impl_balances {
-    ($t:ident) => {
+    ($t:ident, $system:ident) => {
         impl balances::Config for $t {
             type Balance = Balance;
             type Event = ();
@@ -163,9 +167,9 @@ macro_rules! impl_encointer_communities {
 
 #[macro_export]
 macro_rules! test_runtime {
-    ($t:ident, $scheduler:ident) => {
+    ($t:ident, $system:ident, $scheduler:ident) => {
         impl_frame_system!($t);
-        impl_balances!($t);
+        impl_balances!($t, $system);
         impl_timestamp!($t, $scheduler);
         impl_outer_origin_for_runtime!($t);
     };
@@ -176,7 +180,7 @@ macro_rules! impl_encointer_ceremonies {
     ($t:ident) => {
         impl encointer_ceremonies::Config for $t {
             type Event = ();
-            type Public = AccountId;
+            type Public = <Signature as Verify>::Signer;
             type Signature = Signature;
         }
     };
@@ -205,3 +209,9 @@ macro_rules! impl_outer_origin_for_runtime {
         }
     };
 }
+
+parameter_types! {
+    pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+}
+
+pub type LocationConverter = SiblingParachainConvertsVia<Sibling, AccountId>;

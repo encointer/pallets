@@ -1,5 +1,6 @@
 use codec::{Decode, Encode};
-use sp_core::RuntimeDebug;
+use sp_core::{RuntimeDebug, H256};
+use sp_runtime::traits::{BlakeTwo256, Hash};
 
 use crate::communities::{CommunityIdentifier, Location};
 use crate::scheduler::CeremonyIndexType;
@@ -20,6 +21,7 @@ pub enum Reputation {
     // verified former attendance that has already been linked to a new registration
     VerifiedLinked,
 }
+
 impl Default for Reputation {
     fn default() -> Self {
         Reputation::Unverified
@@ -51,6 +53,20 @@ pub struct ProofOfAttendance<Signature, AccountId> {
     pub community_identifier: CommunityIdentifier,
     pub attendee_public: AccountId,
     pub attendee_signature: Signature,
+}
+
+impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountId> {
+    /// get the hash of the proof without the attendee signature,
+    /// as the signature is non-deterministic.
+    pub fn hash(&self) -> H256 {
+        (
+            self.prover_public.clone(),
+            self.ceremony_index,
+            self.community_identifier,
+            self.attendee_public.clone(),
+        )
+            .using_encoded(BlakeTwo256::hash)
+    }
 }
 
 pub mod consts {

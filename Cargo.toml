@@ -5,8 +5,8 @@ members = [
     'communities',
     'ceremonies',
     'bazaar',
-    'sybil/gate',
-    'sybil/proof-issuer',
+    'sybil-gate-template',
+    'personhood-oracle',
     'primitives',
     'test-utils'
 ]
