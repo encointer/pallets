@@ -86,9 +86,8 @@ decl_module! {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let para_id: u32 = Sibling::try_from_account(&sender)
-                .ok_or("[EncointerSybilGate]: Can only call `issue_proof_of_personhood` from another parachain")?
+                .ok_or(<Error<T>>::UnableToDecodeRequest)?
                 .into();
-            let request_hash = proof_of_person_hood_request.hash();
             let request = <Vec<ProofOfPersonhoodOf<T>>>::decode(&mut proof_of_person_hood_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
@@ -97,11 +96,11 @@ decl_module! {
 
             let confidence = Self::verify(request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 
-            let location = Junction::Parachain { id: para_id };
-
-            let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, request_hash.clone(), confidence);
+            let request_hash = proof_of_person_hood_request.hash();
+            let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, request_hash, confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
-            match T::XcmSender::send_xcm(location.into(), message.into()) {
+
+            match T::XcmSender::send_xcm(Junction::Parachain { id: para_id }.into(), message) {
                 Ok(()) => Self::deposit_event(Event::ProofOfPersonHoodSentSuccess(request_hash, para_id)),
                 Err(e) => Self::deposit_event(Event::ProofOfPersonHoodSentFailure(request_hash, para_id, e)),
             }

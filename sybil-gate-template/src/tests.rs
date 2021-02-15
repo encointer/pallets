@@ -89,14 +89,14 @@ fn faucet_returns_err_if_proof_too_weak() {
 }
 
 #[test]
-fn faucet_returns_err_for_unexpected_account() {
+fn faucet_returns_err_for_unexpected_request() {
     let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
     let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
 
     new_test_ext().execute_with(|| {
         assert!(SybilGate::faucet(
             Origin::signed(account),
-            AccountKeyring::Alice.into(),
+            Default::default(),
             ProofOfPersonhoodConfidence::default()
         )
         .is_err());
