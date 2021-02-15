@@ -24,7 +24,7 @@ impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, Accou
         sender_pallet_index: u8,
     ) -> Self {
         Self {
-            call_index: [sybil_proof_issuer_index, 0], // is the first call in proof-issuer pallet
+            call_index: [sybil_proof_issuer_index, 0], // is the first call in personhood pallet
             requester,
             request,
             requested_response: requested_response as u8,
@@ -33,7 +33,7 @@ impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, Accou
     }
 }
 
-/// This allows to generically call the sybil-proof-issuer, whose response calls the method with the
+/// This allows to generically call the sybil-personhood, whose response calls the method with the
 /// index defined in the `RequestedSybilResponse`
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum RequestedSybilResponse {

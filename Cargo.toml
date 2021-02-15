@@ -6,7 +6,7 @@ members = [
     'ceremonies',
     'bazaar',
     'sybil-gate-template',
-    'sybil/proof-issuer',
+    'personhood',
     'primitives',
     'test-utils'
 ]

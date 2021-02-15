@@ -1245,6 +1245,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-personhood"
+version = "0.3.9"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "pallet-encointer-balances",
+ "pallet-encointer-ceremonies",
+ "pallet-encointer-communities",
+ "pallet-encointer-scheduler",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
+]
+
+[[package]]
 name = "pallet-encointer-scheduler"
 version = "0.3.9"
 dependencies = [
@@ -1287,32 +1313,6 @@ dependencies = [
  "substrate-fixed",
  "test-utils",
  "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "pallet-encointer-sybil-proof-issuer"
-version = "0.3.9"
-dependencies = [
- "encointer-primitives",
- "frame-support",
- "frame-system",
- "hex",
- "pallet-encointer-balances",
- "pallet-encointer-ceremonies",
- "pallet-encointer-communities",
- "pallet-encointer-scheduler",
- "pallet-timestamp",
- "parity-scale-codec",
- "polkadot-parachain",
- "sp-core",
- "sp-io",
- "sp-keyring",
- "sp-runtime",
- "sp-std",
- "test-utils",
- "xcm",
- "xcm-builder",
  "xcm-executor",
 ]
 
