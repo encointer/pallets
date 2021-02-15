@@ -92,12 +92,12 @@ decl_module! {
         ///
         /// Request a PersonhoodUniquenessRating from an encointer-parachain.
         ///
-        /// The `pallet_sybil_proof_issuer_index` is the pallet's module index of the respective encointer-parachain's
+        /// The `pallet_personhood_oracle_index` is the pallet's module index of the respective encointer-parachain's
         /// `pallet-encointer-sybil-personhood-oracle` pallet to query.
-        fn request_proof_of_personhood_confidence(
+        fn request_personhood_uniqueness_rating(
             origin,
             parachain_id: u32,
-            pallet_sybil_proof_issuer_index: u8,
+            pallet_personhood_oracle_index: u8,
             request: Vec<Vec<u8>>,
             requested_response: SybilResponse
         ) {
@@ -116,7 +116,7 @@ decl_module! {
                 .ok_or("[EncointerSybilGate]: PalletIndex does not fix into u8. Consider giving it a smaller index.")?;
 
             let call = IssuePersonhoodUniquenessRatingCall::new(
-                pallet_sybil_proof_issuer_index,
+                pallet_personhood_oracle_index,
                 request,
                 requested_response,
                 sender_pallet_sybil_gate_index

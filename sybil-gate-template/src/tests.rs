@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::{Module, Config};
+use crate::{Config, Module};
 use frame_support::assert_ok;
 use sp_core::H256;
 use sp_keyring::AccountKeyring;
@@ -56,7 +56,7 @@ type SybilGate = Module<TestRuntime>;
 #[test]
 fn faucet_works() {
     new_test_ext().execute_with(|| {
-        assert_ok!(SybilGate::request_proof_of_personhood_confidence(
+        assert_ok!(SybilGate::request_personhood_uniqueness_rating(
             Origin::signed(AccountKeyring::Alice.into()),
             2,
             1,
