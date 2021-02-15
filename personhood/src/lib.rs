@@ -21,8 +21,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
-use frame_support::{debug, decl_event, decl_module, dispatch::DispatchResult, ensure};
+use codec::{Decode, Encode};
+use frame_support::{debug, decl_error, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
@@ -54,6 +54,9 @@ pub trait Config:
     type XcmSender: SendXcm;
 }
 
+type ProofOfPersonhoodOf<T> =
+    ProofOfAttendance<<T as Ceremonies>::Signature, <T as frame_system::Config>::AccountId>;
+
 decl_event! {
     pub enum Event<T>
     where AccountId = <T as frame_system::Config>::AccountId,
@@ -67,12 +70,13 @@ decl_event! {
 decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
+        type Error = Error<T>;
 
         #[weight = 5_000_000]
         fn issue_proof_of_personhood_confidence(
         origin,
         requester: T::AccountId,
-        proof_of_person_hood_request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
+        proof_of_person_hood_request: Vec<u8>,
         requested_response: u8,
         sender_sybil_gate: u8
         ) {
@@ -82,10 +86,13 @@ decl_module! {
                 .ok_or("[EncointerSybilGate]: Can only call `issue_proof_of_personhood` from another parachain")?
                 .into();
 
-            debug::debug!(target: LOG, "received proof of personhood from parachain: {:?}", para_id);
-            debug::debug!(target: LOG, "received proof of personhood request: {:?}", proof_of_person_hood_request);
+            let request = <Vec<ProofOfPersonhoodOf<T>>>::decode(&mut proof_of_person_hood_request.as_slice())
+                .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
-            let confidence = Self::verify(proof_of_person_hood_request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
+            debug::debug!(target: LOG, "received proof of personhood from parachain: {:?}", para_id);
+            debug::debug!(target: LOG, "received proof of personhood request: {:?}", request);
+
+            let confidence = Self::verify(request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 
             let location = Junction::Parachain { id: para_id };
 
@@ -96,6 +103,15 @@ decl_module! {
                 Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentFailure(requester, e)),
             }
         }
+    }
+}
+
+decl_error! {
+    pub enum Error for Module<T: Config> {
+        /// Only other parachains can call this function
+        OnlyParachainsAllowed,
+        /// Unable to decode ProofOfPersonhood request
+        UnableToDecodeRequest,
     }
 }
 

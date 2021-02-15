@@ -109,8 +109,10 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             let location = Junction::Parachain { id: parachain_id };
 
-            let request: Vec<ProofOfAttendance<T::Signature, T::AccountId>> =
-                request.into_iter().map(|proof| Decode::decode(&mut proof.as_slice()).unwrap()).collect();
+            let request =
+                request.into_iter().map(|proof| Decode::decode(&mut proof.as_slice()).unwrap())
+                .collect::<Vec<ProofOfAttendance<T::Signature, T::AccountId>>>()
+                .encode();
 
             // Get this pallet's runtime configuration specific module index.
             let sender_pallet_sybil_gate_index = <T as frame_system::Config>::PalletInfo::index::<Self>()

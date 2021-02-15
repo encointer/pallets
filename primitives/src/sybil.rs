@@ -3,23 +3,22 @@ use fixed::traits::Fixed;
 use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 
-use crate::ceremonies::ProofOfAttendance;
 use crate::scheduler::CeremonyIndexType;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> {
+pub struct IssueProofOfPersonhoodConfidenceCall<AccountId> {
     call_index: [u8; 2],
     requester: AccountId,
-    request: Vec<ProofOfAttendance<Signature, AccountId>>,
+    request: Vec<u8>,
     requested_response: u8,
     sender_pallet_index: u8,
 }
 
-impl<Signature, AccountId> IssueProofOfPersonhoodConfidenceCall<Signature, AccountId> {
+impl<AccountId> IssueProofOfPersonhoodConfidenceCall<AccountId> {
     pub fn new(
         sybil_proof_issuer_index: u8,
         requester: AccountId,
-        request: Vec<ProofOfAttendance<Signature, AccountId>>,
+        request: Vec<u8>,
         requested_response: RequestedSybilResponse,
         sender_pallet_index: u8,
     ) -> Self {
