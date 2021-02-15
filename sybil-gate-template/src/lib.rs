@@ -55,13 +55,13 @@ pub trait Config: frame_system::Config {
 
 decl_storage! {
     trait Store for Module<T: Config> as EncointerSybilGate {
-        /// XCM PersonhoodUniquenessRating requests sent to another parachain that have yielded a response yet
+        /// XCM PersonhoodUniquenessRating requests sent to another parachain that have not yielded a response yet
         PendingRequests get(fn pending_requests): map hasher(identity) H256 => T::AccountId;
         /// The proof of attendances that have already been used in a previous request
-        /// Membership checks are faster with maps that with vecs, see: https://substrate.dev/recipes/map-set.html.
+        /// Membership checks are faster with maps than with vecs, see: https://substrate.dev/recipes/map-set.html.
         ///
         /// This is a double_map, as more requests might be added, and ProofOfAttendances are allowed to be used per request
-        BurndedProofs get(fn burned_proofs): double_map hasher(blake2_128_concat) SybilResponse, hasher(blake2_128_concat) H256 => ();
+        BurnedProofs get(fn burned_proofs): double_map hasher(blake2_128_concat) SybilResponse, hasher(blake2_128_concat) H256 => ();
     }
 }
 
@@ -93,19 +93,19 @@ decl_module! {
         /// Request a PersonhoodUniquenessRating from an encointer-parachain.
         ///
         /// The `pallet_personhood_oracle_index` is the pallet's module index of the respective encointer-parachain's
-        /// `pallet-encointer-sybil-personhood-oracle` pallet to query.
+        /// `pallet-encointer-personhood-oracle` pallet to query.
         fn request_personhood_uniqueness_rating(
             origin,
             parachain_id: u32,
             pallet_personhood_oracle_index: u8,
-            request: Vec<Vec<u8>>,
+            proof_of_attendances: Vec<Vec<u8>>,
             requested_response: SybilResponse
         ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
-            let request =
-                request.into_iter().map(|proof| Decode::decode(&mut proof.as_slice()).unwrap())
+            let proofs =
+                proof_of_attendances.into_iter().map(|proof| Decode::decode(&mut proof.as_slice()).unwrap())
                 .collect::<Vec<ProofOfAttendance<T::Signature, T::AccountId>>>()
                 .encode();
 
@@ -117,7 +117,7 @@ decl_module! {
 
             let call = IssuePersonhoodUniquenessRatingCall::new(
                 pallet_personhood_oracle_index,
-                request,
+                proofs,
                 requested_response,
                 sender_pallet_sybil_gate_index
             );
@@ -151,10 +151,10 @@ decl_module! {
 
             ensure!(<PendingRequests<T>>::contains_key(&request_hash), <Error<T>>::UnexpectedResponse);
             let account = <PendingRequests<T>>::take(&request_hash);
-            debug::debug!(target: LOG, "set PersonhoodUniquenessRating for account: {:?}", account);
+            debug::debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
 
             for proof in rating.proofs() {
-                if BurndedProofs::contains_key(SybilResponse::Faucet, proof) {
+                if BurnedProofs::contains_key(SybilResponse::Faucet, proof) {
                     Self::deposit_event(RawEvent::FaucetRejectedDueToProofReuse(account));
                     // Even if the rest of the proofs have not been used, we return here, as the
                     // attested/last_n_ceremonies ratio might not be correct any more.
@@ -168,7 +168,7 @@ decl_module! {
             } else {
                 T::Currency::deposit_creating(&account, 1u32.into());
                 rating.proofs().into_iter().for_each( |p|
-                    BurndedProofs::insert(SybilResponse::Faucet, p, ())
+                    BurnedProofs::insert(SybilResponse::Faucet, p, ())
                );
                 Self::deposit_event(RawEvent::FautetDrippedTo(account))
             }
@@ -184,7 +184,7 @@ decl_error! {
         RequestContainsBurnedProofs,
         /// Only other parachains can call this function
         OnlyParachainsAllowed,
-        /// This received response to an unknown request
+        /// Received response to an unknown request
         UnexpectedResponse,
     }
 }

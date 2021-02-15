@@ -14,10 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Encointer Sybil Proof Issuer Module (WIP, untested)
+//! # Encointer Sybil Proof Issuer Module
 //!
 //! provides functionality for
-//! - issuing and verifying digital proof of personhood-oracle confidence aka anti-sybil confidence
+//! - issuing personhood uniqueness rating aka anti-sybil rating
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -116,7 +116,7 @@ decl_error! {
 }
 
 impl<T: Config> Module<T> {
-    /// Verifies ProofOfAttendances and Returns a PersonhoodUniquenessRating upon success
+    /// Verifies ProofOfAttendances and returns a PersonhoodUniquenessRating upon success
     pub fn verify(
         request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
     ) -> Result<PersonhoodUniquenessRating, DispatchError> {

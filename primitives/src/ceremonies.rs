@@ -65,7 +65,7 @@ impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountI
             self.community_identifier,
             self.attendee_public.clone(),
         )
-            .using_encoded(|d| BlakeTwo256::hash(&d).into())
+            .using_encoded(BlakeTwo256::hash)
     }
 }
 
