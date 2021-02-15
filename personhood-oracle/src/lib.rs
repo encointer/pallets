@@ -26,8 +26,8 @@ use frame_support::{debug, decl_error, decl_event, decl_module, dispatch::Dispat
 use frame_system::ensure_signed;
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
-use sp_runtime::traits::AccountIdConversion;
-use sp_runtime::traits::Verify;
+use sp_core::H256;
+use sp_runtime::traits::{AccountIdConversion, BlakeTwo256, Hash, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
@@ -49,7 +49,7 @@ pub trait Config:
     + encointer_communities::Config
 {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+    type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
     /// The XCM sender module.
     type XcmSender: SendXcm;
 }
@@ -58,12 +58,14 @@ type ProofOfPersonhoodOf<T> =
     ProofOfAttendance<<T as Ceremonies>::Signature, <T as frame_system::Config>::AccountId>;
 
 decl_event! {
-    pub enum Event<T>
-    where AccountId = <T as frame_system::Config>::AccountId,
+    pub enum Event
     {
-        ProofOfPersonHoodRequestReceived(AccountId),
-        ProofOfPersonHoodSentSuccess(AccountId),
-        ProofOfPersonHoodSentFailure(AccountId, XcmError),
+        /// Received ProofOfPersonhood request \[hash, parachain\]
+        ProofOfPersonHoodRequestReceived(H256, u32),
+        /// Successfully sent ProofOfPersonhood response \[hash, parachain\]
+        ProofOfPersonHoodSentSuccess(H256, u32),
+        /// Failed to send ProofOfPersonhood response \[hash, parachain\]
+        ProofOfPersonHoodSentFailure(H256, u32, XcmError),
     }
 }
 
@@ -75,7 +77,6 @@ decl_module! {
         #[weight = 5_000_000]
         fn issue_proof_of_personhood_confidence(
         origin,
-        requester: T::AccountId,
         proof_of_person_hood_request: Vec<u8>,
         requested_response: u8,
         sender_sybil_gate: u8
@@ -85,7 +86,7 @@ decl_module! {
             let para_id: u32 = Sibling::try_from_account(&sender)
                 .ok_or("[EncointerSybilGate]: Can only call `issue_proof_of_personhood` from another parachain")?
                 .into();
-
+            let request_hash: H256 = proof_of_person_hood_request.using_encoded(|d| BlakeTwo256::hash(&d).into());
             let request = <Vec<ProofOfPersonhoodOf<T>>>::decode(&mut proof_of_person_hood_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
@@ -96,11 +97,11 @@ decl_module! {
 
             let location = Junction::Parachain { id: para_id };
 
-            let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, requester.clone(), confidence);
+            let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, request_hash.clone(), confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             match T::XcmSender::send_xcm(location.into(), message.into()) {
-                Ok(()) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentSuccess(requester)),
-                Err(e) => Self::deposit_event(RawEvent::ProofOfPersonHoodSentFailure(requester, e)),
+                Ok(()) => Self::deposit_event(Event::ProofOfPersonHoodSentSuccess(request_hash, para_id)),
+                Err(e) => Self::deposit_event(Event::ProofOfPersonHoodSentFailure(request_hash, para_id, e)),
             }
         }
     }

@@ -122,7 +122,6 @@ decl_module! {
 
             let call = IssueProofOfPersonhoodConfidenceCall::new(
                 pallet_sybil_proof_issuer_index,
-                sender.clone(),
                 request,
                 requested_response,
                 sender_pallet_sybil_gate_index
