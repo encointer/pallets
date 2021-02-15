@@ -17,7 +17,7 @@
 //! # Encointer Sybil Proof Issuer Module (WIP, untested)
 //!
 //! provides functionality for
-//! - issuing and verifying digital proof of personhood confidence aka anti-sybil confidence
+//! - issuing and verifying digital proof of personhood-oracle confidence aka anti-sybil confidence
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -89,8 +89,8 @@ decl_module! {
             let request = <Vec<ProofOfPersonhoodOf<T>>>::decode(&mut proof_of_person_hood_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
-            debug::debug!(target: LOG, "received proof of personhood from parachain: {:?}", para_id);
-            debug::debug!(target: LOG, "received proof of personhood request: {:?}", request);
+            debug::debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
+            debug::debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
 
             let confidence = Self::verify(request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
 

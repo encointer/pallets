@@ -17,7 +17,7 @@
 //! # Encointer Sybil Proof Request Module (WIP)
 //!
 //! provides functionality for
-//! - requesting digital proof of personhood confidence aka anti-sybil confidence
+//! - requesting digital proof of personhood-oracle confidence aka anti-sybil confidence
 //! -
 //!
 //!
@@ -97,7 +97,7 @@ decl_module! {
         /// Request a ProofOfPersonHood from an encointer-parachain.
         ///
         /// The `pallet_sybil_proof_issuer_index` is the pallet's module index of the respective encointer-parachain's
-        /// `pallet-encointer-sybil-personhood` pallet to query.
+        /// `pallet-encointer-sybil-personhood-oracle` pallet to query.
         fn request_proof_of_personhood_confidence(
             origin,
             parachain_id: u32,
