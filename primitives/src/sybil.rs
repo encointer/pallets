@@ -9,9 +9,21 @@ use crate::scheduler::CeremonyIndexType;
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct IssueProofOfPersonhoodConfidenceCall {
     call_index: [u8; 2],
-    request: Vec<u8>,
+    request: ProofOfPersonhoodRequest,
     requested_response: u8,
     sender_pallet_index: u8,
+}
+
+pub type ProofOfPersonhoodRequest = Vec<u8>;
+
+pub trait RequestHash {
+    fn hash(&self) -> H256;
+}
+
+impl RequestHash for ProofOfPersonhoodRequest {
+    fn hash(&self) -> H256 {
+        self.using_encoded(BlakeTwo256::hash)
+    }
 }
 
 impl IssueProofOfPersonhoodConfidenceCall {
@@ -30,7 +42,7 @@ impl IssueProofOfPersonhoodConfidenceCall {
     }
 
     pub fn request_hash(&self) -> H256 {
-        self.request.using_encoded(|d| BlakeTwo256::hash(&d).into())
+        self.request.hash()
     }
 }
 

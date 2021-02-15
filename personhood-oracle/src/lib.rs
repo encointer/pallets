@@ -27,12 +27,14 @@ use frame_system::ensure_signed;
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
 use sp_core::H256;
-use sp_runtime::traits::{AccountIdConversion, BlakeTwo256, Hash, Verify};
+use sp_runtime::traits::{AccountIdConversion, Verify};
 use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
-    sybil::{ProofOfPersonhoodConfidence, SybilResponseCall},
+    sybil::{
+        ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest, RequestHash, SybilResponseCall,
+    },
 };
 
 const LOG: &str = "encointer";
@@ -77,7 +79,7 @@ decl_module! {
         #[weight = 5_000_000]
         fn issue_proof_of_personhood_confidence(
         origin,
-        proof_of_person_hood_request: Vec<u8>,
+        proof_of_person_hood_request: ProofOfPersonhoodRequest,
         requested_response: u8,
         sender_sybil_gate: u8
         ) {
@@ -86,7 +88,7 @@ decl_module! {
             let para_id: u32 = Sibling::try_from_account(&sender)
                 .ok_or("[EncointerSybilGate]: Can only call `issue_proof_of_personhood` from another parachain")?
                 .into();
-            let request_hash: H256 = proof_of_person_hood_request.using_encoded(|d| BlakeTwo256::hash(&d).into());
+            let request_hash = proof_of_person_hood_request.hash();
             let request = <Vec<ProofOfPersonhoodOf<T>>>::decode(&mut proof_of_person_hood_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
