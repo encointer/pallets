@@ -73,7 +73,7 @@ fn issue_proof_of_personhood_is_ok() {
     new_test_ext().execute_with(|| {
         let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
         let account_id = LocationConverter::from_location(&sibling.into()).unwrap();
-        assert_ok!(SybilGate::issue_proof_of_personhood_confidence(
+        assert_ok!(SybilGate::issue_personhood_uniqueness_rating(
             Origin::signed(account_id),
             vec![proof_of_attendance()].encode(),
             1,
@@ -101,7 +101,7 @@ fn create_proof_of_personhood_confidence_works() {
     ext.execute_with(|| {
         assert_eq!(
             EncointerProofIssuer::verify(vec![proof.clone()]).unwrap(),
-            ProofOfPersonhoodConfidence::new(1, 1, vec![proof.hash()])
+            PersonhoodUniquenessRating::new(1, 1, vec![proof.hash()])
         )
     })
 }

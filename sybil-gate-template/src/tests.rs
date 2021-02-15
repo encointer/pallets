@@ -61,7 +61,7 @@ fn faucet_works() {
             2,
             1,
             Default::default(),
-            RequestedSybilResponse::default()
+            SybilResponse::default()
         ));
     })
 }
@@ -80,10 +80,10 @@ fn faucet_returns_err_if_proof_too_weak() {
             SybilGate::faucet(
                 Origin::signed(account),
                 request_hash,
-                ProofOfPersonhoodConfidence::default()
+                PersonhoodUniquenessRating::default()
             )
             .unwrap_err(),
-            Error::<TestRuntime>::ProofOfPersonhoodTooWeak.into()
+            Error::<TestRuntime>::PersonhoodUniquenessRatingTooWeak.into()
         );
     })
 }
@@ -97,7 +97,7 @@ fn faucet_returns_err_for_unexpected_request() {
         assert!(SybilGate::faucet(
             Origin::signed(account),
             Default::default(),
-            ProofOfPersonhoodConfidence::default()
+            PersonhoodUniquenessRating::default()
         )
         .is_err());
     })
@@ -105,5 +105,5 @@ fn faucet_returns_err_for_unexpected_request() {
 
 #[test]
 fn test_enum_encode() {
-    assert_eq!(RequestedSybilResponse::Faucet as u8, 1);
+    assert_eq!(SybilResponse::Faucet as u8, 1);
 }

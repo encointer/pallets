@@ -7,34 +7,34 @@ use sp_runtime::traits::{BlakeTwo256, Hash};
 use crate::scheduler::CeremonyIndexType;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct IssueProofOfPersonhoodConfidenceCall {
+pub struct IssuePersonhoodUniquenessRatingCall {
     call_index: [u8; 2],
-    request: ProofOfPersonhoodRequest,
+    request: OpaqueRequest,
     requested_response: u8,
     sender_pallet_index: u8,
 }
 
-pub type ProofOfPersonhoodRequest = Vec<u8>;
+pub type OpaqueRequest = Vec<u8>;
 
 pub trait RequestHash {
     fn hash(&self) -> H256;
 }
 
-impl RequestHash for ProofOfPersonhoodRequest {
+impl RequestHash for OpaqueRequest {
     fn hash(&self) -> H256 {
         self.using_encoded(BlakeTwo256::hash)
     }
 }
 
-impl IssueProofOfPersonhoodConfidenceCall {
+impl IssuePersonhoodUniquenessRatingCall {
     pub fn new(
-        sybil_proof_issuer_index: u8,
-        request: Vec<u8>,
-        requested_response: RequestedSybilResponse,
+        personhood_oracle_index: u8,
+        request: OpaqueRequest,
+        requested_response: SybilResponse,
         sender_pallet_index: u8,
     ) -> Self {
         Self {
-            call_index: [sybil_proof_issuer_index, 0], // is the first call in personhood-oracle pallet
+            call_index: [personhood_oracle_index, 0], // is the first call in personhood-oracle pallet
             request,
             requested_response: requested_response as u8,
             sender_pallet_index,
@@ -47,15 +47,15 @@ impl IssueProofOfPersonhoodConfidenceCall {
 }
 
 /// This allows to generically call the sybil-personhood-oracle, whose response calls the method with the
-/// index defined in the `RequestedSybilResponse`
+/// index defined in the `SybilResponse`
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub enum RequestedSybilResponse {
+pub enum SybilResponse {
     Faucet = 1,
 }
 
-impl Default for RequestedSybilResponse {
-    fn default() -> RequestedSybilResponse {
-        RequestedSybilResponse::Faucet
+impl Default for SybilResponse {
+    fn default() -> SybilResponse {
+        SybilResponse::Faucet
     }
 }
 
@@ -63,7 +63,7 @@ impl Default for RequestedSybilResponse {
 pub struct SybilResponseCall {
     call_index: [u8; 2],
     request_hash: H256,
-    confidence: ProofOfPersonhoodConfidence,
+    confidence: PersonhoodUniquenessRating,
 }
 
 impl SybilResponseCall {
@@ -71,7 +71,7 @@ impl SybilResponseCall {
         sybil_gate_index: u8,
         requested_sybil_response_call_index: u8,
         request_hash: H256,
-        confidence: ProofOfPersonhoodConfidence,
+        confidence: PersonhoodUniquenessRating,
     ) -> Self {
         Self {
             call_index: [sybil_gate_index, requested_sybil_response_call_index],
@@ -82,13 +82,13 @@ impl SybilResponseCall {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct ProofOfPersonhoodConfidence {
+pub struct PersonhoodUniquenessRating {
     attested: CeremonyIndexType,
     last_n_ceremonies: CeremonyIndexType,
     proofs: Vec<H256>,
 }
 
-impl ProofOfPersonhoodConfidence {
+impl PersonhoodUniquenessRating {
     pub fn new(
         attested: CeremonyIndexType,
         last_n_ceremonies: CeremonyIndexType,

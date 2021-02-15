@@ -32,9 +32,7 @@ use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
-    sybil::{
-        ProofOfPersonhoodConfidence, ProofOfPersonhoodRequest, RequestHash, SybilResponseCall,
-    },
+    sybil::{OpaqueRequest, PersonhoodUniquenessRating, RequestHash, SybilResponseCall},
 };
 
 const LOG: &str = "encointer";
@@ -56,18 +54,18 @@ pub trait Config:
     type XcmSender: SendXcm;
 }
 
-type ProofOfPersonhoodOf<T> =
+type ProofOfAttendanceOf<T> =
     ProofOfAttendance<<T as Ceremonies>::Signature, <T as frame_system::Config>::AccountId>;
 
 decl_event! {
     pub enum Event
     {
-        /// Received ProofOfPersonhood request \[hash, parachain\]
-        ProofOfPersonHoodRequestReceived(H256, u32),
-        /// Successfully sent ProofOfPersonhood response \[hash, parachain\]
-        ProofOfPersonHoodSentSuccess(H256, u32),
-        /// Failed to send ProofOfPersonhood response \[hash, parachain\]
-        ProofOfPersonHoodSentFailure(H256, u32, XcmError),
+        /// Received PersonhoodUniquenessRating request \[hash, parachain\]
+        PersonhoodUniquenessRatingRequestReceived(H256, u32),
+        /// Successfully sent PersonhoodUniquenessRating response \[hash, parachain\]
+        PersonhoodUniquenessRatingSentSuccess(H256, u32),
+        /// Failed to send PersonhoodUniquenessRating response \[hash, parachain\]
+        PersonhoodUniquenessRatingSentFailure(H256, u32, XcmError),
     }
 }
 
@@ -77,9 +75,9 @@ decl_module! {
         type Error = Error<T>;
 
         #[weight = 5_000_000]
-        fn issue_proof_of_personhood_confidence(
+        fn issue_personhood_uniqueness_rating(
         origin,
-        proof_of_person_hood_request: ProofOfPersonhoodRequest,
+        rating_request: OpaqueRequest,
         requested_response: u8,
         sender_sybil_gate: u8
         ) {
@@ -88,21 +86,21 @@ decl_module! {
             let para_id: u32 = Sibling::try_from_account(&sender)
                 .ok_or(<Error<T>>::UnableToDecodeRequest)?
                 .into();
-            let request = <Vec<ProofOfPersonhoodOf<T>>>::decode(&mut proof_of_person_hood_request.as_slice())
+            let request = <Vec<ProofOfAttendanceOf<T>>>::decode(&mut rating_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
             debug::debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
             debug::debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
 
-            let confidence = Self::verify(request).unwrap_or_else(|_| ProofOfPersonhoodConfidence::default());
+            let confidence = Self::verify(request).unwrap_or_else(|_| PersonhoodUniquenessRating::default());
 
-            let request_hash = proof_of_person_hood_request.hash();
+            let request_hash = rating_request.hash();
             let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, request_hash, confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
 
             match T::XcmSender::send_xcm(Junction::Parachain { id: para_id }.into(), message) {
-                Ok(()) => Self::deposit_event(Event::ProofOfPersonHoodSentSuccess(request_hash, para_id)),
-                Err(e) => Self::deposit_event(Event::ProofOfPersonHoodSentFailure(request_hash, para_id, e)),
+                Ok(()) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentSuccess(request_hash, para_id)),
+                Err(e) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentFailure(request_hash, para_id, e)),
             }
         }
     }
@@ -112,16 +110,16 @@ decl_error! {
     pub enum Error for Module<T: Config> {
         /// Only other parachains can call this function
         OnlyParachainsAllowed,
-        /// Unable to decode ProofOfPersonhood request
+        /// Unable to decode PersonhoodUniquenessRating request
         UnableToDecodeRequest,
     }
 }
 
 impl<T: Config> Module<T> {
-    /// Verifies ProofOfAttendances and Returns a ProofOfPersonhoodUponSuccess
+    /// Verifies ProofOfAttendances and Returns a PersonhoodUniquenessRating upon success
     pub fn verify(
         request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
-    ) -> Result<ProofOfPersonhoodConfidence, DispatchError> {
+    ) -> Result<PersonhoodUniquenessRating, DispatchError> {
         let mut c_index_min = <encointer_scheduler::Module<T>>::current_ceremony_index();
         let mut n_attested = 0;
         let mut attested = Vec::new();
@@ -147,7 +145,7 @@ impl<T: Config> Module<T> {
             .checked_sub(c_index_min)
             .expect("Proofs can't be valid with bogus ceremony index; qed");
 
-        Ok(ProofOfPersonhoodConfidence::new(
+        Ok(PersonhoodUniquenessRating::new(
             n_attested,
             last_n_ceremonies,
             attested,
