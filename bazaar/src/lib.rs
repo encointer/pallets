@@ -81,8 +81,8 @@ decl_error! {
 // TODO: Add Article Upload / Removal
 decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
-        // initialisation
         fn deposit_event() = default;
+        type Error = Error<T>;
 
         /// Allow a user to create a shop
         #[weight = 10_000]
