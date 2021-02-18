@@ -108,6 +108,7 @@ decl_storage! {
 decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
+        type Error = Error<T>;
 
         #[weight = 10_000]
         pub fn grant_reputation(origin, cid: CommunityIdentifier, reputable: T::AccountId) -> DispatchResult {

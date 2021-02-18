@@ -62,6 +62,7 @@ decl_storage! {
 decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
+        type Error = Error<T>;
         // FIXME: this function has complexity O(n^2)!
         // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later

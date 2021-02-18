@@ -70,6 +70,7 @@ decl_event!(
 decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
+        type Error = Error<T>;
 
         /// Transfer some balance to another account.
         #[weight = 10_000]
