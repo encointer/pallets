@@ -68,7 +68,7 @@ fn faucet_works() {
 
 #[test]
 fn faucet_returns_err_if_proof_too_weak() {
-    let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
+    let sibling = sibling_junction(1863);
     let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
     let alice: AccountId = AccountKeyring::Alice.into();
     let request_hash = H256::default();
@@ -90,7 +90,7 @@ fn faucet_returns_err_if_proof_too_weak() {
 
 #[test]
 fn faucet_returns_err_for_unexpected_request() {
-    let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
+    let sibling = sibling_junction(1863);
     let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
 
     new_test_ext().execute_with(|| {

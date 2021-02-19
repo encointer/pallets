@@ -34,6 +34,12 @@ package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
+[dependencies.xcm]
+default-features = false
+package = "xcm"
+git = "https://github.com/paritytech/polkadot.git"
+branch = "master"
+
 [dependencies.serde]
 features = ["derive"]
 optional = true
