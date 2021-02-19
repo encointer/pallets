@@ -1,6 +1,9 @@
 # Encointer Pallets
 
-![badge](https://img.shields.io/badge/substrate-2.0.0-success)
+![badge](https://img.shields.io/badge/substrate-2.0.1-success) 
+(but depending on master)
+
+[![CI build](https://github.com/encointer/pallets/actions/workflows/rust.yml/badge.svg)](https://github.com/encointer/pallets/actions/workflows/rust.yml)
 
 All application-specific pallets for [encointer](https://encointer.org)
 
@@ -18,3 +21,6 @@ a balances module that supports multiple communities and demurrage
 
 ## pallet-encointer-bazaar
 a registry for classifieds from community members, linking to IPFS
+
+## personhood-oracle
+a digital personhood verification oracle with XCM support. See pallet sybil-gate-example for how to use this from another parachain
