@@ -3,7 +3,7 @@
 ![badge](https://img.shields.io/badge/substrate-2.0.1-success) 
 (but depending on master)
 
-[![CI build](https://github.com/encointer/pallets/actions/workflows/rust.yml/badge.svg)](https://github.com/encointer/pallets/actions/workflows/rust.yml)
+[![Rust](https://github.com/encointer/pallets/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/encointer/pallets/actions/workflows/build_and_test.yml)
 
 All application-specific pallets for [encointer](https://encointer.org)
 
