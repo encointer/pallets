@@ -396,6 +396,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "substrate-fixed",
+ "xcm",
 ]
 
 [[package]]

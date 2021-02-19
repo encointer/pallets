@@ -28,11 +28,13 @@ use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
 use sp_core::H256;
 use sp_runtime::traits::{AccountIdConversion, Verify};
-use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
+use xcm::v0::{Error as XcmError, OriginKind, SendXcm, Xcm};
 
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
-    sybil::{OpaqueRequest, PersonhoodUniquenessRating, RequestHash, SybilResponseCall},
+    sybil::{
+        sibling_junction, OpaqueRequest, PersonhoodUniquenessRating, RequestHash, SybilResponseCall,
+    },
 };
 
 const LOG: &str = "encointer";
@@ -98,7 +100,7 @@ decl_module! {
             let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, request_hash, confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
 
-            match T::XcmSender::send_xcm(Junction::Parachain { id: para_id }.into(), message) {
+            match T::XcmSender::send_xcm(sibling_junction(para_id).into(), message) {
                 Ok(()) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentSuccess(request_hash, para_id)),
                 Err(e) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentFailure(request_hash, para_id, e)),
             }

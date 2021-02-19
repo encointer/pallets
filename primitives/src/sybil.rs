@@ -3,6 +3,7 @@ use fixed::traits::Fixed;
 use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash};
+use xcm::v0::Junction;
 
 use crate::scheduler::CeremonyIndexType;
 
@@ -110,4 +111,8 @@ impl PersonhoodUniquenessRating {
             .checked_div(F::from_num(self.last_n_ceremonies))
             .unwrap_or_default();
     }
+}
+
+pub fn sibling_junction(id: u32) -> (Junction, Junction) {
+    (Junction::Parent, Junction::Parachain { id })
 }

@@ -25,7 +25,10 @@
 use codec::{Decode, Encode};
 use encointer_primitives::{
     ceremonies::ProofOfAttendance,
-    sybil::{IssuePersonhoodUniquenessRatingCall, PersonhoodUniquenessRating, SybilResponse},
+    sybil::{
+        sibling_junction, IssuePersonhoodUniquenessRatingCall, PersonhoodUniquenessRating,
+        SybilResponse,
+    },
 };
 use fixed::types::I16F16;
 use frame_support::traits::Currency;
@@ -37,7 +40,7 @@ use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
 use sp_core::H256;
 use sp_runtime::traits::{AccountIdConversion, CheckedConversion, IdentifyAccount, Member, Verify};
-use xcm::v0::{Error as XcmError, Junction, OriginKind, SendXcm, Xcm};
+use xcm::v0::{Error as XcmError, OriginKind, SendXcm, Xcm};
 
 const LOG: &str = "encointer";
 
@@ -125,7 +128,7 @@ decl_module! {
 
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
             debug::debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
-            match T::XcmSender::send_xcm(Junction::Parachain { id: parachain_id }.into(), message) {
+            match T::XcmSender::send_xcm(sibling_junction(parachain_id).into(), message) {
                 Ok(()) => {
                     <PendingRequests<T>>::insert(&request_hash, &sender);
                     Self::deposit_event(RawEvent::PersonhoodUniquenessRatingRequestSentSuccess(sender, request_hash, parachain_id))

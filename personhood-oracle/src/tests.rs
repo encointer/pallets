@@ -71,7 +71,7 @@ fn proof_of_attendance() -> ProofOfAttendance<Signature, AccountId> {
 #[test]
 fn issue_proof_of_personhood_is_ok() {
     new_test_ext().execute_with(|| {
-        let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
+        let sibling = sibling_junction(1863);
         let account_id = LocationConverter::from_location(&sibling.into()).unwrap();
         assert_ok!(PersonhoodOracle::issue_personhood_uniqueness_rating(
             Origin::signed(account_id),
@@ -109,7 +109,7 @@ fn create_proof_of_personhood_confidence_works() {
 #[test]
 fn account_id_conversion_works() {
     new_test_ext().execute_with(|| {
-        let sibling = (Junction::Parent, Junction::Parachain { id: 1863 });
+        let sibling = sibling_junction(1863);
         let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
         assert_eq!(
             LocationConverter::try_into_location(account).unwrap(),
