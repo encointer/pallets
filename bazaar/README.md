@@ -4,6 +4,8 @@
 
 this is a design document WIP and does not necessarily reflect the current implementation
 
+![class diagram](./BazaarClassDiagram.svg)
+
 ### scope
 
 The encointer bazaar shall 
@@ -42,8 +44,8 @@ optional:
 ### storage
 
 ```
-BusinessRegistry: double_map(cid, AccountId) -> url
-OfferingRegistry: double_map(cid, AccountId) -> Vec<url>
+BusinessRegistry: double_map(cid, AccountId) -> (url, block_number)
+OfferingRegistry: double_map(cid, AccountId) -> Vec<(url, block_number)>
 ```
 
 #### performance considerations
