@@ -111,8 +111,7 @@ impl<T: Config> Module<T> {
         let entry = <Balance<T>>::get(community_id, who);
         Self::apply_demurrage(
             entry,
-            <encointer_communities::Module<T>>::community_properties(community_id)
-                .demurrage_per_block,
+            <encointer_communities::Module<T>>::demurrage_per_block(community_id),
         )
     }
 
@@ -127,8 +126,7 @@ impl<T: Config> Module<T> {
         let entry = <TotalIssuance<T>>::get(community_id);
         Self::apply_demurrage(
             entry,
-            <encointer_communities::Module<T>>::community_properties(community_id)
-                .demurrage_per_block,
+            <encointer_communities::Module<T>>::demurrage_per_block(community_id),
         )
     }
 

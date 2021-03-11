@@ -38,7 +38,13 @@ use codec::Encode;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use runtime_io::hashing::blake2_256;
 
-use encointer_primitives::{communities::consts::*, communities::*};
+use encointer_primitives::{
+    balances::BalanceType,
+    communities::{
+        consts::*, CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree,
+        Demurrage, Location, LossyFrom,
+    },
+};
 use sp_runtime::SaturatedConversion;
 
 pub trait Config: frame_system::Config {
@@ -53,7 +59,10 @@ decl_storage! {
         Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
-        CommunityProperties get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CommunityPropertiesType;
+        CommunityMetadata get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
+        DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
+        /// amount of UBI to be paid for every attended ceremony. If empty, the config's default is used.
+        NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => BalanceType;
         // TODO: replace this with on-chain governance
         CommunityMaster get(fn community_master) config(): T::AccountId;
     }
@@ -67,7 +76,13 @@ decl_module! {
         // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
-        pub fn new_community(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
+        pub fn new_community(origin,
+            loc: Vec<Location>,
+            bootstrappers: Vec<T::AccountId>,
+            community_metadata: CommunityMetadataType,
+            demurrage: Option<Demurrage>,
+            nominal_income: Option<BalanceType>
+        ) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
@@ -110,12 +125,9 @@ decl_module! {
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
 
-            <CommunityProperties>::insert(&cid,
-                CommunityPropertiesType {
-                    name_utf8: b"encointer dummy".to_vec(),
-                    demurrage_per_block: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128)
-                }
-            );
+            <CommunityMetadata>::insert(&cid, community_metadata);
+            <DemurragePerBlock>::insert(&cid, Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128));
+
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
             Ok(())
