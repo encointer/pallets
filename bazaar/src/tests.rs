@@ -17,7 +17,7 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use crate::{Module, Config};
+use crate::{Config, Module};
 use codec::Encode;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::assert_ok;
@@ -78,7 +78,10 @@ fn register_test_community() -> CommunityIdentifier {
     assert_ok!(EncointerCommunities::new_community(
         Origin::signed(alice.clone()),
         loc.clone(),
-        bs.clone()
+        bs.clone(),
+        Default::default(),
+        None,
+        None,
     ));
     CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }

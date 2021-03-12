@@ -19,7 +19,7 @@
 //extern crate node_primitives;
 
 use super::*;
-use crate::{GenesisConfig, Module, Config};
+use crate::{Config, GenesisConfig, Module};
 use encointer_primitives::{
     communities::{CommunityIdentifier, Degree, Location, LossyInto},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -41,6 +41,7 @@ use std::ops::Rem;
 type TestAttestation = Attestation<Signature, AccountId, Moment>;
 type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
+use encointer_primitives::communities::Demurrage;
 use test_utils::*;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -73,6 +74,11 @@ impl ExtBuilder {
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
+        encointer_balances::GenesisConfig {
+            demurrage_per_block: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128),
+        }
+        .assimilate_storage(&mut storage)
+        .unwrap();
         encointer_communities::GenesisConfig::<TestRuntime> {
             community_master: AccountId::from(AccountKeyring::Alice),
         }
@@ -314,7 +320,10 @@ fn register_test_community(
     assert_ok!(EncointerCommunities::new_community(
         Origin::signed(prime.clone()),
         loc.clone(),
-        bs.clone()
+        bs.clone(),
+        Default::default(),
+        None,
+        None,
     ));
     CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }
