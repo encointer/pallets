@@ -134,10 +134,8 @@ fn demurrage_should_work() {
         System::set_block_number(1);
         assert_eq!(
             EncointerBalances::balance(cid, &ALICE),
-            exp::<BalanceType, BalanceType>(
-                -EncointerCommunities::community_properties(cid).demurrage_per_block
-            )
-            .unwrap()
+            exp::<BalanceType, BalanceType>(-EncointerCommunities::demurrage_per_block(cid))
+                .unwrap()
         );
         //one year later
         System::set_block_number(86400 / 5 * 356);

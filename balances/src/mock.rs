@@ -20,7 +20,7 @@
 
 use super::*;
 use codec::Encode;
-use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
+use encointer_primitives::communities::{CommunityIdentifier, Degree, Demurrage, Location};
 use frame_support::assert_ok;
 use frame_support::impl_outer_event;
 use frame_system;
@@ -116,7 +116,12 @@ pub fn register_test_community() -> CommunityIdentifier {
     assert_ok!(EncointerCommunities::new_community(
         Origin::signed(alice.clone()),
         loc.clone(),
-        bs.clone()
+        bs.clone(),
+        Default::default(),
+        Some(Demurrage::from_bits(
+            0x0000000000000000000001E3F0A8A973_i128
+        )),
+        None
     ));
     CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }
