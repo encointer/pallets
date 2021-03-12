@@ -60,9 +60,10 @@ decl_storage! {
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
         CommunityMetadata get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
-        DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
-        /// amount of UBI to be paid for every attended ceremony. If empty, the config's default is used.
-        NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => BalanceType;
+        /// If it is empty, the genesis config's default is used.
+        pub DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
+        /// Amount of UBI to be paid for every attended ceremony.         /// If it is empty, the genesis config's default is used.
+        pub NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => BalanceType;
         // TODO: replace this with on-chain governance
         CommunityMaster get(fn community_master) config(): T::AccountId;
     }

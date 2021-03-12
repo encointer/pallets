@@ -23,6 +23,7 @@ use encointer_primitives::{
 use fixed::transcendental::exp;
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
+    StorageMap,
 };
 use frame_system::{self as frame_system, ensure_signed};
 use rstd::convert::TryInto;
@@ -54,7 +55,8 @@ decl_storage! {
     trait Store for Module<T: Config> as EncointerBalances {
         pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CommunityIdentifier => BalanceEntry<T::BlockNumber>;
         pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
-        //pub DemurragePerBlock get(fn demurrage_per_block): BalanceType = DemurrageRate;
+        /// The default value to be used if there is no community specific demurrage set.
+        DemurragePerBlock get(fn demurrage_per_block) config(): BalanceType;
     }
 }
 
@@ -109,10 +111,7 @@ impl<T: Config> Module<T> {
         who: &T::AccountId,
     ) -> BalanceEntry<T::BlockNumber> {
         let entry = <Balance<T>>::get(community_id, who);
-        Self::apply_demurrage(
-            entry,
-            <encointer_communities::Module<T>>::demurrage_per_block(community_id),
-        )
+        Self::apply_demurrage(entry, Self::demurrage(community_id))
     }
 
     pub fn total_issuance(community_id: CommunityIdentifier) -> BalanceType {
@@ -124,10 +123,7 @@ impl<T: Config> Module<T> {
         community_id: CommunityIdentifier,
     ) -> BalanceEntry<T::BlockNumber> {
         let entry = <TotalIssuance<T>>::get(community_id);
-        Self::apply_demurrage(
-            entry,
-            <encointer_communities::Module<T>>::demurrage_per_block(community_id),
-        )
+        Self::apply_demurrage(entry, Self::demurrage(community_id))
     }
 
     /// calculate actual value with demurrage
@@ -214,5 +210,14 @@ impl<T: Config> Module<T> {
         <TotalIssuance<T>>::insert(community_id, entry_tot);
         <Balance<T>>::insert(community_id, who, entry_who);
         Ok(())
+    }
+
+    /// Returns the community-specific demurrage if it is set. Otherwise returns the
+    /// the demurrage defined in the genesis config
+    fn demurrage(cid: CommunityIdentifier) -> BalanceType {
+        match encointer_communities::DemurragePerBlock::try_get(cid) {
+            Ok(demurrage) => demurrage,
+            Err(_) => Self::demurrage_per_block(),
+        }
     }
 }
