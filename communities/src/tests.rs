@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::{GenesisConfig, Module, Config};
+use crate::{Config, GenesisConfig, Module};
 use frame_support::assert_ok;
 use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
 use sp_keyring::AccountKeyring;
@@ -184,16 +184,28 @@ fn new_community_works() {
         println!("north pole at {:?}", NORTH_POLE);
         let loc = vec![a, b];
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+        let community_meta: CommunityMetadataType = CommunityMetadataType {
+            name: "Default".into(),
+            symbol: "DEF".into(),
+            ..Default::default()
+        };
         assert_ok!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
             loc.clone(),
-            bs.clone()
+            bs.clone(),
+            community_meta.clone(),
+            None,
+            None
         ));
         let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()));
         let cids = EncointerCommunities::community_identifiers();
         assert!(cids.contains(&cid));
         assert_eq!(EncointerCommunities::locations(&cid), loc);
         assert_eq!(EncointerCommunities::bootstrappers(&cid), bs);
+        assert_eq!(
+            EncointerCommunities::community_metadata(&cid),
+            community_meta
+        );
     });
 }
 
@@ -215,9 +227,15 @@ fn new_community_with_too_close_inner_locations_fails() {
         let loc = vec![a, b];
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
 
-        assert!(
-            EncointerCommunities::new_community(Origin::signed(alice.clone()), loc, bs).is_err()
-        );
+        assert!(EncointerCommunities::new_community(
+            Origin::signed(alice.clone()),
+            loc,
+            bs,
+            Default::default(),
+            None,
+            None
+        )
+        .is_err());
     });
 }
 
@@ -240,7 +258,10 @@ fn new_community_too_close_to_existing_community_fails() {
         assert_ok!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
             loc.clone(),
-            bs.clone()
+            bs.clone(),
+            Default::default(),
+            None,
+            None
         ));
 
         // second community
@@ -256,7 +277,10 @@ fn new_community_too_close_to_existing_community_fails() {
         assert!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
             loc.clone(),
-            bs.clone()
+            bs.clone(),
+            Default::default(),
+            None,
+            None
         )
         .is_err());
     });
@@ -282,7 +306,10 @@ fn new_community_with_near_pole_locations_fails() {
         assert!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
             loc,
-            bs.clone()
+            bs.clone(),
+            Default::default(),
+            None,
+            None
         )
         .is_err());
 
@@ -295,9 +322,15 @@ fn new_community_with_near_pole_locations_fails() {
             lon: T::from_num(-60),
         };
         let loc = vec![a, b];
-        assert!(
-            EncointerCommunities::new_community(Origin::signed(alice.clone()), loc, bs).is_err()
-        );
+        assert!(EncointerCommunities::new_community(
+            Origin::signed(alice.clone()),
+            loc,
+            bs,
+            Default::default(),
+            None,
+            None
+        )
+        .is_err());
     });
 }
 
@@ -321,7 +354,10 @@ fn new_community_near_dateline_fails() {
         assert!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
             loc,
-            bs.clone()
+            bs.clone(),
+            Default::default(),
+            None,
+            None
         )
         .is_err());
     });
@@ -349,7 +385,10 @@ fn new_currency_with_very_close_location_works() {
         assert!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
             loc,
-            bs.clone()
+            bs.clone(),
+            Default::default(),
+            None,
+            None
         )
         .is_ok());
     });

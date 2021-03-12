@@ -59,7 +59,7 @@ decl_storage! {
         Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
-        CommunityMetadata get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
+        CommunityMetadata get(fn community_metadata): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
         /// If it is empty, the genesis config's default is used.
         pub DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
         /// Amount of UBI to be paid for every attended ceremony.         /// If it is empty, the genesis config's default is used.
