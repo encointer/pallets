@@ -111,7 +111,7 @@ impl<T: Config> Module<T> {
         who: &T::AccountId,
     ) -> BalanceEntry<T::BlockNumber> {
         let entry = <Balance<T>>::get(community_id, who);
-        Self::apply_demurrage(entry, Self::demurrage(community_id))
+        Self::apply_demurrage(entry, Self::demurrage(&community_id))
     }
 
     pub fn total_issuance(community_id: CommunityIdentifier) -> BalanceType {
@@ -123,7 +123,7 @@ impl<T: Config> Module<T> {
         community_id: CommunityIdentifier,
     ) -> BalanceEntry<T::BlockNumber> {
         let entry = <TotalIssuance<T>>::get(community_id);
-        Self::apply_demurrage(entry, Self::demurrage(community_id))
+        Self::apply_demurrage(entry, Self::demurrage(&community_id))
     }
 
     /// calculate actual value with demurrage
@@ -214,7 +214,7 @@ impl<T: Config> Module<T> {
 
     /// Returns the community-specific demurrage if it is set. Otherwise returns the
     /// the demurrage defined in the genesis config
-    fn demurrage(cid: CommunityIdentifier) -> BalanceType {
+    fn demurrage(cid: &CommunityIdentifier) -> BalanceType {
         match encointer_communities::DemurragePerBlock::try_get(cid) {
             Ok(demurrage) => demurrage,
             Err(_) => Self::demurrage_per_block(),
