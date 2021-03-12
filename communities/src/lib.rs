@@ -124,9 +124,14 @@ decl_module! {
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
-
             <CommunityMetadata>::insert(&cid, community_metadata);
-            <DemurragePerBlock>::insert(&cid, Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128));
+
+            if demurrage.is_some() {
+                <DemurragePerBlock>::insert(&cid, demurrage.unwrap());
+            }
+            if nominal_income.is_some() {
+                <NominalIncome>::insert(&cid, nominal_income.unwrap());
+            }
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
