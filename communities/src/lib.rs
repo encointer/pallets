@@ -25,9 +25,7 @@
 
 // use host_calls::runtime_interfaces;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage,
-    dispatch::DispatchResult,
-    ensure,
+    debug, decl_error, decl_event, decl_module, decl_storage, ensure,
     storage::{StorageMap, StorageValue},
 };
 use frame_system::ensure_signed;
@@ -77,13 +75,14 @@ decl_module! {
         // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
-        pub fn new_community(origin,
+        fn new_community(
+            origin,
             loc: Vec<Location>,
             bootstrappers: Vec<T::AccountId>,
             community_metadata: CommunityMetadataType,
             demurrage: Option<Demurrage>,
             nominal_income: Option<BalanceType>
-        ) -> DispatchResult {
+        ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
@@ -101,13 +100,13 @@ decl_module! {
                 if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
                     || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M {
                     debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
-                    return Err(<Error<T>>::MinimumDistanceViolationToPole.into());
+                    return Err(<Error<T>>::MinimumDistanceViolationToPole)?;
                 }
                 // prohibit proximity to dateline
                 let dateline_proxy = Location { lat: l1.lat, lon: DATELINE_LON };
                 if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
                     debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
-                    return Err(<Error<T>>::MinimumDistanceViolationToDateLine.into());
+                    return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
                 }
                 // test against all other communities globally
                 for other in cids.iter() {
@@ -116,7 +115,7 @@ decl_module! {
                             debug::warn!(target: LOG,
                                 "location {:?} too close to previously registered location {:?} with cid {:?}",
                                 l1, l2, other);
-                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity.into());
+                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity)?;
                         }
                     }
                 }
@@ -125,6 +124,7 @@ decl_module! {
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
+            // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
 
             if demurrage.is_some() {
@@ -136,7 +136,25 @@ decl_module! {
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
-            Ok(())
+        }
+
+        #[weight = 10_000]
+        fn update_community_medadata(origin, cid: CommunityIdentifier, community_metadata: CommunityMetadataType) {
+            debug::RuntimeLogger::init();
+            let sender = ensure_signed(origin)?;
+
+            if !Self::community_identifiers().contains(&cid) {
+                return Err(<Error<T>>::CommunityInexistent)?;
+            }
+
+            if !<Bootstrappers<T>>::get(cid).contains(&sender) {
+                return Err(<Error<T>>::MissingPrivileges)?;
+            }
+
+            // Todo: Validate metadata??
+            <CommunityMetadata>::insert(&cid, community_metadata);
+            Self::deposit_event(RawEvent::CommunityMetadataUpdated(sender, cid));
+            debug::info!(target: LOG, "registered community with cid: {:?}", cid);
         }
     }
 }
@@ -146,7 +164,10 @@ decl_event!(
     where
         AccountId = <T as frame_system::Config>::AccountId,
     {
+        /// A new community was registered \[who, community_identifier\]
         CommunityRegistered(AccountId, CommunityIdentifier),
+        /// CommunityMetadata was updated \[who, community_identifier\]
+        CommunityMetadataUpdated(AccountId, CommunityIdentifier),
     }
 );
 
@@ -158,6 +179,12 @@ decl_error! {
         MinimumDistanceViolationToDateLine,
         /// minimum distance violated towards other community's location
         MinimumDistanceViolationToOtherCommunity,
+        /// Only bootstrappers can call this function
+        MissingPrivileges,
+        /// Can't register community that already exists
+        CommunityAlreadyRegistered,
+        /// Community does not exist yet
+        CommunityInexistent
     }
 }
 
