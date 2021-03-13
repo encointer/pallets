@@ -62,7 +62,7 @@ decl_storage! {
         CommunityMetadata get(fn community_metadata): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
         /// If it is empty, the genesis config's default is used.
         pub DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
-        /// Amount of UBI to be paid for every attended ceremony.         /// If it is empty, the genesis config's default is used.
+        /// Amount of UBI to be paid for every attended ceremony. If it is empty, the genesis config's default is used.
         pub NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => BalanceType;
         // TODO: replace this with on-chain governance
         CommunityMaster get(fn community_master) config(): T::AccountId;

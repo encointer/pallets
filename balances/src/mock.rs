@@ -86,7 +86,7 @@ impl ExtBuilder {
 
 /// register a simple test community with 3 meetup locations and well known bootstrappers
 pub fn register_test_community() -> CommunityIdentifier {
-    // all well-known keys are boottrappers for easy testen afterwards
+    // all well-known keys are bootstrappers for easy testing afterwards
     let alice = 1;
     let bob = 2;
     let charlie = 3;
