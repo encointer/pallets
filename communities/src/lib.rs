@@ -28,7 +28,7 @@ use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, ensure,
     storage::{StorageMap, StorageValue},
 };
-use frame_system::ensure_signed;
+use frame_system::{ensure_root, ensure_signed};
 
 use rstd::prelude::*;
 
@@ -141,20 +141,16 @@ decl_module! {
         #[weight = 10_000]
         fn update_community_medadata(origin, cid: CommunityIdentifier, community_metadata: CommunityMetadataType) {
             debug::RuntimeLogger::init();
-            let sender = ensure_signed(origin)?;
+            ensure_root(origin)?;
 
             if !Self::community_identifiers().contains(&cid) {
                 return Err(<Error<T>>::CommunityInexistent)?;
             }
 
-            if !<Bootstrappers<T>>::get(cid).contains(&sender) {
-                return Err(<Error<T>>::MissingPrivileges)?;
-            }
-
             // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
-            Self::deposit_event(RawEvent::CommunityMetadataUpdated(sender, cid));
-            debug::info!(target: LOG, "registered community with cid: {:?}", cid);
+            Self::deposit_event(RawEvent::CommunityMetadataUpdated(cid));
+            debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
         }
     }
 }
@@ -167,8 +163,7 @@ decl_event!(
         /// A new community was registered \[who, community_identifier\]
         CommunityRegistered(AccountId, CommunityIdentifier),
         /// CommunityMetadata was updated \[who, community_identifier\]
-        CommunityMetadataUpdated(AccountId, CommunityIdentifier),
-    }
+        CommunityMetadataUpdated(CommunityIdentifier),
 );
 
 decl_error! {
@@ -179,8 +174,6 @@ decl_error! {
         MinimumDistanceViolationToDateLine,
         /// minimum distance violated towards other community's location
         MinimumDistanceViolationToOtherCommunity,
-        /// Only bootstrappers can call this function
-        MissingPrivileges,
         /// Can't register community that already exists
         CommunityAlreadyRegistered,
         /// Community does not exist yet
