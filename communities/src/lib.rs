@@ -44,7 +44,7 @@ use encointer_primitives::{
         NominalIncome as NominalIncomeType,
     },
 };
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{DispatchResult, SaturatedConversion};
 
 pub trait Config: frame_system::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -96,38 +96,7 @@ decl_module! {
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
             ensure!(!cids.contains(&cid), "community already registered");
-
-            for l1 in loc.iter() {
-                ensure!(Self::is_valid_geolocation(&l1), "invalid geolocation specified");
-                //test within this communities' set
-                for l2 in loc.iter() {
-                    if l2 == l1 { continue }
-                    ensure!(Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S, "minimum solar trip time violated within supplied locations");
-                }
-                // prohibit proximity to poles
-                if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
-                    || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
-                    return Err(<Error<T>>::MinimumDistanceViolationToPole)?;
-                }
-                // prohibit proximity to dateline
-                let dateline_proxy = Location { lat: l1.lat, lon: DATELINE_LON };
-                if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
-                    return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
-                }
-                // test against all other communities globally
-                for other in cids.iter() {
-                    for l2 in Self::locations(other) {
-                        if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
-                            debug::warn!(target: LOG,
-                                "location {:?} too close to previously registered location {:?} with cid {:?}",
-                                l1, l2, other);
-                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity)?;
-                        }
-                    }
-                }
-            }
+            Self::validate_locations(&loc, &cids)?;
 
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
@@ -271,6 +240,53 @@ impl<T: Config> Module<T> {
         let c: D = two * asin(sqrt::<D, D>(aa).unwrap_or_default());
         let d = D::from(MEAN_EARTH_RADIUS) * c;
         i64::lossy_from(d).saturated_into()
+    }
+
+    fn validate_locations(loc: &Vec<Location>, cids: &Vec<CommunityIdentifier>) -> DispatchResult {
+        for l1 in loc.iter() {
+            ensure!(
+                Self::is_valid_geolocation(&l1),
+                "invalid geolocation specified"
+            );
+            //test within this communities' set
+            for l2 in loc.iter() {
+                if l2 == l1 {
+                    continue;
+                }
+                ensure!(
+                    Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S,
+                    "minimum solar trip time violated within supplied locations"
+                );
+            }
+            // prohibit proximity to poles
+            if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
+                || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M
+            {
+                debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
+                return Err(<Error<T>>::MinimumDistanceViolationToPole)?;
+            }
+            // prohibit proximity to dateline
+            let dateline_proxy = Location {
+                lat: l1.lat,
+                lon: DATELINE_LON,
+            };
+            if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
+                debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
+                return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
+            }
+            // test against all other communities globally
+            for other in cids.iter() {
+                for l2 in Self::locations(other) {
+                    if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
+                        debug::warn!(target: LOG,
+                                     "location {:?} too close to previously registered location {:?} with cid {:?}",
+                                     l1, l2, other);
+                        return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity)?;
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }
 
