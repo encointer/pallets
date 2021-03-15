@@ -215,9 +215,7 @@ impl<T: Config> Module<T> {
     /// Returns the community-specific demurrage if it is set. Otherwise returns the
     /// the demurrage defined in the genesis config
     fn demurrage(cid: &CommunityIdentifier) -> BalanceType {
-        match encointer_communities::DemurragePerBlock::try_get(cid) {
-            Ok(demurrage) => demurrage,
-            Err(_) => Self::demurrage_per_block(),
-        }
+        encointer_communities::DemurragePerBlock::try_get(cid)
+            .unwrap_or_else(|_| Self::demurrage_per_block())
     }
 }

@@ -643,10 +643,8 @@ impl<T: Config> Module<T> {
     /// Returns the community-specific nominal income if it is set. Otherwise returns the
     /// the ceremony reward defined in the genesis config.
     fn nominal_income(cid: &CommunityIdentifier) -> BalanceType {
-        match encointer_communities::NominalIncome::try_get(cid) {
-            Ok(income) => income,
-            Err(_) => Self::ceremony_reward(),
-        }
+        encointer_communities::NominalIncome::try_get(cid)
+            .unwrap_or_else(|_| Self::ceremony_reward())
     }
 
     #[cfg(test)]
