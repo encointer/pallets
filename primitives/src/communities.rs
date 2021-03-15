@@ -9,14 +9,22 @@ pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I64F64;
 pub type Demurrage = I64F64;
+pub type NominalIncome = I64F64;
 pub type CommunityIdentifier = H256;
 
-/// Ensure that the demurrage is in a sane range. Currently, it is only checked if the demurrage
-/// is bigger than zero.
+/// Ensure that the demurrage is in a sane range.
 ///
 /// Todo: Other sanity checks, e.g., 0 < e^(demurrage_per_block*sum(phase_durations)) < 1?
-pub fn validate_demurrage(demurrage: Demurrage) -> Result<(), ()> {
-    if demurrage <= Demurrage::from_num(0) {
+pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), ()> {
+    if demurrage < &Demurrage::from_num(0) {
+        return Err(());
+    }
+    Ok(())
+}
+
+/// Ensure that the demurrage is in a sane range.
+pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()> {
+    if nominal_income <= &NominalIncome::from_num(0) {
         return Err(());
     }
     Ok(())
@@ -88,10 +96,20 @@ pub mod consts {
 
 #[cfg(test)]
 mod tests {
-    use crate::communities::{ensure_valid, Demurrage};
+    use crate::communities::{
+        validate_demurrage, validate_nominal_income, Demurrage, NominalIncome,
+    };
 
     #[test]
     fn demurrage_smaller_0_fails() {
-        assert_eq!(ensure_valid(Demurrage::from_num(-1)), Err(()));
+        assert_eq!(validate_demurrage(&Demurrage::from_num(-1)), Err(()));
+    }
+
+    #[test]
+    fn nominal_income_smaller_0_fails() {
+        assert_eq!(
+            validate_nominal_income(&NominalIncome::from_num(-1)),
+            Err(())
+        );
     }
 }

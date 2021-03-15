@@ -39,8 +39,9 @@ use runtime_io::hashing::blake2_256;
 use encointer_primitives::{
     balances::BalanceType,
     communities::{
-        consts::*, validate_demurrage, CommunityIdentifier,
+        consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
         CommunityMetadata as CommunityMetadataType, Degree, Demurrage, Location, LossyFrom,
+        NominalIncome as NominalIncomeType,
     },
 };
 use sp_runtime::SaturatedConversion;
@@ -61,7 +62,7 @@ decl_storage! {
         /// If it is empty, the genesis config's default is used.
         pub DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
         /// Amount of UBI to be paid for every attended ceremony. If it is empty, the genesis config's default is used.
-        pub NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => BalanceType;
+        pub NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => NominalIncomeType;
         // TODO: replace this with on-chain governance
         CommunityMaster get(fn community_master) config(): T::AccountId;
     }
@@ -81,11 +82,16 @@ decl_module! {
             bootstrappers: Vec<T::AccountId>,
             community_metadata: CommunityMetadataType,
             demurrage: Option<Demurrage>,
-            nominal_income: Option<BalanceType>
+            nominal_income: Option<NominalIncomeType>
         ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
-            validate_demurrage(demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+            if let Some(d) = demurrage {
+                validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+            }
+            if let Some(i) = nominal_income {
+                validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+            }
 
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
@@ -129,12 +135,8 @@ decl_module! {
             // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
 
-            if demurrage.is_some() {
-                <DemurragePerBlock>::insert(&cid, demurrage.unwrap());
-            }
-            if nominal_income.is_some() {
-                <NominalIncome>::insert(&cid, nominal_income.unwrap());
-            }
+            demurrage.map(|d| <DemurragePerBlock>::insert(&cid, d));
+            nominal_income.map(|i| <NominalIncome>::insert(&cid, i));
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
@@ -159,8 +161,7 @@ decl_module! {
         fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
-            validate_demurrage(demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-
+            validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 
             if !Self::community_identifiers().contains(&cid) {
                 return Err(<Error<T>>::CommunityInexistent)?;
@@ -172,9 +173,10 @@ decl_module! {
         }
 
         #[weight = 10_000]
-        fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: BalanceType) {
+        fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: NominalIncomeType) {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
+            validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 
             if !Self::community_identifiers().contains(&cid) {
                 return Err(<Error<T>>::CommunityInexistent)?;
@@ -216,7 +218,9 @@ decl_error! {
         /// Community does not exist yet
         CommunityInexistent,
         /// Invalid demurrage supplied
-        InvalidDemurrage
+        InvalidDemurrage,
+        /// Invalid demurrage supplied
+        InvalidNominalIncome
     }
 }
 

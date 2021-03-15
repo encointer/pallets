@@ -48,7 +48,7 @@ use encointer_primitives::{
     balances::BalanceType,
     ceremonies::consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
     ceremonies::*,
-    communities::{CommunityIdentifier, Degree, Location, LossyFrom},
+    communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
@@ -642,7 +642,7 @@ impl<T: Config> Module<T> {
 
     /// Returns the community-specific nominal income if it is set. Otherwise returns the
     /// the ceremony reward defined in the genesis config.
-    fn nominal_income(cid: &CommunityIdentifier) -> BalanceType {
+    fn nominal_income(cid: &CommunityIdentifier) -> NominalIncome {
         encointer_communities::NominalIncome::try_get(cid)
             .unwrap_or_else(|_| Self::ceremony_reward())
     }
