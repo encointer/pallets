@@ -16,3 +16,7 @@ pub struct BalanceEntry<BlockNumber> {
     /// The time (block height) at which the balance was last adjusted
     pub last_update: BlockNumber,
 }
+
+pub mod consts {
+    pub const DEFAULT_DEMURRAGE: i128 = 0x0000000000000000000001E3F0A8A973_i128;
+}

@@ -41,6 +41,7 @@ use std::ops::Rem;
 type TestAttestation = Attestation<Signature, AccountId, Moment>;
 type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
+use encointer_primitives::balances::consts::DEFAULT_DEMURRAGE;
 use encointer_primitives::communities::Demurrage;
 use test_utils::*;
 
@@ -75,7 +76,7 @@ impl ExtBuilder {
             .build_storage::<TestRuntime>()
             .unwrap();
         encointer_balances::GenesisConfig {
-            demurrage_per_block: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128),
+            demurrage_per_block: Demurrage::from_bits(DEFAULT_DEMURRAGE),
         }
         .assimilate_storage(&mut storage)
         .unwrap();
