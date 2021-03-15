@@ -116,10 +116,7 @@ decl_module! {
         fn update_community_medadata(origin, cid: CommunityIdentifier, community_metadata: CommunityMetadataType) {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
-
-            if !Self::community_identifiers().contains(&cid) {
-                return Err(<Error<T>>::CommunityInexistent)?;
-            }
+            Self::ensure_cid_exists(&cid)?;
 
             // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
@@ -132,10 +129,7 @@ decl_module! {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
             validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-
-            if !Self::community_identifiers().contains(&cid) {
-                return Err(<Error<T>>::CommunityInexistent)?;
-            }
+            Self::ensure_cid_exists(&cid)?;
 
             <DemurragePerBlock>::insert(&cid, demurrage);
             Self::deposit_event(RawEvent::CommunityDemurrageUpdated(cid));
@@ -147,10 +141,7 @@ decl_module! {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
             validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-
-            if !Self::community_identifiers().contains(&cid) {
-                return Err(<Error<T>>::CommunityInexistent)?;
-            }
+            Self::ensure_cid_exists(&cid)?;
 
             <NominalIncome>::insert(&cid, nominal_income);
             Self::deposit_event(RawEvent::CommunityNominalIncomeUpdated(cid));
@@ -210,6 +201,13 @@ impl<T: Config> Module<T> {
         let tflight = d.checked_div(MAX_SPEED_MPS).unwrap();
         let dt: i32 = i64::lossy_from(dt.abs()).saturated_into();
         tflight - dt
+    }
+
+    fn ensure_cid_exists(cid: &CommunityIdentifier) -> DispatchResult {
+        match Self::community_identifiers().contains(&cid) {
+            true => Ok(()),
+            false => Err(<Error<T>>::CommunityInexistent)?,
+        }
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
