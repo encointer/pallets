@@ -24,7 +24,8 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
 };
 
-use test_utils::*;
+use encointer_primitives::communities::NominalIncome;
+use test_utils::{helpers::register_test_community, *};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
@@ -38,6 +39,7 @@ pub type EncointerCommunities = Module<TestRuntime>;
 
 impl_frame_system!(TestRuntime);
 impl_balances!(TestRuntime, System);
+impl_encointer_communities!(TestRuntime);
 impl_outer_origin_for_runtime!(TestRuntime);
 
 pub struct ExtBuilder;
@@ -205,6 +207,20 @@ fn new_community_works() {
         assert_eq!(
             EncointerCommunities::community_metadata(&cid),
             community_meta
+        );
+    });
+}
+
+#[test]
+fn updating_nominal_income_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Assert that is the genesis config's value
+        let cid = register_test_community::<TestRuntime>(None, 1);
+        assert!(NominalIncome::try_get(cid).is_none());
+        EncointerCommunities::update_nominal_income(Origin::Root, cid, BalanceType::from_num(1.1));
+        assert_eq!(
+            NominalIncome::try_get(&cid).unwrap(),
+            BalanceType::from_num(1.1)
         );
     });
 }

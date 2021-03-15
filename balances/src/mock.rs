@@ -19,15 +19,9 @@
 #![cfg(test)]
 
 use super::*;
-use codec::Encode;
-use encointer_primitives::{
-    balances::consts::DEFAULT_DEMURRAGE,
-    communities::{CommunityIdentifier, Degree, Demurrage, Location},
-};
-use frame_support::assert_ok;
 use frame_support::impl_outer_event;
 use frame_system;
-use sp_core::{hashing::blake2_256, H256};
+use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup};
 
 use test_utils::*;
@@ -85,44 +79,4 @@ impl ExtBuilder {
             .unwrap();
         t.into()
     }
-}
-
-/// register a simple test community with 3 meetup locations and well known bootstrappers
-pub fn register_test_community() -> CommunityIdentifier {
-    // all well-known keys are bootstrappers for easy testing afterwards
-    let alice = 1;
-    let bob = 2;
-    let charlie = 3;
-    let dave = 4;
-    let eve = 5;
-    let ferdie = 6;
-
-    let a = Location::default(); // 0, 0
-
-    let b = Location {
-        lat: Degree::from_num(1),
-        lon: Degree::from_num(1),
-    };
-    let c = Location {
-        lat: Degree::from_num(2),
-        lon: Degree::from_num(2),
-    };
-    let loc = vec![a, b, c];
-    let bs = vec![
-        alice.clone(),
-        bob.clone(),
-        charlie.clone(),
-        dave.clone(),
-        eve.clone(),
-        ferdie.clone(),
-    ];
-    assert_ok!(EncointerCommunities::new_community(
-        Origin::signed(alice.clone()),
-        loc.clone(),
-        bs.clone(),
-        Default::default(),
-        Some(Demurrage::from_bits(DEFAULT_DEMURRAGE)),
-        None
-    ));
-    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }

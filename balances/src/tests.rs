@@ -23,9 +23,10 @@ use encointer_primitives::communities::CommunityIdentifier;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{
-    register_test_community, EncointerBalances, EncointerCommunities, ExtBuilder, System,
-    TestEvent, TestRuntime, ALICE, BOB,
+    EncointerBalances, EncointerCommunities, ExtBuilder, System, TestEvent, TestRuntime, ALICE, BOB,
 };
+
+use test_utils::helpers::register_test_community;
 
 #[test]
 fn issue_should_work() {
@@ -124,7 +125,7 @@ fn transfer_should_work() {
 #[test]
 fn demurrage_should_work() {
     ExtBuilder::default().build().execute_with(|| {
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 3);
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,
@@ -149,7 +150,7 @@ fn demurrage_should_work() {
 #[test]
 fn transfer_with_demurrage_exceeding_amount_should_fail() {
     ExtBuilder::default().build().execute_with(|| {
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 3);
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,
