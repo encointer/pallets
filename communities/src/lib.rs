@@ -75,7 +75,7 @@ decl_module! {
         // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
-        fn new_community(
+        pub fn new_community(
             origin,
             loc: Vec<Location>,
             bootstrappers: Vec<T::AccountId>,
