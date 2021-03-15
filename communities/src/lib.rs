@@ -152,6 +152,34 @@ decl_module! {
             Self::deposit_event(RawEvent::CommunityMetadataUpdated(cid));
             debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
         }
+
+        #[weight = 10_000]
+        fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
+            debug::RuntimeLogger::init();
+            ensure_root(origin)?;
+
+            if !Self::community_identifiers().contains(&cid) {
+                return Err(<Error<T>>::CommunityInexistent)?;
+            }
+
+            <DemurragePerBlock>::insert(&cid, demurrage);
+            Self::deposit_event(RawEvent::CommunityDemurrageUpdated(cid));
+            debug::info!(target: LOG, " updated demurrage for cid: {:?}", cid);
+        }
+
+        #[weight = 10_000]
+        fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: BalanceType) {
+            debug::RuntimeLogger::init();
+            ensure_root(origin)?;
+
+            if !Self::community_identifiers().contains(&cid) {
+                return Err(<Error<T>>::CommunityInexistent)?;
+            }
+
+            <NominalIncome>::insert(&cid, nominal_income);
+            Self::deposit_event(RawEvent::CommunityNominalIncomeUpdated(cid));
+            debug::info!(target: LOG, " updated nominal income for cid: {:?}", cid);
+        }
     }
 }
 
@@ -164,6 +192,11 @@ decl_event!(
         CommunityRegistered(AccountId, CommunityIdentifier),
         /// CommunityMetadata was updated \[who, community_identifier\]
         CommunityMetadataUpdated(CommunityIdentifier),
+        /// A community's nominal income was updated \[who, community_identifier\]
+        CommunityNominalIncomeUpdated(CommunityIdentifier),
+        /// A community's demurrage was updated \[who, community_identifier\]
+        CommunityDemurrageUpdated(CommunityIdentifier),
+    }
 );
 
 decl_error! {
