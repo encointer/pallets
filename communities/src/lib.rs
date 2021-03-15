@@ -39,8 +39,8 @@ use runtime_io::hashing::blake2_256;
 use encointer_primitives::{
     balances::BalanceType,
     communities::{
-        consts::*, CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree,
-        Demurrage, Location, LossyFrom,
+        consts::*, validate_demurrage, CommunityIdentifier,
+        CommunityMetadata as CommunityMetadataType, Degree, Demurrage, Location, LossyFrom,
     },
 };
 use sp_runtime::SaturatedConversion;
@@ -85,6 +85,8 @@ decl_module! {
         ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
+            validate_demurrage(demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
             ensure!(!cids.contains(&cid), "community already registered");
@@ -157,6 +159,8 @@ decl_module! {
         fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
+            validate_demurrage(demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+
 
             if !Self::community_identifiers().contains(&cid) {
                 return Err(<Error<T>>::CommunityInexistent)?;
@@ -210,7 +214,9 @@ decl_error! {
         /// Can't register community that already exists
         CommunityAlreadyRegistered,
         /// Community does not exist yet
-        CommunityInexistent
+        CommunityInexistent,
+        /// Invalid demurrage supplied
+        InvalidDemurrage
     }
 }
 

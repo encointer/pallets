@@ -11,6 +11,17 @@ pub type Degree = I64F64;
 pub type Demurrage = I64F64;
 pub type CommunityIdentifier = H256;
 
+/// Ensure that the demurrage is in a sane range. Currently, it is only checked if the demurrage
+/// is bigger than zero.
+///
+/// Todo: Other sanity checks, e.g., 0 < e^(demurrage_per_block*sum(phase_durations)) < 1?
+pub fn validate_demurrage(demurrage: Demurrage) -> Result<(), ()> {
+    if demurrage <= Demurrage::from_num(0) {
+        return Err(());
+    }
+    Ok(())
+}
+
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct Location {
@@ -73,4 +84,14 @@ pub mod consts {
     // dec2hex(6371000,8)
     // in meters
     pub const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::communities::{ensure_valid, Demurrage};
+
+    #[test]
+    fn demurrage_smaller_0_fails() {
+        assert_eq!(ensure_valid(Demurrage::from_num(-1)), Err(()));
+    }
 }
