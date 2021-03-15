@@ -18,12 +18,11 @@
 //!
 //! provides functionality for
 //! - registering new communities
-//! - modify community characteristics
+//! - modifying community characteristics
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// use host_calls::runtime_interfaces;
 use frame_support::{
     debug, decl_error, decl_event, decl_module, decl_storage, ensure,
     storage::{StorageMap, StorageValue},
@@ -96,7 +95,9 @@ decl_module! {
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
             ensure!(!cids.contains(&cid), "community already registered");
-            Self::validate_locations(&loc, &cids)?;
+            Self::validate_locations(&loc, &cids)?; // <- O(n^2) !!!
+
+            // All checks done, now mutate state
 
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
