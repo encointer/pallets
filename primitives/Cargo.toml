@@ -50,6 +50,7 @@ default = ["std"]
 std = [
     "codec/std",
     "fixed/std",
+    "fixed/serde",
     "rstd/std",
     "serde",
     "sp-core/std",
