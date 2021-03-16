@@ -4,7 +4,7 @@ use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 
 use crate::balances::Demurrage;
-use crate::common::PalletString;
+use crate::common::{IpfsCid, PalletString};
 
 pub use fixed::traits::{LossyFrom, LossyInto};
 
@@ -52,8 +52,6 @@ pub struct CommunityMetadata {
     /// optional link to a community site
     pub url: Option<PalletString>,
 }
-
-pub type IpfsCid = Vec<u8>;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct Favicon {
