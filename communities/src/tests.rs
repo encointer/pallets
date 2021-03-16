@@ -235,6 +235,24 @@ fn updating_nominal_income_works() {
 }
 
 #[test]
+fn updating_demurrage_works() {
+    ExtBuilder::build().execute_with(|| {
+        // Assert that is the genesis config's value
+        let cid = register_test_community::<TestRuntime>(None, 1);
+        assert!(DemurragePerBlock::try_get(cid).is_err());
+        assert_ok!(EncointerCommunities::update_demurrage(
+            Origin::root(),
+            cid,
+            Demurrage::from_num(0.0001),
+        ));
+        assert_eq!(
+            DemurragePerBlock::try_get(&cid).unwrap(),
+            BalanceType::from_num(0.0001)
+        );
+    });
+}
+
+#[test]
 fn new_community_with_too_close_inner_locations_fails() {
     ExtBuilder::build().execute_with(|| {
         let alice = AccountId::from(AccountKeyring::Alice);
