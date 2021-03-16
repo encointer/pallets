@@ -3,6 +3,7 @@
 pub mod balances;
 pub mod bazaar;
 pub mod ceremonies;
+pub mod common;
 pub mod communities;
 pub mod scheduler;
 pub mod sybil;

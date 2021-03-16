@@ -36,7 +36,8 @@ use frame_system::ensure_signed;
 use rstd::prelude::*;
 
 use encointer_primitives::{
-    bazaar::{consts::MAX_HASH_SIZE, ArticleIdentifier, ShopIdentifier},
+    bazaar::{ArticleIdentifier, ShopIdentifier},
+    common::consts::MAX_HASH_SIZE,
     communities::CommunityIdentifier,
 };
 

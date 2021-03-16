@@ -4,6 +4,7 @@ use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 
 use crate::balances::Demurrage;
+use crate::common::PalletString;
 
 pub use fixed::traits::{LossyFrom, LossyInto};
 
@@ -41,15 +42,15 @@ pub struct Location {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct CommunityMetadata {
     /// utf8 encoded name
-    pub name: Vec<u8>,
+    pub name: PalletString,
     /// utf8 encoded abbreviation of the name
-    pub symbol: Vec<u8>,
+    pub symbol: PalletString,
     /// multi-resolution resource for the community icon
     pub icons: Vec<Favicon>,
     /// optional color scheme or other customizable styles to shape app appearance
     pub theme: Option<Theme>,
     /// optional link to a community site
-    pub url: Option<Vec<u8>>,
+    pub url: Option<PalletString>,
 }
 
 pub type IpfsCid = Vec<u8>;
@@ -57,7 +58,7 @@ pub type IpfsCid = Vec<u8>;
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct Favicon {
     src: IpfsCid,
-    sizes: Vec<u8>,
+    sizes: PalletString,
     density: u8,
 }
 
