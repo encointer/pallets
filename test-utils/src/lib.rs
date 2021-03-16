@@ -32,6 +32,8 @@ pub use balances;
 pub use sp_core::H256;
 pub use sp_runtime::traits::BlakeTwo256;
 
+pub use sp_keyring::AccountKeyring;
+
 pub mod helpers;
 pub mod storage;
 
