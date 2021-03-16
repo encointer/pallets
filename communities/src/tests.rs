@@ -218,7 +218,6 @@ fn new_community_works() {
 #[test]
 fn updating_nominal_income_works() {
     ExtBuilder::build().execute_with(|| {
-        // Assert that is the genesis config's value
         let cid = register_test_community::<TestRuntime>(None, 1);
         assert!(NominalIncome::try_get(cid).is_err());
         assert_ok!(EncointerCommunities::update_nominal_income(
@@ -236,7 +235,6 @@ fn updating_nominal_income_works() {
 #[test]
 fn updating_demurrage_works() {
     ExtBuilder::build().execute_with(|| {
-        // Assert that is the genesis config's value
         let cid = register_test_community::<TestRuntime>(None, 1);
         assert!(DemurragePerBlock::try_get(cid).is_err());
         assert_ok!(EncointerCommunities::update_demurrage(
