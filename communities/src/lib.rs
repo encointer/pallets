@@ -120,7 +120,7 @@ decl_module! {
 
             // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
-            Self::deposit_event(RawEvent::CommunityMetadataUpdated(cid));
+            Self::deposit_event(RawEvent::MetadataUpdated(cid));
             debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
         }
 
@@ -132,7 +132,7 @@ decl_module! {
             Self::ensure_cid_exists(&cid)?;
 
             <DemurragePerBlock>::insert(&cid, demurrage);
-            Self::deposit_event(RawEvent::CommunityDemurrageUpdated(cid));
+            Self::deposit_event(RawEvent::DemurrageUpdated(cid));
             debug::info!(target: LOG, " updated demurrage for cid: {:?}", cid);
         }
 
@@ -144,7 +144,7 @@ decl_module! {
             Self::ensure_cid_exists(&cid)?;
 
             <NominalIncome>::insert(&cid, nominal_income);
-            Self::deposit_event(RawEvent::CommunityNominalIncomeUpdated(cid));
+            Self::deposit_event(RawEvent::NominalIncomeUpdated(cid));
             debug::info!(target: LOG, " updated nominal income for cid: {:?}", cid);
         }
     }
@@ -158,11 +158,11 @@ decl_event!(
         /// A new community was registered \[who, community_identifier\]
         CommunityRegistered(AccountId, CommunityIdentifier),
         /// CommunityMetadata was updated \[who, community_identifier\]
-        CommunityMetadataUpdated(CommunityIdentifier),
+        MetadataUpdated(CommunityIdentifier),
         /// A community's nominal income was updated \[who, community_identifier\]
-        CommunityNominalIncomeUpdated(CommunityIdentifier),
+        NominalIncomeUpdated(CommunityIdentifier),
         /// A community's demurrage was updated \[who, community_identifier\]
-        CommunityDemurrageUpdated(CommunityIdentifier),
+        DemurrageUpdated(CommunityIdentifier),
     }
 );
 
