@@ -3,6 +3,9 @@ use fixed::types::I64F64;
 use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
 use crate::balances::Demurrage;
 use crate::common::{IpfsCid, PalletString};
 
@@ -13,7 +16,7 @@ pub type LocationIndexType = u32;
 pub type Degree = I64F64;
 pub type NominalIncome = I64F64;
 pub type CommunityIdentifier = H256;
-
+0xFF000000
 /// Ensure that the demurrage is in a sane range.
 ///
 /// Todo: Other sanity checks, e.g., 0 < e^(demurrage_per_block*sum(phase_durations)) < 1?
@@ -40,6 +43,7 @@ pub struct Location {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CommunityMetadata {
     /// utf8 encoded name
     pub name: PalletString,
@@ -54,18 +58,22 @@ pub struct CommunityMetadata {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-/// Todo: Unfinalized. But check with the wallet-app first the exact data types that need to be used.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Favicon {
     src: IpfsCid,
+    /// e.g. "64x64", "128x128", ...
     sizes: PalletString,
+    /// e.g. 1, 2, 3, ...
     density: u8,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-/// Todo: Unfinalized. But check with the wallet-app first the exact data types that need to be used.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Theme {
     // Todo: extend
     /// primary theme color from which the accent colors are derived by the material app design guide line
+    ///
+    /// e.g. black = 0xFF000000
     primary_swatch: u32,
 }
 
