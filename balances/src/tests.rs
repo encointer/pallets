@@ -22,23 +22,22 @@ use super::*;
 use encointer_primitives::communities::CommunityIdentifier;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
-use mock::{
-    EncointerBalances, EncointerCommunities, ExtBuilder, System, TestEvent, TestRuntime, ALICE, BOB,
-};
+use mock::{EncointerBalances, EncointerCommunities, ExtBuilder, System, TestEvent, TestRuntime};
 
-use test_utils::helpers::register_test_community;
+use test_utils::{helpers::register_test_community, AccountKeyring};
 
 #[test]
 fn issue_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         let cid = CommunityIdentifier::default();
+        let alice = AccountKeyring::Alice.to_account_id();
         assert_ok!(EncointerBalances::issue(
             cid,
-            &ALICE,
+            &alice,
             BalanceType::from_num(50.1)
         ));
         assert_eq!(
-            EncointerBalances::balance(cid, &ALICE),
+            EncointerBalances::balance(cid, &alice),
             BalanceType::from_num(50.1)
         );
         assert_eq!(
@@ -52,18 +51,19 @@ fn issue_should_work() {
 fn burn_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         let cid = CommunityIdentifier::default();
+        let alice = AccountKeyring::Alice.to_account_id();
         assert_ok!(EncointerBalances::issue(
             cid,
-            &ALICE,
+            &alice,
             BalanceType::from_num(50)
         ));
         assert_ok!(EncointerBalances::burn(
             cid,
-            &ALICE,
+            &alice,
             BalanceType::from_num(20)
         ));
         assert_eq!(
-            EncointerBalances::balance(cid, &ALICE),
+            EncointerBalances::balance(cid, &alice),
             BalanceType::from_num(30)
         );
         assert_eq!(
@@ -71,7 +71,7 @@ fn burn_should_work() {
             BalanceType::from_num(30)
         );
         assert_noop!(
-            EncointerBalances::burn(cid, &ALICE, BalanceType::from_num(31)),
+            EncointerBalances::burn(cid, &alice, BalanceType::from_num(31)),
             Error::<TestRuntime>::BalanceTooLow,
         );
     });
@@ -83,23 +83,25 @@ fn transfer_should_work() {
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
 
+        let alice = AccountKeyring::Alice.to_account_id();
+        let bob = AccountKeyring::Bob.to_account_id();
         let cid = CommunityIdentifier::default();
         assert_ok!(EncointerBalances::issue(
             cid,
-            &ALICE,
+            &alice,
             BalanceType::from_num(50)
         ));
         assert_ok!(EncointerBalances::transfer(
-            Some(ALICE).into(),
-            BOB,
+            Some(alice.clone()).into(),
+            bob.clone(),
             cid,
             BalanceType::from_num(9.999)
         ));
 
-        let balance: f64 = EncointerBalances::balance(cid, &ALICE).lossy_into();
+        let balance: f64 = EncointerBalances::balance(cid, &alice).lossy_into();
         assert_relative_eq!(balance, 40.001, epsilon = 1.0e-9);
 
-        let balance: f64 = EncointerBalances::balance(cid, &BOB).lossy_into();
+        let balance: f64 = EncointerBalances::balance(cid, &bob).lossy_into();
         assert_relative_eq!(balance, 9.999, epsilon = 1.0e-9);
 
         let balance: f64 = EncointerBalances::total_issuance(cid).lossy_into();
@@ -107,8 +109,8 @@ fn transfer_should_work() {
 
         let transferred_event = TestEvent::tokens(RawEvent::Transferred(
             cid,
-            ALICE,
-            BOB,
+            alice.clone(),
+            bob.clone(),
             BalanceType::from_num(9.999),
         ));
         assert!(System::events()
@@ -116,7 +118,7 @@ fn transfer_should_work() {
             .any(|record| record.event == transferred_event));
 
         assert_noop!(
-            EncointerBalances::transfer(Some(ALICE).into(), BOB, cid, BalanceType::from_num(60)),
+            EncointerBalances::transfer(Some(alice).into(), bob, cid, BalanceType::from_num(60)),
             Error::<TestRuntime>::BalanceTooLow,
         );
     });
@@ -125,22 +127,23 @@ fn transfer_should_work() {
 #[test]
 fn demurrage_should_work() {
     ExtBuilder::default().build().execute_with(|| {
+        let alice = AccountKeyring::Alice.to_account_id();
         let cid = register_test_community::<TestRuntime>(None, 3);
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,
-            &ALICE,
+            &alice,
             BalanceType::from_num(1)
         ));
         System::set_block_number(1);
         assert_eq!(
-            EncointerBalances::balance(cid, &ALICE),
+            EncointerBalances::balance(cid, &alice),
             exp::<BalanceType, BalanceType>(-EncointerCommunities::demurrage_per_block(cid))
                 .unwrap()
         );
         //one year later
         System::set_block_number(86400 / 5 * 356);
-        let result: f64 = EncointerBalances::balance(cid, &ALICE).lossy_into();
+        let result: f64 = EncointerBalances::balance(cid, &alice).lossy_into();
         assert_abs_diff_eq!(result, 0.5, epsilon = 1.0e-12);
         let result: f64 = EncointerBalances::total_issuance(cid).lossy_into();
         assert_abs_diff_eq!(result, 0.5, epsilon = 1.0e-12);
@@ -149,19 +152,21 @@ fn demurrage_should_work() {
 
 #[test]
 fn transfer_with_demurrage_exceeding_amount_should_fail() {
+    let alice = AccountKeyring::Alice.to_account_id();
+    let bob = AccountKeyring::Bob.to_account_id();
     ExtBuilder::default().build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 3);
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,
-            &ALICE,
+            &alice,
             BalanceType::from_num(100)
         ));
         //one year later
         System::set_block_number(86400 / 5 * 356);
         // balance should now be 50
         assert_noop!(
-            EncointerBalances::transfer(Some(ALICE).into(), BOB, cid, BalanceType::from_num(60)),
+            EncointerBalances::transfer(Some(alice).into(), bob, cid, BalanceType::from_num(60)),
             Error::<TestRuntime>::BalanceTooLow,
         );
     });

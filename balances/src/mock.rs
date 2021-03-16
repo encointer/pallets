@@ -40,8 +40,6 @@ impl_outer_event! {
     }
 }
 
-type AccountId = u64;
-
 // Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
@@ -60,9 +58,6 @@ impl encointer_communities::Config for TestRuntime {
 impl Config for TestRuntime {
     type Event = TestEvent;
 }
-
-pub const ALICE: AccountId = 1;
-pub const BOB: AccountId = 2;
 
 pub struct ExtBuilder {}
 
