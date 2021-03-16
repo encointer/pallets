@@ -19,11 +19,14 @@
 #![cfg(test)]
 
 use super::*;
-use encointer_primitives::communities::CommunityIdentifier;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{EncointerBalances, EncointerCommunities, ExtBuilder, System, TestEvent, TestRuntime};
 
+use encointer_primitives::{
+    balances::consts::DEFAULT_DEMURRAGE,
+    communities::{CommunityIdentifier, Demurrage},
+};
 use test_utils::{helpers::register_test_community, AccountKeyring};
 
 #[test]
@@ -138,8 +141,7 @@ fn demurrage_should_work() {
         System::set_block_number(1);
         assert_eq!(
             EncointerBalances::balance(cid, &alice),
-            exp::<BalanceType, BalanceType>(-EncointerCommunities::demurrage_per_block(cid))
-                .unwrap()
+            exp::<BalanceType, BalanceType>(-Demurrage::from_bits(DEFAULT_DEMURRAGE)).unwrap()
         );
         //one year later
         System::set_block_number(86400 / 5 * 356);

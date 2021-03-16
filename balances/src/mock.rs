@@ -24,6 +24,7 @@ use frame_system;
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup};
 
+use encointer_primitives::{balances::consts::DEFAULT_DEMURRAGE, communities::Demurrage};
 use test_utils::*;
 
 mod tokens {
@@ -69,9 +70,14 @@ impl Default for ExtBuilder {
 
 impl ExtBuilder {
     pub fn build(self) -> runtime_io::TestExternalities {
-        let t = frame_system::GenesisConfig::default()
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
-        t.into()
+        GenesisConfig {
+            demurrage_per_block: Demurrage::from_bits(DEFAULT_DEMURRAGE),
+        }
+        .assimilate_storage(&mut storage)
+        .unwrap();
+        storage.into()
     }
 }
