@@ -24,7 +24,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
 };
 
-use encointer_primitives::communities::NominalIncome;
+use encointer_primitives::balances::consts::DEFAULT_DEMURRAGE;
 use test_utils::{helpers::register_test_community, *};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -49,6 +49,11 @@ impl ExtBuilder {
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
+        encointer_balances::GenesisConfig {
+            demurrage_per_block: Demurrage::from_bits(DEFAULT_DEMURRAGE),
+        }
+        .assimilate_storage(&mut storage)
+        .unwrap();
         balances::GenesisConfig::<TestRuntime> { balances: vec![] }
             .assimilate_storage(&mut storage)
             .unwrap();
@@ -216,8 +221,12 @@ fn updating_nominal_income_works() {
     ExtBuilder::build().execute_with(|| {
         // Assert that is the genesis config's value
         let cid = register_test_community::<TestRuntime>(None, 1);
-        assert!(NominalIncome::try_get(cid).is_none());
-        EncointerCommunities::update_nominal_income(Origin::Root, cid, BalanceType::from_num(1.1));
+        assert!(NominalIncome::try_get(cid).is_err());
+        assert_ok!(EncointerCommunities::update_nominal_income(
+            Origin::root(),
+            cid,
+            BalanceType::from_num(1.1),
+        ));
         assert_eq!(
             NominalIncome::try_get(&cid).unwrap(),
             BalanceType::from_num(1.1)
