@@ -28,8 +28,8 @@ use std::cell::RefCell;
 use xcm::v0::NetworkId;
 use xcm_builder::SiblingParachainConvertsVia;
 
-pub use sp_core::H256;
-pub use sp_runtime::traits::BlakeTwo256;
+// convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.
+pub use sp_keyring::AccountKeyring;
 
 // reexports for macro resolution
 pub use balances;
@@ -40,7 +40,8 @@ pub use encointer_scheduler;
 pub use frame_system;
 pub use timestamp;
 
-pub use sp_keyring::AccountKeyring;
+pub use sp_core::H256;
+pub use sp_runtime::traits::BlakeTwo256;
 
 pub mod helpers;
 pub mod storage;

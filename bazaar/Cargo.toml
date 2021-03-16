@@ -60,11 +60,6 @@ git = "https://github.com/encointer/substrate-fixed"
 tag = "v0.5.5"
 package = "substrate-fixed"
 
-[dev-dependencies.sp-keyring]
-package = "sp-keyring"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
 [dev-dependencies.balances]
 package = "pallet-balances"
 git = "https://github.com/paritytech/substrate.git" 

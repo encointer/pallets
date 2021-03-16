@@ -21,7 +21,6 @@ use crate::{Config, Module};
 use codec::Encode;
 use encointer_primitives::communities::CommunityIdentifier;
 use sp_core::{hashing::blake2_256, H256};
-use sp_keyring::AccountKeyring;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},

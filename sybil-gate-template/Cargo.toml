@@ -73,11 +73,6 @@ default-features = false
 git = "https://github.com/paritytech/polkadot"
 branch = "master"
 
-[dev-dependencies.sp-keyring]
-package = "sp-keyring"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
 [dev-dependencies.xcm-executor]
 git = "https://github.com/paritytech/polkadot.git"
 branch = "master"

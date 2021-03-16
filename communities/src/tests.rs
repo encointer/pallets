@@ -18,7 +18,6 @@ use super::*;
 use crate::{Config, GenesisConfig, Module};
 use frame_support::assert_ok;
 use sp_core::{hashing::blake2_256, sr25519, Pair, H256};
-use sp_keyring::AccountKeyring;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},

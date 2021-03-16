@@ -1189,7 +1189,6 @@ dependencies = [
  "sp-core",
  "sp-externalities",
  "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-std",
  "substrate-fixed",
@@ -1218,7 +1217,6 @@ dependencies = [
  "sp-externalities",
  "sp-inherents",
  "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-std",
  "tempdir",
@@ -1238,7 +1236,6 @@ dependencies = [
  "sp-core",
  "sp-externalities",
  "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-std",
  "substrate-fixed",
@@ -1262,7 +1259,6 @@ dependencies = [
  "polkadot-parachain",
  "sp-core",
  "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-std",
  "test-utils",
@@ -1308,7 +1304,6 @@ dependencies = [
  "polkadot-parachain",
  "sp-core",
  "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-std",
  "substrate-fixed",
@@ -2630,18 +2625,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.23"
+version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76cc616c6abf8c8928e2fdcc0dbfab37175edd8fb49a4641066ad1364fdab146"
+checksum = "e0f4a65597094d4483ddaed134f409b2cb7c1beccf25201a9f73c719254fa98e"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.23"
+version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9be73a2caec27583d0046ef3796c3794f868a5bc813db689eed00c7631275cd1"
+checksum = "7765189610d8241a44529806d6fd1f2e0a08734313a35d5b3a556f92b381f3c0"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
@@ -2720,9 +2715,9 @@ dependencies = [
 
 [[package]]
 name = "tracing"
-version = "0.1.23"
+version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7d40a22fd029e33300d8d89a5cc8ffce18bb7c587662f54629e94c9de5487f3"
+checksum = "01ebdc2bb4498ab1ab5f5b73c5803825e60199229ccba0698170e3be0e7f959f"
 dependencies = [
  "cfg-if 1.0.0",
  "pin-project-lite",
@@ -2732,9 +2727,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-attributes"
-version = "0.1.12"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43f080ea7e4107844ef4766459426fa2d5c1ada2e47edba05dc7fa99d9629f47"
+checksum = "c42e6fa53307c8a17e4ccd4dc81cf5ec38db9209f59b222210375b54ee40d1e2"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",

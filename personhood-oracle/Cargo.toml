@@ -87,11 +87,6 @@ package = "sp-io"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
-[dev-dependencies.sp-keyring]
-package = "sp-keyring"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
 [dev-dependencies.xcm-builder]
 git = "https://github.com/paritytech/polkadot.git"
 branch = "master"

@@ -49,7 +49,6 @@ impl_outer_origin_for_runtime!(TestRuntime);
 impl_frame_system!(TestRuntime, TestEvent);
 
 pub type System = frame_system::Module<TestRuntime>;
-pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 pub type EncointerBalances = Module<TestRuntime>;
 
 impl encointer_communities::Config for TestRuntime {

@@ -21,7 +21,7 @@
 use super::*;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
-use mock::{EncointerBalances, EncointerCommunities, ExtBuilder, System, TestEvent, TestRuntime};
+use mock::{EncointerBalances, ExtBuilder, System, TestEvent, TestRuntime};
 
 use encointer_primitives::{
     balances::consts::DEFAULT_DEMURRAGE,

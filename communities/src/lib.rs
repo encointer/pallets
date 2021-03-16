@@ -89,7 +89,7 @@ decl_module! {
                 validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             }
             if let Some(i) = nominal_income {
-                validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+                validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
             }
 
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
