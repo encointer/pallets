@@ -24,8 +24,8 @@ use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{EncointerBalances, ExtBuilder, System, TestEvent, TestRuntime};
 
 use encointer_primitives::{
-    balances::consts::DEFAULT_DEMURRAGE,
-    communities::{CommunityIdentifier, Demurrage},
+    balances::{consts::DEFAULT_DEMURRAGE, Demurrage},
+    communities::CommunityIdentifier,
 };
 use test_utils::{helpers::register_test_community, AccountKeyring};
 

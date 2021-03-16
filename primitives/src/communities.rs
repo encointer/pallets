@@ -3,12 +3,13 @@ use fixed::types::I64F64;
 use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 
+use crate::balances::Demurrage;
+
 pub use fixed::traits::{LossyFrom, LossyInto};
 
 pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I64F64;
-pub type Demurrage = I64F64;
 pub type NominalIncome = I64F64;
 pub type CommunityIdentifier = H256;
 

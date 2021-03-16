@@ -36,10 +36,10 @@ use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use runtime_io::hashing::blake2_256;
 
 use encointer_primitives::{
-    balances::BalanceType,
+    balances::{BalanceType, Demurrage},
     communities::{
         consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
-        CommunityMetadata as CommunityMetadataType, Degree, Demurrage, Location, LossyFrom,
+        CommunityMetadata as CommunityMetadataType, Degree, Location, LossyFrom,
         NominalIncome as NominalIncomeType,
     },
 };

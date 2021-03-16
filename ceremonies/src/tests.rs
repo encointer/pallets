@@ -40,8 +40,7 @@ use std::ops::Rem;
 type TestAttestation = Attestation<Signature, AccountId, Moment>;
 type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
-use encointer_primitives::balances::consts::DEFAULT_DEMURRAGE;
-use encointer_primitives::communities::Demurrage;
+use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
 use test_utils::{
     helpers::{account_id, bootstrappers, register_test_community},
     *,

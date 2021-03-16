@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 // We're working with fixpoint here.
 pub type BalanceType = I64F64;
+pub type Demurrage = I64F64;
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Copy)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

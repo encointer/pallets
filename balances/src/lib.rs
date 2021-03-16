@@ -17,7 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use encointer_primitives::{
-    balances::{BalanceEntry, BalanceType},
+    balances::{BalanceEntry, BalanceType, Demurrage},
     communities::CommunityIdentifier,
 };
 use fixed::transcendental::exp;
@@ -56,7 +56,7 @@ decl_storage! {
         pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CommunityIdentifier => BalanceEntry<T::BlockNumber>;
         pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
         /// The default value to be used if there is no community specific demurrage set.
-        DemurragePerBlock get(fn demurrage_per_block) config(): BalanceType;
+        DemurragePerBlock get(fn demurrage_per_block) config(): Demurrage;
     }
 }
 

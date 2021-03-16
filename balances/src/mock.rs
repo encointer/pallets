@@ -24,7 +24,7 @@ use frame_system;
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup};
 
-use encointer_primitives::{balances::consts::DEFAULT_DEMURRAGE, communities::Demurrage};
+use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
 use test_utils::*;
 
 mod tokens {
