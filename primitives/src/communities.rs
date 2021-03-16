@@ -16,7 +16,7 @@ pub type LocationIndexType = u32;
 pub type Degree = I64F64;
 pub type NominalIncome = I64F64;
 pub type CommunityIdentifier = H256;
-0xFF000000
+
 /// Ensure that the demurrage is in a sane range.
 ///
 /// Todo: Other sanity checks, e.g., 0 < e^(demurrage_per_block*sum(phase_durations)) < 1?
