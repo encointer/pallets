@@ -54,6 +54,7 @@ pub struct CommunityMetadata {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+/// Todo: Unfinalized. But check with the wallet-app first the exact data types that need to be used.
 pub struct Favicon {
     src: IpfsCid,
     sizes: PalletString,
@@ -61,6 +62,7 @@ pub struct Favicon {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+/// Todo: Unfinalized. But check with the wallet-app first the exact data types that need to be used.
 pub struct Theme {
     // Todo: extend
     /// primary theme color from which the accent colors are derived by the material app design guide line
