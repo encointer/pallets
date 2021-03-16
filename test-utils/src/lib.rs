@@ -28,9 +28,17 @@ use std::cell::RefCell;
 use xcm::v0::NetworkId;
 use xcm_builder::SiblingParachainConvertsVia;
 
-pub use balances;
 pub use sp_core::H256;
 pub use sp_runtime::traits::BlakeTwo256;
+
+// reexports for macro resolution
+pub use balances;
+pub use encointer_balances;
+pub use encointer_ceremonies;
+pub use encointer_communities;
+pub use encointer_scheduler;
+pub use frame_system;
+pub use timestamp;
 
 pub use sp_keyring::AccountKeyring;
 
