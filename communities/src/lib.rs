@@ -131,8 +131,8 @@ decl_module! {
             validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             Self::ensure_cid_exists(&cid)?;
 
-            <DemurragePerBlock>::insert(&cid, demurrage);
-            Self::deposit_event(RawEvent::DemurrageUpdated(cid));
+            <DemurragePerBlock>::insert(&cid, &demurrage);
+            Self::deposit_event(RawEvent::DemurrageUpdated(cid, demurrage.to_bits()));
             debug::info!(target: LOG, " updated demurrage for cid: {:?}", cid);
         }
 
@@ -143,8 +143,8 @@ decl_module! {
             validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             Self::ensure_cid_exists(&cid)?;
 
-            <NominalIncome>::insert(&cid, nominal_income);
-            Self::deposit_event(RawEvent::NominalIncomeUpdated(cid));
+            <NominalIncome>::insert(&cid, &nominal_income);
+            Self::deposit_event(RawEvent::NominalIncomeUpdated(cid, nominal_income.to_bits()));
             debug::info!(target: LOG, " updated nominal income for cid: {:?}", cid);
         }
     }
@@ -157,12 +157,12 @@ decl_event!(
     {
         /// A new community was registered \[who, community_identifier\]
         CommunityRegistered(AccountId, CommunityIdentifier),
-        /// CommunityMetadata was updated \[who, community_identifier\]
+        /// CommunityMetadata was updated \[community_identifier\]
         MetadataUpdated(CommunityIdentifier),
-        /// A community's nominal income was updated \[who, community_identifier\]
-        NominalIncomeUpdated(CommunityIdentifier),
-        /// A community's demurrage was updated \[who, community_identifier\]
-        DemurrageUpdated(CommunityIdentifier),
+        /// A community's nominal income was updated \[community_identifier, new_income\]
+        NominalIncomeUpdated(CommunityIdentifier, i128),
+        /// A community's demurrage was updated \[community_identifier, new_demurrage\]
+        DemurrageUpdated(CommunityIdentifier, i128),
     }
 );
 
