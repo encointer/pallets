@@ -168,6 +168,14 @@ decl_event!(
 
 decl_error! {
     pub enum Error for Module<T: Config> {
+        /// Too many locations supplied
+        TooManyLocations,
+        /// Too few locations supplied
+        TooFewLocations,
+        /// Location is not a valid geolocation
+        InvalidLocation,
+        /// minimum distance violation within community
+        MinimumDistanceViolationWithinCommunity,
         /// minimum distance violated towards pole
         MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
@@ -242,11 +250,11 @@ impl<T: Config> Module<T> {
     }
 
     fn validate_locations(loc: &Vec<Location>, cids: &Vec<CommunityIdentifier>) -> DispatchResult {
+        ensure!(loc.len() <= 1000, <Error<T>>::TooManyLocations);
+        ensure!(!loc.is_empty(), <Error<T>>::TooFewLocations);
+
         for l1 in loc.iter() {
-            ensure!(
-                Self::is_valid_geolocation(&l1),
-                "invalid geolocation specified"
-            );
+            ensure!(Self::is_valid_geolocation(&l1), <Error<T>>::InvalidLocation);
             //test within this communities' set
             for l2 in loc.iter() {
                 if l2 == l1 {
@@ -254,7 +262,7 @@ impl<T: Config> Module<T> {
                 }
                 ensure!(
                     Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S,
-                    "minimum solar trip time violated within supplied locations"
+                    <Error<T>>::MinimumDistanceViolationWithinCommunity
                 );
             }
             // prohibit proximity to poles
