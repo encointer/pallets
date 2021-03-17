@@ -53,7 +53,7 @@ decl_storage! {
         // Item owner
         pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
         pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
-        // The set of all shops and articles per community (community)
+        // The set of all shops and articles per community
         pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ShopIdentifier>;
         pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ArticleIdentifier>;
     }

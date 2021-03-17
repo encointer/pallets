@@ -105,9 +105,7 @@ impl CommunityMetadata {
         if let Some(u) = &self.url {
             validate_ascii(u).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
             if u.len() >= 20 {
-                return Err(CommunityMetadataError::TooManyCharactersInNameUrl(
-                    u.len() as u8
-                ));
+                return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8));
             }
         }
         Ok(())
@@ -137,7 +135,7 @@ pub enum CommunityMetadataError {
     /// Invalid amount of characters symbol. Must be 3. Used: \[amount\]
     InvalidAmountCharactersInSymbol(u8),
     /// Too many characters in url. Allowed: 20. Used: \[amount\]
-    TooManyCharactersInNameUrl(u8),
+    TooManyCharactersInUrl(u8),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
