@@ -1,5 +1,4 @@
 use codec::{Decode, Encode};
-use consts::MAX_HASH_SIZE;
 use rstd::vec::Vec;
 use sp_core::RuntimeDebug;
 
@@ -19,6 +18,10 @@ pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
     Ok(())
 }
 
+// Only valid for current hashing algorithm of IPFS (sha256)
+// string length: 46 bs58 characters (bs58 -> 1 byte/char)
+pub const MAX_HASH_SIZE: usize = 46;
+
 pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
     if cid.len() != MAX_HASH_SIZE {
         return Err(IpfsValidationError::InvalidLength);
@@ -30,12 +33,6 @@ pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
 pub enum IpfsValidationError {
     InvalidLength,
     InvalidBase58(Bs58Error),
-}
-
-pub mod consts {
-    // Only valid for current hashing algorithm of IPFS (sha256)
-    // string length: 46 characters (base-58)
-    pub const MAX_HASH_SIZE: usize = 46;
 }
 
 /// Simple Bs58 verification adapted from https://github.com/mycorrhiza/bs58-rs
