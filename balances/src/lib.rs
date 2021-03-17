@@ -55,8 +55,8 @@ decl_storage! {
     trait Store for Module<T: Config> as EncointerBalances {
         pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CommunityIdentifier => BalanceEntry<T::BlockNumber>;
         pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
-        /// The default value to be used if there is no community specific demurrage set.
-        DemurragePerBlock get(fn demurrage_per_block) config(): Demurrage;
+        /// The demurrage per block if no community specific value is set.
+        DemurragePerBlockDefault get(fn demurrage_per_block_default) config(): Demurrage;
     }
 }
 
@@ -216,6 +216,6 @@ impl<T: Config> Module<T> {
     /// the demurrage defined in the genesis config
     fn demurrage(cid: &CommunityIdentifier) -> BalanceType {
         encointer_communities::DemurragePerBlock::try_get(cid)
-            .unwrap_or_else(|_| Self::demurrage_per_block())
+            .unwrap_or_else(|_| Self::demurrage_per_block_default())
     }
 }

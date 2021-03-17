@@ -77,7 +77,7 @@ impl ExtBuilder {
             .build_storage::<TestRuntime>()
             .unwrap();
         encointer_balances::GenesisConfig {
-            demurrage_per_block: Demurrage::from_bits(DEFAULT_DEMURRAGE),
+            demurrage_per_block_default: Demurrage::from_bits(DEFAULT_DEMURRAGE),
         }
         .assimilate_storage(&mut storage)
         .unwrap();
