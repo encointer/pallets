@@ -10,6 +10,15 @@ pub type PalletString = Vec<u8>;
 
 pub type IpfsCid = PalletString;
 
+pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
+    for (i, c) in bytes.iter().enumerate() {
+        if *c > 127 {
+            return Err(i as u8);
+        }
+    }
+    Ok(())
+}
+
 pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
     if cid.len() != MAX_HASH_SIZE {
         return Err(IpfsValidationError::InvalidLength);

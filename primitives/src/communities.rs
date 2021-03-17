@@ -1,5 +1,4 @@
 use codec::{Decode, Encode};
-use encoding_rs::Encoding;
 use fixed::types::I64F64;
 use sp_core::{RuntimeDebug, H256};
 
@@ -7,7 +6,9 @@ use sp_core::{RuntimeDebug, H256};
 use serde::{Deserialize, Serialize};
 
 use crate::balances::Demurrage;
-use crate::common::{validate_ipfs_cid, IpfsCid, IpfsValidationError, PalletString};
+use crate::common::{
+    validate_ascii, validate_ipfs_cid, IpfsCid, IpfsValidationError, PalletString,
+};
 
 pub use fixed::traits::{LossyFrom, LossyInto};
 
@@ -85,35 +86,31 @@ impl CommunityMetadata {
     /// Only ascii characters are allowed because the character set is sufficient. Furthermore,
     /// they strictly encode to one byte, which allows length checks.
     pub fn validate(&self) -> Result<(), CommunityMetadataError> {
-        let mut res = Self::validate_ascii(&self.name)?;
-        if res > 20 {
-            return Err(CommunityMetadataError::TooManyCharactersInName(res));
-        }
-
-        res = Self::validate_ascii(&self.symbol)?;
-        if res != 3 {
-            return Err(CommunityMetadataError::InvalidAmountCharactersInSymbol(res));
-        }
-
+        validate_ascii(&self.name).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+        validate_ascii(&self.symbol).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
         validate_ipfs_cid(&self.icons).map_err(|e| CommunityMetadataError::InvalidIpfsCid(e))?;
 
+        if self.name.len() > 20 {
+            return Err(CommunityMetadataError::TooManyCharactersInName(
+                self.name.len() as u8,
+            ));
+        }
+
+        if self.symbol.len() != 3 {
+            return Err(CommunityMetadataError::InvalidAmountCharactersInSymbol(
+                self.symbol.len() as u8,
+            ));
+        }
+
         if let Some(u) = &self.url {
-            res = Self::validate_ascii(u)?;
-            if res >= 20 {
-                return Err(CommunityMetadataError::TooManyCharactersInNameUrl(res));
+            validate_ascii(u).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+            if u.len() >= 20 {
+                return Err(CommunityMetadataError::TooManyCharactersInNameUrl(
+                    u.len() as u8
+                ));
             }
         }
         Ok(())
-    }
-
-    /// If valid, returns the length of the ascii sequence.
-    fn validate_ascii(bytes: &[u8]) -> Result<u8, CommunityMetadataError> {
-        let res = Encoding::ascii_valid_up_to(bytes);
-        if res == bytes.len() {
-            Ok(res as u8)
-        } else {
-            Err(CommunityMetadataError::InvalidAscii)
-        }
     }
 }
 
@@ -132,7 +129,8 @@ impl Default for CommunityMetadata {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum CommunityMetadataError {
-    InvalidAscii,
+    /// Invalid ascii character at \[index\]
+    InvalidAscii(u8),
     InvalidIpfsCid(IpfsValidationError),
     /// Too many characters in name. Allowed: 20. Used: \[amount\]
     TooManyCharactersInName(u8),
@@ -185,7 +183,6 @@ mod tests {
         validate_demurrage, validate_nominal_income, CommunityMetadata, CommunityMetadataError,
         Demurrage, NominalIncome,
     };
-    use codec::Encode;
 
     #[test]
     fn demurrage_smaller_0_fails() {
@@ -214,9 +211,12 @@ mod tests {
     #[test]
     fn validate_metadata_fails_for_invalid_ascii() {
         let meta = CommunityMetadata {
-            name: 11111111111_i128.encode(),
+            name: vec![128],
             ..Default::default()
         };
-        assert_eq!(meta.validate(), Err(CommunityMetadataError::InvalidAscii));
+        assert_eq!(
+            meta.validate(),
+            Err(CommunityMetadataError::InvalidAscii(0))
+        );
     }
 }

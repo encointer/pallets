@@ -45,10 +45,6 @@ features = ["derive"]
 optional = true
 version = "1.0.101"
 
-[dependencies.encoding_rs]
-default-features = false
-version = "0.8.28"
-
 [features]
 default = ["std"]
 std = [
