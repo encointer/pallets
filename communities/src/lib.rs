@@ -85,6 +85,7 @@ decl_module! {
         ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
+            Self::validate_bootstrappers(&bootstrappers)?;
             if let Some(d) = demurrage {
                 validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             }
@@ -174,6 +175,8 @@ decl_error! {
         TooFewLocations,
         /// Location is not a valid geolocation
         InvalidLocation,
+        /// Invalid amount of bootstrappers supplied. Needs to be \[3, 12\]
+        InvalidAmountBootstrappers,
         /// minimum distance violation within community
         MinimumDistanceViolationWithinCommunity,
         /// minimum distance violated towards pole
@@ -247,6 +250,18 @@ impl<T: Config> Module<T> {
         let c: D = two * asin(sqrt::<D, D>(aa).unwrap_or_default());
         let d = D::from(MEAN_EARTH_RADIUS) * c;
         i64::lossy_from(d).saturated_into()
+    }
+
+    fn validate_bootstrappers(boostrappers: &Vec<T::AccountId>) -> DispatchResult {
+        ensure!(
+            boostrappers.len() <= 1000,
+            <Error<T>>::InvalidAmountBootstrappers
+        );
+        ensure!(
+            !boostrappers.len() >= 3,
+            <Error<T>>::InvalidAmountBootstrappers
+        );
+        Ok(())
     }
 
     fn validate_locations(loc: &Vec<Location>, cids: &Vec<CommunityIdentifier>) -> DispatchResult {
