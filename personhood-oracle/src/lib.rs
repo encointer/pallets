@@ -83,7 +83,6 @@ decl_module! {
         requested_response: u8,
         sender_sybil_gate: u8
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let para_id: u32 = Sibling::try_from_account(&sender)
                 .ok_or(<Error<T>>::UnableToDecodeRequest)?
@@ -91,8 +90,8 @@ decl_module! {
             let request = <Vec<ProofOfAttendanceOf<T>>>::decode(&mut rating_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
-            debug::debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
-            debug::debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
+            log::debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
+            log::debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
 
             let confidence = Self::verify(request).unwrap_or_else(|_| PersonhoodUniquenessRating::default());
 
@@ -130,7 +129,7 @@ impl<T: Config> Module<T> {
             if !<encointer_communities::Module<T>>::community_identifiers()
                 .contains(&proof.community_identifier)
             {
-                debug::warn!(
+                log::warn!(
                     target: LOG,
                     "Received ProofOfAttendance for unknown cid: {:?}",
                     proof.community_identifier

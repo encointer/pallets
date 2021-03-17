@@ -104,7 +104,6 @@ decl_module! {
             proof_of_attendances: Vec<Vec<u8>>,
             requested_response: SybilResponse
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
             let proofs =
@@ -127,7 +126,7 @@ decl_module! {
             let request_hash = call.request_hash();
 
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
-            debug::debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
+            log::debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(sibling_junction(parachain_id).into(), message) {
                 Ok(()) => {
                     <PendingRequests<T>>::insert(&request_hash, &sender);
@@ -150,11 +149,10 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
 
-            debug::RuntimeLogger::init();
 
             ensure!(<PendingRequests<T>>::contains_key(&request_hash), <Error<T>>::UnexpectedResponse);
             let account = <PendingRequests<T>>::take(&request_hash);
-            debug::debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
+            log::debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
 
             for proof in rating.proofs() {
                 if BurnedProofs::contains_key(SybilResponse::Faucet, proof) {

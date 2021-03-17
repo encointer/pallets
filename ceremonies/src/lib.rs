@@ -112,18 +112,17 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn grant_reputation(origin, cid: CommunityIdentifier, reputable: T::AccountId) -> DispatchResult {
-            debug::RuntimeLogger::init();
+            log::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <encointer_scheduler::Module<T>>::ceremony_master(), "only the CeremonyMaster can call this function");
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
             <ParticipantReputation<T>>::insert(&(cid, cindex-1), reputable, Reputation::VerifiedUnlinked);
-            debug::info!(target: LOG, "granting reputation to {:?}", sender);
+            log::info!(target: LOG, "granting reputation to {:?}", sender);
             Ok(())
         }
 
         #[weight = 10_000]
         pub fn register_participant(origin, cid: CommunityIdentifier, proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
                 "registering participants can only be done during REGISTERING phase");
@@ -164,13 +163,12 @@ decl_module! {
             <ParticipantIndex<T>>::insert((cid, cindex), &sender, &new_count);
             <ParticipantCount>::insert((cid, cindex), new_count);
 
-            debug::debug!(target: LOG, "registered participant: {:?}", sender);
+            log::debug!(target: LOG, "registered participant: {:?}", sender);
             Ok(())
         }
 
         #[weight = 10_000]
         pub fn register_attestations(origin, attestations: Vec<Attestation<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
                 "registering attestations can only be done during ATTESTING phase");
@@ -193,57 +191,57 @@ decl_module! {
                 { l } else { return Err(<Error<T>>::MeetupLocationNotFound.into()) };
             let mtime = if let Some(t) = Self::get_meetup_time(&cid, meetup_index)
                 { t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
-            debug::debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
+            log::debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
                 meetup_index, mlocation, mtime, cid);
             for attestation in attestations.iter() {
                 let attestation_account = &attestation.public;
                 if !meetup_participants.contains(attestation_account) {
-                    debug::warn!(target: LOG,
+                    log::warn!(target: LOG,
                         "ignoring attestation that isn't a meetup participant: {:?}",
                         attestation_account);
                     continue };
                 if attestation.claim.ceremony_index != cindex {
-                    debug::warn!(target: LOG,
+                    log::warn!(target: LOG,
                         "ignoring claim with wrong ceremony index: {}",
                         attestation.claim.ceremony_index);
                     continue };
                 if attestation.claim.community_identifier != cid {
-                    debug::warn!(target: LOG,
+                    log::warn!(target: LOG,
                         "ignoring claim with wrong community identifier: {:?}",
                         attestation.claim.community_identifier);
                     continue };
                 if attestation.claim.meetup_index != meetup_index {
-                    debug::warn!(target: LOG,
+                    log::warn!(target: LOG,
                         "ignoring claim with wrong meetup index: {}",
                         attestation.claim.meetup_index);
                     continue };
                 if !<encointer_communities::Module<T>>::is_valid_geolocation(
                     &attestation.claim.location) {
-                        debug::warn!(target: LOG,
+                        log::warn!(target: LOG,
                             "ignoring claim with illegal geolocation: {:?}",
                             attestation.claim.location);
                         continue };
                 if <encointer_communities::Module<T>>::haversine_distance(
                     &mlocation, &attestation.claim.location) > Self::location_tolerance() {
-                        debug::warn!(target: LOG,
+                        log::warn!(target: LOG,
                             "ignoring claim beyond location tolerance: {:?}",
                             attestation.claim.location);
                         continue };
                 if let Some(dt) = mtime.checked_sub(&attestation.claim.timestamp) {
                     if dt > Self::time_tolerance() {
-                        debug::warn!(target: LOG,
+                        log::warn!(target: LOG,
                             "ignoring claim beyond time tolerance (too early): {:?}",
                             attestation.claim.timestamp);
                         continue };
                 } else if let Some(dt) = attestation.claim.timestamp.checked_sub(&mtime) {
                     if dt > Self::time_tolerance() {
-                        debug::warn!(target: LOG,
+                        log::warn!(target: LOG,
                             "ignoring claim beyond time tolerance (too late): {:?}",
                             attestation.claim.timestamp);
                         continue };
                 }
                 if Self::verify_attestation_signature(attestation.clone()).is_err() {
-                    debug::warn!(target: LOG, "ignoring attestation with bad signature for {:?}", sender);
+                    log::warn!(target: LOG, "ignoring attestation with bad signature for {:?}", sender);
                     continue };
                 // attestation is legit. insert it!
                 verified_attestation_accounts.insert(0, attestation_account.clone());
@@ -267,7 +265,7 @@ decl_module! {
             <AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestation_accounts);
             <AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
             <MeetupParticipantCountVote<T>>::insert((cid, cindex), &sender, &claim_n_participants);
-            debug::debug!(target: LOG,
+            log::debug!(target: LOG,
                 "sucessfully registered {} attestations for {:?}",
                 verified_attestation_accounts.len(), sender);
             Ok(())
@@ -275,7 +273,6 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn endorse_newcomer(origin, cid: CommunityIdentifier, newbie: T::AccountId) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
@@ -295,7 +292,7 @@ decl_module! {
             "newbie is already endorsed");
 
             <BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender,|b| *b += 1);
-            debug::debug!(target: LOG, "endorsed newbie: {:?}", newbie);
+            log::debug!(target: LOG, "endorsed newbie: {:?}", newbie);
             <Endorsees<T>>::insert((cid, cindex), newbie, ());
             <EndorseesCount>::mutate((cid, cindex), |c| *c += 1);
             Ok(())
@@ -340,7 +337,7 @@ impl<T: Config> Module<T> {
             <AttestationCount>::insert((cid, cindex), 0);
             <MeetupParticipantCountVote<T>>::remove_prefix((cid, cindex));
         }
-        debug::debug!(target: LOG, "purged registry for ceremony {}", cindex);
+        log::debug!(target: LOG, "purged registry for ceremony {}", cindex);
     }
 
     /* this is for a more recent revision of substrate....
@@ -401,7 +398,7 @@ impl<T: Config> Module<T> {
             n += endorsees.len();
 
             if n < 3 {
-                debug::debug!(target: LOG, "no meetups assigned for cid {:?}", cid);
+                log::debug!(target: LOG, "no meetups assigned for cid {:?}", cid);
                 continue;
             }
 
@@ -410,7 +407,7 @@ impl<T: Config> Module<T> {
 
             // capping the amount a participants prevents assigning more meetups than there are locations.
             if n > n_locations * 12 {
-                debug::warn!(target: LOG, "Meetup Locations exhausted for cid: {:?}", cid);
+                log::warn!(target: LOG, "Meetup Locations exhausted for cid: {:?}", cid);
                 n = n_locations * 12;
             }
 
@@ -446,14 +443,14 @@ impl<T: Config> Module<T> {
                     <MeetupRegistry<T>>::insert((cid, cindex), &_idx, m.clone());
                 }
             };
-            debug::debug!(
+            log::debug!(
                 target: LOG,
                 "assigned {} meetups for cid {:?}",
                 meetups.len(),
                 cid
             );
         }
-        debug::debug!(target: LOG, "meetup assignments done");
+        log::debug!(target: LOG, "meetup assignments done");
     }
 
     fn verify_attestation_signature(
@@ -504,7 +501,7 @@ impl<T: Config> Module<T> {
                     match Self::ballot_meetup_n_votes(cid, cindex, m) {
                         Some(nn) => nn,
                         _ => {
-                            debug::warn!(
+                            log::warn!(
                                 target: LOG,
                                 "ignoring meetup {} because votes are not dependable",
                                 m
@@ -515,7 +512,7 @@ impl<T: Config> Module<T> {
                 let meetup_participants = Self::meetup_registry((cid, cindex), &m);
                 for p in meetup_participants {
                     if Self::meetup_participant_count_vote((cid, cindex), &p) != n_confirmed {
-                        debug::debug!(
+                        log::debug!(
                             target: LOG,
                             "skipped participant because of wrong participant count vote: {:?}",
                             p
@@ -529,7 +526,7 @@ impl<T: Config> Module<T> {
                     if attestations.len() < (n_honest_participants - 1) as usize
                         || attestations.is_empty()
                     {
-                        debug::debug!(
+                        log::debug!(
                             target: LOG,
                             "skipped participant because of too few attestations ({}): {:?}",
                             attestations.len(),
@@ -548,14 +545,14 @@ impl<T: Config> Module<T> {
                         }
                     }
                     if has_attested < (n_honest_participants - 1) {
-                        debug::debug!(
+                        log::debug!(
                             target: LOG,
                             "skipped participant because didn't testify for honest peers: {:?}",
                             p
                         );
                         continue;
                     }
-                    debug::trace!(target: LOG, "participant merits reward: {:?}", p);
+                    log::trace!(target: LOG, "participant merits reward: {:?}", p);
                     if <encointer_balances::Module<T>>::issue(*cid, &p, reward).is_ok() {
                         <ParticipantReputation<T>>::insert(
                             (cid, cindex),
@@ -566,7 +563,7 @@ impl<T: Config> Module<T> {
                 }
             }
         }
-        debug::info!(target: LOG, "issuing rewards completed");
+        log::info!(target: LOG, "issuing rewards completed");
     }
 
     fn ballot_meetup_n_votes(

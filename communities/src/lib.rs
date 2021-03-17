@@ -25,7 +25,7 @@
 
 // use host_calls::runtime_interfaces;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage,
+    decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::{StorageMap, StorageValue},
@@ -68,7 +68,6 @@ decl_module! {
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
         pub fn new_community(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
@@ -84,20 +83,20 @@ decl_module! {
                 // prohibit proximity to poles
                 if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
                     || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
+                    log::warn!(target: LOG, "location too close to pole: {:?}", l1);
                     return Err(<Error<T>>::MinimumDistanceViolationToPole.into());
                 }
                 // prohibit proximity to dateline
                 let dateline_proxy = Location { lat: l1.lat, lon: DATELINE_LON };
                 if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
+                    log::warn!(target: LOG, "location too close to dateline: {:?}", l1);
                     return Err(<Error<T>>::MinimumDistanceViolationToDateLine.into());
                 }
                 // test against all other communities globally
                 for other in cids.iter() {
                     for l2 in Self::locations(other) {
                         if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
-                            debug::warn!(target: LOG,
+                            log::warn!(target: LOG,
                                 "location {:?} too close to previously registered location {:?} with cid {:?}",
                                 l1, l2, other);
                             return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity.into());
@@ -117,7 +116,7 @@ decl_module! {
                 }
             );
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
-            debug::info!(target: LOG, "registered community with cid: {:?}", cid);
+            log::info!(target: LOG, "registered community with cid: {:?}", cid);
             Ok(())
         }
     }

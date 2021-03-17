@@ -182,7 +182,6 @@ impl<T: Config> Module<T> {
         who: &T::AccountId,
         amount: BalanceType,
     ) -> DispatchResult {
-        debug::RuntimeLogger::init();
         let mut entry_who = Self::balance_entry_updated(community_id, who);
         let mut entry_tot = Self::total_issuance_entry_updated(community_id);
         ensure!(
@@ -193,7 +192,7 @@ impl<T: Config> Module<T> {
         entry_tot.principal += amount;
         <TotalIssuance<T>>::insert(community_id, entry_tot);
         <Balance<T>>::insert(community_id, who, entry_who);
-        debug::debug!(target: LOG, "issue {:?} for {:?}", amount, who);
+        log::debug!(target: LOG, "issue {:?} for {:?}", amount, who);
         Ok(())
     }
 

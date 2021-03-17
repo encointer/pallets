@@ -78,7 +78,6 @@ decl_module! {
         /// Manually transition to next phase without affecting the ceremony rhythm
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn next_phase(origin) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
             Self::progress_phase()?;
@@ -88,7 +87,6 @@ decl_module! {
         /// Push next phase change by one entire day
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn push_by_one_day(origin) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
             let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
@@ -131,7 +129,7 @@ impl<T: Config> Module<T> {
         <CurrentPhase>::put(next_phase);
         T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
         Self::deposit_event(Event::PhaseChangedTo(next_phase));
-        debug::info!(target: LOG, "phase changed to: {:?}", next_phase);
+        log::info!(target: LOG, "phase changed to: {:?}", next_phase);
         Ok(())
     }
 
@@ -158,7 +156,7 @@ impl<T: Config> Module<T> {
             tnext.saturating_sub(cycle_duration.saturating_mul(n))
         };
         <NextPhaseTimestamp<T>>::put(tnext);
-        debug::info!(target: LOG, "next phase change at: {:?}", tnext);
+        log::info!(target: LOG, "next phase change at: {:?}", tnext);
         Ok(())
     }
 
