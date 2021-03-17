@@ -24,14 +24,15 @@ pub const MAX_HASH_SIZE: usize = 46;
 
 pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
     if cid.len() != MAX_HASH_SIZE {
-        return Err(IpfsValidationError::InvalidLength);
+        return Err(IpfsValidationError::InvalidLength(cid.len() as u8));
     }
     Bs58verify::verify(&cid).map_err(|e| IpfsValidationError::InvalidBase58(e))
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum IpfsValidationError {
-    InvalidLength,
+    /// Invalid length supplied. Should be 46. Is: \[length\]
+    InvalidLength(u8),
     InvalidBase58(Bs58Error),
 }
 

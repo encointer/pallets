@@ -103,7 +103,6 @@ decl_module! {
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
-            // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
 
             demurrage.map(|d| <DemurragePerBlock>::insert(&cid, d));
@@ -120,7 +119,6 @@ decl_module! {
             Self::ensure_cid_exists(&cid)?;
             community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
 
-            // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
             Self::deposit_event(RawEvent::MetadataUpdated(cid));
             debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);

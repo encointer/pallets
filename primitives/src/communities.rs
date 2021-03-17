@@ -177,6 +177,7 @@ pub mod consts {
 
 #[cfg(test)]
 mod tests {
+    use crate::common::{Bs58Error, IpfsValidationError};
     use crate::communities::{
         validate_demurrage, validate_nominal_income, CommunityMetadata, CommunityMetadataError,
         Demurrage, NominalIncome,
@@ -197,13 +198,7 @@ mod tests {
 
     #[test]
     fn validate_metadata_works() {
-        let meta = CommunityMetadata {
-            name: "Default".into(),
-            symbol: "DEF".into(),
-            url: Some("Default".into()),
-            ..Default::default()
-        };
-        assert_eq!(meta.validate(), Ok(()));
+        assert_eq!(CommunityMetadata::default().validate(), Ok(()));
     }
 
     #[test]
@@ -215,6 +210,20 @@ mod tests {
         assert_eq!(
             meta.validate(),
             Err(CommunityMetadataError::InvalidAscii(0))
+        );
+    }
+
+    #[test]
+    fn validate_metadata_fails_for_invalid_icons_cid() {
+        let meta = CommunityMetadata {
+            icons: "IhaveCorrectLengthButWrongSymbols1111111111111".into(),
+            ..Default::default()
+        };
+        assert_eq!(
+            meta.validate(),
+            Err(CommunityMetadataError::InvalidIpfsCid(
+                IpfsValidationError::InvalidBase58(Bs58Error::NonBs58Character(0))
+            ))
         );
     }
 }
