@@ -7,7 +7,7 @@ use sp_core::{RuntimeDebug, H256};
 use serde::{Deserialize, Serialize};
 
 use crate::balances::Demurrage;
-use crate::common::{IpfsCid, PalletString};
+use crate::common::{validate_ipfs_cid, IpfsCid, IpfsValidationError, PalletString};
 
 pub use fixed::traits::{LossyFrom, LossyInto};
 
@@ -95,14 +95,7 @@ impl CommunityMetadata {
             return Err(CommunityMetadataError::InvalidAmountCharactersInSymbol(res));
         }
 
-        // Todo: Be more strict, check only base58 characters.
-        // Might be supported by in no_std environment https://github.com/mycorrhiza/bs58-rs/
-        res = Self::validate_ascii(&self.icons)?;
-        if res != 46 {
-            return Err(CommunityMetadataError::InvalidAmountCharactersInIpfsCid(
-                res,
-            ));
-        }
+        validate_ipfs_cid(&self.icons).map_err(|e| CommunityMetadataError::InvalidIpfsCid(e))?;
 
         if let Some(u) = &self.url {
             res = Self::validate_ascii(u)?;
@@ -130,7 +123,7 @@ impl Default for CommunityMetadata {
         CommunityMetadata {
             name: "Default".into(),
             symbol: "DEF".into(),
-            icons: "DefaultCidThatIs46CharactersInLength1111111111".into(),
+            icons: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
             theme: None,
             url: Some("DefaultUrl".into()),
         }
@@ -140,12 +133,11 @@ impl Default for CommunityMetadata {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum CommunityMetadataError {
     InvalidAscii,
+    InvalidIpfsCid(IpfsValidationError),
     /// Too many characters in name. Allowed: 20. Used: \[amount\]
     TooManyCharactersInName(u8),
     /// Invalid amount of characters symbol. Must be 3. Used: \[amount\]
     InvalidAmountCharactersInSymbol(u8),
-    /// Invalid amount of characters IpfsCid. Must be 46. Used: \[amount\]
-    InvalidAmountCharactersInIpfsCid(u8),
     /// Too many characters in url. Allowed: 20. Used: \[amount\]
     TooManyCharactersInNameUrl(u8),
 }
