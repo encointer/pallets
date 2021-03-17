@@ -30,7 +30,7 @@
 extern crate approx;
 
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage,
+    decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::{StorageDoubleMap, StorageMap},

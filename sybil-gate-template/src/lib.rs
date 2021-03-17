@@ -33,7 +33,7 @@ use encointer_primitives::{
 use fixed::types::I16F16;
 use frame_support::traits::Currency;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
+    decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
 };
 use frame_system::ensure_signed;
 use polkadot_parachain::primitives::Sibling;

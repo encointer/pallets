@@ -22,7 +22,7 @@ use encointer_primitives::{
 };
 use fixed::transcendental::exp;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
+    decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
 };
 use frame_system::{self as frame_system, ensure_signed};
 use rstd::convert::TryInto;

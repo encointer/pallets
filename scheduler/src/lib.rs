@@ -25,7 +25,7 @@
 
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
-    debug, decl_event, decl_module, decl_storage,
+    decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::StorageValue,
