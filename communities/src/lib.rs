@@ -132,7 +132,7 @@ decl_module! {
             Self::ensure_cid_exists(&cid)?;
 
             <DemurragePerBlock>::insert(&cid, &demurrage);
-            Self::deposit_event(RawEvent::DemurrageUpdated(cid, demurrage.to_bits()));
+            Self::deposit_event(RawEvent::DemurrageUpdated(cid, demurrage));
             debug::info!(target: LOG, " updated demurrage for cid: {:?}", cid);
         }
 
@@ -144,7 +144,7 @@ decl_module! {
             Self::ensure_cid_exists(&cid)?;
 
             <NominalIncome>::insert(&cid, &nominal_income);
-            Self::deposit_event(RawEvent::NominalIncomeUpdated(cid, nominal_income.to_bits()));
+            Self::deposit_event(RawEvent::NominalIncomeUpdated(cid, nominal_income));
             debug::info!(target: LOG, " updated nominal income for cid: {:?}", cid);
         }
     }
@@ -160,9 +160,9 @@ decl_event!(
         /// CommunityMetadata was updated \[community_identifier\]
         MetadataUpdated(CommunityIdentifier),
         /// A community's nominal income was updated \[community_identifier, new_income\]
-        NominalIncomeUpdated(CommunityIdentifier, i128),
+        NominalIncomeUpdated(CommunityIdentifier, NominalIncomeType),
         /// A community's demurrage was updated \[community_identifier, new_demurrage\]
-        DemurrageUpdated(CommunityIdentifier, i128),
+        DemurrageUpdated(CommunityIdentifier, Demurrage),
     }
 );
 
