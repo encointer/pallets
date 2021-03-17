@@ -95,6 +95,8 @@ impl CommunityMetadata {
             return Err(CommunityMetadataError::InvalidAmountCharactersInSymbol(res));
         }
 
+        // Todo: Be more strict, check only base58 characters.
+        // Might be supported by in no_std environment https://github.com/mycorrhiza/bs58-rs/
         res = Self::validate_ascii(&self.icons)?;
         if res != 46 {
             return Err(CommunityMetadataError::InvalidAmountCharactersInIpfsCid(
