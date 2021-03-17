@@ -85,6 +85,7 @@ decl_module! {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             Self::validate_bootstrappers(&bootstrappers)?;
+            community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
             if let Some(d) = demurrage {
                 validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             }
@@ -117,6 +118,7 @@ decl_module! {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
             Self::ensure_cid_exists(&cid)?;
+            community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
 
             // Todo: Validate metadata??
             <CommunityMetadata>::insert(&cid, community_metadata);
@@ -140,7 +142,7 @@ decl_module! {
         fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: NominalIncomeType) {
             debug::RuntimeLogger::init();
             ensure_root(origin)?;
-            validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+            validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
             Self::ensure_cid_exists(&cid)?;
 
             <NominalIncome>::insert(&cid, &nominal_income);
@@ -188,6 +190,8 @@ decl_error! {
         CommunityAlreadyRegistered,
         /// Community does not exist yet
         CommunityInexistent,
+        /// Invalid Metadata supplied
+        InvalidCommunityMetadata,
         /// Invalid demurrage supplied
         InvalidDemurrage,
         /// Invalid demurrage supplied

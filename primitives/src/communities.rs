@@ -1,4 +1,5 @@
 use codec::{Decode, Encode};
+use encoding_rs::Encoding;
 use fixed::types::I64F64;
 use sp_core::{RuntimeDebug, H256};
 
@@ -41,7 +42,7 @@ pub struct Location {
     pub lon: Degree,
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CommunityMetadata {
     /// utf8 encoded name
@@ -54,6 +55,97 @@ pub struct CommunityMetadata {
     pub theme: Option<Theme>,
     /// optional link to a community site
     pub url: Option<PalletString>,
+}
+
+impl CommunityMetadata {
+    pub fn new(
+        name: PalletString,
+        symbol: PalletString,
+        icons: IpfsCid,
+        theme: Option<Theme>,
+        url: Option<PalletString>,
+    ) -> Result<CommunityMetadata, CommunityMetadataError> {
+        let meta = CommunityMetadata {
+            name,
+            symbol,
+            icons,
+            theme,
+            url,
+        };
+        match meta.validate() {
+            Ok(()) => Ok(meta),
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Ensures valid ascii sequences for the the string fields and that the amount of characters is
+    /// limited (to prevent runtime storage bloating), or correct for the respective usage depending
+    /// on the field.
+    ///
+    /// Only ascii characters are allowed because the character set is sufficient. Furthermore,
+    /// they strictly encode to one byte, which allows length checks.
+    pub fn validate(&self) -> Result<(), CommunityMetadataError> {
+        let mut res = Self::validate_ascii(&self.name)?;
+        if res > 20 {
+            return Err(CommunityMetadataError::TooManyCharactersInName(res));
+        }
+
+        res = Self::validate_ascii(&self.symbol)?;
+        if res != 3 {
+            return Err(CommunityMetadataError::InvalidAmountCharactersInSymbol(res));
+        }
+
+        res = Self::validate_ascii(&self.icons)?;
+        if res != 46 {
+            return Err(CommunityMetadataError::InvalidAmountCharactersInIpfsCid(
+                res,
+            ));
+        }
+
+        if let Some(u) = &self.url {
+            res = Self::validate_ascii(u)?;
+            if res >= 20 {
+                return Err(CommunityMetadataError::TooManyCharactersInNameUrl(res));
+            }
+        }
+        Ok(())
+    }
+
+    /// If valid, returns the length of the ascii sequence.
+    fn validate_ascii(bytes: &[u8]) -> Result<u8, CommunityMetadataError> {
+        let res = Encoding::ascii_valid_up_to(bytes);
+        if res == bytes.len() {
+            Ok(res as u8)
+        } else {
+            Err(CommunityMetadataError::InvalidAscii)
+        }
+    }
+}
+
+impl Default for CommunityMetadata {
+    /// Default implementation, which passes `self::validate()` for easy pallet testing
+    fn default() -> Self {
+        CommunityMetadata {
+            name: "Default".into(),
+            symbol: "DEF".into(),
+            icons: "DefaultCidThatIs46CharactersInLength1111111111".into(),
+            theme: None,
+            url: Some("DefaultUrl".into()),
+        }
+    }
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+pub enum CommunityMetadataError {
+    InvalidAscii,
+    /// Too many characters in name. Allowed: 20. Used: \[amount\]
+    TooManyCharactersInName(u8),
+    /// Invalid amount of characters symbol. Must be 3. Used: \[amount\]
+    InvalidAmountCharactersInSymbol(u8),
+    /// Invalid amount of characters IpfsCid. Must be 46. Used: \[amount\]
+    InvalidAmountCharactersInIpfsCid(u8),
+    /// Too many characters in url. Allowed: 20. Used: \[amount\]
+    TooManyCharactersInNameUrl(u8),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
@@ -96,8 +188,10 @@ pub mod consts {
 #[cfg(test)]
 mod tests {
     use crate::communities::{
-        validate_demurrage, validate_nominal_income, Demurrage, NominalIncome,
+        validate_demurrage, validate_nominal_income, CommunityMetadata, CommunityMetadataError,
+        Demurrage, NominalIncome,
     };
+    use codec::Encode;
 
     #[test]
     fn demurrage_smaller_0_fails() {
@@ -110,5 +204,25 @@ mod tests {
             validate_nominal_income(&NominalIncome::from_num(-1)),
             Err(())
         );
+    }
+
+    #[test]
+    fn validate_metadata_works() {
+        let meta = CommunityMetadata {
+            name: "Default".into(),
+            symbol: "DEF".into(),
+            url: Some("Default".into()),
+            ..Default::default()
+        };
+        assert_eq!(meta.validate(), Ok(()));
+    }
+
+    #[test]
+    fn validate_metadata_fails_for_invalid_ascii() {
+        let meta = CommunityMetadata {
+            name: 11111111111_i128.encode(),
+            ..Default::default()
+        };
+        assert_eq!(meta.validate(), Err(CommunityMetadataError::InvalidAscii));
     }
 }
