@@ -1,6 +1,5 @@
 use codec::{Decode, Encode};
 use fixed::types::I64F64;
-use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 
 #[cfg(feature = "std")]
@@ -27,7 +26,7 @@ pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), ()> {
     Ok(())
 }
 
-/// Ensure that the demurrage is in a sane range.
+/// Ensure that the nominal is in a sane range.
 pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()> {
     if nominal_income <= &NominalIncome::from_num(0) {
         return Err(());
@@ -49,22 +48,12 @@ pub struct CommunityMetadata {
     pub name: PalletString,
     /// utf8 encoded abbreviation of the name
     pub symbol: PalletString,
-    /// multi-resolution resource for the community icon
-    pub icons: Vec<Favicon>,
+    /// ipfs link to multi-resolution resource for the community icon
+    pub icons: IpfsCid,
     /// optional color scheme or other customizable styles to shape app appearance
     pub theme: Option<Theme>,
     /// optional link to a community site
     pub url: Option<PalletString>,
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct Favicon {
-    src: IpfsCid,
-    /// e.g. "64x64", "128x128", ...
-    sizes: PalletString,
-    /// e.g. 1, 2, 3, ...
-    density: u8,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
