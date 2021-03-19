@@ -19,14 +19,12 @@
 #![cfg(test)]
 
 use super::*;
-use codec::Encode;
-use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use frame_support::assert_ok;
 use frame_support::impl_outer_event;
 use frame_system;
-use sp_core::{hashing::blake2_256, H256};
+use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup};
 
+use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
 use test_utils::*;
 
 mod tokens {
@@ -43,8 +41,6 @@ impl_outer_event! {
     }
 }
 
-type AccountId = u64;
-
 // Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
@@ -53,7 +49,6 @@ impl_outer_origin_for_runtime!(TestRuntime);
 impl_frame_system!(TestRuntime, TestEvent);
 
 pub type System = frame_system::Module<TestRuntime>;
-pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 pub type EncointerBalances = Module<TestRuntime>;
 
 impl encointer_communities::Config for TestRuntime {
@@ -63,9 +58,6 @@ impl encointer_communities::Config for TestRuntime {
 impl Config for TestRuntime {
     type Event = TestEvent;
 }
-
-pub const ALICE: AccountId = 1;
-pub const BOB: AccountId = 2;
 
 pub struct ExtBuilder {}
 
@@ -77,46 +69,14 @@ impl Default for ExtBuilder {
 
 impl ExtBuilder {
     pub fn build(self) -> runtime_io::TestExternalities {
-        let t = frame_system::GenesisConfig::default()
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
-        t.into()
+        GenesisConfig {
+            demurrage_per_block_default: Demurrage::from_bits(DEFAULT_DEMURRAGE),
+        }
+        .assimilate_storage(&mut storage)
+        .unwrap();
+        storage.into()
     }
-}
-
-/// register a simple test community with 3 meetup locations and well known bootstrappers
-pub fn register_test_community() -> CommunityIdentifier {
-    // all well-known keys are boottrappers for easy testen afterwards
-    let alice = 1;
-    let bob = 2;
-    let charlie = 3;
-    let dave = 4;
-    let eve = 5;
-    let ferdie = 6;
-
-    let a = Location::default(); // 0, 0
-
-    let b = Location {
-        lat: Degree::from_num(1),
-        lon: Degree::from_num(1),
-    };
-    let c = Location {
-        lat: Degree::from_num(2),
-        lon: Degree::from_num(2),
-    };
-    let loc = vec![a, b, c];
-    let bs = vec![
-        alice.clone(),
-        bob.clone(),
-        charlie.clone(),
-        dave.clone(),
-        eve.clone(),
-        ferdie.clone(),
-    ];
-    assert_ok!(EncointerCommunities::new_community(
-        Origin::signed(alice.clone()),
-        loc.clone(),
-        bs.clone()
-    ));
-    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
 }

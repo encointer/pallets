@@ -28,10 +28,22 @@ use std::cell::RefCell;
 use xcm::v0::NetworkId;
 use xcm_builder::SiblingParachainConvertsVia;
 
+// convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.
+pub use sp_keyring::AccountKeyring;
+
+// reexports for macro resolution
 pub use balances;
+pub use encointer_balances;
+pub use encointer_ceremonies;
+pub use encointer_communities;
+pub use encointer_scheduler;
+pub use frame_system;
+pub use timestamp;
+
 pub use sp_core::H256;
 pub use sp_runtime::traits::BlakeTwo256;
 
+pub mod helpers;
 pub mod storage;
 
 pub const NONE: u64 = 0;
@@ -95,7 +107,7 @@ macro_rules! impl_frame_system {
             type SystemWeightInfo = ();
             type BlockWeights = ();
             type BlockLength = ();
-            type SS58Prefix = ();   
+            type SS58Prefix = ();
         }
     };
 }

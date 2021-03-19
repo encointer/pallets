@@ -1,6 +1,6 @@
 [package]
 name = "encointer-primitives"
-version = "0.3.9"
+version = "0.4.0"
 authors = ["Christian Langenbacher <christian.langenbacher91@gmail.com>"]
 edition = "2018"
 
@@ -50,6 +50,7 @@ default = ["std"]
 std = [
     "codec/std",
     "fixed/std",
+    "fixed/serde",
     "rstd/std",
     "serde",
     "sp-core/std",

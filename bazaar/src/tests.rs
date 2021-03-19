@@ -17,18 +17,16 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use crate::{Module, Config};
+use crate::{Config, Module};
 use codec::Encode;
-use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use frame_support::assert_ok;
+use encointer_primitives::communities::CommunityIdentifier;
 use sp_core::{hashing::blake2_256, H256};
-use sp_keyring::AccountKeyring;
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
 
-use test_utils::*;
+use test_utils::{helpers::register_test_community, *};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
@@ -43,7 +41,6 @@ impl Config for TestRuntime {
 }
 
 pub type EncointerBazaar = Module<TestRuntime>;
-pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 
 pub struct ExtBuilder;
 
@@ -56,38 +53,11 @@ impl ExtBuilder {
     }
 }
 
-/// register a simple test community with 3 meetup locations and well known bootstrappers
-fn register_test_community() -> CommunityIdentifier {
-    // all well-known keys are boottrappers for easy testen afterwards
-    let alice = AccountId::from(AccountKeyring::Alice);
-    let bob = AccountId::from(AccountKeyring::Bob);
-    let charlie = AccountId::from(AccountKeyring::Charlie);
-
-    let a = Location::default(); // 0, 0
-
-    let b = Location {
-        lat: Degree::from_num(1),
-        lon: Degree::from_num(1),
-    };
-    let c = Location {
-        lat: Degree::from_num(2),
-        lon: Degree::from_num(2),
-    };
-    let loc = vec![a, b, c];
-    let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-    assert_ok!(EncointerCommunities::new_community(
-        Origin::signed(alice.clone()),
-        loc.clone(),
-        bs.clone()
-    ));
-    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
-}
-
 #[test]
 fn create_new_shop_works() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 2);
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
         // upload dummy store to blockchain
@@ -135,7 +105,7 @@ fn create_new_shop_with_bad_cid_fails() {
 fn removal_of_shop_works() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 2);
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
 
@@ -178,7 +148,7 @@ fn removal_of_shop_works() {
 fn alices_store_are_differentiated() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 2);
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
         let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
@@ -238,7 +208,7 @@ fn alices_store_are_differentiated() {
 fn stores_cannot_be_created_twice() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 2);
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
         let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
@@ -273,7 +243,7 @@ fn stores_cannot_be_created_twice() {
 fn bob_cannot_remove_alices_store() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 2);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
@@ -322,7 +292,7 @@ fn bob_cannot_remove_alices_store() {
 fn create_oversized_shop_fails() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
-        let cid = register_test_community();
+        let cid = register_test_community::<TestRuntime>(None, 2);
         let alice = AccountId::from(AccountKeyring::Alice);
         let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTBB");
 

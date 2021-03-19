@@ -48,7 +48,7 @@ use encointer_primitives::{
     balances::BalanceType,
     ceremonies::consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
     ceremonies::*,
-    communities::{CommunityIdentifier, Degree, Location, LossyFrom},
+    communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
@@ -97,6 +97,7 @@ decl_storage! {
         AttestationCount get(fn attestation_count): map hasher(blake2_128_concat) CommunityCeremony => AttestationIndexType;
         // how many peers does each participants observe at their meetup
         MeetupParticipantCountVote get(fn meetup_participant_count_vote): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => u32;
+        /// the default UBI for a ceremony attendee if no community specific value is set.
         CeremonyReward get(fn ceremony_reward) config(): BalanceType;
         // [m] distance from assigned meetup location
         LocationTolerance get(fn location_tolerance) config(): u32;
@@ -496,7 +497,7 @@ impl<T: Config> Module<T> {
         for cid in cids.iter() {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
             let meetup_count = Self::meetup_count((cid, cindex));
-            let reward = Self::ceremony_reward();
+            let reward = Self::nominal_income(cid);
 
             for m in 1..=meetup_count {
                 // first, evaluate votes on how many participants showed up
@@ -637,6 +638,13 @@ impl<T: Config> Module<T> {
         } else {
             Some(start + day / T::Moment::from(2u32) - abs_lon_time)
         }
+    }
+
+    /// Returns the community-specific nominal income if it is set. Otherwise returns the
+    /// the ceremony reward defined in the genesis config.
+    fn nominal_income(cid: &CommunityIdentifier) -> NominalIncome {
+        encointer_communities::NominalIncome::try_get(cid)
+            .unwrap_or_else(|_| Self::ceremony_reward())
     }
 
     #[cfg(test)]

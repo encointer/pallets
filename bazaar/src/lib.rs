@@ -35,8 +35,9 @@ use frame_support::{
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 
+use encointer_primitives::common::validate_ipfs_cid;
 use encointer_primitives::{
-    bazaar::{consts::MAX_HASH_SIZE, ArticleIdentifier, ShopIdentifier},
+    bazaar::{ArticleIdentifier, ShopIdentifier},
     communities::CommunityIdentifier,
 };
 
@@ -52,7 +53,7 @@ decl_storage! {
         // Item owner
         pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
         pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
-        // The set of all shops and articles per community (community)
+        // The set of all shops and articles per community
         pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ShopIdentifier>;
         pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ArticleIdentifier>;
     }
@@ -75,6 +76,8 @@ decl_error! {
         ShopAlreadyCreated,
         /// shop can not be removed by anyone else than its owner
         OnlyOwnerCanRemoveShop,
+        /// invalid IpfsCid supplied
+        InvalidIpfsCid,
     }
 }
 
@@ -96,8 +99,7 @@ decl_module! {
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
             let mut shops = ShopRegistry::get(cid);
 
-            // Check the string length of the to be uploaded shop
-            ensure!(shop.len() <= MAX_HASH_SIZE, "oversized shop");
+            ensure!(validate_ipfs_cid(&shop).is_ok(), Error::<T>::InvalidIpfsCid);
 
             // Verify that the specified shop has not already been created with fast search
             ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);

@@ -18,19 +18,16 @@
 //!
 //! provides functionality for
 //! - registering new communities
-//! - modify community characteristics
+//! - modifying community characteristics
 //!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// use host_calls::runtime_interfaces;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage,
-    dispatch::DispatchResult,
-    ensure,
+    debug, decl_error, decl_event, decl_module, decl_storage, ensure,
     storage::{StorageMap, StorageValue},
 };
-use frame_system::ensure_signed;
+use frame_system::{ensure_root, ensure_signed};
 
 use rstd::prelude::*;
 
@@ -38,8 +35,15 @@ use codec::Encode;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use runtime_io::hashing::blake2_256;
 
-use encointer_primitives::{communities::consts::*, communities::*};
-use sp_runtime::SaturatedConversion;
+use encointer_primitives::{
+    balances::{BalanceType, Demurrage},
+    communities::{
+        consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
+        CommunityMetadata as CommunityMetadataType, Degree, Location, LossyFrom,
+        NominalIncome as NominalIncomeType,
+    },
+};
+use sp_runtime::{DispatchResult, SaturatedConversion};
 
 pub trait Config: frame_system::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -53,7 +57,10 @@ decl_storage! {
         Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
-        CommunityProperties get(fn community_properties): map hasher(blake2_128_concat) CommunityIdentifier => CommunityPropertiesType;
+        CommunityMetadata get(fn community_metadata): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
+        pub DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
+        /// Amount of UBI to be paid for every attended ceremony.
+        pub NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => NominalIncomeType;
         // TODO: replace this with on-chain governance
         CommunityMaster get(fn community_master) config(): T::AccountId;
     }
@@ -67,58 +74,78 @@ decl_module! {
         // where n is the number of all locations of all communities
         // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
-        pub fn new_community(origin, loc: Vec<Location>, bootstrappers: Vec<T::AccountId>) -> DispatchResult {
+        pub fn new_community(
+            origin,
+            loc: Vec<Location>,
+            bootstrappers: Vec<T::AccountId>,
+            community_metadata: CommunityMetadataType,
+            demurrage: Option<Demurrage>,
+            nominal_income: Option<NominalIncomeType>
+        ) {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
+            Self::validate_bootstrappers(&bootstrappers)?;
+            community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
+            if let Some(d) = demurrage {
+                validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+            }
+            if let Some(i) = nominal_income {
+                validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
+            }
+
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
             ensure!(!cids.contains(&cid), "community already registered");
+            Self::validate_locations(&loc, &cids)?; // <- O(n^2) !!!
 
-            for l1 in loc.iter() {
-                ensure!(Self::is_valid_geolocation(&l1), "invalid geolocation specified");
-                //test within this communities' set
-                for l2 in loc.iter() {
-                    if l2 == l1 { continue }
-                    ensure!(Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S, "minimum solar trip time violated within supplied locations");
-                }
-                // prohibit proximity to poles
-                if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
-                    || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
-                    return Err(<Error<T>>::MinimumDistanceViolationToPole.into());
-                }
-                // prohibit proximity to dateline
-                let dateline_proxy = Location { lat: l1.lat, lon: DATELINE_LON };
-                if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
-                    debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
-                    return Err(<Error<T>>::MinimumDistanceViolationToDateLine.into());
-                }
-                // test against all other communities globally
-                for other in cids.iter() {
-                    for l2 in Self::locations(other) {
-                        if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
-                            debug::warn!(target: LOG,
-                                "location {:?} too close to previously registered location {:?} with cid {:?}",
-                                l1, l2, other);
-                            return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity.into());
-                        }
-                    }
-                }
-            }
+            // All checks done, now mutate state
 
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
+            <CommunityMetadata>::insert(&cid, community_metadata);
 
-            <CommunityProperties>::insert(&cid,
-                CommunityPropertiesType {
-                    name_utf8: b"encointer dummy".to_vec(),
-                    demurrage_per_block: Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128)
-                }
-            );
+            demurrage.map(|d| <DemurragePerBlock>::insert(&cid, d));
+            nominal_income.map(|i| <NominalIncome>::insert(&cid, i));
+
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
-            Ok(())
+        }
+
+        #[weight = 10_000]
+        fn update_community_medadata(origin, cid: CommunityIdentifier, community_metadata: CommunityMetadataType) {
+            debug::RuntimeLogger::init();
+            ensure_root(origin)?;
+            Self::ensure_cid_exists(&cid)?;
+            community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
+
+            <CommunityMetadata>::insert(&cid, community_metadata);
+            Self::deposit_event(RawEvent::MetadataUpdated(cid));
+            debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
+        }
+
+        #[weight = 10_000]
+        fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
+            debug::RuntimeLogger::init();
+            ensure_root(origin)?;
+            validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
+            Self::ensure_cid_exists(&cid)?;
+
+            <DemurragePerBlock>::insert(&cid, &demurrage);
+            Self::deposit_event(RawEvent::DemurrageUpdated(cid, demurrage));
+            debug::info!(target: LOG, " updated demurrage for cid: {:?}", cid);
+        }
+
+        #[weight = 10_000]
+        fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: NominalIncomeType) {
+            debug::RuntimeLogger::init();
+            ensure_root(origin)?;
+            validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
+            Self::ensure_cid_exists(&cid)?;
+
+            <NominalIncome>::insert(&cid, &nominal_income);
+            Self::deposit_event(RawEvent::NominalIncomeUpdated(cid, nominal_income));
+            debug::info!(target: LOG, " updated nominal income for cid: {:?}", cid);
         }
     }
 }
@@ -128,18 +155,45 @@ decl_event!(
     where
         AccountId = <T as frame_system::Config>::AccountId,
     {
+        /// A new community was registered \[who, community_identifier\]
         CommunityRegistered(AccountId, CommunityIdentifier),
+        /// CommunityMetadata was updated \[community_identifier\]
+        MetadataUpdated(CommunityIdentifier),
+        /// A community's nominal income was updated \[community_identifier, new_income\]
+        NominalIncomeUpdated(CommunityIdentifier, NominalIncomeType),
+        /// A community's demurrage was updated \[community_identifier, new_demurrage\]
+        DemurrageUpdated(CommunityIdentifier, Demurrage),
     }
 );
 
 decl_error! {
     pub enum Error for Module<T: Config> {
+        /// Too many locations supplied
+        TooManyLocations,
+        /// Too few locations supplied
+        TooFewLocations,
+        /// Location is not a valid geolocation
+        InvalidLocation,
+        /// Invalid amount of bootstrappers supplied. Needs to be \[3, 12\]
+        InvalidAmountBootstrappers,
+        /// minimum distance violation within community
+        MinimumDistanceViolationWithinCommunity,
         /// minimum distance violated towards pole
         MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
         /// minimum distance violated towards other community's location
         MinimumDistanceViolationToOtherCommunity,
+        /// Can't register community that already exists
+        CommunityAlreadyRegistered,
+        /// Community does not exist yet
+        CommunityInexistent,
+        /// Invalid Metadata supplied
+        InvalidCommunityMetadata,
+        /// Invalid demurrage supplied
+        InvalidDemurrage,
+        /// Invalid demurrage supplied
+        InvalidNominalIncome
     }
 }
 
@@ -159,6 +213,13 @@ impl<T: Config> Module<T> {
         let tflight = d.checked_div(MAX_SPEED_MPS).unwrap();
         let dt: i32 = i64::lossy_from(dt.abs()).saturated_into();
         tflight - dt
+    }
+
+    fn ensure_cid_exists(cid: &CommunityIdentifier) -> DispatchResult {
+        match Self::community_identifiers().contains(&cid) {
+            true => Ok(()),
+            false => Err(<Error<T>>::CommunityInexistent)?,
+        }
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
@@ -190,6 +251,65 @@ impl<T: Config> Module<T> {
         let c: D = two * asin(sqrt::<D, D>(aa).unwrap_or_default());
         let d = D::from(MEAN_EARTH_RADIUS) * c;
         i64::lossy_from(d).saturated_into()
+    }
+
+    fn validate_bootstrappers(boostrappers: &Vec<T::AccountId>) -> DispatchResult {
+        ensure!(
+            boostrappers.len() <= 1000,
+            <Error<T>>::InvalidAmountBootstrappers
+        );
+        ensure!(
+            !boostrappers.len() >= 3,
+            <Error<T>>::InvalidAmountBootstrappers
+        );
+        Ok(())
+    }
+
+    fn validate_locations(loc: &Vec<Location>, cids: &Vec<CommunityIdentifier>) -> DispatchResult {
+        ensure!(loc.len() <= 1000, <Error<T>>::TooManyLocations);
+        ensure!(!loc.is_empty(), <Error<T>>::TooFewLocations);
+
+        for l1 in loc.iter() {
+            ensure!(Self::is_valid_geolocation(&l1), <Error<T>>::InvalidLocation);
+            //test within this communities' set
+            for l2 in loc.iter() {
+                if l2 == l1 {
+                    continue;
+                }
+                ensure!(
+                    Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S,
+                    <Error<T>>::MinimumDistanceViolationWithinCommunity
+                );
+            }
+            // prohibit proximity to poles
+            if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
+                || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M
+            {
+                debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
+                return Err(<Error<T>>::MinimumDistanceViolationToPole)?;
+            }
+            // prohibit proximity to dateline
+            let dateline_proxy = Location {
+                lat: l1.lat,
+                lon: DATELINE_LON,
+            };
+            if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
+                debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
+                return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
+            }
+            // test against all other communities globally
+            for other in cids.iter() {
+                for l2 in Self::locations(other) {
+                    if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
+                        debug::warn!(target: LOG,
+                                     "location {:?} too close to previously registered location {:?} with cid {:?}",
+                                     l1, l2, other);
+                        return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity)?;
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }
 
