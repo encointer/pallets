@@ -20,7 +20,7 @@
 
 use encointer_primitives::balances::BalanceType;
 use frame_support::parameter_types;
-use frame_support::traits::Get;
+use frame_support::traits::{Get, PalletInfo};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::{MultiSignature, Perbill};
@@ -100,7 +100,7 @@ macro_rules! impl_frame_system {
             type BlockHashCount = BlockHashCount;
             type DbWeight = ();
             type Version = ();
-            type PalletInfo = ();
+            type PalletInfo = Info;
             type AccountData = balances::AccountData<u64>;
             type OnNewAccount = ();
             type OnKilledAccount = ();
@@ -227,3 +227,26 @@ parameter_types! {
 }
 
 pub type LocationConverter = SiblingParachainConvertsVia<Sibling, AccountId>;
+
+/// Todo: This was needed to be implement because substrate removed this default implementation.
+/// However, they did this because storage collisions can occur with this implementation.
+/// See: https://github.com/paritytech/substrate/issues/7949
+/// In this issue, it was encouraged to use `construct_runtime!` in tests from now on as well. Hence,
+/// we should probably do this too.
+///
+/// Example: https://github.com/paritytech/polkadot/pull/2409/files
+///
+/// Tracking Issue:
+impl PalletInfo for Info {
+    fn index<P: 'static>() -> Option<usize> {
+        Some(0)
+    }
+    fn name<P: 'static>() -> Option<&'static str> {
+        Some("test")
+    }
+}
+
+pub struct Info {
+    pub index: u8,
+    pub name: &'static str,
+}
