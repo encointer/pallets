@@ -1,11 +1,34 @@
 use codec::{Decode, Encode};
-use rstd::vec::Vec;
 use sp_core::RuntimeDebug;
+
+#[cfg(not(feature = "std"))]
+use rstd::vec::Vec;
 
 /// Substrate runtimes provide no string type. Hence, for arbitrary data of varying length the
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
 /// utf8 decode bytes into a string.
+#[cfg(not(feature = "std"))]
 pub type PalletString = Vec<u8>;
+
+#[cfg(feature = "std")]
+pub type PalletString = String;
+
+pub trait AsByteOrNoop {
+    fn as_bytes_or_noop(&self) -> &[u8];
+}
+
+impl AsByteOrNoop for PalletString {
+
+    #[cfg(feature = "std")]
+    fn as_bytes_or_noop(&self) -> &[u8] {
+        self.as_bytes()
+    }
+
+    #[cfg(not(feature = "std"))]
+    fn as_bytes_or_noop(&self) -> &[u8] {
+        self
+    }
+}
 
 pub type IpfsCid = PalletString;
 
@@ -26,7 +49,7 @@ pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
     if cid.len() != MAX_HASH_SIZE {
         return Err(IpfsValidationError::InvalidLength(cid.len() as u8));
     }
-    Bs58verify::verify(&cid).map_err(|e| IpfsValidationError::InvalidBase58(e))
+    Bs58verify::verify(&cid.as_bytes_or_noop()).map_err(|e| IpfsValidationError::InvalidBase58(e))
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
