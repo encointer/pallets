@@ -6,9 +6,7 @@ use sp_core::{RuntimeDebug, H256};
 use serde::{Deserialize, Serialize};
 
 use crate::balances::Demurrage;
-use crate::common::{
-    validate_ascii, validate_ipfs_cid, IpfsCid, IpfsValidationError, PalletString,
-};
+use crate::common::{validate_ascii, validate_ipfs_cid, IpfsCid, IpfsValidationError, PalletString, AsByteOrNoop};
 
 pub use fixed::traits::{LossyFrom, LossyInto};
 
@@ -86,8 +84,8 @@ impl CommunityMetadata {
     /// Only ascii characters are allowed because the character set is sufficient. Furthermore,
     /// they strictly encode to one byte, which allows length checks.
     pub fn validate(&self) -> Result<(), CommunityMetadataError> {
-        validate_ascii(&self.name).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
-        validate_ascii(&self.symbol).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+        validate_ascii(&self.name.as_bytes_or_noop()).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+        validate_ascii(&self.symbol.as_bytes_or_noop()).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
         validate_ipfs_cid(&self.icons).map_err(|e| CommunityMetadataError::InvalidIpfsCid(e))?;
 
         if self.name.len() > 20 {
@@ -103,7 +101,7 @@ impl CommunityMetadata {
         }
 
         if let Some(u) = &self.url {
-            validate_ascii(u).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+            validate_ascii(u.as_bytes_or_noop()).map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
             if u.len() >= 20 {
                 return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8));
             }
@@ -204,7 +202,7 @@ mod tests {
     #[test]
     fn validate_metadata_fails_for_invalid_ascii() {
         let meta = CommunityMetadata {
-            name: vec![128],
+            name: "€".into(),
             ..Default::default()
         };
         assert_eq!(
