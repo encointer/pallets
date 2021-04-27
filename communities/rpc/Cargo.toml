@@ -1,0 +1,51 @@
+[package]
+name = "pallet-encointer-communities-rpc"
+version = "0.1.0"
+authors = ["Christian Langenbacher <clangenb+gh@protonmail.ch>"]
+edition = "2018"
+
+[dependencies]
+jsonrpc-core = "17.0.0"
+jsonrpc-core-client = "17.0.0"
+jsonrpc-derive = "17.0.0"
+
+[dependencies.sp-api]
+default-features = false
+package = "sp-api"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.sp-blockchain]
+default-features = false
+package = "sp-blockchain"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.sc-rpc]
+default-features = false
+package = "sc-rpc"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.sp-runtime]
+default-features = false
+package = "sp-runtime"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.communities-rpc-runtime-api]
+default-features = false
+package = "pallet-encointer-communities-rpc-runtime-api"
+path = "runtime-api"
+
+[dependencies.encointer-primitives]
+default-features = false
+path = "../../primitives"
+
+[features]
+default = ["std"]
+std = [
+    "communities-rpc-runtime-api/std",
+    "sp-runtime/std",
+    "encointer-primitives/std"
+]

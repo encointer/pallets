@@ -37,13 +37,14 @@ use runtime_io::hashing::blake2_256;
 
 use encointer_primitives::{
     balances::{BalanceType, Demurrage},
+    common::PalletString,
     communities::{
         consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
         CommunityMetadata as CommunityMetadataType, Degree, Location, LossyFrom,
         NominalIncome as NominalIncomeType,
     },
 };
-use sp_runtime::{DispatchResult, SaturatedConversion};
+use sp_runtime::{DispatchResult, SaturatedConversion, DispatchError};
 
 pub trait Config: frame_system::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -220,6 +221,11 @@ impl<T: Config> Module<T> {
             true => Ok(()),
             false => Err(<Error<T>>::CommunityInexistent)?,
         }
+    }
+
+    pub fn get_name(cid: &CommunityIdentifier) -> Result<PalletString, DispatchError> {
+        Self::ensure_cid_exists(cid)?;
+        Ok(Self::community_metadata(cid).name)
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
