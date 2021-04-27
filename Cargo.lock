@@ -1466,24 +1466,8 @@ checksum = "489b9c612e60c766f751ab40fcb43cbb55a1e10bb44a9b4307ed510ca598cbd7"
 dependencies = [
  "failure",
  "futures 0.1.31",
- "jsonrpc-core 15.1.0",
- "jsonrpc-pubsub 15.1.0",
- "log",
- "serde",
- "serde_json",
- "url 1.7.2",
-]
-
-[[package]]
-name = "jsonrpc-client-transports"
-version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15b6c6ad01c7354d60de493148c30ac8a82b759e22ae678c8705e9b8e0c566a4"
-dependencies = [
- "derive_more",
- "futures 0.3.12",
- "jsonrpc-core 17.0.0",
- "jsonrpc-pubsub 17.0.0",
+ "jsonrpc-core",
+ "jsonrpc-pubsub",
  "log",
  "serde",
  "serde_json",
@@ -1504,35 +1488,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpc-core"
-version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07569945133257ff557eb37b015497104cea61a2c9edaf126c1cbd6e8332397f"
-dependencies = [
- "futures 0.3.12",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
 name = "jsonrpc-core-client"
 version = "15.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f764902d7b891344a0acb65625f32f6f7c6db006952143bd650209fbe7d94db"
 dependencies = [
- "jsonrpc-client-transports 15.1.0",
-]
-
-[[package]]
-name = "jsonrpc-core-client"
-version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ac9d56dc729912796637c30f475bbf834594607b27740dfea6e5fa7ba40d1f1"
-dependencies = [
- "futures 0.3.12",
- "jsonrpc-client-transports 17.0.0",
+ "jsonrpc-client-transports",
 ]
 
 [[package]]
@@ -1548,41 +1509,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "jsonrpc-derive"
-version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b68ba7e76e5c7796cfa4d2a30e83986550c34404c6d40551c902ca6f7bd4a137"
-dependencies = [
- "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "jsonrpc-pubsub"
 version = "15.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "639558e0604013be9787ae52f798506ae42bf4220fe587bdc5625871cc8b9c77"
 dependencies = [
- "jsonrpc-core 15.1.0",
+ "jsonrpc-core",
  "log",
  "parking_lot 0.10.2",
- "rand 0.7.3",
- "serde",
-]
-
-[[package]]
-name = "jsonrpc-pubsub"
-version = "17.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c48dbebce7a9c88ab272a4db7d6478aa4c6d9596e6c086366e89efc4e9ed89e"
-dependencies = [
- "futures 0.3.12",
- "jsonrpc-core 17.0.0",
- "lazy_static",
- "log",
- "parking_lot 0.11.1",
  "rand 0.7.3",
  "serde",
 ]
@@ -2199,9 +2133,9 @@ name = "pallet-encointer-communities-rpc"
 version = "0.1.0"
 dependencies = [
  "encointer-primitives",
- "jsonrpc-core 17.0.0",
- "jsonrpc-core-client 17.0.0",
- "jsonrpc-derive 17.0.0",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
  "pallet-encointer-communities-rpc-runtime-api",
  "sc-rpc",
  "sp-api",
@@ -3256,8 +3190,8 @@ source = "git+https://github.com/paritytech/substrate.git?branch=master#743accbe
 dependencies = [
  "futures 0.3.12",
  "hash-db",
- "jsonrpc-core 15.1.0",
- "jsonrpc-pubsub 15.1.0",
+ "jsonrpc-core",
+ "jsonrpc-pubsub",
  "log",
  "parity-scale-codec",
  "parking_lot 0.11.1",
@@ -3290,10 +3224,10 @@ source = "git+https://github.com/paritytech/substrate.git?branch=master#743accbe
 dependencies = [
  "derive_more",
  "futures 0.3.12",
- "jsonrpc-core 15.1.0",
- "jsonrpc-core-client 15.1.0",
- "jsonrpc-derive 15.1.0",
- "jsonrpc-pubsub 15.1.0",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "jsonrpc-pubsub",
  "log",
  "parity-scale-codec",
  "parking_lot 0.11.1",

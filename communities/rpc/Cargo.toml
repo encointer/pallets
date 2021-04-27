@@ -5,9 +5,9 @@ authors = ["Christian Langenbacher <clangenb+gh@protonmail.ch>"]
 edition = "2018"
 
 [dependencies]
-jsonrpc-core = "17.0.0"
-jsonrpc-core-client = "17.0.0"
-jsonrpc-derive = "17.0.0"
+jsonrpc-core = "15.0.0"
+jsonrpc-core-client = "15.0.0"
+jsonrpc-derive = "15.0.0"
 
 [dependencies.sp-api]
 default-features = false
