@@ -44,7 +44,7 @@ use encointer_primitives::{
         NominalIncome as NominalIncomeType,
     },
 };
-use sp_runtime::{DispatchResult, SaturatedConversion, DispatchError};
+use sp_runtime::{DispatchError, DispatchResult, SaturatedConversion};
 
 pub trait Config: frame_system::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -229,14 +229,10 @@ impl<T: Config> Module<T> {
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
-        if (loc.lat > NORTH_POLE.lat)
-            | (loc.lat < SOUTH_POLE.lat)
-            | (loc.lon > DATELINE_LON)
-            | (loc.lon < -DATELINE_LON)
-        {
-            return false;
-        }
-        true
+        (loc.lat < NORTH_POLE.lat)
+            & (loc.lat > SOUTH_POLE.lat)
+            & (loc.lon < DATELINE_LON)
+            & (loc.lon > -DATELINE_LON)
     }
 
     pub fn haversine_distance(a: &Location, b: &Location) -> u32 {
