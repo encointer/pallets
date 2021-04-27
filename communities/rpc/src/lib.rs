@@ -1,4 +1,4 @@
-use jsonrpc_core::Result;
+use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -37,9 +37,9 @@ where
 {
     fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<()> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(||
-			// If the block hash is not supplied assume the best block.
-			self.client.info().best_hash));
+        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+        let _res = api.get_cids(&at);
 
         let _res = api.get_name(&at, CommunityIdentifier::default());
         Ok(())

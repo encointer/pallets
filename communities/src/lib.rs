@@ -223,11 +223,6 @@ impl<T: Config> Module<T> {
         }
     }
 
-    pub fn get_name(cid: &CommunityIdentifier) -> Result<PalletString, DispatchError> {
-        Self::ensure_cid_exists(cid)?;
-        Ok(Self::community_metadata(cid).name)
-    }
-
     pub fn is_valid_geolocation(loc: &Location) -> bool {
         (loc.lat < NORTH_POLE.lat)
             & (loc.lat > SOUTH_POLE.lat)
@@ -312,6 +307,17 @@ impl<T: Config> Module<T> {
             }
         }
         Ok(())
+    }
+
+    // The methods below are for the runtime api
+
+    pub fn get_cids() -> Vec<CommunityIdentifier> {
+        return Self::community_identifiers();
+    }
+
+    pub fn get_name(cid: &CommunityIdentifier) -> Result<PalletString, DispatchError> {
+        Self::ensure_cid_exists(cid)?;
+        Ok(Self::community_metadata(cid).name)
     }
 }
 

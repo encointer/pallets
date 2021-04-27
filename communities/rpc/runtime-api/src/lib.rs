@@ -7,6 +7,7 @@ use encointer_primitives::{common::PalletString, communities::CommunityIdentifie
 sp_api::decl_runtime_apis! {
 
     pub trait CommunitiesApi {
+        fn get_cids() -> Vec<CommunityIdentifier>;
         fn get_name(cid: CommunityIdentifier) -> PalletString;
     }
 }
