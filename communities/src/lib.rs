@@ -259,13 +259,13 @@ impl<T: Config> Module<T> {
         i64::lossy_from(d).saturated_into()
     }
 
-    fn validate_bootstrappers(boostrappers: &Vec<T::AccountId>) -> DispatchResult {
+    fn validate_bootstrappers(bootstrappers: &Vec<T::AccountId>) -> DispatchResult {
         ensure!(
-            boostrappers.len() <= 1000,
+            bootstrappers.len() <= 1000,
             <Error<T>>::InvalidAmountBootstrappers
         );
         ensure!(
-            !boostrappers.len() >= 3,
+            !bootstrappers.len() >= 3,
             <Error<T>>::InvalidAmountBootstrappers
         );
         Ok(())
