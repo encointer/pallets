@@ -14,6 +14,12 @@ package = "sp-api"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
+[dependencies.rstd]
+default-features = false
+package = "sp-std"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
 [dependencies.encointer-primitives]
 default-features = false
 path = "../../../primitives"
@@ -21,6 +27,7 @@ path = "../../../primitives"
 [features]
 default = ["std"]
 std = [
+    "rstd/std",
     "sp-api/std",
     "encointer-primitives/std"
 ]

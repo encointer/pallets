@@ -33,7 +33,7 @@ package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
-[dependencies.communities-rpc-runtime-api]
+[dependencies.encointer-communities-rpc-runtime-api]
 default-features = false
 package = "pallet-encointer-communities-rpc-runtime-api"
 path = "runtime-api"
@@ -45,7 +45,8 @@ path = "../../primitives"
 [features]
 default = ["std"]
 std = [
-    "communities-rpc-runtime-api/std",
+    "sp-api/std",
     "sp-runtime/std",
+    "encointer-communities-rpc-runtime-api/std",
     "encointer-primitives/std"
 ]

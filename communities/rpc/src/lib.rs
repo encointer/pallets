@@ -1,11 +1,13 @@
-use jsonrpc_core::{Error, ErrorCode, Result};
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
-use communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
+use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use encointer_primitives::communities::CommunityIdentifier;
 
 #[rpc]
@@ -41,7 +43,7 @@ where
 
         let _res = api.get_cids(&at);
 
-        let _res = api.get_name(&at, CommunityIdentifier::default());
+        let _res = api.get_name(&at, &CommunityIdentifier::default());
         Ok(())
     }
 }

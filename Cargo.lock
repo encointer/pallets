@@ -2215,6 +2215,7 @@ version = "0.1.0"
 dependencies = [
  "encointer-primitives",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]

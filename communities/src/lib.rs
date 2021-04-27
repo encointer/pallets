@@ -44,7 +44,7 @@ use encointer_primitives::{
         NominalIncome as NominalIncomeType,
     },
 };
-use sp_runtime::{DispatchError, DispatchResult, SaturatedConversion};
+use sp_runtime::{DispatchResult, SaturatedConversion};
 
 pub trait Config: frame_system::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -315,9 +315,9 @@ impl<T: Config> Module<T> {
         return Self::community_identifiers();
     }
 
-    pub fn get_name(cid: &CommunityIdentifier) -> Result<PalletString, DispatchError> {
-        Self::ensure_cid_exists(cid)?;
-        Ok(Self::community_metadata(cid).name)
+    pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
+        Self::ensure_cid_exists(cid).ok()?;
+        Some(Self::community_metadata(cid).name)
     }
 }
 
