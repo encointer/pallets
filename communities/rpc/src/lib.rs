@@ -8,6 +8,7 @@ use std::sync::Arc;
 use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use encointer_primitives::common::PalletString;
 use encointer_primitives::communities::CommunityIdentifier;
+use sp_api::offchain::OffchainStorage;
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
@@ -15,31 +16,37 @@ pub trait CommunitiesApi<BlockHash> {
     fn community_names(&self, at: Option<BlockHash>) -> Result<Vec<PalletString>>;
 }
 
-pub struct Communities<Client, Block> {
+pub struct Communities<Client, Block, S> {
     client: Arc<Client>,
+    storage: Option<S>,
     _marker: std::marker::PhantomData<Block>,
 }
 
-impl<C, B> Communities<C, B> {
+impl<C, B, S> Communities<C, B, S> {
     /// Create new `Communities` with the given reference to the client.
-    pub fn new(client: Arc<C>) -> Self {
+    pub fn new(client: Arc<C>, storage: Option<S>) -> Self {
+        if storage.is_none() {
+            log::warn!("Offchain caching disabled, due to lack of offchain storage support in backend.");
+        }
+
         Communities {
             client,
+            storage,
             _marker: Default::default(),
         }
     }
 }
 
-impl<C, Block> CommunitiesApi<<Block as BlockT>::Hash> for Communities<C, Block>
+impl<C, Block, S> CommunitiesApi<<Block as BlockT>::Hash> for Communities<C, Block, S>
 where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: CommunitiesRuntimeApi<Block>,
+    S: 'static + OffchainStorage
 {
     fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<PalletString>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-
         let cids = api.get_cids(&at)
             .map_err(runtime_error_into_rpc_err)?;
 
