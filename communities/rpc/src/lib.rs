@@ -1,6 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
-use jsonrpc_core::Result;
+use jsonrpc_core::{Result, Error, ErrorCode};
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
