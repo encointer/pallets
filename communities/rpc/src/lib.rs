@@ -1,6 +1,6 @@
-use jsonrpc_core::{Result, Error, ErrorCode};
+use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
@@ -8,7 +8,8 @@ use std::sync::Arc;
 use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use encointer_primitives::common::PalletString;
 use encointer_primitives::communities::CommunityIdentifier;
-use sp_api::offchain::OffchainStorage;
+use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
+use parking_lot::RwLock;
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
@@ -18,20 +19,16 @@ pub trait CommunitiesApi<BlockHash> {
 
 pub struct Communities<Client, Block, S> {
     client: Arc<Client>,
-    storage: Option<S>,
+    storage: Arc<RwLock<S>>,
     _marker: std::marker::PhantomData<Block>,
 }
 
 impl<C, B, S> Communities<C, B, S> {
     /// Create new `Communities` with the given reference to the client.
-    pub fn new(client: Arc<C>, storage: Option<S>) -> Self {
-        if storage.is_none() {
-            log::warn!("Offchain caching disabled, due to lack of offchain storage support in backend.");
-        }
-
+    pub fn new(client: Arc<C>, storage: S) -> Self {
         Communities {
             client,
-            storage,
+            storage: Arc::new(RwLock::new(storage)),
             _marker: Default::default(),
         }
     }
@@ -42,22 +39,32 @@ where
     Block: BlockT,
     C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
     C::Api: CommunitiesRuntimeApi<Block>,
-    S: 'static + OffchainStorage
+    S: 'static + OffchainStorage,
 {
     fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<PalletString>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-        let cids = api.get_cids(&at)
-            .map_err(runtime_error_into_rpc_err)?;
+        let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
+
+        let cache = self
+            .storage.read().get(STORAGE_PREFIX, b"cids");
+
+        if cache.is_none() {
+            log::warn!("Cache is none");
+        } else {
+            log::warn!("Cache: {:?}", cache.unwrap())
+        }
 
         println!("Cids {:?}", cids);
-        let mut names :Vec<PalletString> = vec![];
+        let mut names: Vec<PalletString> = vec![];
 
         for cid in cids.iter() {
             api.get_name(&at, cid)
                 .map_err(runtime_error_into_rpc_err)?
-                .map_or_else(|| warn_storage_inconsistency(cid) ,|name| names.push(name));
+                .map_or_else(|| warn_storage_inconsistency(cid), |name| names.push(name));
         }
+
+        self.storage.write().set(STORAGE_PREFIX, b"cids", &names.encode());
 
         Ok(names)
     }

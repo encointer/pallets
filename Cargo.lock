@@ -2138,6 +2138,7 @@ dependencies = [
  "jsonrpc-derive",
  "log",
  "pallet-encointer-communities-rpc-runtime-api",
+ "parking_lot 0.11.1",
  "sc-rpc",
  "sp-api",
  "sp-blockchain",
