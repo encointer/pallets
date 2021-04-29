@@ -20,6 +20,7 @@ pub struct Communities<Client, Block, S> {
     client: Arc<Client>,
     storage: Arc<RwLock<S>>,
     _marker: std::marker::PhantomData<Block>,
+    offchain_indexing: bool
 }
 
 impl<C, B, S> Communities<C, B, S>
@@ -27,11 +28,12 @@ where
     S: 'static + OffchainStorage,
 {
     /// Create new `Communities` with the given reference to the client and to the offchain storage
-    pub fn new(client: Arc<C>, storage: S) -> Self {
+    pub fn new(client: Arc<C>, storage: S, offchain_indexing: bool) -> Self {
         Communities {
             client,
             storage: Arc::new(RwLock::new(storage)),
             _marker: Default::default(),
+            offchain_indexing
         }
     }
 
@@ -44,8 +46,7 @@ where
                 true
             }),
             None => {
-                // can also be none if no community was registered.
-                log::warn!("Cache dirty bit is none, is offchain-indexing enabled?");
+                log::warn!("Cache dirty bit is none. This is fine if no community is registered.");
                 true
             }
         }
@@ -71,6 +72,10 @@ where
     S: 'static + OffchainStorage,
 {
     fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
+        if !self.offchain_indexing {
+            return Err(offchain_indexing_disabled_error("community_cid_names"))
+        }
+
         let cids_key = b"cids";
         if !self.cache_dirty() {
             return match self.get_storage(cids_key) {
@@ -104,7 +109,8 @@ where
 
 /// Arbitrary number, but substrate uses the same
 const RUNTIME_ERROR: i64 = 1;
-const STORAGE_NOT_FOUND_ERROR: i64 = 1;
+const OFFCHAIN_INDEXING_DISABLED_ERROR: i64 = 2;
+const STORAGE_NOT_FOUND_ERROR: i64 = 3;
 
 /// Converts a runtime trap into an RPC error.
 fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
@@ -120,6 +126,14 @@ fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
         code: ErrorCode::ServerError(STORAGE_NOT_FOUND_ERROR),
         message: "Offchain storage not found".into(),
         data: Some(format!("Key {:?}", key).into()),
+    }
+}
+
+fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
+    Error {
+        code: ErrorCode::ServerError(OFFCHAIN_INDEXING_DISABLED_ERROR),
+        message: "This call is not allowed with offchain-indexing disabled".into(),
+        data: Some(format!("call {:?}", call).into()),
     }
 }
 
