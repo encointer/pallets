@@ -73,7 +73,8 @@ where
 {
     fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         if !self.offchain_indexing {
-            return Err(offchain_indexing_disabled_error("community_cid_names"))
+            let call = "community_getCidNames";
+            return Err(offchain_indexing_disabled_error(call))
         }
 
         let cids_key = b"cids";
@@ -132,7 +133,7 @@ fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
 fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
     Error {
         code: ErrorCode::ServerError(OFFCHAIN_INDEXING_DISABLED_ERROR),
-        message: "This call is not allowed with offchain-indexing disabled".into(),
+        message: "This rpc is not allowed with offchain-indexing disabled".into(),
         data: Some(format!("call {:?}", call).into()),
     }
 }
