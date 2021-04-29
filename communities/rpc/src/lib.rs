@@ -38,13 +38,14 @@ where
     /// Check cache was marked dirty by the runtime
     pub fn cache_dirty(&self) -> bool {
         match self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY_KEY) {
-            Some(b) =>  Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
+            Some(d) => Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
                 log::error!("Cache dirty bit: {:?}", e);
                 log::info!("Defaulting to dirty == true");
                 true
             }),
             None => {
-                log::warn!("Dirty is none, defaulting to dirty == true");
+                // can also be none if no community was registered.
+                log::warn!("Cache dirty bit is none, is offchain-indexing enabled?");
                 true
             }
         }
@@ -72,12 +73,14 @@ where
     fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         let cids_key = b"cids";
         if !self.cache_dirty() {
-            let cids = self.get_storage(cids_key);
-            if cids.is_some() {
-                // should only be None if no community was registered
-                log::info!("Using cached community names: {:?}", cids);
-                return Ok(cids.unwrap());
-            }
+            return match self.get_storage(cids_key) {
+                Some(cids) => {
+                    // should only be None if no community was registered
+                    log::info!("Using cached community names: {:?}", cids);
+                    Ok(cids)
+                }
+                None => Err(storage_not_found_error(cids_key)),
+            };
         }
 
         let api = self.client.runtime_api();
@@ -85,19 +88,12 @@ where
         let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
         let mut cid_names: Vec<CidName> = vec![];
 
-        for cid in cids.iter() {
-            match self.get_storage(cid.as_ref()) {
-                Some(name) => cid_names.push(CidName::new(*cid, name)),
-                None => api
-                    .get_name(&at, cid)
-                    .map_err(runtime_error_into_rpc_err)?
-                    // simply warn that about the cid in question and continue with other ones
-                    .map_or_else(
-                        || warn_storage_inconsistency(cid),
-                        |name| cid_names.push(CidName::new(*cid, name)),
-                    ),
-            };
-        }
+        cids.iter().for_each(|cid| {
+            self.get_storage(cid.as_ref()).map_or_else(
+                || warn_storage_inconsistency(cid),
+                |name| cid_names.push(CidName::new(*cid, name)),
+            )
+        });
 
         self.set_storage(cids_key, &cid_names);
         self.set_storage(CACHE_DIRTY_KEY, &false);
@@ -108,6 +104,7 @@ where
 
 /// Arbitrary number, but substrate uses the same
 const RUNTIME_ERROR: i64 = 1;
+const STORAGE_NOT_FOUND_ERROR: i64 = 1;
 
 /// Converts a runtime trap into an RPC error.
 fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
@@ -115,6 +112,14 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
         code: ErrorCode::ServerError(RUNTIME_ERROR),
         message: "Runtime trapped".into(),
         data: Some(format!("{:?}", err).into()),
+    }
+}
+
+fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
+    Error {
+        code: ErrorCode::ServerError(STORAGE_NOT_FOUND_ERROR),
+        message: "Offchain storage not found".into(),
+        data: Some(format!("Key {:?}", key).into()),
     }
 }
 
