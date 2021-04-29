@@ -6,15 +6,14 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
-use encointer_primitives::common::PalletString;
-use encointer_primitives::communities::{CommunityIdentifier, consts::CACHE_DIRTY_KEY};
+use encointer_primitives::communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier};
 use parking_lot::RwLock;
 use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
     #[rpc(name = "communities_getNames")]
-    fn community_names(&self, at: Option<BlockHash>) -> Result<Vec<PalletString>>;
+    fn community_names(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
 }
 
 pub struct Communities<Client, Block, S> {
@@ -62,9 +61,7 @@ where
     }
 
     pub fn set_storage<V: Encode>(&self, key: &[u8], val: &V) {
-        self.storage
-            .write()
-            .set(STORAGE_PREFIX, key, &val.encode());
+        self.storage.write().set(STORAGE_PREFIX, key, &val.encode());
     }
 }
 
@@ -75,9 +72,9 @@ where
     C::Api: CommunitiesRuntimeApi<Block>,
     S: 'static + OffchainStorage,
 {
-    fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<PalletString>> {
+    fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         if !self.cache_dirty() {
-            let cids =  self.get_storage(b"cids");
+            let cids = self.get_storage(b"cids");
             if cids.is_some() {
                 log::info!("Using cached community names: {:?}", cids);
                 return Ok(cids.unwrap());
@@ -87,22 +84,26 @@ where
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
         let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
-        let mut names: Vec<PalletString> = vec![];
+        let mut cid_names: Vec<CidName> = vec![];
 
         for cid in cids.iter() {
             match self.get_storage(cid.as_ref()) {
-                Some(name) => names.push(name),
-                None => api.get_name(&at, cid)
+                Some(name) => cid_names.push(CidName::new(*cid, name)),
+                None => api
+                    .get_name(&at, cid)
                     .map_err(runtime_error_into_rpc_err)?
                     // simply warn that about the cid in question and continue with other ones
-                    .map_or_else(|| warn_storage_inconsistency(cid), |name| names.push(name))
+                    .map_or_else(
+                        || warn_storage_inconsistency(cid),
+                        |name| cid_names.push(CidName::new(*cid, name)),
+                    ),
             };
         }
 
-        self.set_storage(b"cids", &names);
+        self.set_storage(b"cids", &cid_names);
         self.set_storage(CACHE_DIRTY_KEY, &false);
 
-        Ok(names)
+        Ok(cid_names)
     }
 }
 

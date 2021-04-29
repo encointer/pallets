@@ -56,6 +56,19 @@ pub struct CommunityMetadata {
     pub url: Option<PalletString>,
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct CidName {
+    pub cid: CommunityIdentifier,
+    pub name: PalletString,
+}
+
+impl CidName {
+    pub fn new(cid: CommunityIdentifier, name: PalletString) -> Self {
+        Self { cid, name }
+    }
+}
+
 impl CommunityMetadata {
     pub fn new(
         name: PalletString,
