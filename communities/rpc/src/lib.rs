@@ -26,7 +26,7 @@ impl<C, B, S> Communities<C, B, S>
 where
     S: 'static + OffchainStorage,
 {
-    /// Create new `Communities` with the given reference to the client.
+    /// Create new `Communities` with the given reference to the client and to the offchain storage
     pub fn new(client: Arc<C>, storage: S) -> Self {
         Communities {
             client,
@@ -35,9 +35,9 @@ where
         }
     }
 
+    /// Check cache was marked dirty by the runtime
     pub fn cache_dirty(&self) -> bool {
         let option_dirty = self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY_KEY);
-
         if option_dirty.is_none() {
             log::warn!("Dirty is none")
         }
@@ -46,7 +46,8 @@ where
             || true,
             |d| {
                 Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
-                    log::warn!("{:?}", e);
+                    log::error!("Cache dirty bit: {:?}", e);
+                    log::info!("Defaulting to dirty == true");
                     true
                 })
             },
@@ -73,8 +74,9 @@ where
     S: 'static + OffchainStorage,
 {
     fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
+        let cids_key = b"cids";
         if !self.cache_dirty() {
-            let cids = self.get_storage(b"cids");
+            let cids = self.get_storage(cids_key);
             if cids.is_some() {
                 log::info!("Using cached community names: {:?}", cids);
                 return Ok(cids.unwrap());
@@ -100,7 +102,7 @@ where
             };
         }
 
-        self.set_storage(b"cids", &cid_names);
+        self.set_storage(cids_key, &cid_names);
         self.set_storage(CACHE_DIRTY_KEY, &false);
 
         Ok(cid_names)

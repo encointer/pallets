@@ -319,7 +319,7 @@ impl<T: Config> Module<T> {
     // The methods below are for the runtime api
 
     pub fn get_cids() -> Vec<CommunityIdentifier> {
-        return Self::community_identifiers();
+        Self::community_identifiers()
     }
 
     pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
