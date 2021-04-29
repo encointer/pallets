@@ -1,7 +1,7 @@
 [package]
 name = "pallet-encointer-communities-rpc-runtime-api"
 version = "0.1.0"
-authors = ["Christian Langenbacher <clangenb+gh@protonmail.ch>"]
+authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
