@@ -127,6 +127,7 @@ decl_module! {
             <CommunityMetadata>::insert(&cid, &community_metadata);
 
             runtime_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
+            runtime_io::offchain_index::set(CACHE_DIRTY, &true.encode());
 
             Self::deposit_event(RawEvent::MetadataUpdated(cid));
             debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
