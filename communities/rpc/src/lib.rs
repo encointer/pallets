@@ -26,7 +26,10 @@ pub struct Communities<Client, Block, S> {
     _marker: std::marker::PhantomData<Block>,
 }
 
-impl<C, B, S> Communities<C, B, S> {
+impl<C, B, S> Communities<C, B, S>
+where
+    S: 'static + OffchainStorage,
+{
     /// Create new `Communities` with the given reference to the client.
     pub fn new(client: Arc<C>, storage: S) -> Self {
         Communities {
@@ -34,6 +37,37 @@ impl<C, B, S> Communities<C, B, S> {
             storage: Arc::new(RwLock::new(storage)),
             _marker: Default::default(),
         }
+    }
+
+    pub fn cache_dirty(&self) -> bool {
+        let option_dirty = self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY);
+
+        if option_dirty.is_none() {
+            log::warn!("Dirty is none")
+        }
+
+        option_dirty.map_or_else(
+            || true,
+            |d| {
+                Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
+                    log::warn!("{:?}", e);
+                    true
+                })
+            },
+        )
+    }
+
+    pub fn get_storage<V: Decode>(&self, key: &[u8]) -> Option<V> {
+        match self.storage.read().get(STORAGE_PREFIX, key) {
+            Some(v) => Some(Decode::decode(&mut v.as_slice()).unwrap()),
+            None => None,
+        }
+    }
+
+    pub fn set_storage<V: Encode>(&self, key: &[u8], val: &V) {
+        self.storage
+            .write()
+            .set(STORAGE_PREFIX, key, &val.encode());
     }
 }
 
@@ -45,53 +79,34 @@ where
     S: 'static + OffchainStorage,
 {
     fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<PalletString>> {
+        if !self.cache_dirty() {
+            let cids =  self.get_storage(b"cids");
+            if cids.is_some() {
+                log::info!("Using cached community names: {:?}", cids);
+                return Ok(cids.unwrap());
+            }
+        }
+
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
+        println!("Cids {:?}", cids);
+        let mut names: Vec<PalletString> = vec![];
 
-        let option_dirty = self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY);
-
-        if option_dirty.is_none() {
-            log::warn!("Dirty is none")
-        }
-
-        let dirty = option_dirty.map_or_else(
-            || true,
-            |d| {
-                Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
-                    log::warn!("{:?}", e);
-                    true
-                })
-            },
-        );
-
-        let cache = || self.storage.read().get(STORAGE_PREFIX, b"cids");
-
-        if !dirty & cache().is_some() {
-            let c = Decode::decode(&mut cache().unwrap().as_slice()).unwrap();
-            log::warn!("Using cached value: {:?}", c);
-            return Ok(c);
-        } else {
-            let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
-            println!("Cids {:?}", cids);
-            let mut names: Vec<PalletString> = vec![];
-
-            for cid in cids.iter() {
-                api.get_name(&at, cid)
+        for cid in cids.iter() {
+            match self.get_storage(cid.as_ref()) {
+                Some(name) => names.push(name),
+                None => api.get_name(&at, cid)
                     .map_err(runtime_error_into_rpc_err)?
                     // simply warn that about the cid in question and continue with other ones
-                    .map_or_else(|| warn_storage_inconsistency(cid), |name| names.push(name));
-            }
-
-            self.storage
-                .write()
-                .set(STORAGE_PREFIX, b"cids", &names.encode());
-
-            self.storage
-                .write()
-                .set(STORAGE_PREFIX, CACHE_DIRTY, &false.encode());
-
-            Ok(names)
+                    .map_or_else(|| warn_storage_inconsistency(cid), |name| names.push(name))
+            };
         }
+
+        self.set_storage(b"cids", &names);
+        self.set_storage(CACHE_DIRTY, &false);
+
+        Ok(names)
     }
 }
 
