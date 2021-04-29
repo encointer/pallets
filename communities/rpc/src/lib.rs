@@ -37,21 +37,17 @@ where
 
     /// Check cache was marked dirty by the runtime
     pub fn cache_dirty(&self) -> bool {
-        let option_dirty = self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY_KEY);
-        if option_dirty.is_none() {
-            log::warn!("Dirty is none")
+        match self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY_KEY) {
+            Some(b) =>  Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
+                log::error!("Cache dirty bit: {:?}", e);
+                log::info!("Defaulting to dirty == true");
+                true
+            }),
+            None => {
+                log::warn!("Dirty is none, defaulting to dirty == true");
+                true
+            }
         }
-
-        option_dirty.map_or_else(
-            || true,
-            |d| {
-                Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
-                    log::error!("Cache dirty bit: {:?}", e);
-                    log::info!("Defaulting to dirty == true");
-                    true
-                })
-            },
-        )
     }
 
     pub fn get_storage<V: Decode>(&self, key: &[u8]) -> Option<V> {
@@ -78,6 +74,7 @@ where
         if !self.cache_dirty() {
             let cids = self.get_storage(cids_key);
             if cids.is_some() {
+                // should only be None if no community was registered
                 log::info!("Using cached community names: {:?}", cids);
                 return Ok(cids.unwrap());
             }
