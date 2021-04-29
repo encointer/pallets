@@ -19,8 +19,8 @@ pub trait CommunitiesApi<BlockHash> {
 pub struct Communities<Client, Block, S> {
     client: Arc<Client>,
     storage: Arc<RwLock<S>>,
+    offchain_indexing: bool,
     _marker: std::marker::PhantomData<Block>,
-    offchain_indexing: bool
 }
 
 impl<C, B, S> Communities<C, B, S>
@@ -32,12 +32,12 @@ where
         Communities {
             client,
             storage: Arc::new(RwLock::new(storage)),
+            offchain_indexing,
             _marker: Default::default(),
-            offchain_indexing
         }
     }
 
-    /// Check cache was marked dirty by the runtime
+    /// Check if cache was marked dirty by the runtime
     pub fn cache_dirty(&self) -> bool {
         match self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY_KEY) {
             Some(d) => Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
@@ -74,14 +74,13 @@ where
     fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         if !self.offchain_indexing {
             let call = "community_getCidNames";
-            return Err(offchain_indexing_disabled_error(call))
+            return Err(offchain_indexing_disabled_error(call));
         }
 
         let cids_key = b"cids";
         if !self.cache_dirty() {
             return match self.get_storage(cids_key) {
                 Some(cids) => {
-                    // should only be None if no community was registered
                     log::info!("Using cached community names: {:?}", cids);
                     Ok(cids)
                 }
@@ -108,8 +107,7 @@ where
     }
 }
 
-/// Arbitrary number, but substrate uses the same
-const RUNTIME_ERROR: i64 = 1;
+const RUNTIME_ERROR: i64 = 1; // Arbitrary number, but substrate uses the same
 const OFFCHAIN_INDEXING_DISABLED_ERROR: i64 = 2;
 const STORAGE_NOT_FOUND_ERROR: i64 = 3;
 
@@ -134,7 +132,7 @@ fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
     Error {
         code: ErrorCode::ServerError(OFFCHAIN_INDEXING_DISABLED_ERROR),
         message: "This rpc is not allowed with offchain-indexing disabled".into(),
-        data: Some(format!("call {:?}", call).into()),
+        data: Some(format!("call: {:?}", call).into()),
     }
 }
 
