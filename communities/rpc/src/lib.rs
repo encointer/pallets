@@ -12,8 +12,8 @@ use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
-    #[rpc(name = "communities_getNames")]
-    fn community_names(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
+    #[rpc(name = "communities_getCidNames")]
+    fn community_cid_names(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
 }
 
 pub struct Communities<Client, Block, S> {
@@ -72,7 +72,7 @@ where
     C::Api: CommunitiesRuntimeApi<Block>,
     S: 'static + OffchainStorage,
 {
-    fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
+    fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         if !self.cache_dirty() {
             let cids = self.get_storage(b"cids");
             if cids.is_some() {
