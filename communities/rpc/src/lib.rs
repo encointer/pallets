@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+#[cfg(test)]
+mod tests;
+
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
@@ -25,6 +28,8 @@ use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeA
 use encointer_primitives::communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier};
 use parking_lot::RwLock;
 use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
+
+const CIDS_KEY: &[u8; 4] = b"cids";
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
@@ -92,14 +97,13 @@ where
             return Err(offchain_indexing_disabled_error("community_getCidNames"));
         }
 
-        let cids_key = b"cids";
         if !self.cache_dirty() {
-            return match self.get_storage(cids_key) {
+            return match self.get_storage(CIDS_KEY) {
                 Some(cids) => {
                     log::info!("Using cached community names: {:?}", cids);
                     Ok(cids)
                 }
-                None => Err(storage_not_found_error(cids_key)),
+                None => Err(storage_not_found_error(CIDS_KEY)),
             };
         }
 
@@ -115,7 +119,7 @@ where
             )
         });
 
-        self.set_storage(cids_key, &cid_names);
+        self.set_storage(CIDS_KEY, &cid_names);
         self.set_storage(CACHE_DIRTY_KEY, &false);
 
         Ok(cid_names)

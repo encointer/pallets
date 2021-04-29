@@ -37,3 +37,10 @@ path = "runtime-api"
 
 [dependencies.encointer-primitives]
 path = "../../primitives"
+
+[dev-dependencies]
+
+[dev-dependencies.sp-core]
+package = "sp-core"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
