@@ -171,6 +171,9 @@ pub mod consts {
     // dec2hex(6371000,8)
     // in meters
     pub const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
+
+    /// Dirty bit key for offfchain storage
+    pub const CACHE_DIRTY_KEY: &[u8] = b"dirty";
 }
 
 #[cfg(test)]

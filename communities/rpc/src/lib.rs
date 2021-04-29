@@ -7,12 +7,9 @@ use std::sync::Arc;
 
 use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use encointer_primitives::common::PalletString;
-use encointer_primitives::communities::CommunityIdentifier;
+use encointer_primitives::communities::{CommunityIdentifier, consts::CACHE_DIRTY_KEY};
 use parking_lot::RwLock;
 use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
-
-// Todo: consolidate declaration in primitives once sybil stuff is feature gated
-const CACHE_DIRTY: &[u8] = b"dirty";
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
@@ -40,7 +37,7 @@ where
     }
 
     pub fn cache_dirty(&self) -> bool {
-        let option_dirty = self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY);
+        let option_dirty = self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY_KEY);
 
         if option_dirty.is_none() {
             log::warn!("Dirty is none")
@@ -90,7 +87,6 @@ where
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
         let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
-        println!("Cids {:?}", cids);
         let mut names: Vec<PalletString> = vec![];
 
         for cid in cids.iter() {
@@ -104,7 +100,7 @@ where
         }
 
         self.set_storage(b"cids", &names);
-        self.set_storage(CACHE_DIRTY, &false);
+        self.set_storage(CACHE_DIRTY_KEY, &false);
 
         Ok(names)
     }

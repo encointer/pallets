@@ -52,7 +52,6 @@ pub trait Config: frame_system::Config {
 
 // Logger target
 const LOG: &str = "encointer";
-const CACHE_DIRTY: &[u8] = b"dirty";
 
 decl_storage! {
     trait Store for Module<T: Config> as EncointerCommunities {
@@ -111,7 +110,7 @@ decl_module! {
             nominal_income.map(|i| <NominalIncome>::insert(&cid, i));
 
             runtime_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
-            runtime_io::offchain_index::set(CACHE_DIRTY, &true.encode());
+            runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
@@ -127,7 +126,7 @@ decl_module! {
             <CommunityMetadata>::insert(&cid, &community_metadata);
 
             runtime_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
-            runtime_io::offchain_index::set(CACHE_DIRTY, &true.encode());
+            runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
             Self::deposit_event(RawEvent::MetadataUpdated(cid));
             debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
