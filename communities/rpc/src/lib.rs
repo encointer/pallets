@@ -1,6 +1,6 @@
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use sp_api::{Encode, ProvideRuntimeApi};
+use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
@@ -8,8 +8,11 @@ use std::sync::Arc;
 use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use encointer_primitives::common::PalletString;
 use encointer_primitives::communities::CommunityIdentifier;
-use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 use parking_lot::RwLock;
+use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
+
+// Todo: consolidate declaration in primitives once sybil stuff is feature gated
+const CACHE_DIRTY: &[u8] = b"dirty";
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
@@ -44,29 +47,51 @@ where
     fn community_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<PalletString>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-        let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
 
-        let cache = self
-            .storage.read().get(STORAGE_PREFIX, b"cids");
+        let option_dirty = self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY);
 
-        if cache.is_none() {
-            log::warn!("Cache is none");
+        if option_dirty.is_none() {
+            log::warn!("Dirty is none")
+        }
+
+        let dirty = option_dirty.map_or_else(
+            || true,
+            |d| {
+                Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
+                    log::warn!("{:?}", e);
+                    true
+                })
+            },
+        );
+
+        let cache = || self.storage.read().get(STORAGE_PREFIX, b"cids");
+
+        if !dirty & cache().is_some() {
+            let c = Decode::decode(&mut cache().unwrap().as_slice()).unwrap();
+            log::warn!("Using cached value: {:?}", c);
+            return Ok(c);
         } else {
-            log::warn!("Cache: {:?}", cache.unwrap())
+            let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
+            println!("Cids {:?}", cids);
+            let mut names: Vec<PalletString> = vec![];
+
+            for cid in cids.iter() {
+                api.get_name(&at, cid)
+                    .map_err(runtime_error_into_rpc_err)?
+                    // simply warn that about the cid in question and continue with other ones
+                    .map_or_else(|| warn_storage_inconsistency(cid), |name| names.push(name));
+            }
+
+            self.storage
+                .write()
+                .set(STORAGE_PREFIX, b"cids", &names.encode());
+
+            self.storage
+                .write()
+                .set(STORAGE_PREFIX, CACHE_DIRTY, &false.encode());
+
+            Ok(names)
         }
-
-        println!("Cids {:?}", cids);
-        let mut names: Vec<PalletString> = vec![];
-
-        for cid in cids.iter() {
-            api.get_name(&at, cid)
-                .map_err(runtime_error_into_rpc_err)?
-                .map_or_else(|| warn_storage_inconsistency(cid), |name| names.push(name));
-        }
-
-        self.storage.write().set(STORAGE_PREFIX, b"cids", &names.encode());
-
-        Ok(names)
     }
 }
 
