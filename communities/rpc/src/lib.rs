@@ -89,8 +89,7 @@ where
 {
     fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         if !self.offchain_indexing {
-            let call = "community_getCidNames";
-            return Err(offchain_indexing_disabled_error(call));
+            return Err(offchain_indexing_disabled_error("community_getCidNames"));
         }
 
         let cids_key = b"cids";
@@ -154,5 +153,5 @@ fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
 
 /// This should never happen!
 fn warn_storage_inconsistency(cid: &CommunityIdentifier) {
-    log::warn!("Storage inconsistency. Could not find cid: {:?} in runtime storage. This is a fatal bug in the pallet", cid)
+    log::warn!("Storage inconsistency. Could not find cid: {:?} in offchain storage. This is a fatal bug in the pallet", cid)
 }
