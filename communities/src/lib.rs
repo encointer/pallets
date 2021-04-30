@@ -37,6 +37,7 @@ use runtime_io::hashing::blake2_256;
 
 use encointer_primitives::{
     balances::{BalanceType, Demurrage},
+    common::PalletString,
     communities::{
         consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
         CommunityMetadata as CommunityMetadataType, Degree, Location, LossyFrom,
@@ -103,10 +104,13 @@ decl_module! {
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
             <Locations>::insert(&cid, &loc);
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
-            <CommunityMetadata>::insert(&cid, community_metadata);
+            <CommunityMetadata>::insert(&cid, &community_metadata);
 
             demurrage.map(|d| <DemurragePerBlock>::insert(&cid, d));
             nominal_income.map(|i| <NominalIncome>::insert(&cid, i));
+
+            runtime_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
+            runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             debug::info!(target: LOG, "registered community with cid: {:?}", cid);
@@ -119,7 +123,11 @@ decl_module! {
             Self::ensure_cid_exists(&cid)?;
             community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
 
-            <CommunityMetadata>::insert(&cid, community_metadata);
+            <CommunityMetadata>::insert(&cid, &community_metadata);
+
+            runtime_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
+            runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+
             Self::deposit_event(RawEvent::MetadataUpdated(cid));
             debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
         }
@@ -223,14 +231,10 @@ impl<T: Config> Module<T> {
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
-        if (loc.lat > NORTH_POLE.lat)
-            | (loc.lat < SOUTH_POLE.lat)
-            | (loc.lon > DATELINE_LON)
-            | (loc.lon < -DATELINE_LON)
-        {
-            return false;
-        }
-        true
+        (loc.lat < NORTH_POLE.lat)
+            & (loc.lat > SOUTH_POLE.lat)
+            & (loc.lon < DATELINE_LON)
+            & (loc.lon > -DATELINE_LON)
     }
 
     pub fn haversine_distance(a: &Location, b: &Location) -> u32 {
@@ -253,13 +257,13 @@ impl<T: Config> Module<T> {
         i64::lossy_from(d).saturated_into()
     }
 
-    fn validate_bootstrappers(boostrappers: &Vec<T::AccountId>) -> DispatchResult {
+    fn validate_bootstrappers(bootstrappers: &Vec<T::AccountId>) -> DispatchResult {
         ensure!(
-            boostrappers.len() <= 1000,
+            bootstrappers.len() <= 1000,
             <Error<T>>::InvalidAmountBootstrappers
         );
         ensure!(
-            !boostrappers.len() >= 3,
+            !bootstrappers.len() >= 3,
             <Error<T>>::InvalidAmountBootstrappers
         );
         Ok(())
@@ -310,6 +314,17 @@ impl<T: Config> Module<T> {
             }
         }
         Ok(())
+    }
+
+    // The methods below are for the runtime api
+
+    pub fn get_cids() -> Vec<CommunityIdentifier> {
+        Self::community_identifiers()
+    }
+
+    pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
+        Self::ensure_cid_exists(cid).ok()?;
+        Some(Self::community_metadata(cid).name)
     }
 }
 

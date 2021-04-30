@@ -3,6 +3,8 @@ members = [
     'scheduler',
     'balances',
     'communities',
+    'communities/rpc',
+    'communities/rpc/runtime-api',
     'ceremonies',
     'bazaar',
     'sybil-gate-template',

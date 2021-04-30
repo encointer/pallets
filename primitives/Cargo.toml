@@ -1,7 +1,7 @@
 [package]
 name = "encointer-primitives"
 version = "0.4.0"
-authors = ["Christian Langenbacher <christian.langenbacher91@gmail.com>"]
+authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies.codec]
