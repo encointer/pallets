@@ -33,8 +33,8 @@ const CIDS_KEY: &[u8; 4] = b"cids";
 
 #[rpc]
 pub trait CommunitiesApi<BlockHash> {
-    #[rpc(name = "communities_getCidNames")]
-    fn community_cid_names(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
+    #[rpc(name = "communities_getAll")]
+    fn communities_get_all(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
 }
 
 pub struct Communities<Client, Block, S> {
@@ -92,15 +92,15 @@ where
     C::Api: CommunitiesRuntimeApi<Block>,
     S: 'static + OffchainStorage,
 {
-    fn community_cid_names(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
+    fn communities_get_all(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         if !self.offchain_indexing {
-            return Err(offchain_indexing_disabled_error("community_getCidNames"));
+            return Err(offchain_indexing_disabled_error("communities_getAll"));
         }
 
         if !self.cache_dirty() {
             return match self.get_storage(CIDS_KEY) {
                 Some(cids) => {
-                    log::info!("Using cached community names: {:?}", cids);
+                    log::info!("Using cached community list: {:?}", cids);
                     Ok(cids)
                 }
                 None => Err(storage_not_found_error(CIDS_KEY)),
