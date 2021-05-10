@@ -6,4 +6,6 @@ pub mod ceremonies;
 pub mod common;
 pub mod communities;
 pub mod scheduler;
+
+#[cfg(feature = "sybil")]
 pub mod sybil;
