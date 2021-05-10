@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies.encointer-primitives]
 default-features = false
+features = ["sybil"]
 package = "encointer-primitives"
 path = "../primitives"
 
