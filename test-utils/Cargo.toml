@@ -14,6 +14,7 @@ package = "pallet-encointer-communities"
 
 [dependencies.encointer-primitives]
 package = "encointer-primitives"
+features = ["sybil"]
 path = "../primitives"
 
 [dependencies.codec]

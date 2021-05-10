@@ -36,6 +36,7 @@ branch = "master"
 
 [dependencies.xcm]
 default-features = false
+optional = true
 package = "xcm"
 git = "https://github.com/paritytech/polkadot.git"
 branch = "master"
@@ -47,6 +48,7 @@ version = "1.0.101"
 
 [features]
 default = ["std"]
+sybil = ["xcm"]
 std = [
     "codec/std",
     "fixed/std",
