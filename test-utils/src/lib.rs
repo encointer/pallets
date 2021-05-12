@@ -194,6 +194,7 @@ macro_rules! impl_encointer_ceremonies {
             type Event = ();
             type Public = <Signature as Verify>::Signer;
             type Signature = Signature;
+            type RandomnessSource = frame_support::traits::TestRandomness;
         }
     };
 }

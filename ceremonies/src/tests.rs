@@ -25,7 +25,7 @@ use encointer_primitives::{
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::assert_ok;
-use frame_support::traits::{OnFinalize, OnInitialize, UnfilteredDispatchable};
+use frame_support::traits::{OnFinalize, OnInitialize, UnfilteredDispatchable, TestRandomness};
 use inherents::ProvideInherent;
 use rstest::*;
 use sp_core::crypto::Ss58Codec;
@@ -67,6 +67,7 @@ impl Config for TestRuntime {
     type Event = ();
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
+    type RandomnessSource = TestRandomness;
 }
 
 pub struct ExtBuilder;
