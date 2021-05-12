@@ -50,8 +50,10 @@ mod tests {
 
     #[test]
     fn random_permutation_works() {
-        let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new( BlakeTwo256::hash(b"my_seed"));
-        let mut random_source_2 = RandomNumberGenerator::<BlakeTwo256>::new(BlakeTwo256::hash(b"my_seed2"));
+        let mut random_source =
+            RandomNumberGenerator::<BlakeTwo256>::new(BlakeTwo256::hash(b"my_seed"));
+        let mut random_source_2 =
+            RandomNumberGenerator::<BlakeTwo256>::new(BlakeTwo256::hash(b"my_seed2"));
         let input = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
         assert_eq!(
@@ -70,5 +72,10 @@ mod tests {
             input.random_permutation(&mut random_source_2),
             Some(vec![1, 7, 8, 9, 2, 3, 10, 5, 4, 6])
         );
+
+        assert_eq!(
+            Vec::<u8>::new().random_permutation(&mut random_source_2),
+            None
+        )
     }
 }
