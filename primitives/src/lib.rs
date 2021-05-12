@@ -8,6 +8,7 @@ pub mod communities;
 pub mod scheduler;
 
 pub mod bs58_verify;
+pub mod random_permutation;
 
 #[cfg(feature = "sybil")]
 pub mod sybil;
