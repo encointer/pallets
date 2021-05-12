@@ -50,24 +50,25 @@ mod tests {
 
     #[test]
     fn random_permutation_works() {
-        let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new([1u8; 32].into());
-        let mut random_source_2 = RandomNumberGenerator::<BlakeTwo256>::new([2u8; 32].into());
+        let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new( BlakeTwo256::hash(b"my_seed"));
+        let mut random_source_2 = RandomNumberGenerator::<BlakeTwo256>::new(BlakeTwo256::hash(b"my_seed2"));
         let input = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
         assert_eq!(
             input.clone().random_permutation(&mut random_source),
-            Some(vec![2, 10, 9, 8, 7, 6, 5, 4, 3, 1])
+            Some(vec![5, 9, 7, 4, 6, 8, 2, 3, 1, 10])
         );
 
         // second time should yield other output
         assert_eq!(
             input.clone().random_permutation(&mut random_source),
-            Some(vec![2, 10, 9, 8, 7, 6, 5, 4, 3, 1])
-        ); // Todo: this should not be the same as the first try, why does it not change?
+            Some(vec![9, 8, 3, 5, 6, 2, 10, 4, 7, 1])
+        );
 
+        // different seed, different output
         assert_eq!(
             input.random_permutation(&mut random_source_2),
-            Some(vec![3, 10, 9, 8, 7, 6, 5, 4, 1, 2])
+            Some(vec![1, 7, 8, 9, 2, 3, 10, 5, 4, 6])
         );
     }
 }
