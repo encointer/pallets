@@ -65,6 +65,10 @@ pub struct Bs58verify {}
 impl Bs58verify {
     const BITCOIN_ALPHABET: &'static [u8] =
         b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+    // This closure was taken from the original verifier, which also supports other alphabets.
+    // Upon initialization the decode map is generated for the chosen alphabet. Here, one could
+    // argue to hardcode the decode map for efficiency.
     const BITCOIN_DECODE_MAP: fn() -> [u8; 128] = || -> [u8; 128] {
         let mut decode = [0xFF; 128];
 
