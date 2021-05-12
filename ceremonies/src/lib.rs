@@ -404,6 +404,8 @@ impl<T: Config> Module<T> {
                 T::RandomnessSource::random_seed()
             );
 
+            // if we don't need the results immediately, chaining iterators is the fastest to
+            // concatenate `vec`s. If we need to collect, it is the slowest.
             let all_participants = bootstrappers
                 .into_iter()
                 .chain(reputables
