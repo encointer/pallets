@@ -34,11 +34,40 @@ impl<T> RandomPermutation for Vec<T> {
             let mut r = vec![];
             let size = input.len();
 
-            for i in 0..=size {
+            for i in 1..=size {
                 // swap remove is O(1)
                 r.push(input.swap_remove(random.pick_usize(size - i)));
             }
             return Some(r);
         };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sp_runtime::traits::BlakeTwo256;
+
+    #[test]
+    fn random_permutation_works() {
+        let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new([1u8; 32].into());
+        let mut random_source_2 = RandomNumberGenerator::<BlakeTwo256>::new([2u8; 32].into());
+        let input = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+        assert_eq!(
+            input.clone().random_permutation(&mut random_source),
+            Some(vec![2, 10, 9, 8, 7, 6, 5, 4, 3, 1])
+        );
+
+        // second time should yield other output
+        assert_eq!(
+            input.clone().random_permutation(&mut random_source),
+            Some(vec![2, 10, 9, 8, 7, 6, 5, 4, 3, 1])
+        ); // Todo: this should not be the same as the first try, why does it not change?
+
+        assert_eq!(
+            input.random_permutation(&mut random_source_2),
+            Some(vec![3, 10, 9, 8, 7, 6, 5, 4, 1, 2])
+        );
     }
 }
