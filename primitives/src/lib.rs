@@ -7,5 +7,7 @@ pub mod common;
 pub mod communities;
 pub mod scheduler;
 
+pub mod bs58_verify;
+
 #[cfg(feature = "sybil")]
 pub mod sybil;

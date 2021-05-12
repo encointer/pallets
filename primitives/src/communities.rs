@@ -191,7 +191,8 @@ pub mod consts {
 
 #[cfg(test)]
 mod tests {
-    use crate::common::{Bs58Error, IpfsValidationError};
+    use crate::bs58_verify::{Bs58Error};
+    use crate::common::{IpfsValidationError};
     use crate::communities::{
         validate_demurrage, validate_nominal_income, CommunityMetadata, CommunityMetadataError,
         Demurrage, NominalIncome,
