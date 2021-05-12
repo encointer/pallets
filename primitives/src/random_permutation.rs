@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+//! A simple trait that allows pseudo-random permutations on arbitrary `vec`s.
+
 use sp_runtime::traits::Hash;
 use sp_runtime::RandomNumberGenerator;
 
