@@ -34,7 +34,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     storage::{StorageDoubleMap, StorageMap},
-    traits::Get,
+    traits::{Get, Randomness},
 };
 use frame_system::ensure_signed;
 
@@ -52,7 +52,8 @@ use encointer_primitives::{
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{SaturatedConversion, RandomNumberGenerator};
+use encointer_primitives::random_permutation::RandomPermutation;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -67,6 +68,7 @@ pub trait Config:
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
+    type RandomnessSource: Randomness<Self::Hash>;
 }
 
 // This module's storage items.
@@ -415,11 +417,27 @@ impl<T: Config> Module<T> {
                 n = n_locations * 12;
             }
 
+            let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
+                T::RandomnessSource::random_seed()
+            );
+
             let all_participants = bootstrappers
                 .into_iter()
-                .chain(reputables.into_iter())
-                .chain(endorsees.into_iter())
-                .chain(newbies.into_iter());
+                .chain(reputables
+                    .random_permutation(&mut random_source)
+                    .unwrap_or_default()
+                    .into_iter()
+                )
+                .chain(endorsees
+                    .random_permutation(&mut random_source)
+                    .unwrap_or_default()
+                    .into_iter()
+                )
+                .chain(newbies
+                    .random_permutation(&mut random_source)
+                    .unwrap_or_default()
+                    .into_iter()
+                );
 
             let mut n_meetups = n / 12;
             if n.rem_euclid(12) > 0 {
