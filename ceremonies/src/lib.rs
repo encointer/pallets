@@ -352,6 +352,14 @@ impl<T: Config> Module<T> {
         let cids = <encointer_communities::Module<T>>::community_identifiers();
         let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
+        let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
+            // we don't need to pass a subject here, as this is only called once in a block.
+            // However, without subject this should be initialized outside the community loop, otherwise
+            // every community gets the same sequence of permutations if there are the same amount of
+            // people per category (bootstrappers, reputables, etc.).
+            T::RandomnessSource::random_seed()
+        );
+
         for cid in cids.iter() {
             let pcount = <ParticipantCount>::get((cid, cindex));
             let ecount = <EndorseesCount>::get((cid, cindex));
@@ -400,9 +408,6 @@ impl<T: Config> Module<T> {
                 n = n_locations * 12;
             }
 
-            let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
-                T::RandomnessSource::random_seed()
-            );
 
             // if we don't need the results immediately, chaining iterators is the fastest to
             // concatenate `vec`s. If we need to collect, it is the slowest.
