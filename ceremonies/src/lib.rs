@@ -199,11 +199,11 @@ decl_module! {
             debug::debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
                 meetup_index, mlocation, mtime, cid);
             for claim in claims.iter() {
-                let claim_account = &claim.claimant_public;
-                if !meetup_participants.contains(claim_account) {
+                let claimant = &claim.claimant_public;
+                if !meetup_participants.contains(claimant) {
                     debug::warn!(target: LOG,
                         "ignoring claim that isn't a meetup participant: {:?}",
-                        claim_account);
+                        claimant);
                     continue };
                 if claim.ceremony_index != cindex {
                     debug::warn!(target: LOG,
@@ -249,7 +249,7 @@ decl_module! {
                     debug::warn!(target: LOG, "ignoring claim with bad signature for {:?}", sender);
                     continue };
                 // claim is legit. insert it!
-                verified_attestees.insert(0, claim_account.clone());
+                verified_attestees.insert(0, claimant.clone());
                 // is it a problem if this number isn't equal for all claims? Guess not.
                 claim_n_participants = claim.number_of_participants_confirmed;
             }
@@ -261,8 +261,10 @@ decl_module! {
             let mut idx = count+1;
 
             if <AttestationIndex<T>>::contains_key((cid, cindex), &sender) {
+                // update previously registered set
                 idx = <AttestationIndex<T>>::get((cid, cindex), &sender);
             } else {
+                // add new set of attestees
                 let new_count = count.checked_add(1).
                     ok_or("[EncointerCeremonies]: Overflow adding set of attestees to registry")?;
                 <AttestationCount>::insert((cid, cindex), new_count);
@@ -271,8 +273,7 @@ decl_module! {
             <AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
             <MeetupParticipantCountVote<T>>::insert((cid, cindex), &sender, &claim_n_participants);
             debug::debug!(target: LOG,
-                "successfully registered {} claims for {:?}",
-                verified_attestees.len(), sender);
+                "successfully registered {} claims", verified_attestees.len());
             Ok(())
         }
 
