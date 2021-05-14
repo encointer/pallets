@@ -865,7 +865,7 @@ fn ballot_meetup_n_votes_works() {
 
         attest_all(
             account_id(&alice),
-            &vec![&bob],
+            &vec![&bob, &charlie],
             cid,
             1,
             1,
@@ -884,18 +884,8 @@ fn ballot_meetup_n_votes_works() {
             5,
         );
         attest_all(
-            account_id(&charlie),
-            &vec![&alice],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&dave),
-            &vec![&alice],
+            account_id(&alice),
+            &vec![&dave],
             cid,
             1,
             1,
@@ -904,8 +894,8 @@ fn ballot_meetup_n_votes_works() {
             4,
         );
         attest_all(
-            account_id(&eve),
-            &vec![&alice],
+            account_id(&alice),
+            &vec![&eve, &ferdie],
             cid,
             1,
             1,
@@ -913,17 +903,8 @@ fn ballot_meetup_n_votes_works() {
             time,
             6,
         );
-        attest_all(
-            account_id(&ferdie),
-            &vec![&dave],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            6,
-        );
-        assert!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1) == Some((5, 3)));
+        // votes should be (5, 3), (6, 2), (4, 1)
+        assert_eq!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1), Some((5, 3)));
     });
 }
 
