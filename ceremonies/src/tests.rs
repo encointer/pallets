@@ -257,7 +257,7 @@ fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519
 /// shorthand for attesting one claimant by many attesters. register all attestation to chain
 fn attest_all(
     attestor: AccountId,
-    attestees: Vec<sr25519::Pair>,
+    attestees: &Vec<&sr25519::Pair>,
     cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
     mindex: MeetupIndexType,
@@ -269,14 +269,14 @@ fn attest_all(
     for a in attestees {
         claims.push(
             TestClaim::new_unsigned(
-                a.clone().public().into(),
+                a.public().into(),
                 cindex,
                 cid,
                 mindex,
                 location,
                 timestamp,
                 n_participants
-            ).sign(&a)
+            ).sign(*a)
         );
     }
 
@@ -309,7 +309,7 @@ fn perform_bootstrapping_ceremony(
     for i in 0..bootstrappers.len() {
         let mut bs = bootstrappers.clone();
         let claimant = bs.remove(i);
-        attest_all(account_id(&claimant), bs, cid, cindex, 1, loc, time, 6);
+        attest_all(account_id(&claimant), &bs.iter().collect(), cid, cindex, 1, loc, time, 6);
     }
 
     run_to_next_phase();
@@ -346,7 +346,7 @@ fn fully_attest_meetup(
         let time = correct_meetup_time(&cid, mindex);
         attest_all(
             (*p).clone(),
-            others,
+            &others.iter().collect(),
             cid,
             cindex,
             mindex,
@@ -453,7 +453,7 @@ fn attest_claims_works() {
         let time = correct_meetup_time(&cid, 1);
         attest_all(
             account_id(&alice),
-            vec![bob.clone(), ferdie.clone()],
+            &vec![&bob, &ferdie],
             cid,
             1,
             1,
@@ -463,7 +463,7 @@ fn attest_claims_works() {
         );
         attest_all(
             account_id(&bob),
-            vec![alice.clone(), ferdie.clone()],
+            &vec![&alice, &ferdie],
             cid,
             1,
             1,
@@ -485,7 +485,7 @@ fn attest_claims_works() {
         // TEST: re-registering must overwrite previous entry
         attest_all(
             account_id(&alice),
-            vec![bob.clone(), ferdie.clone()],
+            &vec![&bob, &ferdie],
             cid,
             1,
             1,
@@ -511,7 +511,7 @@ fn attest_claims_for_non_participant_fails_silently() {
 
         attest_all(
             account_id(&alice),
-            vec![bob.clone(), alice.clone()],
+            &vec![&bob, &alice],
             cid,
             1,
             1,
@@ -587,7 +587,7 @@ fn attest_claims_with_non_participant_fails_silently() {
         // ATTESTING
         attest_all(
             account_id(&alice),
-            vec![bob.clone(), eve.clone()],
+            &vec![&bob, &eve],
             cid,
             1,
             1,
@@ -846,7 +846,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&ferdie),
-            vec![dave.clone()],
+            &vec![&alice],
             cid,
             cindex,
             1,
@@ -854,6 +854,7 @@ fn ballot_meetup_n_votes_works() {
             time,
             6,
         );
+        // assert that majority vote was successful
         assert_eq!(
             EncointerCeremonies::ballot_meetup_n_votes(&cid, cindex, 1),
             Some((5, 5))
@@ -861,7 +862,7 @@ fn ballot_meetup_n_votes_works() {
 
         attest_all(
             account_id(&alice),
-            vec![bob.clone()],
+            &vec![&bob],
             cid,
             1,
             1,
@@ -871,7 +872,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&bob),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -881,7 +882,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&charlie),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -891,7 +892,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&dave),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -901,7 +902,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&eve),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -911,7 +912,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&ferdie),
-            vec![dave.clone()],
+            &vec![&dave],
             cid,
             1,
             1,
@@ -923,7 +924,7 @@ fn ballot_meetup_n_votes_works() {
 
         attest_all(
             account_id(&alice),
-            vec![bob.clone()],
+            &vec![&bob],
             cid,
             1,
             1,
@@ -933,7 +934,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&bob),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -943,7 +944,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&charlie),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -953,7 +954,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&dave),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -963,7 +964,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&eve),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -973,7 +974,7 @@ fn ballot_meetup_n_votes_works() {
         );
         attest_all(
             account_id(&ferdie),
-            vec![dave.clone()],
+            &vec![&dave],
             cid,
             1,
             1,
@@ -1011,7 +1012,7 @@ fn issue_reward_works() {
         let time = correct_meetup_time(&cid, 1);
         attest_all(
             account_id(&alice),
-            vec![bob.clone(), charlie.clone(), dave.clone()],
+            &vec![&bob, &charlie, &dave],
             cid,
             1,
             1,
@@ -1021,7 +1022,7 @@ fn issue_reward_works() {
         );
         attest_all(
             account_id(&bob),
-            vec![alice.clone(), charlie.clone(), dave.clone()],
+            &vec![&alice, &charlie, &dave],
             cid,
             1,
             1,
@@ -1031,7 +1032,7 @@ fn issue_reward_works() {
         );
         attest_all(
             account_id(&charlie),
-            vec![alice.clone(), bob.clone()],
+            &vec![&alice, &bob],
             cid,
             1,
             1,
@@ -1041,7 +1042,7 @@ fn issue_reward_works() {
         );
         attest_all(
             account_id(&dave),
-            vec![alice.clone(), bob.clone(), charlie.clone()],
+            &vec![&alice, &bob, &charlie],
             cid,
             1,
             1,
@@ -1051,7 +1052,7 @@ fn issue_reward_works() {
         );
         attest_all(
             account_id(&eve),
-            vec![alice.clone(), bob.clone(), charlie.clone(), dave.clone()],
+            &vec![&alice, &bob, &charlie, &dave],
             cid,
             1,
             1,
@@ -1061,7 +1062,7 @@ fn issue_reward_works() {
         );
         attest_all(
             account_id(&ferdie),
-            vec![dave.clone()],
+            &vec![&dave],
             cid,
             1,
             1,
