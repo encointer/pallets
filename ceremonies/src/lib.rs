@@ -199,6 +199,11 @@ decl_module! {
                 meetup_index, mlocation, mtime, cid);
             for claim in claims.iter() {
                 let claimant = &claim.claimant_public;
+                if claimant == &sender {
+					debug::warn!(target: LOG,
+                        "ignoring claim that isn't is from sender: {:?}",
+                        claimant);
+                    continue };
                 if !meetup_participants.contains(claimant) {
                     debug::warn!(target: LOG,
                         "ignoring claim that isn't a meetup participant: {:?}",
