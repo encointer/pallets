@@ -512,7 +512,7 @@ impl<T: Config> Module<T> {
                         }
                     };
                 let meetup_participants = Self::meetup_registry((cid, cindex), &m);
-                for p in meetup_participants {
+                for p in &meetup_participants {
                     if Self::meetup_participant_count_vote((cid, cindex), &p) != n_confirmed {
                         debug::debug!(
                             target: LOG,
@@ -535,11 +535,10 @@ impl<T: Config> Module<T> {
                     }
 
                     let mut was_attested_count = 0u32;
-                    // Todo: Attestations by participants that are not attestees are missed here.
-                    // If we want to allow non-mutual attestations, we could even save some
-                    // runtime storage because then we exclusively use the `attestation_registry`
-                    // to get the amount of attestees.
-                    for w in &attestees {
+                    let mut other_participants = meetup_participants.clone();
+                    other_participants.retain(|x| x != p);
+
+                    for w in &other_participants {
                         let attestees_from_other = Self::attestation_registry(
                             (cid, cindex),
                             &Self::attestation_index((cid, cindex), &w),
@@ -552,9 +551,8 @@ impl<T: Config> Module<T> {
                     if was_attested_count < (n_honest_participants - 1)
                     {
                         debug::debug!(
-                            target: LOG,
                             "skipped participant because of too few attestations ({}): {:?}",
-                            attestees.len(),
+                            was_attested_count,
                             p
                         );
                         continue;
