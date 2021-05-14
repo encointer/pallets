@@ -250,8 +250,11 @@ decl_module! {
                     continue };
                 // claim is legit. insert it!
                 verified_attestees.insert(0, claimant.clone());
-                // is it a problem if this number isn't equal for all claims? Guess not.
                 claim_n_participants = claim.number_of_participants_confirmed;
+
+                // is it a problem if this number isn't equal for all claims? Guess not.
+                // is it a problem that this gets inserted multiple times? Guess not.
+                <MeetupParticipantCountVote<T>>::insert((cid, cindex), &claimant, &claim.number_of_participants_confirmed);
             }
             if verified_attestees.is_empty() {
                 return Err(<Error<T>>::NoValidClaims.into());
@@ -271,7 +274,6 @@ decl_module! {
             }
             <AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestees);
             <AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
-            <MeetupParticipantCountVote<T>>::insert((cid, cindex), &sender, &claim_n_participants);
             debug::debug!(target: LOG,
                 "successfully registered {} claims", verified_attestees.len());
             Ok(())
