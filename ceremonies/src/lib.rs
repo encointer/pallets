@@ -172,7 +172,7 @@ decl_module! {
         }
 
         #[weight = 10_000]
-        pub fn register_attestations(origin, attestations: Vec<Attestation<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
+        pub fn attest_claims(origin, attestations: Vec<Attestation<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
