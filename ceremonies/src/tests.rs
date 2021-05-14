@@ -288,7 +288,7 @@ fn gets_attested_by(
             ),
         );
     }
-    assert_ok!(EncointerCeremonies::register_attestations(
+    assert_ok!(EncointerCeremonies::attest_claims(
         Origin::signed(claimant),
         attestations.clone()
     ));
@@ -464,7 +464,7 @@ fn verify_attestation_signature_works() {
 }
 
 #[test]
-fn register_attestations_works() {
+fn attest_claims_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -528,7 +528,7 @@ fn register_attestations_works() {
 }
 
 #[test]
-fn register_attestations_for_non_participant_fails_silently() {
+fn attest_claims_for_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -557,7 +557,7 @@ fn register_attestations_for_non_participant_fails_silently() {
 }
 
 #[test]
-fn register_attestations_for_non_participant_fails() {
+fn attest_claims_for_non_participant_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -597,7 +597,7 @@ fn register_attestations_for_non_participant_fails() {
                 3,
             ),
         );
-        assert!(EncointerCeremonies::register_attestations(
+        assert!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&eve)),
             eve_attestations.clone()
         )
@@ -606,7 +606,7 @@ fn register_attestations_for_non_participant_fails() {
 }
 
 #[test]
-fn register_attestations_with_non_participant_fails_silently() {
+fn attest_claims_with_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -635,7 +635,7 @@ fn register_attestations_with_non_participant_fails_silently() {
 }
 
 #[test]
-fn register_attestations_with_wrong_meetup_index_fails() {
+fn attest_claims_with_wrong_meetup_index_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -671,7 +671,7 @@ fn register_attestations_with_wrong_meetup_index_fails() {
                 public: account_id(&ferdie),
             },
         );
-        assert_ok!(EncointerCeremonies::register_attestations(
+        assert_ok!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
             alice_attestations
         ));
@@ -682,7 +682,7 @@ fn register_attestations_with_wrong_meetup_index_fails() {
 }
 
 #[test]
-fn register_attestations_with_wrong_ceremony_index_fails() {
+fn attest_claims_with_wrong_ceremony_index_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -718,7 +718,7 @@ fn register_attestations_with_wrong_ceremony_index_fails() {
                 public: account_id(&ferdie),
             },
         );
-        assert_ok!(EncointerCeremonies::register_attestations(
+        assert_ok!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
             alice_attestations
         ));
@@ -729,7 +729,7 @@ fn register_attestations_with_wrong_ceremony_index_fails() {
 }
 
 #[test]
-fn register_attestations_with_wrong_timestamp_fails() {
+fn attest_claims_with_wrong_timestamp_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -767,7 +767,7 @@ fn register_attestations_with_wrong_timestamp_fails() {
             time,
             3,
         ));
-        assert!(EncointerCeremonies::register_attestations(
+        assert!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
             alice_attestations
         )
@@ -778,7 +778,7 @@ fn register_attestations_with_wrong_timestamp_fails() {
 }
 
 #[test]
-fn register_attestations_with_wrong_location_fails() {
+fn attest_claims_with_wrong_location_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -815,7 +815,7 @@ fn register_attestations_with_wrong_location_fails() {
             time,
             3,
         ));
-        assert!(EncointerCeremonies::register_attestations(
+        assert!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
             alice_attestations
         )
