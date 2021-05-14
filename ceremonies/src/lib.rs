@@ -518,23 +518,23 @@ impl<T: Config> Module<T> {
                         );
                         continue;
                     }
-                    let attestations = Self::attestation_registry(
+                    let attestees = Self::attestation_registry(
                         (cid, cindex),
                         &Self::attestation_index((cid, cindex), &p),
                     );
-                    if attestations.len() < (n_honest_participants - 1) as usize
-                        || attestations.is_empty()
+                    if attestees.len() < (n_honest_participants - 1) as usize
+                        || attestees.is_empty()
                     {
                         debug::debug!(
                             target: LOG,
                             "skipped participant because of too few attestations ({}): {:?}",
-                            attestations.len(),
+                            attestees.len(),
                             p
                         );
                         continue;
                     }
                     let mut has_attested = 0u32;
-                    for w in attestations {
+                    for w in attestees {
                         let w_attestations = Self::attestation_registry(
                             (cid, cindex),
                             &Self::attestation_index((cid, cindex), &w),
