@@ -190,7 +190,6 @@ decl_module! {
             let num_registered = meetup_participants.len();
             ensure!(claims.len() <= num_registered, "can\'t have more claims than other meetup participants");
             let mut verified_attestees = vec!();
-            let mut claim_n_participants = 0u32;
 
             let mlocation = if let Some(l) = Self::get_meetup_location(&cid, meetup_index)
                 { l } else { return Err(<Error<T>>::MeetupLocationNotFound.into()) };
@@ -250,7 +249,6 @@ decl_module! {
                     continue };
                 // claim is legit. insert it!
                 verified_attestees.insert(0, claimant.clone());
-                claim_n_participants = claim.number_of_participants_confirmed;
 
                 // is it a problem if this number isn't equal for all claims? Guess not.
                 // is it a problem that this gets inserted multiple times? Guess not.
