@@ -245,7 +245,7 @@ decl_module! {
                             claim.timestamp);
                         continue };
                 }
-                if Self::verify_attestation_signature(claim.clone()).is_err() {
+                if !claim.verify() {
                     debug::warn!(target: LOG, "ignoring claim with bad signature for {:?}", sender);
                     continue };
                 // claim is legit. insert it!
@@ -463,22 +463,6 @@ impl<T: Config> Module<T> {
             );
         }
         debug::debug!(target: LOG, "meetup assignments done");
-    }
-
-    fn verify_attestation_signature(
-        attestation: Attestation<T::Signature, T::AccountId, T::Moment>,
-    ) -> DispatchResult {
-        ensure!(
-            attestation.public != attestation.claim.claimant_public,
-            "attestation may not be self-signed"
-        );
-        match attestation
-            .signature
-            .verify(&attestation.claim.encode()[..], &attestation.public)
-        {
-            true => Ok(()),
-            false => Err(<Error<T>>::BadAttestationSignature.into()),
-        }
     }
 
     fn verify_attendee_signature(
