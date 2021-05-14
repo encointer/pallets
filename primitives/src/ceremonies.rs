@@ -117,7 +117,7 @@ impl<Signature, AccountId: Encode, Moment: Encode + Copy>
             .encode()
     }
 
-    pub fn sign<P>(self, pair: P) -> Self
+    pub fn sign<P>(self, pair: &P) -> Self
     where
     P: Pair,
     Signature: From<P::Signature>
