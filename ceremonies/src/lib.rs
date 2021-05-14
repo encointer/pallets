@@ -189,7 +189,7 @@ decl_module! {
             meetup_participants.retain(|x| x != &sender);
             let num_registered = meetup_participants.len();
             ensure!(claims.len() <= num_registered, "can\'t have more claims than other meetup participants");
-            let mut verified_attestation_accounts = vec!();
+            let mut verified_attestees = vec!();
             let mut claim_n_participants = 0u32;
 
             let mlocation = if let Some(l) = Self::get_meetup_location(&cid, meetup_index)
@@ -249,11 +249,11 @@ decl_module! {
                     debug::warn!(target: LOG, "ignoring claim with bad signature for {:?}", sender);
                     continue };
                 // claim is legit. insert it!
-                verified_attestation_accounts.insert(0, claim_account.clone());
+                verified_attestees.insert(0, claim_account.clone());
                 // is it a problem if this number isn't equal for all claims? Guess not.
                 claim_n_participants = claim.number_of_participants_confirmed;
             }
-            if verified_attestation_accounts.is_empty() {
+            if verified_attestees.is_empty() {
                 return Err(<Error<T>>::NoValidAttestations.into());
             }
 
@@ -264,15 +264,15 @@ decl_module! {
                 idx = <AttestationIndex<T>>::get((cid, cindex), &sender);
             } else {
                 let new_count = count.checked_add(1).
-                    ok_or("[EncointerCeremonies]: Overflow adding new attestation to registry")?;
+                    ok_or("[EncointerCeremonies]: Overflow adding set of attestees to registry")?;
                 <AttestationCount>::insert((cid, cindex), new_count);
             }
-            <AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestation_accounts);
+            <AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestees);
             <AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
             <MeetupParticipantCountVote<T>>::insert((cid, cindex), &sender, &claim_n_participants);
             debug::debug!(target: LOG,
                 "successfully registered {} claims for {:?}",
-                verified_attestation_accounts.len(), sender);
+                verified_attestees.len(), sender);
             Ok(())
         }
 
