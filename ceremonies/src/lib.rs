@@ -522,8 +522,28 @@ impl<T: Config> Module<T> {
                         (cid, cindex),
                         &Self::attestation_index((cid, cindex), &p),
                     );
-                    if attestees.len() < (n_honest_participants - 1) as usize
-                        || attestees.is_empty()
+                    if attestees.len() < (n_honest_participants - 1) as usize {
+                        debug::debug!(
+                            target: LOG,
+                            "skipped participant because didn't testify for honest peers: {:?}",
+                            p
+                        );
+                        continue;
+                    }
+
+                    let mut was_attested_count = 0u32;
+                    // Todo: Attestations by participants that are not attestees are missed here
+                    for w in attestees {
+                        let attestees_from_other = Self::attestation_registry(
+                            (cid, cindex),
+                            &Self::attestation_index((cid, cindex), &w),
+                        );
+                        if attestees_from_other.contains(&p) {
+                            was_attested_count += 1;
+                        }
+                    }
+
+                    if was_attested_count < (n_honest_participants - 1)
                     {
                         debug::debug!(
                             target: LOG,
@@ -533,24 +553,7 @@ impl<T: Config> Module<T> {
                         );
                         continue;
                     }
-                    let mut has_attested = 0u32;
-                    for w in attestees {
-                        let w_attestations = Self::attestation_registry(
-                            (cid, cindex),
-                            &Self::attestation_index((cid, cindex), &w),
-                        );
-                        if w_attestations.contains(&p) {
-                            has_attested += 1;
-                        }
-                    }
-                    if has_attested < (n_honest_participants - 1) {
-                        debug::debug!(
-                            target: LOG,
-                            "skipped participant because didn't testify for honest peers: {:?}",
-                            p
-                        );
-                        continue;
-                    }
+
                     debug::trace!(target: LOG, "participant merits reward: {:?}", p);
                     if <encointer_balances::Module<T>>::issue(*cid, &p, reward).is_ok() {
                         <ParticipantReputation<T>>::insert(
