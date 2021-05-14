@@ -99,6 +99,18 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
             claimant_signature: None,
         }
     }
+
+    pub fn set_claimant(self, claimant: AccountId) -> Self {
+        let mut claim_mut = self;
+        claim_mut.claimant_public = claimant;
+        claim_mut
+    }
+
+    pub fn set_participant_count(self, count: u32) -> Self {
+        let mut claim_mut = self;
+        claim_mut.number_of_participants_confirmed = count;
+        claim_mut
+    }
 }
 
 impl<Signature, AccountId: Encode, Moment: Encode + Copy>

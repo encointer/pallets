@@ -254,7 +254,7 @@ fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519
     participants
 }
 
-/// shorthand for attesting one claimant by many attesters. register all attestation to chain
+/// shorthand for generating multiple identical signed claims of the attestees
 fn attest_all(
     attestor: AccountId,
     attestees: &Vec<&sr25519::Pair>,
@@ -282,7 +282,14 @@ fn attest_all(
 
     assert_ok!(EncointerCeremonies::attest_claims(
         Origin::signed(attestor),
-        claims.clone()
+        claims
+    ));
+}
+
+fn attest(attestor: AccountId, claims: Vec<TestClaim>) {
+    assert_ok!(EncointerCeremonies::attest_claims(
+        Origin::signed(attestor),
+        claims
     ));
 }
 
@@ -914,84 +921,57 @@ fn issue_reward_works() {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
-        let ferdie = AccountKeyring::Ferdie.pair();
         let charlie = AccountKeyring::Charlie.pair();
         let dave = AccountKeyring::Dave.pair();
         let eve = AccountKeyring::Eve.pair();
+        let ferdie = AccountKeyring::Ferdie.pair();
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);
         register_charlie_dave_eve(cid);
+
+        let loc = Location::default();
+        let time = correct_meetup_time(&cid, 1);
+
+        let claim_base = TestClaim::new_unsigned(
+            account_id(&alice),
+            cindex,
+            cid,
+            1,
+            loc,
+            time,
+            5,
+        );
+
+        let claim_alice = claim_base.clone().sign(&alice);
+        let claim_bob = claim_base.clone().set_claimant(account_id(&bob)).sign(&bob);
+        let claim_charlie = claim_base.clone().set_claimant(account_id(&charlie)).sign(&alice);
+        let claim_dave = claim_base.clone()
+            .set_claimant(account_id(&dave))
+            .set_participant_count(6)
+            .sign(&dave);
+        let claim_eve = claim_base.clone().set_claimant(account_id(&eve)).sign(&eve);
+        let claim_ferdie = claim_base.clone().set_claimant(account_id(&ferdie)).sign(&ferdie);
 
         run_to_next_phase();
         // ASSIGNING
         run_to_next_phase();
         // ATTESTING
-        // ferdi doesn't show up
-        // eve signs no one else
-        // charlie collects incomplete signatures
-        // dave signs ferdi and reports wrong number of participants
-        let loc = Location::default();
-        let time = correct_meetup_time(&cid, 1);
-        attest_all(
-            account_id(&alice),
-            &vec![&bob, &charlie, &dave],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&bob),
-            &vec![&alice, &charlie, &dave],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&charlie),
-            &vec![&alice, &bob],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&dave),
-            &vec![&alice, &bob, &charlie],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            6,
-        );
-        attest_all(
-            account_id(&eve),
-            &vec![&alice, &bob, &charlie, &dave],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&ferdie),
-            &vec![&dave],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            6,
-        );
+        // Scenario:
+        //      ferdie doesn't show up
+        //      eve signs no one else
+        //      charlie collects bogus signatures
+        //      dave signs ferdie and reports wrong number of participants
+
+        // alice attests all others except for ferdie, who doesn't show up
+        attest(account_id(&alice), vec![claim_bob.clone(), claim_charlie.clone(), claim_dave.clone(), claim_eve.clone()]);
+        // bob attests all others except for ferdie, who doesn't show up
+        attest(account_id(&bob), vec![claim_alice.clone(), claim_charlie.clone(), claim_dave.clone(), claim_eve.clone()]);
+        // charlie attests all others except for ferdie, who doesn't shows up, but he supplies erroneous signatures with the others' claims
+        attest(account_id(&charlie), vec![claim_alice.clone(), claim_bob.clone(), claim_dave.clone(), claim_eve.clone()]);
+        // dave attests all others plus nonexistent ferdie and reports wrong number
+        attest(account_id(&dave), vec![claim_alice.clone(), claim_bob.clone(), claim_charlie.clone(), claim_eve.clone(), claim_ferdie.clone()]);
+        // eve does not attest anybody...
+        // ferdie is not here...
 
         assert_eq!(EncointerBalances::balance(cid, &account_id(&alice)), ZERO);
 
