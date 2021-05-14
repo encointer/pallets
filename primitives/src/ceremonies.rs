@@ -52,7 +52,7 @@ pub struct Attestation<Signature, AccountId, Moment> {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-pub struct ClaimOfAttendance<AccountId, Moment> {
+pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
     pub claimant_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
     pub community_identifier: CommunityIdentifier,
@@ -60,6 +60,7 @@ pub struct ClaimOfAttendance<AccountId, Moment> {
     pub location: Location,
     pub timestamp: Moment,
     pub number_of_participants_confirmed: u32,
+    pub claimant_signature: Signature,
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
