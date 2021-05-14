@@ -254,7 +254,7 @@ decl_module! {
                 claim_n_participants = claim.number_of_participants_confirmed;
             }
             if verified_attestees.is_empty() {
-                return Err(<Error<T>>::NoValidAttestations.into());
+                return Err(<Error<T>>::NoValidClaims.into());
             }
 
             let count = <AttestationCount>::get((cid, cindex));
@@ -324,7 +324,7 @@ decl_error! {
         BadAttendeeSignature,
         MeetupLocationNotFound,
         MeetupTimeCalculationError,
-        NoValidAttestations
+        NoValidClaims
     }
 }
 
