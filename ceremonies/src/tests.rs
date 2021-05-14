@@ -780,10 +780,10 @@ fn ballot_meetup_n_votes_works() {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
-        let ferdie = AccountKeyring::Ferdie.pair();
         let charlie = AccountKeyring::Charlie.pair();
         let dave = AccountKeyring::Dave.pair();
         let eve = AccountKeyring::Eve.pair();
+        let ferdie = AccountKeyring::Ferdie.pair();
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);
         register_charlie_dave_eve(cid);
@@ -796,47 +796,7 @@ fn ballot_meetup_n_votes_works() {
         let time = correct_meetup_time(&cid, 1);
         attest_all(
             account_id(&alice),
-            vec![bob.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&bob),
-            vec![alice.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&charlie),
-            vec![alice.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&dave),
-            vec![alice.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        attest_all(
-            account_id(&eve),
-            vec![alice.clone()],
+            &vec![&bob, &charlie, &dave, &eve, &ferdie],
             cid,
             cindex,
             1,
