@@ -172,14 +172,14 @@ decl_module! {
         }
 
         #[weight = 10_000]
-        pub fn attest_claims(origin, attestations: Vec<Attestation<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
+        pub fn attest_claims(origin, claims: Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
             debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
-                "registering attestations can only be done during ATTESTING phase");
+                "registering claims can only be done during ATTESTING phase");
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-            ensure!(!attestations.is_empty(), "empty attestations supplied");
-            let cid = attestations[0].claim.community_identifier;
+            ensure!(!claims.is_empty(), "empty claims supplied");
+            let cid = claims[0].community_identifier;
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 "CommunityIdentifier not found");
 
@@ -188,7 +188,7 @@ decl_module! {
             ensure!(meetup_participants.contains(&sender), "origin not part of this meetup");
             meetup_participants.retain(|x| x != &sender);
             let num_registered = meetup_participants.len();
-            ensure!(attestations.len() <= num_registered, "can\'t have more attestations than other meetup participants");
+            ensure!(claims.len() <= num_registered, "can\'t have more claims than other meetup participants");
             let mut verified_attestation_accounts = vec!();
             let mut claim_n_participants = 0u32;
 
@@ -198,60 +198,60 @@ decl_module! {
                 { t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
             debug::debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
                 meetup_index, mlocation, mtime, cid);
-            for attestation in attestations.iter() {
-                let attestation_account = &attestation.public;
-                if !meetup_participants.contains(attestation_account) {
+            for claim in claims.iter() {
+                let claim_account = &claim.claimant_public;
+                if !meetup_participants.contains(claim_account) {
                     debug::warn!(target: LOG,
-                        "ignoring attestation that isn't a meetup participant: {:?}",
-                        attestation_account);
+                        "ignoring claim that isn't a meetup participant: {:?}",
+                        claim_account);
                     continue };
-                if attestation.claim.ceremony_index != cindex {
+                if claim.ceremony_index != cindex {
                     debug::warn!(target: LOG,
                         "ignoring claim with wrong ceremony index: {}",
-                        attestation.claim.ceremony_index);
+                        claim.ceremony_index);
                     continue };
-                if attestation.claim.community_identifier != cid {
+                if claim.community_identifier != cid {
                     debug::warn!(target: LOG,
                         "ignoring claim with wrong community identifier: {:?}",
-                        attestation.claim.community_identifier);
+                        claim.community_identifier);
                     continue };
-                if attestation.claim.meetup_index != meetup_index {
+                if claim.meetup_index != meetup_index {
                     debug::warn!(target: LOG,
                         "ignoring claim with wrong meetup index: {}",
-                        attestation.claim.meetup_index);
+                        claim.meetup_index);
                     continue };
                 if !<encointer_communities::Module<T>>::is_valid_geolocation(
-                    &attestation.claim.location) {
+                    &claim.location) {
                         debug::warn!(target: LOG,
                             "ignoring claim with illegal geolocation: {:?}",
-                            attestation.claim.location);
+                            claim.location);
                         continue };
                 if <encointer_communities::Module<T>>::haversine_distance(
-                    &mlocation, &attestation.claim.location) > Self::location_tolerance() {
+                    &mlocation, &claim.location) > Self::location_tolerance() {
                         debug::warn!(target: LOG,
                             "ignoring claim beyond location tolerance: {:?}",
-                            attestation.claim.location);
+                            claim.location);
                         continue };
-                if let Some(dt) = mtime.checked_sub(&attestation.claim.timestamp) {
+                if let Some(dt) = mtime.checked_sub(&claim.timestamp) {
                     if dt > Self::time_tolerance() {
                         debug::warn!(target: LOG,
                             "ignoring claim beyond time tolerance (too early): {:?}",
-                            attestation.claim.timestamp);
+                            claim.timestamp);
                         continue };
-                } else if let Some(dt) = attestation.claim.timestamp.checked_sub(&mtime) {
+                } else if let Some(dt) = claim.timestamp.checked_sub(&mtime) {
                     if dt > Self::time_tolerance() {
                         debug::warn!(target: LOG,
                             "ignoring claim beyond time tolerance (too late): {:?}",
-                            attestation.claim.timestamp);
+                            claim.timestamp);
                         continue };
                 }
-                if Self::verify_attestation_signature(attestation.clone()).is_err() {
-                    debug::warn!(target: LOG, "ignoring attestation with bad signature for {:?}", sender);
+                if Self::verify_attestation_signature(claim.clone()).is_err() {
+                    debug::warn!(target: LOG, "ignoring claim with bad signature for {:?}", sender);
                     continue };
-                // attestation is legit. insert it!
-                verified_attestation_accounts.insert(0, attestation_account.clone());
+                // claim is legit. insert it!
+                verified_attestation_accounts.insert(0, claim_account.clone());
                 // is it a problem if this number isn't equal for all claims? Guess not.
-                claim_n_participants = attestation.claim.number_of_participants_confirmed;
+                claim_n_participants = claim.number_of_participants_confirmed;
             }
             if verified_attestation_accounts.is_empty() {
                 return Err(<Error<T>>::NoValidAttestations.into());
@@ -271,7 +271,7 @@ decl_module! {
             <AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
             <MeetupParticipantCountVote<T>>::insert((cid, cindex), &sender, &claim_n_participants);
             debug::debug!(target: LOG,
-                "sucessfully registered {} attestations for {:?}",
+                "successfully registered {} claims for {:?}",
                 verified_attestation_accounts.len(), sender);
             Ok(())
         }
