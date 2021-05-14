@@ -534,7 +534,7 @@ impl<T: Config> Module<T> {
                     // If we want to allow non-mutual attestations, we could even save some
                     // runtime storage because then we exclusively use the `attestation_registry`
                     // to get the amount of attestees.
-                    for w in attestees {
+                    for w in &attestees {
                         let attestees_from_other = Self::attestation_registry(
                             (cid, cindex),
                             &Self::attestation_index((cid, cindex), &w),
