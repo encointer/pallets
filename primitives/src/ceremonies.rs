@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
-use sp_core::{Pair, RuntimeDebug, H256};
+use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash, IdentifyAccount, Verify};
 
 use crate::communities::{CommunityIdentifier, Location};
@@ -25,6 +25,12 @@ pub type ParticipantIndexType = u64;
 pub type MeetupIndexType = u64;
 pub type AttestationIndexType = u64;
 pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
+
+#[cfg(not(feature = "std"))]
+use rstd::vec::Vec;
+
+#[cfg(feature = "std")]
+use sp_core::Pair;
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
 pub enum Reputation {
@@ -129,13 +135,15 @@ impl<Signature, AccountId: Encode, Moment: Encode + Copy>
             .encode()
     }
 
+    #[cfg(feature = "std")]
     pub fn sign<P>(self, pair: &P) -> Self
     where
-    P: Pair,
-    Signature: From<P::Signature>
+        P: Pair,
+        Signature: From<P::Signature>,
     {
         let mut claim_mut = self;
-        claim_mut.claimant_signature = Some(Signature::from(pair.sign(&claim_mut.payload_encoded()[..])));
+        claim_mut.claimant_signature =
+            Some(Signature::from(pair.sign(&claim_mut.payload_encoded()[..])));
         claim_mut
     }
 }
@@ -144,7 +152,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
     pub fn verify(&self) -> bool
     where
         Signature: Verify,
-        <Signature as Verify>::Signer: IdentifyAccount<AccountId =AccountId>,
+        <Signature as Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
         AccountId: Clone + Encode,
         Moment: Copy + Encode,
     {
