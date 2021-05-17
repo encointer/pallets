@@ -966,7 +966,7 @@ fn issue_reward_works() {
         attest(account_id(&alice), vec![claim_bob.clone(), claim_charlie.clone(), claim_dave.clone(), claim_eve.clone()]);
         // bob attests all others except for ferdie, who doesn't show up
         attest(account_id(&bob), vec![claim_alice.clone(), claim_charlie.clone(), claim_dave.clone(), claim_eve.clone()]);
-        // charlie attests all others except for ferdie, who doesn't shows up, but he supplies erroneous signatures with the others' claims
+        // charlie attests all others except for ferdie, who doesn't show up, but he supplies erroneous signatures with the others' claims
         attest(account_id(&charlie), vec![claim_alice.clone(), claim_bob.clone(), claim_dave.clone(), claim_eve.clone()]);
         // dave attests all others plus nonexistent ferdie and reports wrong number
         attest(account_id(&dave), vec![claim_alice.clone(), claim_bob.clone(), claim_charlie.clone(), claim_eve.clone(), claim_ferdie.clone()]);
