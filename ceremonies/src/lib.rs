@@ -249,7 +249,7 @@ decl_module! {
                             claim.timestamp);
                         continue };
                 }
-                if !claim.verify() {
+                if !claim.verify_signature() {
                     debug::warn!(target: LOG, "ignoring claim with bad signature for {:?}", sender);
                     continue };
                 // claim is legit. insert it!

@@ -149,7 +149,7 @@ impl<Signature, AccountId: Encode, Moment: Encode + Copy>
 }
 
 impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Moment> {
-    pub fn verify(&self) -> bool
+    pub fn verify_signature(&self) -> bool
     where
         Signature: Verify,
         <Signature as Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
@@ -211,6 +211,6 @@ mod tests {
         )
         .sign(&alice);
 
-        assert!(claim.verify())
+        assert!(claim.verify_signature())
     }
 }
