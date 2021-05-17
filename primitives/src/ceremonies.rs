@@ -190,3 +190,27 @@ pub mod consts {
     pub const REPUTATION_LIFETIME: u32 = 1;
     pub const AMOUNT_NEWBIE_TICKETS: u8 = 50;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_utils::AccountKeyring;
+    use test_utils::{Signature, AccountId, Moment};
+
+    #[test]
+    fn claim_verification_works() {
+        let alice = AccountKeyring::Alice.pair();
+        let claim = ClaimOfAttendance::<Signature, AccountId, Moment>::new_unsigned(
+            alice.public().into(),
+            1,
+            Default::default(),
+            1,
+            Default::default(),
+            Default::default(),
+            3,
+        )
+        .sign(&alice);
+
+        assert!(claim.verify())
+    }
+}

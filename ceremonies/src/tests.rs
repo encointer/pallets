@@ -420,27 +420,6 @@ fn registering_participant_in_wrong_phase_fails() {
 }
 
 #[test]
-fn verify_claim_signature_works() {
-    // Todo: this test should be moved to where `ClaimOfAttendance` is defined
-    ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
-        let claimant = AccountKeyring::Alice.pair();
-
-        let claim = signed_claim(
-            &claimant,
-            cid,
-            1,
-             1,
-            Location::default(),
-            correct_meetup_time(&cid, 1),
-            3,
-        );
-
-        assert_eq!(claim.verify(), true);
-    });
-}
-
-#[test]
 fn attest_claims_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
