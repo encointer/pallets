@@ -681,6 +681,7 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "substrate-fixed",
+ "test-utils",
  "xcm",
 ]
 
