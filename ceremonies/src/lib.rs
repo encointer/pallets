@@ -201,7 +201,7 @@ decl_module! {
                 let claimant = &claim.claimant_public;
                 if claimant == &sender {
 					debug::warn!(target: LOG,
-                        "ignoring claim that isn't is from sender: {:?}",
+                        "ignoring claim that is from sender: {:?}",
                         claimant);
                     continue };
                 if !meetup_participants.contains(claimant) {
