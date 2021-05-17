@@ -1242,17 +1242,6 @@ fn endorsing_two_newbies_works() {
     });
 }
 
-/*
-#[test]
-fn test_random_permutation_works() {
-    ExtBuilder::build().execute_with(|| {
-        let ordered = vec!(1u8, 2, 3, 4, 5, 6);
-        let permutation = EncointerCeremonies::random_permutation(ordered);
-        println!("random permutation result {}", permutation);
-    });
-}
-*/
-
 // integration tests ////////////////////////////////
 
 #[test]
