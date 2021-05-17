@@ -535,13 +535,13 @@ impl<T: Config> Module<T> {
                     }
 
                     let mut was_attested_count = 0u32;
-                    let mut other_participants = meetup_participants.clone();
-                    other_participants.retain(|x| x != p);
-
-                    for w in &other_participants {
+                    for other_participant in &meetup_participants {
+                        if other_participant == p {
+                            continue;
+                        }
                         let attestees_from_other = Self::attestation_registry(
                             (cid, cindex),
-                            &Self::attestation_index((cid, cindex), &w),
+                            &Self::attestation_index((cid, cindex), &other_participant),
                         );
                         if attestees_from_other.contains(&p) {
                             was_attested_count += 1;
