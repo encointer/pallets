@@ -56,5 +56,6 @@ std = [
     "rstd/std",
     "serde",
     "sp-core/std",
+    "sp-core/full_crypto",
     "sp-runtime/std",
 ]
