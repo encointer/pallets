@@ -119,12 +119,12 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
     }
 }
 
-impl<Signature, AccountId: Encode, Moment: Encode + Copy>
+impl<Signature, AccountId: Clone + Encode, Moment: Encode + Copy>
     ClaimOfAttendance<Signature, AccountId, Moment>
 {
     pub fn payload_encoded(&self) -> Vec<u8> {
         (
-            self.claimant_public.encode(),
+            self.claimant_public.clone(),
             self.ceremony_index,
             self.community_identifier,
             self.meetup_index,
