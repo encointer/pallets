@@ -1,5 +1,23 @@
+// Copyright (c) 2019 Alain Brenzikofer
+// This file is part of Encointer
+//
+// Encointer is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Encointer is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
+
 use codec::{Decode, Encode};
 use sp_core::RuntimeDebug;
+
+use crate::bs58_verify::{Bs58Error, Bs58verify};
 
 #[cfg(not(feature = "std"))]
 use rstd::vec::Vec;
@@ -18,7 +36,6 @@ pub trait AsByteOrNoop {
 }
 
 impl AsByteOrNoop for PalletString {
-
     #[cfg(feature = "std")]
     fn as_bytes_or_noop(&self) -> &[u8] {
         self.as_bytes()
@@ -57,43 +74,4 @@ pub enum IpfsValidationError {
     /// Invalid length supplied. Should be 46. Is: \[length\]
     InvalidLength(u8),
     InvalidBase58(Bs58Error),
-}
-
-/// Simple Bs58 verification adapted from https://github.com/mycorrhiza/bs58-rs
-pub struct Bs58verify {}
-
-impl Bs58verify {
-    const BITCOIN_ALPHABET: &'static [u8] =
-        b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-    const BITCOIN_DECODE_MAP: fn() -> [u8; 128] = || -> [u8; 128] {
-        let mut decode = [0xFF; 128];
-
-        let mut i = 0;
-        while i < Self::BITCOIN_ALPHABET.len() {
-            decode[Self::BITCOIN_ALPHABET[i] as usize] = i as u8;
-            i += 1;
-        }
-        return decode;
-    };
-
-    pub fn verify(bytes: &[u8]) -> Result<(), Bs58Error> {
-        for (i, c) in bytes.iter().enumerate() {
-            if *c > 127 {
-                return Err(Bs58Error::NonAsciiCharacter(i as u8));
-            }
-
-            if Self::BITCOIN_DECODE_MAP()[*c as usize] as usize == 0xFF {
-                return Err(Bs58Error::NonBs58Character(i as u8));
-            }
-        }
-        Ok(())
-    }
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-pub enum Bs58Error {
-    /// Non ascii character at index
-    NonAsciiCharacter(u8),
-    /// Non bs58 character at index
-    NonBs58Character(u8),
 }

@@ -34,7 +34,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     storage::{StorageDoubleMap, StorageMap},
-    traits::Get,
+    traits::{Get, Randomness},
 };
 use frame_system::ensure_signed;
 
@@ -52,7 +52,8 @@ use encointer_primitives::{
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{SaturatedConversion, RandomNumberGenerator};
+use encointer_primitives::random_permutation::RandomPermutation;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -67,6 +68,7 @@ pub trait Config:
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
+    type RandomnessSource: Randomness<Self::Hash>;
 }
 
 // This module's storage items.
@@ -344,28 +346,19 @@ impl<T: Config> Module<T> {
         debug::debug!(target: LOG, "purged registry for ceremony {}", cindex);
     }
 
-    /* this is for a more recent revision of substrate....
-    fn random_permutation(elements: Vec<u8>) -> Vec<u8> {
-        let random_seed = <frame_system::Module<T>>::random_seed();
-        let out = Vec::with_capacity(elements.len());
-        let n = elements.len();
-        for i in 0..n {
-            let new_random = (random_seed, i)
-                .using_encoded(|b| Blake2Hasher::hash(b))
-                .using_encoded(|mut b| u64::decode(&mut b))
-                .expect("Hash must be bigger than 8 bytes; Qed");
-            let elem = elements.remove(new_random % elements.len());
-            out.push(elem);
-        }
-        out
-    }
-    */
-
     // this function is expensive, so it should later be processed off-chain within SubstraTEE-worker
     // currently the complexity is O(n) where n is the number of registered participants
     fn assign_meetups() {
         let cids = <encointer_communities::Module<T>>::community_identifiers();
         let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+
+        let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
+            // we don't need to pass a subject here, as this is only called once in a block.
+            // However, without subject this should be initialized outside the community loop, otherwise
+            // every community gets the same sequence of permutations if there are the same amount of
+            // people per category (bootstrappers, reputables, etc.).
+            T::RandomnessSource::random_seed()
+        );
 
         for cid in cids.iter() {
             let pcount = <ParticipantCount>::get((cid, cindex));
@@ -415,11 +408,26 @@ impl<T: Config> Module<T> {
                 n = n_locations * 12;
             }
 
+
+            // if we don't need the results immediately, chaining iterators is the fastest to
+            // concatenate `vec`s. If we need to collect, it is the slowest.
             let all_participants = bootstrappers
                 .into_iter()
-                .chain(reputables.into_iter())
-                .chain(endorsees.into_iter())
-                .chain(newbies.into_iter());
+                .chain(reputables
+                    .random_permutation(&mut random_source)
+                    .unwrap_or_default()
+                    .into_iter()
+                )
+                .chain(endorsees
+                    .random_permutation(&mut random_source)
+                    .unwrap_or_default()
+                    .into_iter()
+                )
+                .chain(newbies
+                    .random_permutation(&mut random_source)
+                    .unwrap_or_default()
+                    .into_iter()
+                );
 
             let mut n_meetups = n / 12;
             if n.rem_euclid(12) > 0 {
