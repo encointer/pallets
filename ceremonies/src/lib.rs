@@ -250,7 +250,7 @@ decl_module! {
                         continue };
                 }
                 if !claim.verify_signature() {
-                    debug::warn!(target: LOG, "ignoring claim with bad signature for {:?}", sender);
+                    debug::warn!(target: LOG, "ignoring claim with bad signature for {:?}", claimant);
                     continue };
                 // claim is legit. insert it!
                 verified_attestees.insert(0, claimant.clone());
