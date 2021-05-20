@@ -37,7 +37,7 @@ use sp_runtime::{
 };
 use std::ops::Rem;
 
-type TestAttestation = Attestation<Signature, AccountId, Moment>;
+type TestClaim = ClaimOfAttendance<Signature, AccountId, Moment>;
 type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
 use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
@@ -155,31 +155,24 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
     t.into()
 }
 
-/// generate a fresh claim for claimant and sign it by attestor
-fn meetup_claim_sign(
-    claimant: AccountId,
-    attester: sr25519::Pair,
+fn signed_claim(
+    claimant: &sr25519::Pair,
     cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
     mindex: MeetupIndexType,
     location: Location,
     timestamp: Moment,
-    n_participants: u32,
-) -> TestAttestation {
-    let claim = ClaimOfAttendance {
-        claimant_public: claimant.clone(),
-        community_identifier: cid,
-        ceremony_index: cindex,
-        meetup_index: mindex,
+    participant_count: u32,
+) -> TestClaim {
+    TestClaim::new_unsigned(
+        claimant.public().into(),
+        cindex,
+        cid,
+        mindex,
         location,
         timestamp,
-        number_of_participants_confirmed: n_participants,
-    };
-    TestAttestation {
-        claim: claim.clone(),
-        signature: Signature::from(attester.sign(&claim.encode())),
-        public: account_id(&attester),
-    }
+        participant_count
+    ).sign(claimant)
 }
 
 fn get_proof(
@@ -261,10 +254,10 @@ fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519
     participants
 }
 
-/// shorthand for attesting one claimant by many attesters. register all attestation to chain
-fn gets_attested_by(
-    claimant: AccountId,
-    attestors: Vec<sr25519::Pair>,
+/// shorthand for generating multiple identical signed claims of the attestees
+fn attest_all(
+    attestor: AccountId,
+    attestees: &Vec<&sr25519::Pair>,
     cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
     mindex: MeetupIndexType,
@@ -272,25 +265,31 @@ fn gets_attested_by(
     timestamp: Moment,
     n_participants: u32,
 ) {
-    let mut attestations: Vec<TestAttestation> = vec![];
-    for a in attestors {
-        attestations.insert(
-            0,
-            meetup_claim_sign(
-                claimant.clone(),
-                a.clone(),
-                cid,
+    let mut claims: Vec<TestClaim> = vec![];
+    for a in attestees {
+        claims.push(
+            TestClaim::new_unsigned(
+                a.public().into(),
                 cindex,
+                cid,
                 mindex,
                 location,
                 timestamp,
-                n_participants,
-            ),
+                n_participants
+            ).sign(*a)
         );
     }
-    assert_ok!(EncointerCeremonies::register_attestations(
-        Origin::signed(claimant),
-        attestations.clone()
+
+    assert_ok!(EncointerCeremonies::attest_claims(
+        Origin::signed(attestor),
+        claims
+    ));
+}
+
+fn attest(attestor: AccountId, claims: Vec<TestClaim>) {
+    assert_ok!(EncointerCeremonies::attest_claims(
+        Origin::signed(attestor),
+        claims
     ));
 }
 
@@ -317,7 +316,7 @@ fn perform_bootstrapping_ceremony(
     for i in 0..bootstrappers.len() {
         let mut bs = bootstrappers.clone();
         let claimant = bs.remove(i);
-        gets_attested_by(account_id(&claimant), bs, cid, cindex, 1, loc, time, 6);
+        attest_all(account_id(&claimant), &bs.iter().collect(), cid, cindex, 1, loc, time, 6);
     }
 
     run_to_next_phase();
@@ -352,9 +351,9 @@ fn fully_attest_meetup(
         println!("  length of attestors: {}", others.len());
         let loc = EncointerCommunities::locations(&cid)[(mindex - 1) as usize];
         let time = correct_meetup_time(&cid, mindex);
-        gets_attested_by(
+        attest_all(
             (*p).clone(),
-            others,
+            &others.iter().collect(),
             cid,
             cindex,
             mindex,
@@ -421,50 +420,7 @@ fn registering_participant_in_wrong_phase_fails() {
 }
 
 #[test]
-fn verify_attestation_signature_works() {
-    ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
-        let claimant = AccountKeyring::Alice.pair();
-        let attester = AccountKeyring::Bob.pair();
-
-        let claim = ClaimOfAttendance {
-            claimant_public: account_id(&claimant),
-            community_identifier: cid,
-            ceremony_index: 1,
-            meetup_index: 1,
-            location: Location::default(),
-            timestamp: correct_meetup_time(&cid, 1),
-            number_of_participants_confirmed: 3,
-        };
-        let attestation_good = TestAttestation {
-            claim: claim.clone(),
-            signature: Signature::from(attester.sign(&claim.encode())),
-            public: account_id(&attester),
-        };
-        let attestation_wrong_signature = TestAttestation {
-            claim: claim.clone(),
-            signature: Signature::from(claimant.sign(&claim.encode())),
-            public: account_id(&attester),
-        };
-        let attestation_wrong_signer = TestAttestation {
-            claim: claim.clone(),
-            signature: Signature::from(attester.sign(&claim.encode())),
-            public: account_id(&claimant),
-        };
-        assert_ok!(EncointerCeremonies::verify_attestation_signature(
-            attestation_good
-        ));
-        assert!(
-            EncointerCeremonies::verify_attestation_signature(attestation_wrong_signature).is_err()
-        );
-        assert!(
-            EncointerCeremonies::verify_attestation_signature(attestation_wrong_signer).is_err()
-        );
-    });
-}
-
-#[test]
-fn register_attestations_works() {
+fn attest_claims_works() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -481,9 +437,9 @@ fn register_attestations_works() {
         );
         let loc = Location::default();
         let time = correct_meetup_time(&cid, 1);
-        gets_attested_by(
+        attest_all(
             account_id(&alice),
-            vec![bob.clone(), ferdie.clone()],
+            &vec![&bob, &ferdie],
             cid,
             1,
             1,
@@ -491,9 +447,9 @@ fn register_attestations_works() {
             time,
             3,
         );
-        gets_attested_by(
+        attest_all(
             account_id(&bob),
-            vec![alice.clone(), ferdie.clone()],
+            &vec![&alice, &ferdie],
             cid,
             1,
             1,
@@ -513,9 +469,9 @@ fn register_attestations_works() {
         assert!(wit_vec.contains(&account_id(&ferdie)));
 
         // TEST: re-registering must overwrite previous entry
-        gets_attested_by(
+        attest_all(
             account_id(&alice),
-            vec![bob.clone(), ferdie.clone()],
+            &vec![&bob, &ferdie],
             cid,
             1,
             1,
@@ -528,7 +484,7 @@ fn register_attestations_works() {
 }
 
 #[test]
-fn register_attestations_for_non_participant_fails_silently() {
+fn attest_claims_for_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -539,9 +495,9 @@ fn register_attestations_for_non_participant_fails_silently() {
         run_to_next_phase();
         // ATTESTING
 
-        gets_attested_by(
+        attest_all(
             account_id(&alice),
-            vec![bob.clone(), alice.clone()],
+            &vec![&bob, &alice],
             cid,
             1,
             1,
@@ -557,7 +513,7 @@ fn register_attestations_for_non_participant_fails_silently() {
 }
 
 #[test]
-fn register_attestations_for_non_participant_fails() {
+fn attest_claims_for_non_participant_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -568,14 +524,13 @@ fn register_attestations_for_non_participant_fails() {
         run_to_next_phase();
         run_to_next_phase();
         // ATTESTING
-        let mut eve_attestations: Vec<TestAttestation> = vec![];
+        let mut eve_claims: Vec<TestClaim> = vec![];
         let loc = Location::default();
         let time = correct_meetup_time(&cid, 1);
-        eve_attestations.insert(
+        eve_claims.insert(
             0,
-            meetup_claim_sign(
-                account_id(&eve),
-                alice.clone(),
+            signed_claim(
+                &alice,
                 cid,
                 cindex,
                 1,
@@ -584,11 +539,10 @@ fn register_attestations_for_non_participant_fails() {
                 3,
             ),
         );
-        eve_attestations.insert(
+        eve_claims.insert(
             1,
-            meetup_claim_sign(
-                account_id(&eve),
-                ferdie.clone(),
+            signed_claim(
+                &ferdie,
                 cid,
                 cindex,
                 1,
@@ -597,16 +551,16 @@ fn register_attestations_for_non_participant_fails() {
                 3,
             ),
         );
-        assert!(EncointerCeremonies::register_attestations(
+        assert!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&eve)),
-            eve_attestations.clone()
+            eve_claims.clone()
         )
         .is_err());
     });
 }
 
 #[test]
-fn register_attestations_with_non_participant_fails_silently() {
+fn attest_claims_with_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -617,9 +571,9 @@ fn register_attestations_with_non_participant_fails_silently() {
         run_to_next_phase();
         run_to_next_phase();
         // ATTESTING
-        gets_attested_by(
+        attest_all(
             account_id(&alice),
-            vec![bob.clone(), eve.clone()],
+            &vec![&bob, &eve],
             cid,
             1,
             1,
@@ -635,7 +589,7 @@ fn register_attestations_with_non_participant_fails_silently() {
 }
 
 #[test]
-fn register_attestations_with_wrong_meetup_index_fails() {
+fn attest_claims_with_wrong_meetup_index_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -648,41 +602,32 @@ fn register_attestations_with_wrong_meetup_index_fails() {
         // ATTESTING
         let loc = Location::default();
         let time = correct_meetup_time(&cid, 1);
-        let mut alice_attestations: Vec<TestAttestation> = vec![];
-        alice_attestations.insert(
-            0,
-            meetup_claim_sign(account_id(&alice), bob.clone(), cid, 1, 1, loc, time, 3),
+        let mut alice_claims: Vec<TestClaim> = vec![];
+        alice_claims.push(
+            signed_claim(&bob, cid, 1, 1, loc, time, 3),
         );
-        let claim = ClaimOfAttendance {
-            claimant_public: account_id(&alice),
-            community_identifier: cid,
-            ceremony_index: 1,
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            location: Location::default(),
-            timestamp: time,
-            meetup_index: 1 + 99,
-            number_of_participants_confirmed: 3,
-        };
-        alice_attestations.insert(
-            1,
-            TestAttestation {
-                claim: claim.clone(),
-                signature: Signature::from(ferdie.sign(&claim.encode())),
-                public: account_id(&ferdie),
-            },
+        let bogus_claim = signed_claim(&ferdie, cid, 1,
+                                       1 + 99,
+                                       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                       Location::default(),
+                                       time,
+                                       3,
         );
-        assert_ok!(EncointerCeremonies::register_attestations(
+        alice_claims.push(
+            bogus_claim
+        );
+        assert_ok!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
-            alice_attestations
+            alice_claims
         ));
-        let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
-        assert!(wit_vec.contains(&account_id(&ferdie)) == false);
-        assert!(wit_vec.len() == 1);
+        let attestees = EncointerCeremonies::attestation_registry((cid, cindex), &1);
+        assert!(attestees.contains(&account_id(&ferdie)) == false);
+        assert!(attestees.len() == 1);
     });
 }
 
 #[test]
-fn register_attestations_with_wrong_ceremony_index_fails() {
+fn attest_claims_with_wrong_ceremony_index_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -695,30 +640,24 @@ fn register_attestations_with_wrong_ceremony_index_fails() {
         // ATTESTING
         let loc = Location::default();
         let time = correct_meetup_time(&cid, 1);
-        let mut alice_attestations: Vec<TestAttestation> = vec![];
-        alice_attestations.insert(
-            0,
-            meetup_claim_sign(account_id(&alice), bob.clone(), cid, 1, 1, loc, time, 3),
+        let mut alice_attestations: Vec<TestClaim> = vec![];
+        alice_attestations.push(
+            signed_claim(&bob, cid, 1, 1, loc, time, 3),
         );
-        let claim = ClaimOfAttendance {
-            claimant_public: account_id(&alice),
-            community_identifier: cid,
+        let bogus_claim = signed_claim(
+            &ferdie,
+            cid,
             // !!!!!!!!!!!!!!!!!!!!!!!!!!
-            ceremony_index: 99,
-            meetup_index: 1,
-            location: Location::default(),
-            timestamp: time,
-            number_of_participants_confirmed: 3,
-        };
-        alice_attestations.insert(
+            99,
             1,
-            TestAttestation {
-                claim: claim.clone(),
-                signature: Signature::from(ferdie.sign(&claim.encode())),
-                public: account_id(&ferdie),
-            },
+            Location::default(),
+            time,
+            3,
         );
-        assert_ok!(EncointerCeremonies::register_attestations(
+        alice_attestations.push(
+            bogus_claim
+        );
+        assert_ok!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
             alice_attestations
         ));
@@ -729,7 +668,7 @@ fn register_attestations_with_wrong_ceremony_index_fails() {
 }
 
 #[test]
-fn register_attestations_with_wrong_timestamp_fails() {
+fn attest_claims_with_wrong_timestamp_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -746,10 +685,9 @@ fn register_attestations_with_wrong_timestamp_fails() {
         };
         // too late!
         let time = correct_meetup_time(&cid, 1) + TIME_TOLERANCE + 1;
-        let mut alice_attestations: Vec<TestAttestation> = vec![];
-        alice_attestations.push(meetup_claim_sign(
-            account_id(&alice),
-            bob.clone(),
+        let mut alice_claims: Vec<TestClaim> = vec![];
+        alice_claims.push(signed_claim(
+            &bob,
             cid,
             1,
             1,
@@ -757,9 +695,8 @@ fn register_attestations_with_wrong_timestamp_fails() {
             time,
             3,
         ));
-        alice_attestations.push(meetup_claim_sign(
-            account_id(&alice),
-            ferdie.clone(),
+        alice_claims.push(signed_claim(
+            &ferdie,
             cid,
             1,
             1,
@@ -767,9 +704,9 @@ fn register_attestations_with_wrong_timestamp_fails() {
             time,
             3,
         ));
-        assert!(EncointerCeremonies::register_attestations(
+        assert!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
-            alice_attestations
+            alice_claims
         )
         .is_err());
         let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
@@ -778,7 +715,7 @@ fn register_attestations_with_wrong_timestamp_fails() {
 }
 
 #[test]
-fn register_attestations_with_wrong_location_fails() {
+fn attest_claims_with_wrong_location_fails() {
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
@@ -794,10 +731,9 @@ fn register_attestations_with_wrong_location_fails() {
         let mut loc = Location::default();
         loc.lon += Degree::from_num(0.01); // ~1.11km east of meetup location along equator
         let time = correct_meetup_time(&cid, 1);
-        let mut alice_attestations: Vec<TestAttestation> = vec![];
-        alice_attestations.push(meetup_claim_sign(
-            account_id(&alice),
-            bob.clone(),
+        let mut alice_claims: Vec<TestClaim> = vec![];
+        alice_claims.push(signed_claim(
+            &bob,
             cid,
             1,
             1,
@@ -805,9 +741,8 @@ fn register_attestations_with_wrong_location_fails() {
             time,
             3,
         ));
-        alice_attestations.push(meetup_claim_sign(
-            account_id(&alice),
-            ferdie.clone(),
+        alice_claims.push(signed_claim(
+            &ferdie,
             cid,
             1,
             1,
@@ -815,9 +750,9 @@ fn register_attestations_with_wrong_location_fails() {
             time,
             3,
         ));
-        assert!(EncointerCeremonies::register_attestations(
+        assert!(EncointerCeremonies::attest_claims(
             Origin::signed(account_id(&alice)),
-            alice_attestations
+            alice_claims
         )
         .is_err());
         let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
@@ -831,10 +766,10 @@ fn ballot_meetup_n_votes_works() {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
-        let ferdie = AccountKeyring::Ferdie.pair();
         let charlie = AccountKeyring::Charlie.pair();
         let dave = AccountKeyring::Dave.pair();
         let eve = AccountKeyring::Eve.pair();
+        let ferdie = AccountKeyring::Ferdie.pair();
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);
         register_charlie_dave_eve(cid);
@@ -845,9 +780,9 @@ fn ballot_meetup_n_votes_works() {
         // ATTESTING
         let loc = Location::default();
         let time = correct_meetup_time(&cid, 1);
-        gets_attested_by(
+        attest_all(
             account_id(&alice),
-            vec![bob.clone()],
+            &vec![&bob, &charlie, &dave, &eve, &ferdie],
             cid,
             cindex,
             1,
@@ -855,49 +790,9 @@ fn ballot_meetup_n_votes_works() {
             time,
             5,
         );
-        gets_attested_by(
-            account_id(&bob),
-            vec![alice.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&charlie),
-            vec![alice.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&dave),
-            vec![alice.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&eve),
-            vec![alice.clone()],
-            cid,
-            cindex,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
+        attest_all(
             account_id(&ferdie),
-            vec![dave.clone()],
+            &vec![&alice],
             cid,
             cindex,
             1,
@@ -905,14 +800,15 @@ fn ballot_meetup_n_votes_works() {
             time,
             6,
         );
+        // assert that majority vote was successful
         assert_eq!(
             EncointerCeremonies::ballot_meetup_n_votes(&cid, cindex, 1),
             Some((5, 5))
         );
 
-        gets_attested_by(
+        attest_all(
             account_id(&alice),
-            vec![bob.clone()],
+            &vec![&bob],
             cid,
             1,
             1,
@@ -920,9 +816,9 @@ fn ballot_meetup_n_votes_works() {
             time,
             5,
         );
-        gets_attested_by(
+        attest_all(
             account_id(&bob),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -930,9 +826,9 @@ fn ballot_meetup_n_votes_works() {
             time,
             5,
         );
-        gets_attested_by(
-            account_id(&charlie),
-            vec![alice.clone()],
+        attest_all(
+            account_id(&alice),
+            &vec![&charlie, &dave],
             cid,
             1,
             1,
@@ -940,19 +836,9 @@ fn ballot_meetup_n_votes_works() {
             time,
             4,
         );
-        gets_attested_by(
-            account_id(&dave),
-            vec![alice.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            4,
-        );
-        gets_attested_by(
-            account_id(&eve),
-            vec![alice.clone()],
+        attest_all(
+            account_id(&alice),
+            &vec![&eve, &ferdie],
             cid,
             1,
             1,
@@ -960,21 +846,12 @@ fn ballot_meetup_n_votes_works() {
             time,
             6,
         );
-        gets_attested_by(
-            account_id(&ferdie),
-            vec![dave.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            6,
-        );
+        // votes should be (4, 2), (5, 2), (6, 2)
         assert!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1) == None);
 
-        gets_attested_by(
+        attest_all(
             account_id(&alice),
-            vec![bob.clone()],
+            &vec![&bob, &charlie],
             cid,
             1,
             1,
@@ -982,9 +859,9 @@ fn ballot_meetup_n_votes_works() {
             time,
             5,
         );
-        gets_attested_by(
+        attest_all(
             account_id(&bob),
-            vec![alice.clone()],
+            &vec![&alice],
             cid,
             1,
             1,
@@ -992,19 +869,9 @@ fn ballot_meetup_n_votes_works() {
             time,
             5,
         );
-        gets_attested_by(
-            account_id(&charlie),
-            vec![alice.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&dave),
-            vec![alice.clone()],
+        attest_all(
+            account_id(&alice),
+            &vec![&dave],
             cid,
             1,
             1,
@@ -1012,9 +879,9 @@ fn ballot_meetup_n_votes_works() {
             time,
             4,
         );
-        gets_attested_by(
-            account_id(&eve),
-            vec![alice.clone()],
+        attest_all(
+            account_id(&alice),
+            &vec![&eve, &ferdie],
             cid,
             1,
             1,
@@ -1022,17 +889,8 @@ fn ballot_meetup_n_votes_works() {
             time,
             6,
         );
-        gets_attested_by(
-            account_id(&ferdie),
-            vec![dave.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            6,
-        );
-        assert!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1) == Some((5, 3)));
+        // votes should be (5, 3), (6, 2), (4, 1)
+        assert_eq!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1), Some((5, 3)));
     });
 }
 
@@ -1042,84 +900,57 @@ fn issue_reward_works() {
         let cid = register_test_community::<TestRuntime>(None, 1);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
-        let ferdie = AccountKeyring::Ferdie.pair();
         let charlie = AccountKeyring::Charlie.pair();
         let dave = AccountKeyring::Dave.pair();
         let eve = AccountKeyring::Eve.pair();
+        let ferdie = AccountKeyring::Ferdie.pair();
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);
         register_charlie_dave_eve(cid);
+
+        let loc = Location::default();
+        let time = correct_meetup_time(&cid, 1);
+
+        let claim_base = TestClaim::new_unsigned(
+            account_id(&alice),
+            cindex,
+            cid,
+            1,
+            loc,
+            time,
+            5,
+        );
+
+        let claim_alice = claim_base.clone().sign(&alice);
+        let claim_bob = claim_base.clone().set_claimant(account_id(&bob)).sign(&bob);
+        let claim_charlie = claim_base.clone().set_claimant(account_id(&charlie)).sign(&alice);
+        let claim_dave = claim_base.clone()
+            .set_claimant(account_id(&dave))
+            .set_participant_count(6)
+            .sign(&dave);
+        let claim_eve = claim_base.clone().set_claimant(account_id(&eve)).sign(&eve);
+        let claim_ferdie = claim_base.clone().set_claimant(account_id(&ferdie)).sign(&ferdie);
 
         run_to_next_phase();
         // ASSIGNING
         run_to_next_phase();
         // ATTESTING
-        // ferdi doesn't show up
-        // eve signs no one else
-        // charlie collects incomplete signatures
-        // dave signs ferdi and reports wrong number of participants
-        let loc = Location::default();
-        let time = correct_meetup_time(&cid, 1);
-        gets_attested_by(
-            account_id(&alice),
-            vec![bob.clone(), charlie.clone(), dave.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&bob),
-            vec![alice.clone(), charlie.clone(), dave.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&charlie),
-            vec![alice.clone(), bob.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&dave),
-            vec![alice.clone(), bob.clone(), charlie.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            6,
-        );
-        gets_attested_by(
-            account_id(&eve),
-            vec![alice.clone(), bob.clone(), charlie.clone(), dave.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            5,
-        );
-        gets_attested_by(
-            account_id(&ferdie),
-            vec![dave.clone()],
-            cid,
-            1,
-            1,
-            loc,
-            time,
-            6,
-        );
+        // Scenario:
+        //      ferdie doesn't show up
+        //      eve signs no one else
+        //      charlie collects bogus signatures
+        //      dave signs ferdie and reports wrong number of participants
+
+        // alice attests all others except for ferdie, who doesn't show up
+        attest(account_id(&alice), vec![claim_bob.clone(), claim_charlie.clone(), claim_dave.clone(), claim_eve.clone()]);
+        // bob attests all others except for ferdie, who doesn't show up
+        attest(account_id(&bob), vec![claim_alice.clone(), claim_charlie.clone(), claim_dave.clone(), claim_eve.clone()]);
+        // charlie attests all others except for ferdie, who doesn't show up, but he supplies erroneous signatures with the others' claims
+        attest(account_id(&charlie), vec![claim_alice.clone(), claim_bob.clone(), claim_dave.clone(), claim_eve.clone()]);
+        // dave attests all others plus nonexistent ferdie and reports wrong number
+        attest(account_id(&dave), vec![claim_alice.clone(), claim_bob.clone(), claim_charlie.clone(), claim_eve.clone(), claim_ferdie.clone()]);
+        // eve does not attest anybody...
+        // ferdie is not here...
 
         assert_eq!(EncointerBalances::balance(cid, &account_id(&alice)), ZERO);
 
@@ -1389,17 +1220,6 @@ fn endorsing_two_newbies_works() {
         ));
     });
 }
-
-/*
-#[test]
-fn test_random_permutation_works() {
-    ExtBuilder::build().execute_with(|| {
-        let ordered = vec!(1u8, 2, 3, 4, 5, 6);
-        let permutation = EncointerCeremonies::random_permutation(ordered);
-        println!("random permutation result {}", permutation);
-    });
-}
-*/
 
 // integration tests ////////////////////////////////
 
