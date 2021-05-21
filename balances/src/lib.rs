@@ -132,7 +132,7 @@ impl<T: Config> Module<T> {
         entry: BalanceEntry<T::BlockNumber>,
         demurrage: BalanceType,
     ) -> BalanceEntry<T::BlockNumber> {
-        let current_block = frame_system::Module::<T>::block_number();
+        let current_block = frame_system::Pallet::<T>::block_number();
         let elapsed_time_block_number = current_block - entry.last_update;
         let elapsed_time_u32: u32 = elapsed_time_block_number
             .try_into()

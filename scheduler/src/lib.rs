@@ -140,7 +140,7 @@ impl<T: Config> Module<T> {
         let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING)
             + <PhaseDurations<T>>::get(CeremonyPhaseType::ASSIGNING)
             + <PhaseDurations<T>>::get(CeremonyPhaseType::ATTESTING);
-        let now = <timestamp::Module<T>>::now();
+        let now = <timestamp::Pallet<T>>::now();
 
         let tnext = if tnext < now {
             let gap = now - tnext;
