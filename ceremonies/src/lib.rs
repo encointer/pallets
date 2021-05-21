@@ -70,7 +70,7 @@ pub trait Config:
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
-    type RandomnessSource: Randomness<Self::Hash>;
+    type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
 }
 
 // This module's storage items.
