@@ -361,7 +361,7 @@ impl<T: Config> Module<T> {
             // However, without subject this should be initialized outside the community loop, otherwise
             // every community gets the same sequence of permutations if there are the same amount of
             // people per category (bootstrappers, reputables, etc.).
-            T::RandomnessSource::random_seed()
+            T::RandomnessSource::random_seed().0
         );
 
         for cid in cids.iter() {
