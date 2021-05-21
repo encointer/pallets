@@ -24,7 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, ensure,
+    decl_error, decl_event, decl_module, decl_storage, ensure,
     storage::{StorageMap, StorageValue},
 };
 use frame_system::{ensure_root, ensure_signed};
@@ -83,7 +83,6 @@ decl_module! {
             demurrage: Option<Demurrage>,
             nominal_income: Option<NominalIncomeType>
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             Self::validate_bootstrappers(&bootstrappers)?;
             community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
@@ -118,7 +117,6 @@ decl_module! {
 
         #[weight = 10_000]
         fn update_community_medadata(origin, cid: CommunityIdentifier, community_metadata: CommunityMetadataType) {
-            debug::RuntimeLogger::init();
             ensure_root(origin)?;
             Self::ensure_cid_exists(&cid)?;
             community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
@@ -134,7 +132,6 @@ decl_module! {
 
         #[weight = 10_000]
         fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
-            debug::RuntimeLogger::init();
             ensure_root(origin)?;
             validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             Self::ensure_cid_exists(&cid)?;
@@ -146,7 +143,6 @@ decl_module! {
 
         #[weight = 10_000]
         fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: NominalIncomeType) {
-            debug::RuntimeLogger::init();
             ensure_root(origin)?;
             validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
             Self::ensure_cid_exists(&cid)?;

@@ -104,7 +104,6 @@ decl_module! {
             proof_of_attendances: Vec<Vec<u8>>,
             requested_response: SybilResponse
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
             let proofs =
@@ -149,9 +148,6 @@ decl_module! {
         ) {
             let sender = ensure_signed(origin)?;
             Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
-
-            debug::RuntimeLogger::init();
-
             ensure!(<PendingRequests<T>>::contains_key(&request_hash), <Error<T>>::UnexpectedResponse);
             let account = <PendingRequests<T>>::take(&request_hash);
             debug::debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);

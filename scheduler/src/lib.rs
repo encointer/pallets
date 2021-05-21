@@ -78,7 +78,6 @@ decl_module! {
         /// Manually transition to next phase without affecting the ceremony rhythm
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn next_phase(origin) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
             Self::progress_phase()?;
@@ -88,7 +87,6 @@ decl_module! {
         /// Push next phase change by one entire day
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn push_by_one_day(origin) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
             let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());

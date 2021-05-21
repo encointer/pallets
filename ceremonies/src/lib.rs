@@ -115,7 +115,6 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn grant_reputation(origin, cid: CommunityIdentifier, reputable: T::AccountId) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(sender == <encointer_scheduler::Module<T>>::ceremony_master(), "only the CeremonyMaster can call this function");
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
@@ -126,7 +125,6 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn register_participant(origin, cid: CommunityIdentifier, proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
                 "registering participants can only be done during REGISTERING phase");
@@ -173,7 +171,6 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn attest_claims(origin, claims: Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
                 "registering claims can only be done during ATTESTING phase");
@@ -284,7 +281,6 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn endorse_newcomer(origin, cid: CommunityIdentifier, newbie: T::AccountId) -> DispatchResult {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
 
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),

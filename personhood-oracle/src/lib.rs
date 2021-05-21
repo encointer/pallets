@@ -83,7 +83,6 @@ decl_module! {
         requested_response: u8,
         sender_sybil_gate: u8
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let para_id: u32 = Sibling::try_from_account(&sender)
                 .ok_or(<Error<T>>::UnableToDecodeRequest)?
