@@ -33,7 +33,7 @@ impl Config for TestRuntime {
     type Event = ();
 }
 
-pub type System = frame_system::Module<TestRuntime>;
+pub type System = frame_system::Pallet<TestRuntime>;
 pub type EncointerCommunities = Module<TestRuntime>;
 
 impl_frame_system!(TestRuntime);

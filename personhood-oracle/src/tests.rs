@@ -23,10 +23,10 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
-// use xcm_builder::{AccountId32Aliases, ParentIsDefault, SiblingParachainConvertsVia};
-use xcm_executor::traits::LocationConversion;
+use xcm_executor::traits::Convert;
 
 use encointer_ceremonies::Module as EncointerCeremoniesModule;
+use encointer_primitives::sybil::consts::SYBIL_CALL_WEIGHT;
 use test_utils::{storage::*, *};
 
 pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
@@ -72,12 +72,11 @@ fn proof_of_attendance() -> ProofOfAttendance<Signature, AccountId> {
 fn issue_proof_of_personhood_is_ok() {
     new_test_ext().execute_with(|| {
         let sibling = sibling_junction(1863);
-        let account_id = LocationConverter::from_location(&sibling.into()).unwrap();
+        let account_id = LocationConverter::convert_ref(&sibling.into()).unwrap();
         assert_ok!(PersonhoodOracle::issue_personhood_uniqueness_rating(
             Origin::signed(account_id),
             vec![proof_of_attendance()].encode(),
-            1,
-            1,
+            CallMetadata::new(1, 1, SYBIL_CALL_WEIGHT),
         ));
     })
 }
@@ -110,9 +109,9 @@ fn create_proof_of_personhood_confidence_works() {
 fn account_id_conversion_works() {
     new_test_ext().execute_with(|| {
         let sibling = sibling_junction(1863);
-        let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
+        let account = LocationConverter::convert_ref(&sibling.clone().into()).unwrap();
         assert_eq!(
-            LocationConverter::try_into_location(account).unwrap(),
+            LocationConverter::reverse_ref(account).unwrap(),
             sibling.into()
         );
     });

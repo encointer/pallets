@@ -24,9 +24,11 @@ use encointer_primitives::{
     communities::{CommunityIdentifier, Degree, Location, LossyInto},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
-use frame_support::assert_ok;
-use frame_support::traits::{OnFinalize, OnInitialize, UnfilteredDispatchable, TestRandomness};
-use inherents::ProvideInherent;
+use frame_support::{
+    assert_ok,
+    pallet_prelude::ProvideInherent,
+    traits::{OnFinalize, OnInitialize, UnfilteredDispatchable}
+};
 use rstest::*;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{sr25519, Pair, U256};
@@ -37,11 +39,9 @@ use sp_runtime::{
 };
 use std::ops::Rem;
 
-type TestClaim = ClaimOfAttendance<Signature, AccountId, Moment>;
-type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
-
 use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
 use test_utils::{
+    frame_support_test::TestRandomness,
     helpers::{account_id, bootstrappers, register_test_community},
     *,
 };
@@ -49,12 +49,15 @@ use test_utils::{
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
-pub type System = frame_system::Module<TestRuntime>;
+pub type System = frame_system::Pallet<TestRuntime>;
 pub type EncointerCeremonies = Module<TestRuntime>;
 pub type EncointerBalances = encointer_balances::Module<TestRuntime>;
 pub type EncointerCommunities = encointer_communities::Module<TestRuntime>;
 pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
-pub type Timestamp = timestamp::Module<TestRuntime>;
+pub type Timestamp = timestamp::Pallet<TestRuntime>;
+
+type TestClaim = ClaimOfAttendance<Signature, AccountId, Moment>;
+type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
 test_runtime!(TestRuntime, System, EncointerScheduler);
 
@@ -67,7 +70,7 @@ impl Config for TestRuntime {
     type Event = ();
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
-    type RandomnessSource = TestRandomness;
+    type RandomnessSource = TestRandomness<TestRuntime>;
 }
 
 pub struct ExtBuilder;
@@ -134,7 +137,7 @@ fn run_to_next_phase() {
 }
 
 pub fn set_timestamp(t: u64) {
-    let _ = <timestamp::Module<TestRuntime> as ProvideInherent>::Call::set(t)
+    let _ = <timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
         .dispatch_bypass_filter(Origin::none());
 }
 

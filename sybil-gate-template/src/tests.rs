@@ -22,14 +22,14 @@ use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
 };
-use xcm_executor::traits::LocationConversion;
+use xcm_executor::traits::Convert;
 
 use test_utils::*;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
-pub type System = frame_system::Module<TestRuntime>;
+pub type System = frame_system::Pallet<TestRuntime>;
 
 impl_frame_system!(TestRuntime);
 impl_balances!(TestRuntime, System);
@@ -38,7 +38,7 @@ impl_outer_origin_for_runtime!(TestRuntime);
 impl Config for TestRuntime {
     type Event = ();
     type XcmSender = ();
-    type Currency = balances::Module<TestRuntime>;
+    type Currency = balances::Pallet<TestRuntime>;
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
 }
@@ -68,7 +68,7 @@ fn faucet_works() {
 #[test]
 fn faucet_returns_err_if_proof_too_weak() {
     let sibling = sibling_junction(1863);
-    let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
+    let account = LocationConverter::convert_ref(&sibling.clone().into()).unwrap();
     let alice: AccountId = AccountKeyring::Alice.into();
     let request_hash = H256::default();
 
@@ -90,7 +90,7 @@ fn faucet_returns_err_if_proof_too_weak() {
 #[test]
 fn faucet_returns_err_for_unexpected_request() {
     let sibling = sibling_junction(1863);
-    let account = LocationConverter::from_location(&sibling.clone().into()).unwrap();
+    let account = LocationConverter::convert_ref(&sibling.clone().into()).unwrap();
 
     new_test_ext().execute_with(|| {
         assert!(SybilGate::faucet(

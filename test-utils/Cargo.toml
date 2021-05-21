@@ -37,6 +37,11 @@ package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
+[dependencies.frame-support-test]
+package = "frame-support-test"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
 [dependencies.sp-core]
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"

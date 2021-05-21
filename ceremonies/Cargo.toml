@@ -85,11 +85,6 @@ approx = "0.3.0"
 tempdir = "0.3.7"
 rstest = "0.6.4"
 
-[dev-dependencies.inherents]
-package = "sp-inherents"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
 [dev-dependencies.keystore]
 package = "sc-keystore"
 git = "https://github.com/paritytech/substrate.git" 

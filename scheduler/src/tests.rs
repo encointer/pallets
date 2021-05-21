@@ -19,8 +19,8 @@ use frame_support::traits::UnfilteredDispatchable;
 use frame_support::{
     assert_ok, impl_outer_event,
     traits::{OnFinalize, OnInitialize},
+    pallet_prelude::ProvideInherent,
 };
-use inherents::ProvideInherent;
 use runtime_io::TestExternalities;
 use sp_core::H256;
 use sp_runtime::{
@@ -48,8 +48,8 @@ impl_outer_event! {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
-pub type System = frame_system::Module<TestRuntime>;
-pub type Timestamp = timestamp::Module<TestRuntime>;
+pub type System = frame_system::Pallet<TestRuntime>;
+pub type Timestamp = timestamp::Pallet<TestRuntime>;
 pub type EncointerScheduler = Module<TestRuntime>;
 
 impl_frame_system!(TestRuntime, TestEvent);
@@ -115,7 +115,7 @@ pub fn run_to_block(n: u64) {
 }
 
 pub fn set_timestamp(t: u64) {
-    let _ = <timestamp::Module<TestRuntime> as ProvideInherent>::Call::set(t)
+    let _ = <timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
         .dispatch_bypass_filter(Origin::none());
 }
 

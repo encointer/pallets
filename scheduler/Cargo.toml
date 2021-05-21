@@ -70,11 +70,6 @@ package = "sc-keystore"
 git = "https://github.com/paritytech/substrate.git" 
 branch = "master"
 
-[dev-dependencies.inherents]
-package = "sp-inherents"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
 [dev-dependencies]
 tempdir = "0.3.7"
 

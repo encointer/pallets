@@ -39,6 +39,7 @@ pub use encointer_communities;
 pub use encointer_scheduler;
 pub use frame_system;
 pub use timestamp;
+pub use frame_support_test;
 
 pub use sp_core::H256;
 pub use sp_runtime::traits::BlakeTwo256;
@@ -104,6 +105,7 @@ macro_rules! impl_frame_system {
             type AccountData = balances::AccountData<u64>;
             type OnNewAccount = ();
             type OnKilledAccount = ();
+            type OnSetCode = ();
             type SystemWeightInfo = ();
             type BlockWeights = ();
             type BlockLength = ();
@@ -194,7 +196,7 @@ macro_rules! impl_encointer_ceremonies {
             type Event = ();
             type Public = <Signature as Verify>::Signer;
             type Signature = Signature;
-            type RandomnessSource = frame_support::traits::TestRandomness;
+            type RandomnessSource = frame_support_test::TestRandomness<$t>;
         }
     };
 }

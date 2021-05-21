@@ -22,6 +22,7 @@ use sp_runtime::traits::{BlakeTwo256, Hash};
 use xcm::v0::Junction;
 
 use crate::scheduler::CeremonyIndexType;
+use crate::sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct IssuePersonhoodUniquenessRatingCall {
@@ -64,7 +65,7 @@ impl IssuePersonhoodUniquenessRatingCall {
 
     /// Returns the (currently hardcoded) weight of the `issue_personhood_uniqueness_rating` call
     pub fn weight(&self) -> u64 {
-        5_000_000
+        ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT
     }
 }
 
@@ -160,4 +161,9 @@ impl PersonhoodUniquenessRating {
 
 pub fn sibling_junction(id: u32) -> (Junction, Junction) {
     (Junction::Parent, Junction::Parachain(id))
+}
+
+pub mod consts {
+    pub const SYBIL_CALL_WEIGHT: u64 = 5_000_000;
+    pub const ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT: u64 = 5_000_000;
 }
