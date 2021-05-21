@@ -130,5 +130,5 @@ impl PersonhoodUniquenessRating {
 }
 
 pub fn sibling_junction(id: u32) -> (Junction, Junction) {
-    (Junction::Parent, Junction::Parachain { id })
+    (Junction::Parent, Junction::Parachain(id))
 }
