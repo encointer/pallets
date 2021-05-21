@@ -2638,7 +2638,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "sp-timestamp",
  "tempdir",
  "test-utils",
 ]

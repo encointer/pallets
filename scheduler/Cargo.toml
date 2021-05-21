@@ -48,12 +48,6 @@ package = "frame-system"
 git = "https://github.com/paritytech/substrate.git" 
 branch = "master"
 
-[dependencies.sp-timestamp]
-default-features = false
-package = "sp-timestamp"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
 [dependencies.timestamp]
 default-features = false
 package = "pallet-timestamp"
@@ -107,7 +101,6 @@ std = [
 	"serde",
 	"sp-runtime/std",
 	"timestamp/std",
-	"sp-timestamp/std",
 	"sp-core/std",
 	"frame-support/std",
 	"frame-system/std",

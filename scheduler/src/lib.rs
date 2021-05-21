@@ -29,7 +29,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     storage::StorageValue,
-    traits::Get,
+    traits::{Get, OnTimestampSet},
     weights::{DispatchClass, Pays},
 };
 use frame_system::ensure_signed;
@@ -37,7 +37,6 @@ use log::info;
 use rstd::ops::Rem;
 use rstd::prelude::*;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
-use sp_timestamp::OnTimestampSet;
 
 pub trait Config: frame_system::Config + timestamp::Config {
     type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
