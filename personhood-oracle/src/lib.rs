@@ -34,7 +34,7 @@ use xcm::v0::{Error as XcmError, OriginKind, SendXcm, Xcm};
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
     sybil::{
-        sibling_junction, OpaqueRequest, PersonhoodUniquenessRating, RequestHash, SybilResponseCall,
+        sibling_junction, OpaqueRequest, PersonhoodUniquenessRating, RequestHash, SybilResponseCall, CallMetadata
     },
 };
 
@@ -81,8 +81,7 @@ decl_module! {
         fn issue_personhood_uniqueness_rating(
         origin,
         rating_request: OpaqueRequest,
-        requested_response: u8,
-        sender_sybil_gate: u8
+        response: CallMetadata
         ) {
             let sender = ensure_signed(origin)?;
             let para_id: u32 = Sibling::try_from_account(&sender)
@@ -97,8 +96,8 @@ decl_module! {
             let confidence = Self::verify(request).unwrap_or_else(|_| PersonhoodUniquenessRating::default());
 
             let request_hash = rating_request.hash();
-            let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, request_hash, confidence);
-            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
+            let call =  SybilResponseCall::new(&response, request_hash, confidence);
+            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: response.weight(), call: call.encode().into() };
 
             match T::XcmSender::send_xcm(sibling_junction(para_id).into(), message) {
                 Ok(()) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentSuccess(request_hash, para_id)),

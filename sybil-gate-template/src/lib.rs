@@ -126,7 +126,7 @@ decl_module! {
             );
             let request_hash = call.request_hash();
 
-            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
+            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: call.weight(), call: call.encode().into() };
             debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(sibling_junction(parachain_id).into(), message) {
                 Ok(()) => {
