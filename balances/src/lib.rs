@@ -22,10 +22,11 @@ use encointer_primitives::{
 };
 use fixed::transcendental::exp;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
+    decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
     StorageMap,
 };
 use frame_system::{self as frame_system, ensure_signed};
+use log::debug;
 use rstd::convert::TryInto;
 use sp_runtime::traits::StaticLookup;
 
@@ -186,7 +187,7 @@ impl<T: Config> Module<T> {
         entry_tot.principal += amount;
         <TotalIssuance<T>>::insert(community_id, entry_tot);
         <Balance<T>>::insert(community_id, who, entry_who);
-        debug::debug!(target: LOG, "issue {:?} for {:?}", amount, who);
+        debug!(target: LOG, "issue {:?} for {:?}", amount, who);
         Ok(())
     }
 

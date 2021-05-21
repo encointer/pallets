@@ -4,6 +4,9 @@ version = "0.5.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
+[dependencies]
+log = { version = "0.4.14", default-features = false }
+
 [dependencies.encointer-primitives]
 default-features = false
 features = ["sybil"]
@@ -106,6 +109,7 @@ hex = { version = "*" }
 default = ["std"]
 std = [
     "codec/std",
+    "log/std",
     "rstd/std",
     "frame-system/std",
     "frame-support/std",

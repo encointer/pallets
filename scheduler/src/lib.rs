@@ -25,7 +25,7 @@
 
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
-    debug, decl_event, decl_module, decl_storage,
+    decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
     storage::StorageValue,
@@ -33,6 +33,7 @@ use frame_support::{
     weights::{DispatchClass, Pays},
 };
 use frame_system::ensure_signed;
+use log::info;
 use rstd::ops::Rem;
 use rstd::prelude::*;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
@@ -129,7 +130,7 @@ impl<T: Config> Module<T> {
         <CurrentPhase>::put(next_phase);
         T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
         Self::deposit_event(Event::PhaseChangedTo(next_phase));
-        debug::info!(target: LOG, "phase changed to: {:?}", next_phase);
+        info!(target: LOG, "phase changed to: {:?}", next_phase);
         Ok(())
     }
 
@@ -156,7 +157,7 @@ impl<T: Config> Module<T> {
             tnext.saturating_sub(cycle_duration.saturating_mul(n))
         };
         <NextPhaseTimestamp<T>>::put(tnext);
-        debug::info!(target: LOG, "next phase change at: {:?}", tnext);
+        info!(target: LOG, "next phase change at: {:?}", tnext);
         Ok(())
     }
 

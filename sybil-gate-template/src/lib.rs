@@ -33,9 +33,10 @@ use encointer_primitives::{
 use fixed::types::I16F16;
 use frame_support::traits::Currency;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
+    decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
 };
 use frame_system::ensure_signed;
+use log::debug;
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
 use sp_core::H256;
@@ -126,7 +127,7 @@ decl_module! {
             let request_hash = call.request_hash();
 
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
-            debug::debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
+            debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
             match T::XcmSender::send_xcm(sibling_junction(parachain_id).into(), message) {
                 Ok(()) => {
                     <PendingRequests<T>>::insert(&request_hash, &sender);
@@ -150,7 +151,7 @@ decl_module! {
             Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
             ensure!(<PendingRequests<T>>::contains_key(&request_hash), <Error<T>>::UnexpectedResponse);
             let account = <PendingRequests<T>>::take(&request_hash);
-            debug::debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
+            debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
 
             for proof in rating.proofs() {
                 if BurnedProofs::contains_key(SybilResponse::Faucet, proof) {

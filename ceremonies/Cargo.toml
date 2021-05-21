@@ -5,6 +5,7 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
+log = { version = "0.4.14", default-features = false }
 
 [dependencies.rstd]
 default-features = false
@@ -111,6 +112,7 @@ path = "../test-utils"
 default = ["std"]
 std = [
 	"codec/std",
+	"log/std",
 	"rstd/std",
 	"runtime-io/std",
 	"serde",

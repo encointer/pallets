@@ -24,6 +24,7 @@
 use codec::{Decode, Encode};
 use frame_support::{debug, decl_error, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
+use log::{debug, warn};
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
 use sp_core::H256;
@@ -90,8 +91,8 @@ decl_module! {
             let request = <Vec<ProofOfAttendanceOf<T>>>::decode(&mut rating_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
-            debug::debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
-            debug::debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
+            debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
+            debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
 
             let confidence = Self::verify(request).unwrap_or_else(|_| PersonhoodUniquenessRating::default());
 
@@ -129,7 +130,7 @@ impl<T: Config> Module<T> {
             if !<encointer_communities::Module<T>>::community_identifiers()
                 .contains(&proof.community_identifier)
             {
-                debug::warn!(
+                warn!(
                     target: LOG,
                     "Received ProofOfAttendance for unknown cid: {:?}",
                     proof.community_identifier
