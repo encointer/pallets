@@ -77,6 +77,14 @@ decl_module! {
         fn deposit_event() = default;
         type Error = Error<T>;
 
+        /// Returns `PersonhoodUniquenessRating` based on the  `ProofOfAttendance`s that are
+        /// encodedly passed as an `OpaqueRequest` to this call.
+        ///
+        /// The response is sent back to the sending chain again as an XCM and calls the function
+        /// defined in the `CallMetadata`.
+        ///
+        /// Todo: The total weight of this call should include the weight of `CallMetadata` that
+        /// is passed here.
         #[weight = 5_000_000]
         fn issue_personhood_uniqueness_rating(
         origin,
