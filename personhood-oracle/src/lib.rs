@@ -22,7 +22,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{debug, decl_error, decl_event, decl_module, dispatch::DispatchResult, ensure};
+use frame_support::{decl_error, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
 use log::{debug, warn};
 use polkadot_parachain::primitives::Sibling;
