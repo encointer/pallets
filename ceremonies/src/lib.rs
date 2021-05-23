@@ -40,11 +40,18 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 
-use rstd::cmp::min;
-use rstd::prelude::*;
+use rstd::{
+	prelude::*,
+    vec,
+    cmp::min,
+};
 
 use codec::{Decode, Encode};
-use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
+use sp_runtime::{
+    traits::{CheckedSub, IdentifyAccount, Member, Verify},
+    RandomNumberGenerator,
+    SaturatedConversion
+};
 
 use encointer_primitives::{
     balances::BalanceType,
@@ -54,7 +61,6 @@ use encointer_primitives::{
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
-use sp_runtime::{SaturatedConversion, RandomNumberGenerator};
 use encointer_primitives::random_permutation::RandomPermutation;
 
 // Logger target
