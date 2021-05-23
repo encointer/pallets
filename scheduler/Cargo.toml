@@ -62,7 +62,7 @@ version = "1.0.101"
 [dependencies.sp-core]
 default-features = false
 package = "sp-core"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.keystore]
