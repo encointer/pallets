@@ -771,7 +771,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "encointer-primitives"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -2524,7 +2524,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -2547,7 +2547,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -2570,7 +2570,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -2597,7 +2597,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -2644,7 +2644,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-personhood-oracle"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -2670,7 +2670,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -2692,7 +2692,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-sybil-gate-template"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4918,7 +4918,7 @@ dependencies = [
 
 [[package]]
 name = "test-utils"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
