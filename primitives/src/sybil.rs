@@ -74,7 +74,7 @@ impl IssuePersonhoodUniquenessRatingCall {
 pub struct CallMetadata {
     /// The index must match the position of the module in `construct_runtime!`.
     pallet_index: u8,
-    /// The index should match the position of the dispatchable in the target pallet.
+    /// The index must match the position of the dispatchable in the target pallet.
     call_index: u8,
     /// The weight of `call`; this should be at least the chain's calculated weight.
     require_weight_at_most: u64,
@@ -112,6 +112,8 @@ pub struct SybilResponseCall {
     call_index: [u8; 2],
     request_hash: H256,
     confidence: PersonhoodUniquenessRating,
+    #[codec(skip)]
+    xcm_weight: u64,
 }
 
 impl SybilResponseCall {
@@ -124,7 +126,12 @@ impl SybilResponseCall {
             call_index: [response.pallet_index, response.call_index],
             request_hash,
             confidence,
+            xcm_weight: response.require_weight_at_most
         }
+    }
+
+    pub fn weight(&self) -> u64 {
+        self.xcm_weight
     }
 }
 
