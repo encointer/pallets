@@ -28,8 +28,7 @@ use crate::sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT;
 pub struct IssuePersonhoodUniquenessRatingCall {
     call_index: [u8; 2],
     request: OpaqueRequest,
-    requested_response: u8,
-    sender_pallet_index: u8,
+    response_meta: CallMetadata
 }
 
 pub type OpaqueRequest = Vec<u8>;
@@ -48,14 +47,12 @@ impl IssuePersonhoodUniquenessRatingCall {
     pub fn new(
         personhood_oracle_index: u8,
         request: OpaqueRequest,
-        requested_response: SybilResponse,
-        sender_pallet_index: u8,
+        response_meta: CallMetadata
     ) -> Self {
         Self {
             call_index: [personhood_oracle_index, 0], // is the first call in personhood-oracle pallet
             request,
-            requested_response: requested_response as u8,
-            sender_pallet_index,
+            response_meta,
         }
     }
 
@@ -70,7 +67,7 @@ impl IssuePersonhoodUniquenessRatingCall {
 }
 
 /// Contains the necessary information to ask for an XCM return message.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Copy)]
 pub struct CallMetadata {
     /// The index must match the position of the module in `construct_runtime!`.
     pallet_index: u8,
@@ -96,7 +93,7 @@ impl CallMetadata {
 
 /// This allows to generically call the sybil-personhood-oracle, whose response calls the method with the
 /// index defined in the `SybilResponse`
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Copy)]
 pub enum SybilResponse {
     Faucet = 1,
 }

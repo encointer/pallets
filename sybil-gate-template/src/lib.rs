@@ -26,14 +26,15 @@ use codec::{Decode, Encode};
 use encointer_primitives::{
     ceremonies::ProofOfAttendance,
     sybil::{
-        sibling_junction, IssuePersonhoodUniquenessRatingCall, PersonhoodUniquenessRating,
-        SybilResponse,
+        sibling_junction, CallMetadata, IssuePersonhoodUniquenessRatingCall,
+        PersonhoodUniquenessRating, SybilResponse,
     },
 };
 use fixed::types::I16F16;
 use frame_support::traits::Currency;
+use frame_support::weights::GetDispatchInfo;
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo,
+    decl_error, decl_event, decl_module, decl_storage, ensure, traits::PalletInfo, Parameter,
 };
 use frame_system::ensure_signed;
 use log::debug;
@@ -55,6 +56,9 @@ pub trait Config: frame_system::Config {
 
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
     type Signature: Verify<Signer = <Self as Config>::Public> + Member + Decode + Encode;
+
+    /// The outer call dispatch type.
+    type Call: Parameter + GetDispatchInfo;
 }
 
 decl_storage! {
@@ -106,6 +110,7 @@ decl_module! {
             requested_response: SybilResponse
         ) {
             let sender = ensure_signed(origin)?;
+            let resp_index = requested_response as u8;
 
             let proofs =
                 proof_of_attendances.into_iter().map(|proof| Decode::decode(&mut proof.as_slice()).unwrap())
@@ -118,12 +123,21 @@ decl_module! {
                 .flatten()
                 .ok_or("[EncointerSybilGate]: PalletIndex does not fix into u8. Consider giving it a smaller index.")?;
 
+            // Get the weight of the response dynamically
+            let resp_call: <T as Config>::Call = (
+                [sender_pallet_sybil_gate_index, resp_index],
+                H256::default(),
+                PersonhoodUniquenessRating::default()
+            )
+            .using_encoded(|mut c| Decode::decode(&mut c).ok())
+            .ok_or("[EncointerSybilGate]: Could not transform response call into runtime dispatchable")?;
+
             let call = IssuePersonhoodUniquenessRatingCall::new(
                 pallet_personhood_oracle_index,
                 proofs,
-                requested_response,
-                sender_pallet_sybil_gate_index
+                CallMetadata::new(sender_pallet_sybil_gate_index, resp_index, resp_call.get_dispatch_info().weight)
             );
+
             let request_hash = call.request_hash();
 
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: call.weight(), call: call.encode().into() };
