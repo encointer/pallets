@@ -25,6 +25,7 @@ use sp_runtime::{
 use xcm_executor::traits::Convert;
 
 use test_utils::*;
+use frame_support::dispatch::DispatchInfo;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
@@ -37,10 +38,19 @@ impl_outer_origin_for_runtime!(TestRuntime);
 
 impl Config for TestRuntime {
     type Event = ();
+    type Call = EmptyCall;
     type XcmSender = ();
     type Currency = balances::Pallet<TestRuntime>;
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Decode, Encode)]
+pub struct EmptyCall(());
+impl GetDispatchInfo for EmptyCall {
+    fn get_dispatch_info(&self) -> DispatchInfo {
+        Default::default()
+    }
 }
 
 fn new_test_ext() -> sp_io::TestExternalities {
