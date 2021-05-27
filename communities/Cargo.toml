@@ -1,8 +1,11 @@
 [package]
 name = "pallet-encointer-communities"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
+
+[dependencies]
+log = { version = "0.4.14", default-features = false }
 
 [dependencies.encointer-primitives]
 default-features = false
@@ -76,6 +79,7 @@ path = "../test-utils"
 default = ["std"]
 std = [
 	"codec/std",
+	"log/std",
 	"rstd/std",
 	"runtime-io/std",
 	"serde",

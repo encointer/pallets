@@ -1,10 +1,11 @@
 [package]
 name = "pallet-encointer-ceremonies"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
+log = { version = "0.4.14", default-features = false }
 
 [dependencies.rstd]
 default-features = false
@@ -84,11 +85,6 @@ approx = "0.3.0"
 tempdir = "0.3.7"
 rstest = "0.6.4"
 
-[dev-dependencies.inherents]
-package = "sp-inherents"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
 [dev-dependencies.keystore]
 package = "sc-keystore"
 git = "https://github.com/paritytech/substrate.git" 
@@ -111,6 +107,7 @@ path = "../test-utils"
 default = ["std"]
 std = [
 	"codec/std",
+	"log/std",
 	"rstd/std",
 	"runtime-io/std",
 	"serde",

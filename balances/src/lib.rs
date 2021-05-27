@@ -22,10 +22,11 @@ use encointer_primitives::{
 };
 use fixed::transcendental::exp;
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
+    decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
     StorageMap,
 };
 use frame_system::{self as frame_system, ensure_signed};
+use log::debug;
 use rstd::convert::TryInto;
 use sp_runtime::traits::StaticLookup;
 
@@ -131,7 +132,7 @@ impl<T: Config> Module<T> {
         entry: BalanceEntry<T::BlockNumber>,
         demurrage: BalanceType,
     ) -> BalanceEntry<T::BlockNumber> {
-        let current_block = frame_system::Module::<T>::block_number();
+        let current_block = frame_system::Pallet::<T>::block_number();
         let elapsed_time_block_number = current_block - entry.last_update;
         let elapsed_time_u32: u32 = elapsed_time_block_number
             .try_into()
@@ -176,7 +177,6 @@ impl<T: Config> Module<T> {
         who: &T::AccountId,
         amount: BalanceType,
     ) -> DispatchResult {
-        debug::RuntimeLogger::init();
         let mut entry_who = Self::balance_entry_updated(community_id, who);
         let mut entry_tot = Self::total_issuance_entry_updated(community_id);
         ensure!(
@@ -187,7 +187,7 @@ impl<T: Config> Module<T> {
         entry_tot.principal += amount;
         <TotalIssuance<T>>::insert(community_id, entry_tot);
         <Balance<T>>::insert(community_id, who, entry_who);
-        debug::debug!(target: LOG, "issue {:?} for {:?}", amount, who);
+        debug!(target: LOG, "issue {:?} for {:?}", amount, who);
         Ok(())
     }
 

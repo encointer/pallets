@@ -1,8 +1,11 @@
 [package]
 name = "pallet-encointer-scheduler"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
+
+[dependencies]
+log = { version = "0.4.14", default-features = false }
 
 [dependencies.encointer-primitives]
 default-features = false
@@ -45,12 +48,6 @@ package = "frame-system"
 git = "https://github.com/paritytech/substrate.git" 
 branch = "master"
 
-[dependencies.sp-timestamp]
-default-features = false
-package = "sp-timestamp"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
 [dependencies.timestamp]
 default-features = false
 package = "pallet-timestamp"
@@ -65,16 +62,11 @@ version = "1.0.101"
 [dependencies.sp-core]
 default-features = false
 package = "sp-core"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.keystore]
 package = "sc-keystore"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
-[dev-dependencies.inherents]
-package = "sp-inherents"
 git = "https://github.com/paritytech/substrate.git" 
 branch = "master"
 
@@ -98,12 +90,12 @@ path = "../test-utils"
 default = ["std"]
 std = [
 	"codec/std",
+	"log/std",
 	"rstd/std",
 	"runtime-io/std",
 	"serde",
 	"sp-runtime/std",
 	"timestamp/std",
-	"sp-timestamp/std",
 	"sp-core/std",
 	"frame-support/std",
 	"frame-system/std",

@@ -23,17 +23,17 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Encode;
+use log::{info, warn};
 use frame_support::{
-    debug, decl_error, decl_event, decl_module, decl_storage, ensure,
+    decl_error, decl_event, decl_module, decl_storage, ensure,
     storage::{StorageMap, StorageValue},
 };
 use frame_system::{ensure_root, ensure_signed};
-
 use rstd::prelude::*;
-
-use codec::Encode;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use runtime_io::hashing::blake2_256;
+use sp_runtime::{DispatchResult, SaturatedConversion};
 
 use encointer_primitives::{
     balances::{BalanceType, Demurrage},
@@ -44,7 +44,6 @@ use encointer_primitives::{
         NominalIncome as NominalIncomeType,
     },
 };
-use sp_runtime::{DispatchResult, SaturatedConversion};
 
 pub trait Config: frame_system::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
@@ -83,7 +82,6 @@ decl_module! {
             demurrage: Option<Demurrage>,
             nominal_income: Option<NominalIncomeType>
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             Self::validate_bootstrappers(&bootstrappers)?;
             community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
@@ -113,12 +111,11 @@ decl_module! {
             runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
-            debug::info!(target: LOG, "registered community with cid: {:?}", cid);
+            info!(target: LOG, "registered community with cid: {:?}", cid);
         }
 
         #[weight = 10_000]
         fn update_community_medadata(origin, cid: CommunityIdentifier, community_metadata: CommunityMetadataType) {
-            debug::RuntimeLogger::init();
             ensure_root(origin)?;
             Self::ensure_cid_exists(&cid)?;
             community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
@@ -129,31 +126,29 @@ decl_module! {
             runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
             Self::deposit_event(RawEvent::MetadataUpdated(cid));
-            debug::info!(target: LOG, "updated community metadata for cid: {:?}", cid);
+            info!(target: LOG, "updated community metadata for cid: {:?}", cid);
         }
 
         #[weight = 10_000]
         fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
-            debug::RuntimeLogger::init();
             ensure_root(origin)?;
             validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             Self::ensure_cid_exists(&cid)?;
 
             <DemurragePerBlock>::insert(&cid, &demurrage);
             Self::deposit_event(RawEvent::DemurrageUpdated(cid, demurrage));
-            debug::info!(target: LOG, " updated demurrage for cid: {:?}", cid);
+            info!(target: LOG, " updated demurrage for cid: {:?}", cid);
         }
 
         #[weight = 10_000]
         fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: NominalIncomeType) {
-            debug::RuntimeLogger::init();
             ensure_root(origin)?;
             validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
             Self::ensure_cid_exists(&cid)?;
 
             <NominalIncome>::insert(&cid, &nominal_income);
             Self::deposit_event(RawEvent::NominalIncomeUpdated(cid, nominal_income));
-            debug::info!(target: LOG, " updated nominal income for cid: {:?}", cid);
+            info!(target: LOG, " updated nominal income for cid: {:?}", cid);
         }
     }
 }
@@ -289,7 +284,7 @@ impl<T: Config> Module<T> {
             if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
                 || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M
             {
-                debug::warn!(target: LOG, "location too close to pole: {:?}", l1);
+                warn!(target: LOG, "location too close to pole: {:?}", l1);
                 return Err(<Error<T>>::MinimumDistanceViolationToPole)?;
             }
             // prohibit proximity to dateline
@@ -298,14 +293,14 @@ impl<T: Config> Module<T> {
                 lon: DATELINE_LON,
             };
             if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
-                debug::warn!(target: LOG, "location too close to dateline: {:?}", l1);
+                warn!(target: LOG, "location too close to dateline: {:?}", l1);
                 return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
             }
             // test against all other communities globally
             for other in cids.iter() {
                 for l2 in Self::locations(other) {
                     if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
-                        debug::warn!(target: LOG,
+                        warn!(target: LOG,
                                      "location {:?} too close to previously registered location {:?} with cid {:?}",
                                      l1, l2, other);
                         return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity)?;

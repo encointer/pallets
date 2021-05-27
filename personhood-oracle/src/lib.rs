@@ -22,8 +22,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{debug, decl_error, decl_event, decl_module, dispatch::DispatchResult, ensure};
+use frame_support::{decl_error, decl_event, decl_module, dispatch::DispatchResult, ensure};
 use frame_system::ensure_signed;
+use log::{debug, warn};
 use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
 use sp_core::H256;
@@ -33,7 +34,7 @@ use xcm::v0::{Error as XcmError, OriginKind, SendXcm, Xcm};
 use encointer_primitives::{
     ceremonies::{ProofOfAttendance, Reputation},
     sybil::{
-        sibling_junction, OpaqueRequest, PersonhoodUniquenessRating, RequestHash, SybilResponseCall,
+        sibling_junction, OpaqueRequest, PersonhoodUniquenessRating, RequestHash, SybilResponseCall, CallMetadata
     },
 };
 
@@ -76,14 +77,20 @@ decl_module! {
         fn deposit_event() = default;
         type Error = Error<T>;
 
+        /// Returns `PersonhoodUniquenessRating` based on the  `ProofOfAttendance`s that are
+        /// encodedly passed as an `OpaqueRequest` to this call.
+        ///
+        /// The response is sent back to the sending chain again as an XCM and calls the function
+        /// defined in the `CallMetadata`.
+        ///
+        /// Todo: The total weight of this call should include the weight of `CallMetadata` that
+        /// is passed here.
         #[weight = 5_000_000]
         fn issue_personhood_uniqueness_rating(
         origin,
         rating_request: OpaqueRequest,
-        requested_response: u8,
-        sender_sybil_gate: u8
+        response: CallMetadata
         ) {
-            debug::RuntimeLogger::init();
             let sender = ensure_signed(origin)?;
             let para_id: u32 = Sibling::try_from_account(&sender)
                 .ok_or(<Error<T>>::UnableToDecodeRequest)?
@@ -91,14 +98,14 @@ decl_module! {
             let request = <Vec<ProofOfAttendanceOf<T>>>::decode(&mut rating_request.as_slice())
                 .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
 
-            debug::debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
-            debug::debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
+            debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
+            debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
 
             let confidence = Self::verify(request).unwrap_or_else(|_| PersonhoodUniquenessRating::default());
 
             let request_hash = rating_request.hash();
-            let call =  SybilResponseCall::new(sender_sybil_gate, requested_response, request_hash, confidence);
-            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, call: call.encode() };
+            let call =  SybilResponseCall::new(&response, request_hash, confidence);
+            let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: response.weight(), call: call.encode().into() };
 
             match T::XcmSender::send_xcm(sibling_junction(para_id).into(), message) {
                 Ok(()) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentSuccess(request_hash, para_id)),
@@ -130,7 +137,7 @@ impl<T: Config> Module<T> {
             if !<encointer_communities::Module<T>>::community_identifiers()
                 .contains(&proof.community_identifier)
             {
-                debug::warn!(
+                warn!(
                     target: LOG,
                     "Received ProofOfAttendance for unknown cid: {:?}",
                     proof.community_identifier

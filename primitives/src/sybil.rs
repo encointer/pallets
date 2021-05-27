@@ -22,13 +22,13 @@ use sp_runtime::traits::{BlakeTwo256, Hash};
 use xcm::v0::Junction;
 
 use crate::scheduler::CeremonyIndexType;
+use crate::sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
 pub struct IssuePersonhoodUniquenessRatingCall {
     call_index: [u8; 2],
     request: OpaqueRequest,
-    requested_response: u8,
-    sender_pallet_index: u8,
+    response_meta: CallMetadata
 }
 
 pub type OpaqueRequest = Vec<u8>;
@@ -47,25 +47,53 @@ impl IssuePersonhoodUniquenessRatingCall {
     pub fn new(
         personhood_oracle_index: u8,
         request: OpaqueRequest,
-        requested_response: SybilResponse,
-        sender_pallet_index: u8,
+        response_meta: CallMetadata
     ) -> Self {
         Self {
             call_index: [personhood_oracle_index, 0], // is the first call in personhood-oracle pallet
             request,
-            requested_response: requested_response as u8,
-            sender_pallet_index,
+            response_meta,
         }
     }
 
     pub fn request_hash(&self) -> H256 {
         self.request.hash()
     }
+
+    /// Returns the (currently hardcoded) weight of the `issue_personhood_uniqueness_rating` call
+    pub fn weight(&self) -> u64 {
+        ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT
+    }
+}
+
+/// Contains the necessary information to ask for an XCM return message.
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Copy)]
+pub struct CallMetadata {
+    /// The index must match the position of the module in `construct_runtime!`.
+    pallet_index: u8,
+    /// The index must match the position of the dispatchable in the target pallet.
+    call_index: u8,
+    /// The weight of `call`; this should be at least the chain's calculated weight.
+    require_weight_at_most: u64,
+}
+
+impl CallMetadata {
+    pub fn new(pallet_index: u8, call_index: u8, require_weight_at_most: u64) -> Self {
+        return Self {
+            pallet_index,
+            call_index,
+            require_weight_at_most,
+        };
+    }
+
+    pub fn weight(&self) -> u64 {
+        self.require_weight_at_most
+    }
 }
 
 /// This allows to generically call the sybil-personhood-oracle, whose response calls the method with the
 /// index defined in the `SybilResponse`
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Copy)]
 pub enum SybilResponse {
     Faucet = 1,
 }
@@ -81,20 +109,26 @@ pub struct SybilResponseCall {
     call_index: [u8; 2],
     request_hash: H256,
     confidence: PersonhoodUniquenessRating,
+    #[codec(skip)]
+    xcm_weight: u64,
 }
 
 impl SybilResponseCall {
     pub fn new(
-        sybil_gate_index: u8,
-        requested_sybil_response_call_index: u8,
+        response: &CallMetadata,
         request_hash: H256,
         confidence: PersonhoodUniquenessRating,
     ) -> Self {
         Self {
-            call_index: [sybil_gate_index, requested_sybil_response_call_index],
+            call_index: [response.pallet_index, response.call_index],
             request_hash,
             confidence,
+            xcm_weight: response.require_weight_at_most
         }
+    }
+
+    pub fn weight(&self) -> u64 {
+        self.xcm_weight
     }
 }
 
@@ -130,5 +164,10 @@ impl PersonhoodUniquenessRating {
 }
 
 pub fn sibling_junction(id: u32) -> (Junction, Junction) {
-    (Junction::Parent, Junction::Parachain { id })
+    (Junction::Parent, Junction::Parachain(id))
+}
+
+pub mod consts {
+    pub const SYBIL_CALL_WEIGHT: u64 = 5_000_000;
+    pub const ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT: u64 = 5_000_000;
 }
