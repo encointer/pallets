@@ -78,6 +78,8 @@ decl_error! {
         OnlyOwnerCanRemoveShop,
         /// invalid IpfsCid supplied
         InvalidIpfsCid,
+        /// community identifier not found
+        InexistentCommunity,
     }
 }
 
@@ -94,7 +96,7 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             // Check that the supplied community is actually registered
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                "CommunityIdentifier not found");
+                Error::<T>::InexistentCommunity);
 
             let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
             let mut shops = ShopRegistry::get(cid);
