@@ -14,7 +14,38 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::common::IpfsCid;
+use codec::{Decode, Encode};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_core::RuntimeDebug;
+
+use crate::common::{IpfsCid, PalletString};
+use crate::communities::CommunityIdentifier;
 
 pub type ShopIdentifier = IpfsCid;
+
 pub type ArticleIdentifier = IpfsCid;
+
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct BusinessIdentifier<AccountId> {
+    pub community_identifier: CommunityIdentifier,
+    pub business_account: AccountId,
+}
+
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct BusinessData {
+    //TODO add block number
+    pub url: PalletString,
+    pub last_oid: u32,
+}
+
+pub type OfferingIdentifier = u32;
+
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct OfferingData {
+    //TODO add block number
+    pub url: PalletString,
+}
