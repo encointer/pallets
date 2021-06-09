@@ -126,6 +126,20 @@ decl_module! {
             Ok(())
         }
 
+        #[weight = 10_000]
+        pub fn delete_business(origin, cid: CommunityIdentifier) -> DispatchResult {
+            // Check that the extrinsic was signed and get the signer
+            let sender = ensure_signed(origin)?;
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+                Error::<T>::InexistentCommunity);
+
+            ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
+            BusinessRegistry::<T>::remove(cid, sender);
+
+            Ok(())
+        }
+
         /// Allow a user to create a shop
         #[weight = 10_000]
         pub fn new_shop(origin, cid: CommunityIdentifier, shop: ShopIdentifier) -> DispatchResult {
