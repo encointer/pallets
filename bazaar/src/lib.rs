@@ -84,7 +84,9 @@ decl_error! {
         /// community identifier not found
         InexistentCommunity,
         /// business already registered for this cid
-        ExistingBusiness
+        ExistingBusiness,
+        /// business does not exist
+        InexistentBusiness
     }
 }
 
@@ -105,6 +107,21 @@ decl_module! {
             ensure!(!BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::ExistingBusiness);
 
             BusinessRegistry::<T>::insert(cid, sender, BusinessData { url: url, last_oid: 1 });
+
+            Ok(())
+        }
+
+        #[weight = 10_000]
+        pub fn update_business(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
+            // Check that the extrinsic was signed and get the signer
+            let sender = ensure_signed(origin)?;
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+                Error::<T>::InexistentCommunity);
+
+            ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
+
+            BusinessRegistry::<T>::mutate(cid, sender, |b| b.url = url);
 
             Ok(())
         }

@@ -110,6 +110,31 @@ fn create_business_duplicate() {
 }
 
 #[test]
+fn update_business() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData { url: url(), last_oid: 2 });
+
+        assert!(EncointerBazaar::update_business(Origin::signed(alice()), cid, url1()).is_ok());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData { url: url1(), last_oid: 2 });
+    });
+}
+
+#[test]
+fn update_business_inexistent() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData { url: url(), last_oid: 3 });
+
+        assert!(EncointerBazaar::update_business(Origin::signed(bob()), cid, url1()).is_err());
+        assert!(EncointerBazaar::update_business(Origin::signed(alice()), CommunityIdentifier { 0: [0; 32] }, url1()).is_err());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData { url: url(), last_oid: 3 });
+    });
+}
+
+#[test]
 fn create_new_shop_works() {
     ExtBuilder::build().execute_with(|| {
         // initialisation
