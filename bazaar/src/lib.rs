@@ -48,6 +48,7 @@ pub trait Config: frame_system::Config + encointer_communities::Config {
 decl_storage! {
     trait Store for Module<T: Config> as Bazaar {
         pub BusinessRegistry get(fn business_registry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BusinessData;
+        pub OfferingRegistry get(fn offering_registry): double_map hasher(blake2_128_concat) BusinessIdentifier<T::AccountId>, hasher(blake2_128_concat) OfferingIdentifier => OfferingData;
     }
 }
 
@@ -117,6 +118,23 @@ decl_module! {
 
             ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
             BusinessRegistry::<T>::remove(cid, sender);
+
+            Ok(())
+        }
+
+        #[weight = 10_000]
+        pub fn create_offering(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
+            // Check that the extrinsic was signed and get the signer
+            let sender = ensure_signed(origin)?;
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+                Error::<T>::InexistentCommunity);
+
+            ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
+
+            let oid = BusinessRegistry::<T>::get(cid, sender.clone()).last_oid;
+            BusinessRegistry::<T>::mutate(cid, sender.clone(), |b| b.last_oid = b.last_oid + 1);
+            OfferingRegistry::<T>::insert(BusinessIdentifier{community_identifier: cid, business_account: sender}, oid, OfferingData{url});
 
             Ok(())
         }

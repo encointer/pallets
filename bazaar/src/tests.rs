@@ -67,6 +67,10 @@ fn url1() -> String {
     return "https://substrate.dev".to_string();
 }
 
+fn url2() -> String {
+    return "https://polkadot.network".to_string();
+}
+
 #[test]
 fn create_business() {
     ExtBuilder::build().execute_with(|| {
@@ -151,5 +155,46 @@ fn delete_business_inexistent() {
 
         assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
         assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData { url: url1(), last_oid: 2 });
+    });
+}
+
+#[test]
+fn create_offering() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData { url: url(), last_oid: 1 });
+
+        assert!(EncointerBazaar::create_offering(Origin::signed(alice()), cid, url1()).is_ok());
+        assert!(EncointerBazaar::create_offering(Origin::signed(alice()), cid, url2()).is_ok());
+
+        //TODO get offering identifier from thrown event 
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier { community_identifier: cid, business_account: alice() }, 1),
+                   OfferingData { url: url1() });
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier { community_identifier: cid, business_account: alice() }, 2),
+                   OfferingData { url: url2() });
+    });
+}
+
+#[test]
+fn create_offering_inexistent_business() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData { url: url(), last_oid: 1 });
+
+        assert!(EncointerBazaar::create_offering(Origin::signed(bob()), cid, url1()).is_err());
+
+        //TODO assert events
+    });
+}
+
+#[test]
+fn create_offering_inexistent_community() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData { url: url(), last_oid: 1 });
+
+        assert!(EncointerBazaar::create_offering(Origin::signed(alice()), CommunityIdentifier::zero(), url1()).is_err());
+
+        //TODO assert events
     });
 }
