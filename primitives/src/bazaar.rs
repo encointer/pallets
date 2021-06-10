@@ -24,8 +24,6 @@ use crate::communities::CommunityIdentifier;
 
 pub type ShopIdentifier = IpfsCid;
 
-pub type ArticleIdentifier = IpfsCid;
-
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct BusinessIdentifier<AccountId> {

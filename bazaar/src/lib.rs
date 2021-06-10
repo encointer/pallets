@@ -30,14 +30,13 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    storage::{StorageDoubleMap, StorageMap},
+    storage::{StorageDoubleMap},
 };
 use frame_system::ensure_signed;
 use rstd::prelude::*;
 
-use encointer_primitives::common::validate_ipfs_cid;
 use encointer_primitives::{
-    bazaar::{ArticleIdentifier, ShopIdentifier, BusinessIdentifier, BusinessData, OfferingData, OfferingIdentifier},
+    bazaar::{ShopIdentifier, BusinessIdentifier, BusinessData, OfferingData, OfferingIdentifier},
     communities::CommunityIdentifier,
     common::PalletString,
 };
@@ -48,16 +47,6 @@ pub trait Config: frame_system::Config + encointer_communities::Config {
 
 decl_storage! {
     trait Store for Module<T: Config> as Bazaar {
-        // Maps the shop or article owner to the respective items
-        pub ShopsOwned get(fn shops_owned): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ShopIdentifier>;
-        pub ArticlesOwned get(fn articles_owned): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => Vec<ArticleIdentifier>;
-        // Item owner
-        pub ShopOwner get(fn shop_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ShopIdentifier => T::AccountId;
-        pub ArticleOwner get(fn article_owner): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) ArticleIdentifier => (T::AccountId, ShopIdentifier);
-        // The set of all shops and articles per community
-        pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ShopIdentifier>;
-        pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ArticleIdentifier>;
-
         pub BusinessRegistry get(fn business_registry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BusinessData;
     }
 }
@@ -73,14 +62,6 @@ decl_event! {
 
 decl_error! {
     pub enum Error for Module<T: Config> {
-        /// no such shop exisiting that could be deleted
-        NoSuchShop,
-        /// shop can not be created twice
-        ShopAlreadyCreated,
-        /// shop can not be removed by anyone else than its owner
-        OnlyOwnerCanRemoveShop,
-        /// invalid IpfsCid supplied
-        InvalidIpfsCid,
         /// community identifier not found
         InexistentCommunity,
         /// business already registered for this cid
@@ -138,75 +119,6 @@ decl_module! {
             BusinessRegistry::<T>::remove(cid, sender);
 
             Ok(())
-        }
-
-        /// Allow a user to create a shop
-        #[weight = 10_000]
-        pub fn new_shop(origin, cid: CommunityIdentifier, shop: ShopIdentifier) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
-            // Check that the supplied community is actually registered
-            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                Error::<T>::InexistentCommunity);
-
-            let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
-            let mut shops = ShopRegistry::get(cid);
-
-            ensure!(validate_ipfs_cid(&shop).is_ok(), Error::<T>::InvalidIpfsCid);
-
-            // Verify that the specified shop has not already been created with fast search
-            ensure!(!ShopOwner::<T>::contains_key(cid, &shop), Error::<T>::ShopAlreadyCreated);
-
-            // Add the shop to the registries
-            owned_shops.push(shop.clone());
-            shops.push(shop.clone());
-            // Update blockchain
-            ShopsOwned::<T>::insert(cid, &sender, owned_shops);
-            ShopOwner::<T>::insert(cid, &shop, &sender);
-            ShopRegistry::insert(cid, shops);
-            // Emit an event that the shop was created
-            Self::deposit_event(RawEvent::ShopCreated(cid, sender, shop));
-            Ok(())
-        }
-
-        /// Allow a user to remove their shop
-        #[weight = 10_000]
-        pub fn remove_shop(origin, cid:CommunityIdentifier, shop: ShopIdentifier) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
-
-            let mut owned_shops = ShopsOwned::<T>::get(cid, &sender);
-            let mut shops = ShopRegistry::get(cid);
-
-            // Verify that the removal request is coming from the righteous owner
-            let shop_owner = ShopOwner::<T>::get(cid, &shop);
-            ensure!(shop_owner == sender, Error::<T>::OnlyOwnerCanRemoveShop);
-
-            // Get the index of the shop in the owner list
-            match owned_shops.binary_search(&shop) {
-                // Get the index of the shop registry
-                Ok(shop_registry_index) => {
-                    match owned_shops.binary_search(&shop) {
-                        // If the search succeeds, delete the respective entries
-                        Ok(onwed_shops_index) => {
-                            // Remove the shop from the local registries
-                            owned_shops.remove(onwed_shops_index);
-                            shops.remove(shop_registry_index);
-                            // Update blockchain
-                            ShopsOwned::<T>::insert(cid, &sender, owned_shops);
-                            ShopRegistry::insert(cid, shops);
-                            ShopOwner::<T>::remove(cid, &shop);
-                            // Emit an event that the shop was removed
-                            Self::deposit_event(RawEvent::ShopRemoved(cid, sender, shop));
-                            Ok(())
-                        },
-                        // If the search fails, no such shop is owned
-                        Err(_) => Err(Error::<T>::NoSuchShop.into()),
-                    }
-                },
-                // If the search fails, no such shop is owned
-                Err(_) => Err(Error::<T>::NoSuchShop.into()),
-            }
         }
     }
 }
