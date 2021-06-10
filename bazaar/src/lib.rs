@@ -119,7 +119,9 @@ decl_module! {
                 Error::<T>::InexistentCommunity);
 
             ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
-            BusinessRegistry::<T>::remove(cid, sender);
+
+            BusinessRegistry::<T>::remove(cid, sender.clone());
+            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier{community_identifier: cid, business_account: sender});
 
             Ok(())
         }

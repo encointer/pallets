@@ -256,3 +256,20 @@ fn delete_offering_inexistent() {
         assert!(EncointerBazaar::delete_offering(Origin::signed(alice()), CommunityIdentifier::zero(), 1).is_err());
     });
 }
+
+#[test]
+fn delete_business_with_offerings() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData { url: url(), last_oid: 2 });
+        BusinessRegistry::<TestRuntime>::insert(cid, bob(), BusinessData { url: url1(), last_oid: 2 });
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier { community_identifier: cid, business_account: alice() }, 1, OfferingData { url: url() });
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier { community_identifier: cid, business_account: bob() }, 1, OfferingData { url: url1() });
+
+        assert!(EncointerBazaar::delete_business(Origin::signed(alice()), cid).is_ok());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier { community_identifier: cid, business_account: alice() }, 1), OfferingData::default());
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier { community_identifier: cid, business_account: bob() }, 1), OfferingData { url: url1() });
+    });
+}
