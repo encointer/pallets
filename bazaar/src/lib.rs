@@ -157,6 +157,23 @@ decl_module! {
 
             Ok(())
         }
+
+        #[weight = 10_000]
+        pub fn delete_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier) -> DispatchResult {
+            // Check that the extrinsic was signed and get the signer
+            let sender = ensure_signed(origin)?;
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+                Error::<T>::InexistentCommunity);
+
+            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender};
+
+            ensure!(OfferingRegistry::<T>::contains_key(business_identifier.clone(), oid.clone()), Error::<T>::InexistentOffering);
+
+            OfferingRegistry::<T>::remove(business_identifier, oid);
+
+            Ok(())
+        }
     }
 }
 
