@@ -53,6 +53,62 @@ impl ExtBuilder {
     }
 }
 
+fn create_cid() -> CommunityIdentifier {
+    return register_test_community::<TestRuntime>(None, 2);
+}
+
+fn alice() -> AccountId {
+    return AccountId::from(AccountKeyring::Alice);
+}
+
+fn bob() -> AccountId {
+    return AccountId::from(AccountKeyring::Bob);
+}
+
+fn url() -> String {
+    return "https://encointer.org".to_string();
+}
+
+fn url1() -> String {
+    return "https://substrate.dev".to_string();
+}
+
+#[test]
+fn create_business() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+
+        assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
+        assert!(EncointerBazaar::create_business(Origin::signed(bob()), cid, url1()).is_ok());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData { url: url(), last_oid: 1 });
+        assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData { url: url1(), last_oid: 1 });
+    });
+}
+
+#[test]
+fn create_business_with_invalid_cid() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = CommunityIdentifier { 0: [0; 32] };
+
+        assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_err());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData { url: "".to_string(), last_oid: 0 });
+    });
+}
+
+#[test]
+fn create_business_duplicate() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = create_cid();
+
+        assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
+        assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url1()).is_err());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData { url: url(), last_oid: 1 });
+    });
+}
+
 #[test]
 fn create_new_shop_works() {
     ExtBuilder::build().execute_with(|| {
@@ -128,9 +184,9 @@ fn removal_of_shop_works() {
         assert!(EncointerBazaar::remove_shop(
             Origin::signed(alice.clone()),
             cid,
-            alice_shop.clone()
+            alice_shop.clone(),
         )
-        .is_ok());
+            .is_ok());
 
         // update local shop list
         shops = EncointerBazaar::shop_registry(cid);
@@ -157,15 +213,15 @@ fn alices_store_are_differentiated() {
         assert!(EncointerBazaar::new_shop(
             Origin::signed(alice.clone()),
             cid,
-            alice_shop_one.clone()
+            alice_shop_one.clone(),
         )
-        .is_ok());
+            .is_ok());
         assert!(EncointerBazaar::new_shop(
             Origin::signed(alice.clone()),
             cid,
-            alice_shop_two.clone()
+            alice_shop_two.clone(),
         )
-        .is_ok());
+            .is_ok());
 
         // get shops from blockchain
         let mut shops = EncointerBazaar::shop_registry(cid);
@@ -188,9 +244,9 @@ fn alices_store_are_differentiated() {
         assert!(EncointerBazaar::remove_shop(
             Origin::signed(alice.clone()),
             cid,
-            alice_shop_two.clone()
+            alice_shop_two.clone(),
         )
-        .is_ok());
+            .is_ok());
 
         // assert that shop two was removed and shop one still exisits
         shops = EncointerBazaar::shop_registry(cid);
@@ -219,15 +275,15 @@ fn stores_cannot_be_created_twice() {
         assert!(EncointerBazaar::new_shop(
             Origin::signed(alice.clone()),
             cid,
-            alice_shop_one.clone()
+            alice_shop_one.clone(),
         )
-        .is_ok());
+            .is_ok());
         assert!(EncointerBazaar::new_shop(
             Origin::signed(alice.clone()),
             cid,
-            alice_shop_two.clone()
+            alice_shop_two.clone(),
         )
-        .is_err());
+            .is_err());
 
         // get shops from blockchain
         let shops = EncointerBazaar::shop_registry(cid);

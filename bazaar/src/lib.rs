@@ -37,8 +37,9 @@ use rstd::prelude::*;
 
 use encointer_primitives::common::validate_ipfs_cid;
 use encointer_primitives::{
-    bazaar::{ArticleIdentifier, ShopIdentifier},
+    bazaar::{ArticleIdentifier, ShopIdentifier, BusinessIdentifier, BusinessData, OfferingData, OfferingIdentifier},
     communities::CommunityIdentifier,
+    common::PalletString,
 };
 
 pub trait Config: frame_system::Config + encointer_communities::Config {
@@ -56,6 +57,8 @@ decl_storage! {
         // The set of all shops and articles per community
         pub ShopRegistry get(fn shop_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ShopIdentifier>;
         pub ArticleRegistry get(fn article_registry): map hasher(blake2_128_concat) CommunityIdentifier => Vec<ArticleIdentifier>;
+
+        pub BusinessRegistry get(fn business_registry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BusinessData;
     }
 }
 
@@ -80,6 +83,8 @@ decl_error! {
         InvalidIpfsCid,
         /// community identifier not found
         InexistentCommunity,
+        /// business already registered for this cid
+        ExistingBusiness
     }
 }
 
@@ -88,6 +93,21 @@ decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
         type Error = Error<T>;
+
+        #[weight = 10_000]
+        pub fn create_business(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
+            // Check that the extrinsic was signed and get the signer
+            let sender = ensure_signed(origin)?;
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+                Error::<T>::InexistentCommunity);
+
+            ensure!(!BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::ExistingBusiness);
+
+            BusinessRegistry::<T>::insert(cid, sender, BusinessData { url: url, last_oid: 1 });
+
+            Ok(())
+        }
 
         /// Allow a user to create a shop
         #[weight = 10_000]
