@@ -68,7 +68,9 @@ decl_error! {
         /// business already registered for this cid
         ExistingBusiness,
         /// business does not exist
-        InexistentBusiness
+        InexistentBusiness,
+        /// offering does not exist
+        InexistentOffering
     }
 }
 
@@ -135,6 +137,23 @@ decl_module! {
             let oid = BusinessRegistry::<T>::get(cid, sender.clone()).last_oid;
             BusinessRegistry::<T>::mutate(cid, sender.clone(), |b| b.last_oid = b.last_oid + 1);
             OfferingRegistry::<T>::insert(BusinessIdentifier{community_identifier: cid, business_account: sender}, oid, OfferingData{url});
+
+            Ok(())
+        }
+
+        #[weight = 10_000]
+        pub fn update_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier, url: PalletString) -> DispatchResult {
+            // Check that the extrinsic was signed and get the signer
+            let sender = ensure_signed(origin)?;
+            // Check that the supplied community is actually registered
+            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+                Error::<T>::InexistentCommunity);
+
+            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender};
+
+            ensure!(OfferingRegistry::<T>::contains_key(business_identifier.clone(), oid.clone()), Error::<T>::InexistentOffering);
+
+            OfferingRegistry::<T>::mutate(business_identifier, oid, |o| o.url = url);
 
             Ok(())
         }
