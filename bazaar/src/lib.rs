@@ -36,7 +36,7 @@ use frame_system::ensure_signed;
 use rstd::prelude::*;
 
 use encointer_primitives::{
-    bazaar::{ShopIdentifier, BusinessIdentifier, BusinessData, OfferingData, OfferingIdentifier},
+    bazaar::{BusinessIdentifier, BusinessData, OfferingData, OfferingIdentifier},
     communities::CommunityIdentifier,
     common::PalletString,
 };
@@ -54,10 +54,18 @@ decl_storage! {
 
 decl_event! {
     pub enum Event<T> where AccountId = <T as frame_system::Config>::AccountId {
-        /// Event emitted when a shop is uploaded. [community, who, shop]
-        ShopCreated(CommunityIdentifier, AccountId, ShopIdentifier),
-        /// Event emitted when a shop is removed by the owner. [community, who, shop]
-        ShopRemoved(CommunityIdentifier, AccountId, ShopIdentifier),
+        /// Event emitted when a business is created. [community, who]
+        BusinessCreated(CommunityIdentifier, AccountId),
+        /// Event emitted when a business is updated. [community, who]
+        BusinessUpdated(CommunityIdentifier, AccountId),
+        /// Event emitted when a business is deleted. [community, who]
+        BusinessDeleted(CommunityIdentifier, AccountId),
+        /// Event emitted when an offering is created. [community, who, oid]
+        OfferingCreated(CommunityIdentifier, AccountId, OfferingIdentifier),
+        /// Event emitted when an offering is updated. [community, who, oid]
+        OfferingUpdated(CommunityIdentifier, AccountId, OfferingIdentifier),
+        /// Event emitted when an offering is deleted. [community, who, oid]
+        OfferingDeleted(CommunityIdentifier, AccountId, OfferingIdentifier),
     }
 }
 
@@ -90,7 +98,9 @@ decl_module! {
 
             ensure!(!BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::ExistingBusiness);
 
-            BusinessRegistry::<T>::insert(cid, sender, BusinessData { url: url, last_oid: 1 });
+            BusinessRegistry::<T>::insert(cid, sender.clone(), BusinessData { url: url, last_oid: 1 });
+
+            Self::deposit_event(RawEvent::BusinessCreated(cid, sender));
 
             Ok(())
         }
@@ -105,7 +115,9 @@ decl_module! {
 
             ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
 
-            BusinessRegistry::<T>::mutate(cid, sender, |b| b.url = url);
+            BusinessRegistry::<T>::mutate(cid, sender.clone(), |b| b.url = url);
+
+            Self::deposit_event(RawEvent::BusinessUpdated(cid, sender));
 
             Ok(())
         }
@@ -121,7 +133,9 @@ decl_module! {
             ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
 
             BusinessRegistry::<T>::remove(cid, sender.clone());
-            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier{community_identifier: cid, business_account: sender});
+            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier{community_identifier: cid, business_account: sender.clone()});
+
+            Self::deposit_event(RawEvent::BusinessDeleted(cid, sender));
 
             Ok(())
         }
@@ -138,7 +152,9 @@ decl_module! {
 
             let oid = BusinessRegistry::<T>::get(cid, sender.clone()).last_oid;
             BusinessRegistry::<T>::mutate(cid, sender.clone(), |b| b.last_oid = b.last_oid + 1);
-            OfferingRegistry::<T>::insert(BusinessIdentifier{community_identifier: cid, business_account: sender}, oid, OfferingData{url});
+            OfferingRegistry::<T>::insert(BusinessIdentifier{community_identifier: cid, business_account: sender.clone()}, oid, OfferingData{url});
+
+            Self::deposit_event(RawEvent::OfferingCreated(cid, sender, oid));
 
             Ok(())
         }
@@ -151,11 +167,13 @@ decl_module! {
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 Error::<T>::InexistentCommunity);
 
-            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender};
+            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender.clone()};
 
             ensure!(OfferingRegistry::<T>::contains_key(business_identifier.clone(), oid.clone()), Error::<T>::InexistentOffering);
 
             OfferingRegistry::<T>::mutate(business_identifier, oid, |o| o.url = url);
+
+            Self::deposit_event(RawEvent::OfferingUpdated(cid, sender, oid));
 
             Ok(())
         }
@@ -168,11 +186,13 @@ decl_module! {
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 Error::<T>::InexistentCommunity);
 
-            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender};
+            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender.clone()};
 
             ensure!(OfferingRegistry::<T>::contains_key(business_identifier.clone(), oid.clone()), Error::<T>::InexistentOffering);
 
             OfferingRegistry::<T>::remove(business_identifier, oid);
+
+            Self::deposit_event(RawEvent::OfferingDeleted(cid, sender, oid));
 
             Ok(())
         }

@@ -19,10 +19,8 @@ use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 
-use crate::common::{IpfsCid, PalletString};
+use crate::common::PalletString;
 use crate::communities::CommunityIdentifier;
-
-pub type ShopIdentifier = IpfsCid;
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
