@@ -96,9 +96,9 @@ decl_module! {
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 Error::<T>::InexistentCommunity);
 
-            ensure!(!BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::ExistingBusiness);
+            ensure!(!BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::ExistingBusiness);
 
-            BusinessRegistry::<T>::insert(cid, sender.clone(), BusinessData { url: url, last_oid: 1 });
+            BusinessRegistry::<T>::insert(cid, &sender, BusinessData::new(url, 1));
 
             Self::deposit_event(RawEvent::BusinessCreated(cid, sender));
 
@@ -109,13 +109,10 @@ decl_module! {
         pub fn update_business(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
-            // Check that the supplied community is actually registered
-            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                Error::<T>::InexistentCommunity);
 
-            ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
+            ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
 
-            BusinessRegistry::<T>::mutate(cid, sender.clone(), |b| b.url = url);
+            BusinessRegistry::<T>::mutate(cid, &sender, |b| b.url = url);
 
             Self::deposit_event(RawEvent::BusinessUpdated(cid, sender));
 
@@ -126,14 +123,11 @@ decl_module! {
         pub fn delete_business(origin, cid: CommunityIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
-            // Check that the supplied community is actually registered
-            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                Error::<T>::InexistentCommunity);
 
-            ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
+            ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
 
-            BusinessRegistry::<T>::remove(cid, sender.clone());
-            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier{community_identifier: cid, business_account: sender.clone()});
+            BusinessRegistry::<T>::remove(cid, &sender);
+            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier::new(cid, sender.clone()));
 
             Self::deposit_event(RawEvent::BusinessDeleted(cid, sender));
 
@@ -144,15 +138,12 @@ decl_module! {
         pub fn create_offering(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
-            // Check that the supplied community is actually registered
-            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                Error::<T>::InexistentCommunity);
 
-            ensure!(BusinessRegistry::<T>::contains_key(cid, sender.clone()), Error::<T>::InexistentBusiness);
+            ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
 
-            let oid = BusinessRegistry::<T>::get(cid, sender.clone()).last_oid;
-            BusinessRegistry::<T>::mutate(cid, sender.clone(), |b| b.last_oid = b.last_oid + 1);
-            OfferingRegistry::<T>::insert(BusinessIdentifier{community_identifier: cid, business_account: sender.clone()}, oid, OfferingData{url});
+            let oid = BusinessRegistry::<T>::get(cid, &sender).last_oid;
+            BusinessRegistry::<T>::mutate(cid, &sender, |b| b.last_oid = b.last_oid + 1);
+            OfferingRegistry::<T>::insert(BusinessIdentifier::new(cid, sender.clone()), oid, OfferingData::new(url));
 
             Self::deposit_event(RawEvent::OfferingCreated(cid, sender, oid));
 
@@ -163,13 +154,10 @@ decl_module! {
         pub fn update_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier, url: PalletString) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
-            // Check that the supplied community is actually registered
-            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                Error::<T>::InexistentCommunity);
 
-            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender.clone()};
+            let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
-            ensure!(OfferingRegistry::<T>::contains_key(business_identifier.clone(), oid.clone()), Error::<T>::InexistentOffering);
+            ensure!(OfferingRegistry::<T>::contains_key(&business_identifier, &oid), Error::<T>::InexistentOffering);
 
             OfferingRegistry::<T>::mutate(business_identifier, oid, |o| o.url = url);
 
@@ -182,13 +170,10 @@ decl_module! {
         pub fn delete_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier) -> DispatchResult {
             // Check that the extrinsic was signed and get the signer
             let sender = ensure_signed(origin)?;
-            // Check that the supplied community is actually registered
-            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                Error::<T>::InexistentCommunity);
 
-            let business_identifier = BusinessIdentifier{community_identifier: cid, business_account: sender.clone()};
+            let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
-            ensure!(OfferingRegistry::<T>::contains_key(business_identifier.clone(), oid.clone()), Error::<T>::InexistentOffering);
+            ensure!(OfferingRegistry::<T>::contains_key(&business_identifier, &oid), Error::<T>::InexistentOffering);
 
             OfferingRegistry::<T>::remove(business_identifier, oid);
 

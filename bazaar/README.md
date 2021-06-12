@@ -53,14 +53,14 @@ optional:
    * delete offering
 3. View (RPC)
    * businesses per community
-   * articles per community
-   * articles per businesses
+   * offerings per community
+   * offerings per businesses
 
 #### Proposed Storage Model
 
 ```
-BusinessRegistry: double_map(CommunityId, BusinessAccountId) -> (business_url, last_oid, block_number)
-OfferingRegistry: double_map((CommunityId, BusinessAccountId), OfferingId) -> (offering_url, block_number)
+BusinessRegistry: double_map(CommunityId, BusinessAccountId) -> (business_url, last_oid)
+OfferingRegistry: double_map((CommunityId, BusinessAccountId), OfferingId) -> (offering_url)
 ```
 
 BusinessAccountId is the public key of an anonymous proxy aka the business.

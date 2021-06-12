@@ -29,12 +29,26 @@ pub struct BusinessIdentifier<AccountId> {
     pub business_account: AccountId,
 }
 
+impl<AccountId> BusinessIdentifier<AccountId> {
+    pub fn new(cid: CommunityIdentifier, bid: AccountId) -> BusinessIdentifier<AccountId> {
+        BusinessIdentifier {
+            community_identifier: cid,
+            business_account: bid,
+        }
+    }
+}
+
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct BusinessData {
-    //TODO add block number
     pub url: PalletString,
     pub last_oid: u32,
+}
+
+impl BusinessData {
+    pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
+        return BusinessData { url, last_oid };
+    }
 }
 
 pub type OfferingIdentifier = u32;
@@ -42,6 +56,11 @@ pub type OfferingIdentifier = u32;
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct OfferingData {
-    //TODO add block number
     pub url: PalletString,
+}
+
+impl OfferingData {
+    pub fn new(url: PalletString) -> OfferingData {
+        return OfferingData { url };
+    }
 }
