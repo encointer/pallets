@@ -26,14 +26,14 @@ use crate::communities::CommunityIdentifier;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct BusinessIdentifier<AccountId> {
     pub community_identifier: CommunityIdentifier,
-    pub business_account: AccountId,
+    pub controller: AccountId,
 }
 
 impl<AccountId> BusinessIdentifier<AccountId> {
     pub fn new(cid: CommunityIdentifier, bid: AccountId) -> BusinessIdentifier<AccountId> {
         BusinessIdentifier {
             community_identifier: cid,
-            business_account: bid,
+            controller: bid,
         }
     }
 }
