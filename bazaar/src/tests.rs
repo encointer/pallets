@@ -30,7 +30,6 @@ use test_utils::{helpers::register_test_community, *};
 pub struct TestRuntime;
 
 impl_frame_system!(TestRuntime);
-impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
 impl_outer_origin_for_runtime!(TestRuntime);
 
