@@ -23,6 +23,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod mock;
+mod tests;
 #[cfg(test)]
 extern crate approx;
 
@@ -53,7 +55,7 @@ decl_storage! {
 }
 
 decl_event! {
-    pub enum Event<T> where AccountId = <T as frame_system::Config>::AccountId {
+    pub enum Event<T> where <T as frame_system::Config>::AccountId {
         /// Event emitted when a business is created. [community, who]
         BusinessCreated(CommunityIdentifier, AccountId),
         /// Event emitted when a business is updated. [community, who]
@@ -183,6 +185,3 @@ decl_module! {
         }
     }
 }
-
-#[cfg(test)]
-mod tests;
