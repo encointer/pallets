@@ -41,14 +41,89 @@ optional:
 * since: allows to filter by updated block height to query fresh entries only
 
 
-### storage
+#### Use Cases
+
+1. Business Management   
+   * create business
+   * edit business
+   * delete business
+2. Offering Management
+   * create offering
+   * edit offering
+   * delete offering
+3. View (RPC)
+   * businesses per community
+   * offerings per community
+   * offerings per businesses
+
+#### Proposed Storage Model
 
 ```
-BusinessRegistry: double_map(cid, AccountId) -> (url, block_number)
-OfferingRegistry: double_map(cid, AccountId) -> Vec<(url, block_number)>
+BusinessRegistry: double_map(CommunityId, BusinessAccountId) -> (business_url, last_oid)
+OfferingRegistry: double_map((CommunityId, BusinessAccountId), OfferingId) -> (offering_url)
 ```
 
-#### performance considerations
+BusinessAccountId is the public key of an anonymous proxy aka the business.
+The described tuples/triples are wrapped in value type objects.
+
+#### Dispatchables Pseudo Code
+
+```
+createBusiness(CommunityId, business_url) {
+  var BusinessAccountId = new AnonymousProxy(sender);
+  BusinessRegistry.insert(CommunityId, 
+                       BusinessAccountId, 
+                       (business_url, 1, currrent_block_number));
+}
+  
+updateBusiness(CommunityId, BusinessAccountId, new_business_url) {
+  verify(BusinessAccountId, sender);
+  BusinessRegistry.mutate(CommunityId, BusinessAccountId, (new_business_url, counter, current_block_number));
+} 
+
+deleteBusiness(CommunityId, BusinessAccountId) {
+  verify(BusinessAccountId, sender);
+  BusinessRegistry.remove(CommunityId, BusinessAccountId);
+  OfferingRegistry.remove_prefix((CommunityId, BusinessId));
+}
+
+createOffering(CommunityId, BusinessAccountId, offering_url) {
+  verify(BusinessAccountId, sender);
+  var OfferingId = BusinessRegistry.get(CommunityId, BusinessAccountId).counter++
+  OfferingRegistry.insert((CommunityId, BusinessAccountId), OfferingId, (offering_url, block_number));
+  return OfferingId;
+}
+  
+updateOffering(BusinessAccountId, OfferingId, new_offering_url) {
+  verify(BusinessAccountId, sender);
+  OfferingRegistry.mutate((CommunityId, BusinessAccountId), OfferingId, (BusinessAccountId, new_offering_url));
+} 
+
+deleteOffering(BusinessAccountId, OfferingId) {
+  verify(BusinessAccountId, sender);
+  OfferingRegistry.remove((CommunityId, BusinessAccountId), OfferingId);
+}
+```
+
+#### RPCs
+
+```
+viewBusinesses(cid) {
+  return BusinessRegistry.get(cid);
+}
+  
+viewOfferings(cid) {
+  return BusinessRegistry.get(cid).flatMap(bid -> OfferingRegistry.get(bid));
+}
+
+viewOfferings(bid) {
+  return OfferingRegistry.get(bid);
+}
+```
+
+#### Performance Considerations
+
+The proposed implementation of viewOfferings for a certain business has O(n) complexity. It should only be evaluated through a off-chain rpc.
 
 complexity `Vec` vs `map` for sets:
 

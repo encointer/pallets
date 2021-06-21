@@ -16,298 +16,293 @@
 
 //! Unit tests for the tokens module.
 
-use super::*;
-use crate::{Config, Module};
-use codec::Encode;
-use encointer_primitives::communities::CommunityIdentifier;
-use sp_core::{hashing::blake2_256, H256};
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
-};
+#![cfg(test)]
 
+use super::*;
+use mock::{EncointerBazaar, Origin, ExtBuilder, System, TestEvent, TestRuntime};
+
+use encointer_primitives::{
+    bazaar::{*},
+    communities::CommunityIdentifier,
+};
 use test_utils::{helpers::register_test_community, *};
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct TestRuntime;
-
-impl_frame_system!(TestRuntime);
-impl_encointer_balances!(TestRuntime);
-impl_encointer_communities!(TestRuntime);
-impl_outer_origin_for_runtime!(TestRuntime);
-
-impl Config for TestRuntime {
-    type Event = ();
+fn create_cid() -> CommunityIdentifier {
+    return register_test_community::<TestRuntime>(None, 2);
 }
 
-pub type EncointerBazaar = Module<TestRuntime>;
+fn alice() -> AccountId { AccountKeyring::Alice.into() }
 
-pub struct ExtBuilder;
+fn bob() -> AccountId { AccountKeyring::Bob.into() }
 
-impl ExtBuilder {
-    pub fn build() -> runtime_io::TestExternalities {
-        let storage = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
-            .unwrap();
-        runtime_io::TestExternalities::from(storage)
-    }
+fn url() -> String {
+    return "https://encointer.org".to_string();
+}
+
+fn url1() -> String {
+    return "https://substrate.dev".to_string();
+}
+
+fn url2() -> String {
+    return "https://polkadot.network".to_string();
+}
+
+fn assert_error(actual: DispatchResult, expected: Error::<TestRuntime>) {
+    assert_eq!(match actual.clone().err().unwrap() {
+        sp_runtime::DispatchError::Module { index, error, message } => message,
+        _ => panic!(),
+    }.unwrap(), expected.as_str());
 }
 
 #[test]
-fn create_new_shop_works() {
+fn create_new_business_is_ok() {
     ExtBuilder::build().execute_with(|| {
-        // initialisation
-        let cid = register_test_community::<TestRuntime>(None, 2);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
-        // upload dummy store to blockchain
-        assert!(
-            EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone())
-                .is_ok()
-        );
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
 
-        // get shops from blockchain
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice.clone());
-        // assert that shop was added
-        assert!(shops.contains(&alice_shop));
-        assert!(alices_shops.contains(&alice_shop));
-        // assert that the shop is owned by alice
-        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), alice);
+        assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
+        assert!(EncointerBazaar::create_business(Origin::signed(bob()), cid, url1()).is_ok());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
+        assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData::new(url1(), 1));
+
+        let records = System::events();
+        assert_eq!(records.len(), 3);
+        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessCreated(cid.clone(), alice())));
+        assert_eq!(records.get(2).unwrap().event, TestEvent::tokens(RawEvent::BusinessCreated(cid.clone(), bob())));
     });
 }
 
 #[test]
-fn create_new_shop_with_bad_cid_fails() {
+fn create_business_with_invalid_cid_is_err() {
     ExtBuilder::build().execute_with(|| {
-        // initialisation
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
-        let cid = CommunityIdentifier::from(blake2_256(&(0, alice.clone()).encode())); // fails to register cid
+        System::set_block_number(System::block_number() + 1);
+        assert_error(EncointerBazaar::create_business(Origin::signed(alice()), CommunityIdentifier::zero(), url()), Error::<TestRuntime>::InexistentCommunity);
 
-        // assert that upload fails
-        assert!(
-            EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone())
-                .is_err()
-        );
+        assert_eq!(EncointerBazaar::business_registry(CommunityIdentifier::zero(), alice()), BusinessData::default());
 
-        // get shops from blockchain
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
-
-        // assert that shop was not added
-        assert_eq!(shops.contains(&alice_shop), false);
-        assert_eq!(alices_shops.contains(&alice_shop), false);
+        assert_eq!(System::events().len(), 0);
     });
 }
 
 #[test]
-fn removal_of_shop_works() {
+fn create_business_duplicate_is_err() {
     ExtBuilder::build().execute_with(|| {
-        // initialisation
-        let cid = register_test_community::<TestRuntime>(None, 2);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
 
-        // upload dummy store to blockchain
-        assert!(
-            EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone())
-                .is_ok()
-        );
+        assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
+        assert_error(EncointerBazaar::create_business(Origin::signed(alice()), cid, url1()), Error::<TestRuntime>::ExistingBusiness);
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
 
-        // get shops from blockchain
-        let mut shops = EncointerBazaar::shop_registry(cid);
-        let mut alices_shops = EncointerBazaar::shops_owned(cid, alice.clone());
-        // assert that shop was added
-        assert!(shops.contains(&alice_shop));
-        assert!(alices_shops.contains(&alice_shop));
-        // assert that the shop is owned by alice
-        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), alice);
-
-        // remove shop from blockchain
-        assert!(EncointerBazaar::remove_shop(
-            Origin::signed(alice.clone()),
-            cid,
-            alice_shop.clone()
-        )
-        .is_ok());
-
-        // update local shop list
-        shops = EncointerBazaar::shop_registry(cid);
-        alices_shops = EncointerBazaar::shops_owned(cid, alice);
-
-        // assert that shop was removed
-        assert_eq!(shops.contains(&alice_shop), false);
-        assert_eq!(alices_shops.contains(&alice_shop), false);
-        // TODO: How to assert that hash key is exisiting or empty?
-        //assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), None);
+        let records = System::events();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessCreated(cid.clone(), alice())));
     });
 }
 
 #[test]
-fn alices_store_are_differentiated() {
+fn update_existing_business_is_ok() {
     ExtBuilder::build().execute_with(|| {
-        // initialisation
-        let cid = register_test_community::<TestRuntime>(None, 2);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
-        let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
 
-        // upload stores to blockchain
-        assert!(EncointerBazaar::new_shop(
-            Origin::signed(alice.clone()),
-            cid,
-            alice_shop_one.clone()
-        )
-        .is_ok());
-        assert!(EncointerBazaar::new_shop(
-            Origin::signed(alice.clone()),
-            cid,
-            alice_shop_two.clone()
-        )
-        .is_ok());
+        assert!(EncointerBazaar::update_business(Origin::signed(alice()), cid, url1()).is_ok());
 
-        // get shops from blockchain
-        let mut shops = EncointerBazaar::shop_registry(cid);
-        let mut alices_shops = EncointerBazaar::shops_owned(cid, alice.clone());
-        // assert that shops were added
-        assert!(shops.contains(&alice_shop_one));
-        assert!(shops.contains(&alice_shop_two));
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url1(), 2));
 
-        assert!(alices_shops.contains(&alice_shop_one));
-        assert!(alices_shops.contains(&alice_shop_two));
-
-        // assert that the shops are owned by alice
-        assert_eq!(
-            EncointerBazaar::shop_owner(&cid, &alice_shop_one),
-            alice.clone()
-        );
-        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop_two), alice);
-
-        // delete shop two
-        assert!(EncointerBazaar::remove_shop(
-            Origin::signed(alice.clone()),
-            cid,
-            alice_shop_two.clone()
-        )
-        .is_ok());
-
-        // assert that shop two was removed and shop one still exisits
-        shops = EncointerBazaar::shop_registry(cid);
-        alices_shops = EncointerBazaar::shops_owned(cid, alice);
-
-        assert!(shops.contains(&alice_shop_one));
-        assert_eq!(shops.contains(&alice_shop_two), false);
-
-        assert!(alices_shops.contains(&alice_shop_one));
-        assert_eq!(alices_shops.contains(&alice_shop_two), false);
+        let records = System::events();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessUpdated(cid.clone(), alice())));
     });
 }
 
 #[test]
-fn stores_cannot_be_created_twice() {
+fn update_inexistent_business_is_err() {
     ExtBuilder::build().execute_with(|| {
-        // initialisation
-        let cid = register_test_community::<TestRuntime>(None, 2);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop_one = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
-        let alice_shop_two = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTB");
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 3));
 
-        //let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bs.clone()).encode()))
+        assert_error(EncointerBazaar::update_business(Origin::signed(bob()), cid, url1()), Error::<TestRuntime>::InexistentBusiness);
+        assert_error(EncointerBazaar::update_business(Origin::signed(alice()), CommunityIdentifier::zero(), url1()), Error::<TestRuntime>::InexistentBusiness);
 
-        // upload stores to blockchain
-        assert!(EncointerBazaar::new_shop(
-            Origin::signed(alice.clone()),
-            cid,
-            alice_shop_one.clone()
-        )
-        .is_ok());
-        assert!(EncointerBazaar::new_shop(
-            Origin::signed(alice.clone()),
-            cid,
-            alice_shop_two.clone()
-        )
-        .is_err());
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 3));
 
-        // get shops from blockchain
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
-
-        // Assert that the shop has been uploaded correctly
-        assert!(shops.contains(&alice_shop_one));
-        assert!(alices_shops.contains(&alice_shop_one));
+        assert_eq!(System::events().len(), 1);
     });
 }
 
 #[test]
-fn bob_cannot_remove_alices_store() {
+fn delete_existing_business_is_ok() {
     ExtBuilder::build().execute_with(|| {
-        // initialisation
-        let cid = register_test_community::<TestRuntime>(None, 2);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let bob = AccountId::from(AccountKeyring::Bob);
-        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTA");
-        let bob_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfAgygTB");
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
+        BusinessRegistry::<TestRuntime>::insert(cid, bob(), BusinessData::new(url1(), 3));
 
-        // upload stores to blockchain
-        assert!(
-            EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone())
-                .is_ok()
-        );
-        assert!(
-            EncointerBazaar::new_shop(Origin::signed(bob.clone()), cid, bob_shop.clone()).is_ok()
-        );
+        assert!(EncointerBazaar::delete_business(Origin::signed(alice()), cid).is_ok());
 
-        // get shops from blockchain
-        let mut shops = EncointerBazaar::shop_registry(cid);
-        let mut alices_shops = EncointerBazaar::shops_owned(cid, alice.clone());
-        let bobs_shops = EncointerBazaar::shops_owned(cid, bob.clone());
-        // assert that shops were added
-        assert!(shops.contains(&alice_shop));
-        assert!(shops.contains(&bob_shop));
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
+        assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData::new(url1(), 3));
 
-        assert!(alices_shops.contains(&alice_shop));
-        assert!(bobs_shops.contains(&bob_shop));
-
-        // assert that the shops are owned by alice or bob respective
-        assert_eq!(EncointerBazaar::shop_owner(&cid, &alice_shop), alice);
-        assert_eq!(EncointerBazaar::shop_owner(&cid, &bob_shop), bob);
-
-        // assert that bob can not delete alices shop
-        assert!(
-            EncointerBazaar::remove_shop(Origin::signed(bob.clone()), cid, alice_shop.clone())
-                .is_err()
-        );
-
-        // assert that shop has not been deleted
-        alices_shops = EncointerBazaar::shops_owned(cid, alice);
-        shops = EncointerBazaar::shop_registry(cid);
-
-        assert!(alices_shops.contains(&alice_shop));
-        assert!(shops.contains(&alice_shop));
+        let records = System::events();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessDeleted(cid.clone(), alice())));
     });
 }
 
 #[test]
-fn create_oversized_shop_fails() {
+fn delete_inexistent_business_is_err() {
     ExtBuilder::build().execute_with(|| {
-        // initialisation
-        let cid = register_test_community::<TestRuntime>(None, 2);
-        let alice = AccountId::from(AccountKeyring::Alice);
-        let alice_shop = ShopIdentifier::from("QmW6WLLhUPsosBcKebejveknjrSQjZjq5eYFVBRfugygTBB");
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, bob(), BusinessData::new(url1(), 2));
 
-        // assert that upload fails
-        assert!(
-            EncointerBazaar::new_shop(Origin::signed(alice.clone()), cid, alice_shop.clone())
-                .is_err()
-        );
+        assert_error(EncointerBazaar::delete_business(Origin::signed(alice()), cid), Error::<TestRuntime>::InexistentBusiness);
+        assert_error(EncointerBazaar::delete_business(Origin::signed(bob()), CommunityIdentifier::zero()), Error::<TestRuntime>::InexistentBusiness);
 
-        // get shops from blockchain
-        let shops = EncointerBazaar::shop_registry(cid);
-        let alices_shops = EncointerBazaar::shops_owned(cid, alice);
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
+        assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData::new(url1(), 2));
 
-        // assert that shop was not added
-        assert_eq!(shops.contains(&alice_shop), false);
-        assert_eq!(alices_shops.contains(&alice_shop), false);
+        assert_eq!(System::events().len(), 1);
+    });
+}
+
+fn get_oid(test_event: &TestEvent) -> u32 {
+    let raw_event = match test_event {
+        TestEvent::tokens(event) => event,
+        _ => panic!(),
+    };
+    let oid = match raw_event {
+        RawEvent::OfferingCreated(_, _, oid) => oid,
+        _ => panic!(),
+    };
+    return *oid;
+}
+
+#[test]
+fn create_new_offering_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 1));
+
+        assert!(EncointerBazaar::create_offering(Origin::signed(alice()), cid, url1()).is_ok());
+        assert!(EncointerBazaar::create_offering(Origin::signed(alice()), cid, url2()).is_ok());
+
+        let records = System::events();
+        assert_eq!(records.len(), 3);
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, alice()), get_oid(&records.get(1).unwrap().event)).url, url1());
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, alice()), get_oid(&records.get(2).unwrap().event)).url, url2());
+    });
+}
+
+#[test]
+fn create_offering_for_inexistent_business_is_err() {
+    ExtBuilder::build().execute_with(|| {
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 1));
+
+        assert_error(EncointerBazaar::create_offering(Origin::signed(bob()), cid, url1()), Error::<TestRuntime>::InexistentBusiness);
+
+        assert_eq!(System::events().len(), 1);
+    });
+}
+
+#[test]
+fn update_existing_offering_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier::new(cid, alice()), 1,
+                                                OfferingData::new(url()));
+
+        assert!(EncointerBazaar::update_offering(Origin::signed(alice()), cid, 1, url1()).is_ok());
+
+        let records = System::events();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::OfferingUpdated(cid.clone(), alice(), 1)));
+
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, alice()), 1).url, url1());
+    });
+}
+
+#[test]
+fn update_inexistent_offering_is_err() {
+    ExtBuilder::build().execute_with(|| {
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier::new(cid, alice()), 1,
+                                                OfferingData::new(url()));
+
+        assert_error(EncointerBazaar::update_offering(Origin::signed(bob()), cid, 1, url1()), Error::<TestRuntime>::InexistentOffering);
+        assert_error(EncointerBazaar::update_offering(Origin::signed(alice()), cid, 0, url1()), Error::<TestRuntime>::InexistentOffering);
+        assert_error(EncointerBazaar::update_offering(Origin::signed(alice()), CommunityIdentifier::zero(), 1, url1()), Error::<TestRuntime>::InexistentOffering);
+
+        assert_eq!(System::events().len(), 1);
+    });
+}
+
+#[test]
+fn delete_existing_offering_is_ok() {
+    ExtBuilder::build().execute_with(|| {
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier::new(cid, alice()), 1,
+                                                OfferingData::new(url()));
+
+        assert!(EncointerBazaar::delete_offering(Origin::signed(alice()), cid, 1).is_ok());
+
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, alice()), 1),
+                   OfferingData::default());
+
+        let records = System::events();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::OfferingDeleted(cid.clone(), alice(), 1)));
+    });
+}
+
+#[test]
+fn delete_inexistent_offering_is_err() {
+    ExtBuilder::build().execute_with(|| {
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier::new(cid, alice()), 1,
+                                                OfferingData::new(url()));
+
+        assert_error(EncointerBazaar::delete_offering(Origin::signed(bob()), cid, 1), Error::<TestRuntime>::InexistentOffering);
+        assert_error(EncointerBazaar::delete_offering(Origin::signed(alice()), cid, 0), Error::<TestRuntime>::InexistentOffering);
+        assert_error(EncointerBazaar::delete_offering(Origin::signed(alice()), CommunityIdentifier::zero(), 1), Error::<TestRuntime>::InexistentOffering);
+
+        assert_eq!(System::events().len(), 1);
+    });
+}
+
+#[test]
+fn when_deleting_business_delete_all_its_offerings() {
+    ExtBuilder::build().execute_with(|| {
+        System::set_block_number(System::block_number() + 1);
+        let cid = create_cid();
+        BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
+        BusinessRegistry::<TestRuntime>::insert(cid, bob(), BusinessData::new(url1(), 2));
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier::new(cid, alice()), 1, OfferingData::new(url()));
+        OfferingRegistry::<TestRuntime>::insert(BusinessIdentifier::new(cid, bob()), 1, OfferingData::new(url1()));
+
+        assert!(EncointerBazaar::delete_business(Origin::signed(alice()), cid).is_ok());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, alice()), 1), OfferingData::default());
+        assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, bob()), 1), OfferingData::new(url1()));
+
+        let records = System::events();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessDeleted(cid.clone(), alice())));
     });
 }

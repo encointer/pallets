@@ -14,7 +14,53 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::common::IpfsCid;
+use codec::{Decode, Encode};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_core::RuntimeDebug;
 
-pub type ShopIdentifier = IpfsCid;
-pub type ArticleIdentifier = IpfsCid;
+use crate::common::PalletString;
+use crate::communities::CommunityIdentifier;
+
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct BusinessIdentifier<AccountId> {
+    pub community_identifier: CommunityIdentifier,
+    pub controller: AccountId,
+}
+
+impl<AccountId> BusinessIdentifier<AccountId> {
+    pub fn new(cid: CommunityIdentifier, bid: AccountId) -> BusinessIdentifier<AccountId> {
+        BusinessIdentifier {
+            community_identifier: cid,
+            controller: bid,
+        }
+    }
+}
+
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct BusinessData {
+    pub url: PalletString,
+    pub last_oid: u32,
+}
+
+impl BusinessData {
+    pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
+        return BusinessData { url, last_oid };
+    }
+}
+
+pub type OfferingIdentifier = u32;
+
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct OfferingData {
+    pub url: PalletString,
+}
+
+impl OfferingData {
+    pub fn new(url: PalletString) -> OfferingData {
+        return OfferingData { url };
+    }
+}
