@@ -2569,6 +2569,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-bazaar-rpc"
+version = "0.1.0"
+dependencies = [
+ "encointer-primitives",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "log",
+ "pallet-encointer-bazaar-rpc-runtime-api",
+ "parking_lot 0.11.1",
+ "sc-rpc",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-encointer-bazaar-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-encointer-ceremonies"
 version = "0.6.0"
 dependencies = [
