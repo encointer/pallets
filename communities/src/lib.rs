@@ -329,3 +329,6 @@ extern crate approx;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
