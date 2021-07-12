@@ -6,14 +6,11 @@ use encointer_primitives::{
     balances:: {Demurrage, consts::DEFAULT_DEMURRAGE}
 };
 
-const NUM_LOCATIONS : u32 =  1000;
-const NUM_BOOTSTRAPPERS : u32 = 12;
+const NUM_LOCATIONS : u32 =  2000;
 
 benchmarks! {
     new_community {
     let i in 1 .. NUM_LOCATIONS;
-    let j in 3 .. NUM_BOOTSTRAPPERS;
-
     let caller: T::AccountId = whitelisted_caller();
 
     // spread locations along the equator, ie. lat = 0, lon equally spread over [-150, 150]
@@ -22,7 +19,7 @@ benchmarks! {
     .map(|x| Location{lat: Degree::from_num(0.0), lon: Degree::from_num(((x as f64 * 300.0) / (NUM_LOCATIONS as f64)) - 150.0)})
     .collect();
 
-    let bootrappers : Vec<T::AccountId> = (0..NUM_BOOTSTRAPPERS).map(|n| account("dummy name", n, n)).collect();
+    let bootrappers : Vec<T::AccountId> = (0..12).map(|n| account("dummy name", n, n)).collect();
 
     let mut community_metadata = CommunityMetadata::default();
     community_metadata.name = "20charsaaaaaaaaaaaaa".into();
@@ -31,7 +28,7 @@ benchmarks! {
     let demurrage = Some(Demurrage::from_num(DEFAULT_DEMURRAGE));
     let nominal_income = Some(NominalIncome::from_num(1));
 
-	}: _(RawOrigin::Signed(caller), (&locations[..(i as usize)]).to_vec(), (&bootrappers[..(j as usize)]).to_vec(), community_metadata, demurrage, nominal_income)
+	}: _(RawOrigin::Signed(caller), (&locations[..(i as usize)]).to_vec(), bootrappers, community_metadata, demurrage, nominal_income)
 }
 
 

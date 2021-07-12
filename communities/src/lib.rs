@@ -265,7 +265,7 @@ impl<T: Config> Module<T> {
     }
 
     fn validate_locations(loc: &Vec<Location>, cids: &Vec<CommunityIdentifier>) -> DispatchResult {
-        ensure!(loc.len() <= 1000, <Error<T>>::TooManyLocations);
+        ensure!(loc.len() <= 2000, <Error<T>>::TooManyLocations);
         ensure!(!loc.is_empty(), <Error<T>>::TooFewLocations);
 
         for l1 in loc.iter() {
