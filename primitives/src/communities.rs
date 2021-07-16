@@ -180,7 +180,18 @@ pub mod consts {
     use fixed::types::{I32F0, U0F64};
 
     pub const MAX_SPEED_MPS: i32 = 83; // [m/s] max speed over ground of adversary
-    pub const MIN_SOLAR_TRIP_TIME_S: i32 = 1; // [s] minimum adversary trip time between two locations measured in local (solar) time.
+
+    // sun travels at a speed of 24h * 3600s / 360° = 240s/°
+    // 1 degree of longitude in miles = (90 - lat) * pi / 180 * 69.172
+    // seconds per degree with speed v =
+    // ((90 - lat) * pi / 180 * 69.172) * (3600/v)
+    // ((90 - lat) * pi / 180 * 69.172) * (3600/83) = 240, solve for lat ==> lat = 85.4167
+    // above a latitude with absolute value > 85.4167, a human can travel faster than the sun
+    // so those areas have to be excluded, because no matter the distance between two locations
+    // an attacker can be at the new location faster than the sun.
+    pub const MAX_ABS_LATITUDE: Degree = Degree::from_bits(85i128 << 64);
+
+    pub const MIN_DISTANCE_BETWEEN_LOCATIONS: u32 = 500; // m
 
     pub const DATELINE_DISTANCE_M: u32 = 1_000_000; // meetups may not be closer to dateline (or poles) than this
 

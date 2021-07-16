@@ -77,55 +77,6 @@ fn testdata_lat_long() {
 }
 
 #[test]
-fn solar_trip_time_works() {
-    // one degree equator
-    let a = Location {
-        lat: T::from_num(0i32),
-        lon: T::from_num(0i32),
-    };
-    let b = Location {
-        lat: T::from_num(0i32),
-        lon: T::from_num(1i32),
-    }; // one degree lat is 111km at the equator
-    assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 1099);
-    assert_eq!(EncointerCommunities::solar_trip_time(&b, &a), 1099);
-    // Reykjavik one degree lon: expect to yield much shorter times than at the equator
-    let a = Location {
-        lat: T::from_num(64.135480_f64),
-        lon: T::from_num(-21.895410_f64),
-    }; // this is reykjavik
-    let b = Location {
-        lat: T::from_num(64.135_480),
-        lon: T::from_num(-20.895410),
-    };
-    assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 344);
-
-    // Reykjavik 111km: expect to yield much shorter times than at the equator because
-    // next time zone is much closer in meter overland.
-    // -> require locations to be further apart (in east-west) at this latitude
-    let a = Location {
-        lat: T::from_num(64.135480_f64),
-        lon: T::from_num(0_f64),
-    }; // this is at reykjavik lat
-    let b = Location {
-        lat: T::from_num(64.135480_f64),
-        lon: T::from_num(2.290000_f64),
-    }; // 2.29° is 111km
-    assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 789);
-    // maximal
-    let a = Location {
-        lat: T::from_num(0i32),
-        lon: T::from_num(0i32),
-    };
-    let b = Location {
-        lat: T::from_num(0i32),
-        lon: T::from_num(180i32),
-    };
-    assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 110318);
-    assert_eq!(EncointerCommunities::solar_trip_time(&b, &a), 110318);
-}
-
-#[test]
 fn haversine_distance_works() {
     ExtBuilder::build().execute_with(|| {
         // compare in [km] for human readability
@@ -431,5 +382,16 @@ fn new_currency_with_very_close_location_works() {
             None
         )
         .is_ok());
+    });
+}
+
+#[test]
+fn get_nearby_locations_works() {
+    ExtBuilder::build().execute_with(|| {
+        let b = Location {
+            lat: T::from_num(47.2696129372),
+            lon: T::from_num(8.6439979076),
+        };
+        assert!(EncointerCommunities::get_nearby_locations(&b).is_ok());
     });
 }
