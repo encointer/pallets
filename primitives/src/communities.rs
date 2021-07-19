@@ -182,6 +182,17 @@ pub mod consts {
     pub const MAX_SPEED_MPS: i32 = 83; // [m/s] max speed over ground of adversary
     pub const MIN_SOLAR_TRIP_TIME_S: i32 = 1; // [s] minimum adversary trip time between two locations measured in local (solar) time.
 
+    // sun travels at a speed of 24h * 3600s / 360° = 240s/°
+    // 1 degree of longitude in km at latitude x = cos(x) * 111.3194
+    // seconds per degree with speed v in m/s =
+    // (cos(x) * 111.3194) / (v/1000)
+    // (cos(x) * 111.3194) / (83/1000) = 240, solve for x ==> x == 79.6917
+    // above a latitude with absolute value > 79.6917, a human can travel faster than the sun
+    // so those areas have to be excluded, because no matter the distance between two locations
+    // an attacker can be at the new location faster than the sun.
+    pub const MAX_ABS_LATITUDE: Degree = Degree::from_bits(79i128 << 64);
+
+
     pub const DATELINE_DISTANCE_M: u32 = 1_000_000; // meetups may not be closer to dateline (or poles) than this
 
     pub const NORTH_POLE: Location = Location {
