@@ -433,3 +433,14 @@ fn new_currency_with_very_close_location_works() {
         .is_ok());
     });
 }
+
+#[test]
+fn get_nearby_locations_works() {
+    ExtBuilder::build().execute_with(|| {
+        let b = Location {
+            lat: T::from_num(47.2696129372),
+            lon: T::from_num(8.6439979076),
+        };
+        assert!(EncointerCommunities::get_nearby_locations(&b).is_ok());
+    });
+}

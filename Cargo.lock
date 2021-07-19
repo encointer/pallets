@@ -1253,6 +1253,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "geo-types"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8bd2e95dd9f5c8ff74159ed9205ad7fd239a9569173a550863976421b45d2bb"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "geohash"
+version = "0.11.1-alpha.0"
+source = "git+https://github.com/pifragile/geohash.git?branch=master#c9fa3de03f7764c5dffc5c0320aff03b33cf5312"
+dependencies = [
+ "geo-types",
+ "num-traits",
+ "substrate-fixed",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2604,6 +2623,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "geohash",
  "log",
  "parity-scale-codec",
  "serde",

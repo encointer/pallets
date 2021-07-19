@@ -69,6 +69,11 @@ version = "1.0.101"
 [dev-dependencies]
 approx = "0.3.0"
 
+[dependencies.geohash]
+default-features = false
+git = "https://github.com/pifragile/geohash.git"
+branch = "master"
+
 [dev-dependencies.externalities]
 package = "sp-externalities"
 git = "https://github.com/paritytech/substrate.git" 

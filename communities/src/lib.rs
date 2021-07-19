@@ -31,9 +31,12 @@ use frame_support::{
 };
 use frame_system::{ensure_root, ensure_signed};
 use rstd::prelude::*;
+use rstd::result::Result;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use runtime_io::hashing::blake2_256;
-use sp_runtime::{DispatchResult, SaturatedConversion};
+use sp_runtime::{DispatchResult, SaturatedConversion, DispatchResultWithInfo};
+
+use geohash::{neighbor, encode, decode, Direction, GeohashError};
 
 use encointer_primitives::{
     balances::{BalanceType, Demurrage},
@@ -95,7 +98,7 @@ decl_module! {
             let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
             ensure!(!cids.contains(&cid), "community already registered");
-            Self::validate_locations(&loc, &cids)?; // <- O(n^2) !!!
+            Self::validate_locations(&loc)?;
 
             // All checks done, now mutate state
 
@@ -179,14 +182,12 @@ decl_error! {
         InvalidLocation,
         /// Invalid amount of bootstrappers supplied. Needs to be \[3, 12\]
         InvalidAmountBootstrappers,
-        /// minimum distance violation within community
-        MinimumDistanceViolationWithinCommunity,
+        /// minimum distance violation to other location
+        MinimumDistanceViolationToOtherLocation,
         /// minimum distance violated towards pole
         MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
-        /// minimum distance violated towards other community's location
-        MinimumDistanceViolationToOtherCommunity,
         /// Can't register community that already exists
         CommunityAlreadyRegistered,
         /// Community does not exist yet
@@ -196,7 +197,9 @@ decl_error! {
         /// Invalid demurrage supplied
         InvalidDemurrage,
         /// Invalid demurrage supplied
-        InvalidNominalIncome
+        InvalidNominalIncome,
+        /// Invalid location provided when computing geohash
+        InvalidLocationForGeohash
     }
 }
 
@@ -226,8 +229,8 @@ impl<T: Config> Module<T> {
     }
 
     pub fn is_valid_geolocation(loc: &Location) -> bool {
-        (loc.lat < NORTH_POLE.lat)
-            & (loc.lat > SOUTH_POLE.lat)
+        (loc.lat < MAX_ABS_LATITUDE)
+            & (loc.lat > -MAX_ABS_LATITUDE)
             & (loc.lon < DATELINE_LON)
             & (loc.lon > -DATELINE_LON)
     }
@@ -264,49 +267,42 @@ impl<T: Config> Module<T> {
         Ok(())
     }
 
-    fn validate_locations(loc: &Vec<Location>, cids: &Vec<CommunityIdentifier>) -> DispatchResult {
-        ensure!(loc.len() <= 2000, <Error<T>>::TooManyLocations);
-        ensure!(!loc.is_empty(), <Error<T>>::TooFewLocations);
+    fn get_nearby_locations(location: &Location) -> Result<Vec<Location>, Error<T>>{
+        let result : Vec<Location> = Vec::new();
 
-        for l1 in loc.iter() {
-            ensure!(Self::is_valid_geolocation(&l1), <Error<T>>::InvalidLocation);
-            //test within this communities' set
-            for l2 in loc.iter() {
-                if l2 == l1 {
-                    continue;
-                }
-                ensure!(
-                    Self::solar_trip_time(&l1, &l2) >= MIN_SOLAR_TRIP_TIME_S,
-                    <Error<T>>::MinimumDistanceViolationWithinCommunity
+        let hash = encode(location.lon, location.lat, 7usize).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+        warn!(target: LOG, "computed geohash: {:?}", hash);
+
+        Ok(result)
+    }
+
+    fn validate_location(location: &Location) -> DispatchResult {
+        ensure!(Self::is_valid_geolocation(location), <Error<T>>::InvalidLocation);
+        let nearby_locations = Self::get_nearby_locations(location)?;
+        for nearby_location in nearby_locations.iter() {
+            ensure!(
+                    Self::haversine_distance(location, &nearby_location) >= MIN_DISTANCE_BETWEEN_LOCATIONS,
+                    <Error<T>>::MinimumDistanceViolationToOtherLocation
                 );
-            }
-            // prohibit proximity to poles
-            if Self::haversine_distance(&l1, &NORTH_POLE) < DATELINE_DISTANCE_M
-                || Self::haversine_distance(&l1, &SOUTH_POLE) < DATELINE_DISTANCE_M
-            {
-                warn!(target: LOG, "location too close to pole: {:?}", l1);
-                return Err(<Error<T>>::MinimumDistanceViolationToPole)?;
-            }
-            // prohibit proximity to dateline
-            let dateline_proxy = Location {
-                lat: l1.lat,
-                lon: DATELINE_LON,
-            };
-            if Self::haversine_distance(&l1, &dateline_proxy) < DATELINE_DISTANCE_M {
-                warn!(target: LOG, "location too close to dateline: {:?}", l1);
-                return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
-            }
-            // test against all other communities globally
-            for other in cids.iter() {
-                for l2 in Self::locations(other) {
-                    if Self::solar_trip_time(&l1, &l2) < MIN_SOLAR_TRIP_TIME_S {
-                        warn!(target: LOG,
-                                     "location {:?} too close to previously registered location {:?} with cid {:?}",
-                                     l1, l2, other);
-                        return Err(<Error<T>>::MinimumDistanceViolationToOtherCommunity)?;
-                    }
-                }
-            }
+        }
+        // prohibit proximity to dateline
+        let dateline_proxy = Location {
+            lat: location.lat,
+            lon: DATELINE_LON,
+        };
+        if Self::haversine_distance(location, &dateline_proxy) < DATELINE_DISTANCE_M {
+            warn!(target: LOG, "location too close to dateline: {:?}", location);
+            return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
+        }
+        Ok(())
+    }
+
+    fn validate_locations(locations: &Vec<Location>) -> DispatchResult {
+        ensure!(locations.len() <= 10, <Error<T>>::TooManyLocations);
+        ensure!(!locations.is_empty(), <Error<T>>::TooFewLocations);
+
+        for location in locations.iter() {
+            Self::validate_location(&location)?;
         }
         Ok(())
     }
