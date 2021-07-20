@@ -47,6 +47,12 @@ package = "frame-system"
 git = "https://github.com/paritytech/substrate.git" 
 branch = "master"
 
+[dependencies.pallet-proxy]
+default-features = false
+package = "pallet-proxy"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
 [dev-dependencies]
 approx = "0.3.0"
 tempdir = "0.3.7"
@@ -94,4 +100,5 @@ std = [
 	"runtime-io/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-proxy/std",
 ]

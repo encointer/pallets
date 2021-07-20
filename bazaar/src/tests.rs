@@ -19,7 +19,7 @@
 #![cfg(test)]
 
 use super::*;
-use mock::{EncointerBazaar, Origin, ExtBuilder, System, TestEvent, TestRuntime};
+use mock::{EncointerBazaar, Origin, ExtBuilder, System, Event, TestRuntime};
 
 use encointer_primitives::{
     bazaar::{*},
@@ -63,13 +63,13 @@ fn create_new_business_is_ok() {
         assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
         assert!(EncointerBazaar::create_business(Origin::signed(bob()), cid, url1()).is_ok());
 
-        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
-        assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData::new(url1(), 1));
-
         let records = System::events();
         assert_eq!(records.len(), 3);
-        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessCreated(cid.clone(), alice())));
-        assert_eq!(records.get(2).unwrap().event, TestEvent::tokens(RawEvent::BusinessCreated(cid.clone(), bob())));
+        let business_1 = get_bid(records.get(1).unwrap().event.clone());
+        let business_2 = get_bid(records.get(2).unwrap().event.clone());
+
+        assert_eq!(EncointerBazaar::business_registry(cid, business_1), BusinessData::new(url(), 1));
+        assert_eq!(EncointerBazaar::business_registry(cid, business_2), BusinessData::new(url1(), 1));
     });
 }
 
@@ -77,27 +77,11 @@ fn create_new_business_is_ok() {
 fn create_business_with_invalid_cid_is_err() {
     ExtBuilder::build().execute_with(|| {
         System::set_block_number(System::block_number() + 1);
-        assert_error(EncointerBazaar::create_business(Origin::signed(alice()), CommunityIdentifier::zero(), url()), Error::<TestRuntime>::InexistentCommunity);
+        assert_error(EncointerBazaar::create_business(Origin::signed(alice()), CommunityIdentifier::zero(), url()), Error::InexistentCommunity);
 
         assert_eq!(EncointerBazaar::business_registry(CommunityIdentifier::zero(), alice()), BusinessData::default());
 
         assert_eq!(System::events().len(), 0);
-    });
-}
-
-#[test]
-fn create_business_duplicate_is_err() {
-    ExtBuilder::build().execute_with(|| {
-        System::set_block_number(System::block_number() + 1);
-        let cid = create_cid();
-
-        assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
-        assert_error(EncointerBazaar::create_business(Origin::signed(alice()), cid, url1()), Error::<TestRuntime>::ExistingBusiness);
-        assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
-
-        let records = System::events();
-        assert_eq!(records.len(), 2);
-        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessCreated(cid.clone(), alice())));
     });
 }
 
@@ -114,7 +98,7 @@ fn update_existing_business_is_ok() {
 
         let records = System::events();
         assert_eq!(records.len(), 2);
-        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessUpdated(cid.clone(), alice())));
+        assert_eq!(records.get(1).unwrap().event, Event::encointer_bazaar(RawEvent::BusinessUpdated(cid.clone(), alice())));
     });
 }
 
@@ -149,7 +133,7 @@ fn delete_existing_business_is_ok() {
 
         let records = System::events();
         assert_eq!(records.len(), 2);
-        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessDeleted(cid.clone(), alice())));
+        assert_eq!(records.get(1).unwrap().event, Event::encointer_bazaar(RawEvent::BusinessDeleted(cid.clone(), alice())));
     });
 }
 
@@ -170,16 +154,25 @@ fn delete_inexistent_business_is_err() {
     });
 }
 
-fn get_oid(test_event: &TestEvent) -> u32 {
-    let raw_event = match test_event {
-        TestEvent::tokens(event) => event,
+fn get_bid(test_event: Event) -> AccountId {
+    match get_raw_event(&test_event).clone() {
+        RawEvent::BusinessCreated(_, bid) => bid,
         _ => panic!(),
-    };
-    let oid = match raw_event {
-        RawEvent::OfferingCreated(_, _, oid) => oid,
+    }
+}
+
+fn get_oid(test_event: &Event) -> u32 {
+    match get_raw_event(test_event) {
+        RawEvent::OfferingCreated(_, _, oid) => *oid,
         _ => panic!(),
-    };
-    return *oid;
+    }
+}
+
+fn get_raw_event(test_event: &Event) -> &RawEvent<AccountId> {
+    match test_event {
+        Event::encointer_bazaar(event) => event,
+        _ => panic!(),
+    }
 }
 
 #[test]
@@ -225,7 +218,7 @@ fn update_existing_offering_is_ok() {
 
         let records = System::events();
         assert_eq!(records.len(), 2);
-        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::OfferingUpdated(cid.clone(), alice(), 1)));
+        assert_eq!(records.get(1).unwrap().event, Event::encointer_bazaar(RawEvent::OfferingUpdated(cid.clone(), alice(), 1)));
 
         assert_eq!(EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, alice()), 1).url, url1());
     });
@@ -264,7 +257,7 @@ fn delete_existing_offering_is_ok() {
 
         let records = System::events();
         assert_eq!(records.len(), 2);
-        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::OfferingDeleted(cid.clone(), alice(), 1)));
+        assert_eq!(records.get(1).unwrap().event, Event::encointer_bazaar(RawEvent::OfferingDeleted(cid.clone(), alice(), 1)));
     });
 }
 
@@ -303,6 +296,6 @@ fn when_deleting_business_delete_all_its_offerings() {
 
         let records = System::events();
         assert_eq!(records.len(), 2);
-        assert_eq!(records.get(1).unwrap().event, TestEvent::tokens(RawEvent::BusinessDeleted(cid.clone(), alice())));
+        assert_eq!(records.get(1).unwrap().event, Event::encointer_bazaar(RawEvent::BusinessDeleted(cid.clone(), alice())));
     });
 }

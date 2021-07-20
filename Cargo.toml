@@ -7,6 +7,8 @@ members = [
     'communities/rpc/runtime-api',
     'ceremonies',
     'bazaar',
+    'bazaar/rpc',
+    'bazaar/rpc/runtime-api',
     'sybil-gate-template',
     'personhood-oracle',
     'primitives',
