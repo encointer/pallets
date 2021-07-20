@@ -44,9 +44,11 @@ use encointer_primitives::{
     common::PalletString,
 };
 
-pub trait Config: frame_system::Config + encointer_communities::Config {
+pub trait Config: frame_system::Config + encointer_communities::Config + pallet_proxy::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
+
+pub type ProxyTypeOf<T> = <T as pallet_proxy::Config>::ProxyType;
 
 decl_storage! {
     trait Store for Module<T: Config> as Bazaar {
@@ -98,11 +100,11 @@ decl_module! {
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 Error::<T>::InexistentCommunity);
 
-            ensure!(!BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::ExistingBusiness);
+            let anonymous_proxy = pallet_proxy::Pallet::<T>::anonymous_account(&sender, &ProxyTypeOf::<T>::default(), 0, None);
 
-            BusinessRegistry::<T>::insert(cid, &sender, BusinessData::new(url, 1));
+            BusinessRegistry::<T>::insert(cid, anonymous_proxy.clone(), BusinessData::new(url, 1));
 
-            Self::deposit_event(RawEvent::BusinessCreated(cid, sender));
+            Self::deposit_event(RawEvent::BusinessCreated(cid, anonymous_proxy));
 
             Ok(())
         }
