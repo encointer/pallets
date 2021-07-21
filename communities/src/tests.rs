@@ -184,8 +184,8 @@ fn new_community_works() {
             lat: T::from_num(1i32),
             lon: T::from_num(2i32),
         };
-        assert!(EncointerCommunities::is_valid_geolocation(&a));
-        assert!(EncointerCommunities::is_valid_geolocation(&b));
+        assert!(EncointerCommunities::is_valid_location(&a));
+        assert!(EncointerCommunities::is_valid_location(&b));
         println!("testing Location {:?} and {:?}", a, b);
         println!("north pole at {:?}", NORTH_POLE);
         let loc = vec![a, b];

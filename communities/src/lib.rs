@@ -34,9 +34,9 @@ use rstd::prelude::*;
 use rstd::result::Result;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use runtime_io::hashing::blake2_256;
-use sp_runtime::{DispatchResult, SaturatedConversion, DispatchResultWithInfo};
+use sp_runtime::{DispatchResult, SaturatedConversion};
 
-use geohash::{neighbor, encode, decode, Direction, GeohashError};
+use geohash::{neighbors, encode, decode};
 
 use encointer_primitives::{
     balances::{BalanceType, Demurrage},
@@ -57,7 +57,12 @@ const LOG: &str = "encointer";
 
 decl_storage! {
     trait Store for Module<T: Config> as EncointerCommunities {
-        Locations get(fn locations): map hasher(blake2_128_concat) CommunityIdentifier => Vec<Location>;
+        // map geohash -> cid
+        CommunityIdentifiersByGeohash get(fn cids_by_geohash): map hasher(identity) PalletString => Vec<CommunityIdentifier>;
+
+        // map cid -> geohash -> location
+        Locations get(fn locations): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(identity) PalletString => Vec<Location>;
+
         Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
         CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
         CommunityMetadata get(fn community_metadata): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
@@ -73,13 +78,10 @@ decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
         type Error = Error<T>;
-        // FIXME: this function has complexity O(n^2)!
-        // where n is the number of all locations of all communities
-        // this should be run off-chain in substraTEE-worker later
         #[weight = 10_000]
         pub fn new_community(
             origin,
-            loc: Vec<Location>,
+            location: Location,
             bootstrappers: Vec<T::AccountId>,
             community_metadata: CommunityMetadataType,
             demurrage: Option<Demurrage>,
@@ -95,15 +97,31 @@ decl_module! {
                 validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
             }
 
-            let cid = CommunityIdentifier::from(blake2_256(&(loc.clone(), bootstrappers.clone()).encode()));
+            let cid = CommunityIdentifier::from(blake2_256(&(location.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
             ensure!(!cids.contains(&cid), "community already registered");
-            Self::validate_locations(&loc)?;
 
+            Self::validate_location(&location)?;
             // All checks done, now mutate state
+            let geo_hash = encode(location.lon, location.lat, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+            let mut locations: Vec<Location> = Vec::new();
+
+            // insert cid into cids_by_geohash map
+            let mut cids_in_bucket = Self::cids_by_geohash(&geo_hash);
+            match cids_in_bucket.binary_search(&cid) {
+                Ok(_) => (),
+                Err(index) => {
+                    cids_in_bucket.insert(index, cid.clone());
+                    <CommunityIdentifiersByGeohash>::insert(&geo_hash, cids_in_bucket);
+                }
+            }
+
+            // insert location into cid -> geohash -> location map
+            locations.push(location);
+            <Locations>::insert(&cid, &geo_hash, locations);
 
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
-            <Locations>::insert(&cid, &loc);
+
             <Bootstrappers<T>>::insert(&cid, &bootstrappers);
             <CommunityMetadata>::insert(&cid, &community_metadata);
 
@@ -115,6 +133,60 @@ decl_module! {
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             info!(target: LOG, "registered community with cid: {:?}", cid);
+        }
+
+        #[weight = 10_000]
+        pub fn add_location(origin, cid: CommunityIdentifier, location: Location) {
+            ensure_root(origin)?;
+            Self::validate_location(&location)?;
+            let geo_hash = encode(location.lon, location.lat, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+            // insert location into locations
+            let mut locations = Self::locations(&cid, &geo_hash);
+            match locations.binary_search(&location) {
+                Ok(_) => (),
+                Err(index) => {
+                    locations.insert(index, location);
+                    <Locations>::insert(&cid, &geo_hash, locations);
+                }
+            }
+            // check if cid is in cids_by_geohash, if not, add it
+            let mut cids = Self::cids_by_geohash(&geo_hash);
+            match cids.binary_search(&cid) {
+                Ok(_) => (),
+                Err(index) => {
+                    cids.insert(index, cid.clone());
+                    <CommunityIdentifiersByGeohash>::insert(&geo_hash, cids);
+                }
+            }
+        }
+
+        #[weight = 10_000]
+        pub fn remove_locations(origin, cid: CommunityIdentifier,location: Location) {
+            ensure_root(origin)?;
+            let geo_hash = encode(location.lon, location.lat, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+            //remove location from locations(cid,geohash)
+            let mut locations = Self::locations(&cid, &geo_hash);
+            let mut locations_len = 0;
+            match locations.binary_search(&location) {
+                Ok(index) => {
+                    locations.remove(index);
+                    locations_len = locations.len();
+                    <Locations>::insert(&cid, &geo_hash, locations);
+                },
+                Err(_) => ()
+            }
+            // if the list from above is now empty (community has no more locations in this bucket)
+            // remove cid from cids_by_geohash(geohash)
+            if locations_len == 0 {
+                let mut cids = Self::cids_by_geohash(&geo_hash);
+                match cids.binary_search(&cid) {
+                    Ok(index) => {
+                    cids.remove(index);
+                    <CommunityIdentifiersByGeohash>::insert(&geo_hash, cids);
+                    },
+                    Err(_) => ()
+                }
+            }
         }
 
         #[weight = 10_000]
@@ -199,7 +271,9 @@ decl_error! {
         /// Invalid demurrage supplied
         InvalidNominalIncome,
         /// Invalid location provided when computing geohash
-        InvalidLocationForGeohash
+        InvalidLocationForGeohash,
+        /// Invalid Geohash provided
+        InvalidGeohash
     }
 }
 
@@ -228,7 +302,7 @@ impl<T: Config> Module<T> {
         }
     }
 
-    pub fn is_valid_geolocation(loc: &Location) -> bool {
+    pub fn is_valid_location(loc: &Location) -> bool {
         (loc.lat < MAX_ABS_LATITUDE)
             & (loc.lat > -MAX_ABS_LATITUDE)
             & (loc.lon < DATELINE_LON)
@@ -267,24 +341,93 @@ impl<T: Config> Module<T> {
         Ok(())
     }
 
-    fn get_nearby_locations(location: &Location) -> Result<Vec<Location>, Error<T>>{
-        let result : Vec<Location> = Vec::new();
+    fn get_relevant_neighbor_buckets(geo_hash: &geohash::String, location: &Location)-> Result<Vec<geohash::String>, Error<T>> {
+        let mut relevant_neighbor_buckets: Vec<geohash::String> = Vec::new();
+        let neighbors = neighbors(&geo_hash).map_err(|_| <Error<T>>::InvalidGeohash)?;
+        let (bucket_center_lon, bucket_center_lat, bucket_lon_error, bucket_lat_error) = decode(&geo_hash).map_err(|_| <Error<T>>::InvalidGeohash)?;
+        let bucket_min_lat = bucket_center_lat - bucket_lat_error;
+        let bucket_max_lat = bucket_center_lat + bucket_lat_error;
+        let bucket_min_lon = bucket_center_lon - bucket_lon_error;
+        let bucket_max_lon = bucket_center_lon + bucket_lon_error;
 
-        let hash = encode(location.lon, location.lat, 7usize).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
-        warn!(target: LOG, "computed geohash: {:?}", hash);
 
+        //check if northern neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.n)
+        }
+
+        //check if southern neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.s)
+        }
+
+        // if we assume MIN_SOLAR_TIME = 1 second and maximum latitude = 78 degrees
+        // and maximum human speed 83 m/s and a GEO_HASH_LENGTH of 5
+        // it is save to only consider the direct neighbours of the current bucket,
+        // because it takes more more than 1 second solar time to traverse 1 bucket.
+
+        // solar time = time human - time sun
+        // width of one bucket at latitude x = 4900 * cos(x) m
+        // speed human: 83 m/s
+        // speed sun: (cos(x) * 111319) / 240 = (meters/degree)/(seconds/degree) = m/s
+        // time sun = (4900 * cos(x)) / ((cos(x) * 111319) / 240)
+        // time human = (4900 * cos(x)) / 83
+        // solar time = ((4900 * cos(x)) / 83) - ((4900 * cos(x)) / ((cos(x) * 111319) / 240))
+        // solve ((4900 * cos(x)) / 83) - ((4900 * cos(x)) / ((cos(x) * 111319) / 240)) = 1
+        // x = 78.7036, so below 78.7036 it takes a human more than 1 second solar time to
+        // traverse 1 bucket horizontally
+
+        //check if north eastern neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.ne)
+        }
+
+        //check if eastern neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.e)
+        }
+
+        //check if south eastern neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.se)
+        }
+
+
+        //check if north western neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.nw)
+        }
+
+        //check if western neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.w)
+        }
+
+        //check if south western neighbour bucket needs to be included
+        if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location) < MIN_SOLAR_TRIP_TIME_S {
+            relevant_neighbor_buckets.push(neighbors.sw)
+        }
+
+        Ok(relevant_neighbor_buckets)
+
+    }
+    fn get_nearby_locations(location: &Location) -> Result<Vec<Location>, Error<T>> {
+        let mut result: Vec<Location> = Vec::new();
+        let geo_hash = encode(location.lon, location.lat, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+        let mut relevant_buckets = Self::get_relevant_neighbor_buckets(&geo_hash, location)?;
+        relevant_buckets.push(geo_hash);
+
+        for bucket in relevant_buckets {
+            for cid in Self::cids_by_geohash(&bucket) {
+                result.append(&mut Self::locations(&cid, &bucket).clone());
+            }
+        }
         Ok(result)
     }
 
     fn validate_location(location: &Location) -> DispatchResult {
-        ensure!(Self::is_valid_geolocation(location), <Error<T>>::InvalidLocation);
-        let nearby_locations = Self::get_nearby_locations(location)?;
-        for nearby_location in nearby_locations.iter() {
-            ensure!(
-                    Self::haversine_distance(location, &nearby_location) >= MIN_DISTANCE_BETWEEN_LOCATIONS,
-                    <Error<T>>::MinimumDistanceViolationToOtherLocation
-                );
-        }
+        ensure!(Self::is_valid_location(location), <Error<T>>::InvalidLocation);
+
         // prohibit proximity to dateline
         let dateline_proxy = Location {
             lat: location.lat,
@@ -294,15 +437,13 @@ impl<T: Config> Module<T> {
             warn!(target: LOG, "location too close to dateline: {:?}", location);
             return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
         }
-        Ok(())
-    }
 
-    fn validate_locations(locations: &Vec<Location>) -> DispatchResult {
-        ensure!(locations.len() <= 10, <Error<T>>::TooManyLocations);
-        ensure!(!locations.is_empty(), <Error<T>>::TooFewLocations);
-
-        for location in locations.iter() {
-            Self::validate_location(&location)?;
+        let nearby_locations = Self::get_nearby_locations(location)?;
+        for nearby_location in nearby_locations{
+            ensure!(
+                    Self::solar_trip_time(location, &nearby_location) >= MIN_SOLAR_TRIP_TIME_S,
+                    <Error<T>>::MinimumDistanceViolationToOtherLocation
+                );
         }
         Ok(())
     }

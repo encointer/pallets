@@ -51,7 +51,7 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 }
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord)]
 pub struct Location {
     pub lat: Degree,
     pub lon: Degree,
@@ -190,10 +190,10 @@ pub mod consts {
     // above a latitude with absolute value > 79.6917, a human can travel faster than the sun
     // so those areas have to be excluded, because no matter the distance between two locations
     // an attacker can be at the new location faster than the sun.
-    pub const MAX_ABS_LATITUDE: Degree = Degree::from_bits(79i128 << 64);
+    // as the northern most population is at 78 degrees, we use 78
+    pub const MAX_ABS_LATITUDE: Degree = Degree::from_bits(78i128 << 64);
 
-
-    pub const DATELINE_DISTANCE_M: u32 = 1_000_000; // meetups may not be closer to dateline (or poles) than this
+    pub const DATELINE_DISTANCE_M: u32 = 1_000_000; // meetups may not be closer to dateline than this
 
     pub const NORTH_POLE: Location = Location {
         lon: Degree::from_bits(0i128),
@@ -211,6 +211,12 @@ pub mod consts {
     // dec2hex(6371000,8)
     // in meters
     pub const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
+
+    // dec2hex(111319,8)
+    // in meters
+    pub const METERS_PER_DEGREE_AT_EQUATOR : I32F0 = I32F0::from_bits(0x0001B2D7);
+
+    pub const GEO_HASH_LENGTH : usize = 7usize;
 
     /// Dirty bit key for offfchain storage
     pub const CACHE_DIRTY_KEY: &[u8] = b"dirty";
