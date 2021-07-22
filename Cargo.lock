@@ -1264,7 +1264,7 @@ dependencies = [
 [[package]]
 name = "geohash"
 version = "0.11.1-alpha.0"
-source = "git+https://github.com/pifragile/geohash.git?branch=master#0e1c74ab0bbc72c38f804bb73dc119db3a6b2100"
+source = "git+https://github.com/pifragile/geohash.git?branch=master#92574eecb1744ba39bab7aca4d61de8f0281a95b"
 dependencies = [
  "geo-types",
  "num-traits",
