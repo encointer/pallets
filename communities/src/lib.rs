@@ -48,6 +48,22 @@ use encointer_primitives::{
     },
 };
 
+pub trait ToPalletString {
+    fn to_pallet_string(&self) -> PalletString;
+}
+
+impl ToPalletString for geohash::String {
+    #[cfg(feature = "std")]
+    fn to_pallet_string(&self) -> PalletString {
+        self.clone()
+    }
+
+    #[cfg(not(feature = "std"))]
+    fn to_pallet_string(&self) -> PalletString {
+        return (self.clone().into_bytes()).to_vec();
+    }
+}
+
 pub trait Config: frame_system::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
@@ -107,18 +123,18 @@ decl_module! {
             let mut locations: Vec<Location> = Vec::new();
 
             // insert cid into cids_by_geohash map
-            let mut cids_in_bucket = Self::cids_by_geohash(&geo_hash);
+            let mut cids_in_bucket = Self::cids_by_geohash(geo_hash.to_pallet_string());
             match cids_in_bucket.binary_search(&cid) {
                 Ok(_) => (),
                 Err(index) => {
                     cids_in_bucket.insert(index, cid.clone());
-                    <CommunityIdentifiersByGeohash>::insert(&geo_hash, cids_in_bucket);
+                    <CommunityIdentifiersByGeohash>::insert(geo_hash.to_pallet_string(), cids_in_bucket);
                 }
             }
 
             // insert location into cid -> geohash -> location map
             locations.push(location);
-            <Locations>::insert(&cid, &geo_hash, locations);
+            <Locations>::insert(&cid, geo_hash.to_pallet_string(), locations);
 
             <CommunityIdentifiers>::mutate(|v| v.push(cid));
 
@@ -141,21 +157,21 @@ decl_module! {
             Self::validate_location(&location)?;
             let geo_hash = encode(location.lat, location.lon, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             // insert location into locations
-            let mut locations = Self::locations(&cid, &geo_hash);
+            let mut locations = Self::locations(&cid, geo_hash.to_pallet_string());
             match locations.binary_search(&location) {
                 Ok(_) => (),
                 Err(index) => {
                     locations.insert(index, location);
-                    <Locations>::insert(&cid, &geo_hash, locations);
+                    <Locations>::insert(&cid, geo_hash.to_pallet_string(), locations);
                 }
             }
             // check if cid is in cids_by_geohash, if not, add it
-            let mut cids = Self::cids_by_geohash(&geo_hash);
+            let mut cids = Self::cids_by_geohash(geo_hash.to_pallet_string());
             match cids.binary_search(&cid) {
                 Ok(_) => (),
                 Err(index) => {
                     cids.insert(index, cid.clone());
-                    <CommunityIdentifiersByGeohash>::insert(&geo_hash, cids);
+                    <CommunityIdentifiersByGeohash>::insert(geo_hash.to_pallet_string(), cids);
                 }
             }
         }
@@ -165,24 +181,24 @@ decl_module! {
             ensure_root(origin)?;
             let geo_hash = encode(location.lat, location.lon, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             //remove location from locations(cid,geohash)
-            let mut locations = Self::locations(&cid, &geo_hash);
+            let mut locations = Self::locations(&cid, geo_hash.to_pallet_string());
             let mut locations_len = 0;
             match locations.binary_search(&location) {
                 Ok(index) => {
                     locations.remove(index);
                     locations_len = locations.len();
-                    <Locations>::insert(&cid, &geo_hash, locations);
+                    <Locations>::insert(&cid, geo_hash.to_pallet_string(), locations);
                 },
                 Err(_) => ()
             }
             // if the list from above is now empty (community has no more locations in this bucket)
             // remove cid from cids_by_geohash(geohash)
             if locations_len == 0 {
-                let mut cids = Self::cids_by_geohash(&geo_hash);
+                let mut cids = Self::cids_by_geohash(geo_hash.to_pallet_string());
                 match cids.binary_search(&cid) {
                     Ok(index) => {
                     cids.remove(index);
-                    <CommunityIdentifiersByGeohash>::insert(&geo_hash, cids);
+                    <CommunityIdentifiersByGeohash>::insert(geo_hash.to_pallet_string(), cids);
                     },
                     Err(_) => ()
                 }
@@ -418,8 +434,8 @@ impl<T: Config> Module<T> {
         relevant_buckets.push(geo_hash);
 
         for bucket in relevant_buckets {
-            for cid in Self::cids_by_geohash(&bucket) {
-                result.append(&mut Self::locations(&cid, &bucket).clone());
+            for cid in Self::cids_by_geohash(bucket.to_pallet_string()) {
+                result.append(&mut Self::locations(&cid, bucket.to_pallet_string()).clone());
             }
         }
         Ok(result)
