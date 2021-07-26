@@ -7,18 +7,31 @@ use encointer_primitives::{
     balances:: {Demurrage, consts::DEFAULT_DEMURRAGE}
 };
 
-const NUM_LOCATIONS : u32 =  20000;
+use log::{info, warn};
+
+const NUM_LOCATIONS : u32 =  1000000;
+
+fn get_location(i:u32) -> Location {
+    // splits the world into 1m locations
+    let max_locations = 1000000;
+    assert!(i < max_locations );
+
+    // lat from -50 to 50
+    // split latitude degrees in 100
+    let lat = (i / 100) as f64 / 100.0 - 50.0;
+
+    // lon from -150 to 150
+    // per latitude have 100 locations
+    let lon = (i % 100) as f64 * 3.0  - 150.0;
+
+    Location{lat: Degree::from_num(lat), lon: Degree::from_num(lon)}
+}
 
 benchmarks! {
     new_community {
-    let i in 1 .. NUM_LOCATIONS;
+    let i in 2 .. NUM_LOCATIONS;
+    warn!("starting benchmark.");
     let caller: T::AccountId = whitelisted_caller();
-
-    // spread locations along the equator, ie. lat = 0, lon equally spread over [-150, 150]
-    // using 150 to have a save distance from the dateline
-    let locations: Vec<Location> = (0..i + 1)
-    .map(|x| Location{lat: Degree::from_num(0.0), lon: Degree::from_num(((x as f64 * 300.0) / (NUM_LOCATIONS as f64)) - 150.0)})
-    .collect();
 
     let bootstrappers : Vec<T::AccountId> = (0..12).map(|n| account("dummy name", n, n)).collect();
     let mut community_metadata = CommunityMetadata::default();
@@ -28,15 +41,13 @@ benchmarks! {
     let nominal_income = Some(NominalIncome::from_num(1));
 
     // setup test community
-    PalletModule::<T>::new_community(RawOrigin::Signed(caller.clone()).into(), locations[0usize], bootstrappers.clone(), community_metadata.clone(), demurrage.clone(), nominal_income.clone());
-    let cid = CommunityIdentifier::from(blake2_256(&(locations[0usize].clone(), bootstrappers.clone()).encode()));
-    for j in 1..i {
-        PalletModule::<T>::add_location(RawOrigin::Root.into(), cid, locations[j as usize]);
+    PalletModule::<T>::new_community(RawOrigin::Signed(caller.clone()).into(), get_location(0), bootstrappers.clone(), community_metadata.clone(), demurrage.clone(), nominal_income.clone());
+    let cid = CommunityIdentifier::from(blake2_256(&(get_location(0).clone(), bootstrappers.clone()).encode()));
+    for j in 1..i-1 {
+        assert!(PalletModule::<T>::add_location(RawOrigin::Root.into(), cid, get_location(j)).is_ok());
     }
-
-
-
-	}: _(RawOrigin::Signed(caller), locations[i as usize], bootstrappers, community_metadata, demurrage, nominal_income)
+    warn!("setup complete.");
+	}: _(RawOrigin::Signed(caller), get_location(i-1), bootstrappers, community_metadata, demurrage, nominal_income)
 }
 
 
