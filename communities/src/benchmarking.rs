@@ -9,20 +9,18 @@ use encointer_primitives::{
 
 use log::{info, warn};
 
-const NUM_LOCATIONS : u32 =  1000000;
+const NUM_LOCATIONS : u32 =  500000;
 
 fn get_location(i:u32) -> Location {
     // splits the world into 1m locations
     let max_locations = 1000000;
     assert!(i < max_locations );
 
-    // lat from -50 to 50
-    // split latitude degrees in 100
-    let lat = (i / 100) as f64 / 100.0 - 50.0;
+    // lat from -40 to 40
+    let lat = (i / 1000) as f64 * 0.08 - 40.0;
 
-    // lon from -150 to 150
-    // per latitude have 100 locations
-    let lon = (i % 100) as f64 * 3.0  - 150.0;
+    // lon from -140 to 140
+    let lon = (i % 1000) as f64 * 0.28  - 140.0;
 
     Location{lat: Degree::from_num(lat), lon: Degree::from_num(lon)}
 }
