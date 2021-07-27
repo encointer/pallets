@@ -28,7 +28,7 @@ fn get_location(i:u32) -> Location {
 benchmarks! {
     new_community {
     let i in 2 .. NUM_LOCATIONS;
-    warn!("starting benchmark.");
+    warn!("starting benchmark {:?}", i);
     let caller: T::AccountId = whitelisted_caller();
 
     let bootstrappers : Vec<T::AccountId> = (0..12).map(|n| account("dummy name", n, n)).collect();
