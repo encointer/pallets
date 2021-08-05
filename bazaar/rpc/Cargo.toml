@@ -1,0 +1,46 @@
+[package]
+name = "pallet-encointer-bazaar-rpc"
+version = "0.1.0"
+authors = ["encointer.org <alain@encointer.org>"]
+edition = "2018"
+
+[dependencies]
+jsonrpc-core = "15.0.0"
+jsonrpc-core-client = "15.0.0"
+jsonrpc-derive = "15.0.0"
+log = "0.4.14"
+parking_lot = "0.11.1"
+
+[dependencies.sp-api]
+package = "sp-api"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.sp-blockchain]
+package = "sp-blockchain"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.sc-rpc]
+package = "sc-rpc"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.sp-runtime]
+package = "sp-runtime"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dependencies.encointer-bazaar-rpc-runtime-api]
+package = "pallet-encointer-bazaar-rpc-runtime-api"
+path = "runtime-api"
+
+[dependencies.encointer-primitives]
+path = "../../primitives"
+
+[dev-dependencies]
+
+[dev-dependencies.sp-core]
+package = "sp-core"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"

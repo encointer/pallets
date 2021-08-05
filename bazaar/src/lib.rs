@@ -25,6 +25,7 @@
 
 mod mock;
 mod tests;
+
 #[cfg(test)]
 extern crate approx;
 
@@ -32,7 +33,7 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    storage::{StorageDoubleMap},
+    storage::{StorageDoubleMap, IterableStorageDoubleMap},
 };
 use frame_system::ensure_signed;
 use rstd::prelude::*;
@@ -84,7 +85,6 @@ decl_error! {
     }
 }
 
-// TODO: Add Article Upload / Removal
 decl_module! {
     pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
@@ -183,5 +183,16 @@ decl_module! {
 
             Ok(())
         }
+    }
+}
+
+impl<T: Config> Module<T>
+{
+    pub fn get_businesses(cid: &CommunityIdentifier) -> Vec<(T::AccountId, BusinessData)> {
+        return BusinessRegistry::<T>::iter_prefix(cid).collect();
+    }
+
+    pub fn get_offerings(bid: &BusinessIdentifier<T::AccountId>) -> Vec<OfferingData> {
+        return OfferingRegistry::<T>::iter_prefix_values(bid).collect();
     }
 }
