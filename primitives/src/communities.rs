@@ -188,8 +188,7 @@ pub mod consts {
     // (cos(x) * 111.3194) / (v/1000)
     // (cos(x) * 111.3194) / (83/1000) = 240, solve for x ==> x == 79.6917
     // above a latitude with absolute value > 79.6917, a human can travel faster than the sun
-    // so those areas have to be excluded, because no matter the distance between two locations
-    // an attacker can be at the new location faster than the sun.
+    // when he moves along the same latitude, so it simplifies things to exclude those locations.
     // as the northern most population is at 78 degrees, we use 78
     pub const MAX_ABS_LATITUDE: Degree = Degree::from_bits(78i128 << 64);
 
