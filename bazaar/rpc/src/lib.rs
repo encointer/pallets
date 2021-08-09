@@ -44,14 +44,13 @@ pub struct Bazaar<Client, Block, AccountId> {
 }
 
 impl<Client, Block, AccountId> Bazaar<Client, Block, AccountId>
-    where
 {
     /// Create new `Bazaar` instance with the given reference to the client.
-    pub fn new(client: Arc<Client>) -> Self {
+    pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
         Bazaar {
             client,
             _marker: Default::default(),
-            deny_unsafe: DenyUnsafe::Yes
+            deny_unsafe
         }
     }
 }
