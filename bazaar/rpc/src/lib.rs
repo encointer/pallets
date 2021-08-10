@@ -44,21 +44,20 @@ pub struct Bazaar<Client, Block, AccountId> {
 }
 
 impl<Client, Block, AccountId> Bazaar<Client, Block, AccountId>
-    where
 {
     /// Create new `Bazaar` instance with the given reference to the client.
-    pub fn new(client: Arc<Client>) -> Self {
+    pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
         Bazaar {
             client,
             _marker: Default::default(),
-            deny_unsafe: DenyUnsafe::Yes
+            deny_unsafe
         }
     }
 }
 
 impl<Client, Block, AccountId> BazaarApi<<Block as BlockT>::Hash, AccountId> for Bazaar<Client, Block, AccountId>
     where
-        AccountId: 'static + Encode + Decode + Send + Sync + Copy,
+        AccountId: 'static + Clone + Encode + Decode + Send + Sync,
         Block: BlockT,
         Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
         Client::Api: BazaarRuntimeApi<Block, AccountId> {
@@ -80,7 +79,7 @@ impl<Client, Block, AccountId> BazaarApi<<Block as BlockT>::Hash, AccountId> for
         let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
         return Ok(api.get_businesses(&at, &cid)
             .map_err(runtime_error_into_rpc_err)?.iter()
-            .flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0)))
+            .flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0.clone())))
             .flatten()
             .collect());
     }
