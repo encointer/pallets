@@ -25,6 +25,7 @@ use sp_runtime::{
 
 use encointer_primitives::balances::consts::DEFAULT_DEMURRAGE;
 use test_utils::{helpers::register_test_community, *};
+extern crate alloc;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
@@ -70,6 +71,10 @@ fn get_accountid(pair: &sr25519::Pair) -> AccountId {
 }
 
 type T = Degree;
+
+fn string_to_geohash(s: &str) -> GeoHash {
+    GeoHash(alloc::string::String::from(s).as_bytes().to_vec())
+}
 
 #[test]
 fn testdata_lat_long() {
@@ -197,7 +202,7 @@ fn new_community_works() {
         ));
         let cid = CommunityIdentifier::from(blake2_256(&(location.clone(), bs.clone()).encode()));
         let cids = EncointerCommunities::community_identifiers();
-        let geo_hash = geohash::encode(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
         assert!(cids.contains(&cid));
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
@@ -227,12 +232,12 @@ fn two_communities_in_same_bucket_works() {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
         };
-        let geo_hash = geohash::encode(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
         let location2 = Location {
             lat: T::from_num(0),
             lon: T::from_num(-0.015),
         };
-        let geo_hash2 = geohash::encode(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
         assert_ok!(EncointerCommunities::new_community(
@@ -317,7 +322,7 @@ fn add_location_works() {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
         };
-        let geo_hash = geohash::encode(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
@@ -326,7 +331,7 @@ fn add_location_works() {
             lat: T::from_num(0),
             lon: T::from_num(-0.015),
         };
-        let geo_hash2 = geohash::encode(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
         EncointerCommunities::add_location(Origin::root(), cid, location2);
@@ -342,7 +347,7 @@ fn add_location_works() {
             lat: T::from_num(0),
             lon: T::from_num(0.015),
         };
-        let geo_hash3 = geohash::encode(location3.lat, location3.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon, GEO_HASH_LENGTH).unwrap();
 
         EncointerCommunities::add_location(Origin::root(), cid, location3);
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash3), vec![location3]);
@@ -358,7 +363,7 @@ fn remove_location_works() {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
         };
-        let geo_hash = geohash::encode(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
@@ -367,7 +372,7 @@ fn remove_location_works() {
             lat: T::from_num(0),
             lon: T::from_num(-0.015),
         };
-        let geo_hash2 = geohash::encode(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
         EncointerCommunities::add_location(Origin::root(), cid, location2);
@@ -507,8 +512,7 @@ fn get_relevant_neighbor_buckets_works() {
     ///
     ExtBuilder::build().execute_with(|| {
         // center location should not make it necessary to check any other buckets
-        type S = geohash::String;
-        let bucket = S::from("sbh2n");
+        let bucket = string_to_geohash("sbh2n");
         let center = Location {
             lat: T::from_num(0.02197265625),
             lon: T::from_num(40.01220703125),
@@ -522,7 +526,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(40.034179687),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("sbh2q"), S::from("sbh2r"), S::from("sbh2p")];
+        let mut expected_result = vec![string_to_geohash("sbh2q"), string_to_geohash("sbh2r"), string_to_geohash("sbh2p")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
@@ -533,7 +537,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(40.034179687),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("sbh2p")];
+        let mut expected_result = vec![string_to_geohash("sbh2p")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
@@ -544,7 +548,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(40.034179687),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("sbh2p"), S::from("kzury"), S::from("kzurz")];
+        let mut expected_result = vec![string_to_geohash("sbh2p"), string_to_geohash("kzury"), string_to_geohash("kzurz")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
@@ -555,7 +559,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(40.01220703125),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("kzury")];
+        let mut expected_result = vec![string_to_geohash("kzury")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
@@ -566,7 +570,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(39.990234376),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("kzury"), S::from("kzurv"), S::from("sbh2j")];
+        let mut expected_result = vec![string_to_geohash("kzury"), string_to_geohash("kzurv"), string_to_geohash("sbh2j")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
@@ -577,7 +581,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(39.990234376),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("sbh2j")];
+        let mut expected_result = vec![string_to_geohash("sbh2j")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
@@ -589,7 +593,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(39.990234376),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("sbh2m"), S::from("sbh2q"), S::from("sbh2j")];
+        let mut expected_result = vec![string_to_geohash("sbh2m"), string_to_geohash("sbh2q"), string_to_geohash("sbh2j")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
@@ -600,7 +604,7 @@ fn get_relevant_neighbor_buckets_works() {
             lon: T::from_num(40.01220703125),
         };
         let mut result = EncointerCommunities::get_relevant_neighbor_buckets(&bucket, &location).unwrap();
-        let mut expected_result = vec![S::from("sbh2q")];
+        let mut expected_result = vec![string_to_geohash("sbh2q")];
         result.sort();
         expected_result.sort();
         assert_eq!(result, expected_result);
