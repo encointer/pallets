@@ -215,7 +215,7 @@ pub mod consts {
     // in meters
     pub const METERS_PER_DEGREE_AT_EQUATOR : I32F0 = I32F0::from_bits(0x0001B2D7);
 
-    pub const GEO_HASH_LENGTH : usize = 5usize;
+    pub const BUCKET_RESOLUTION : usize = 5usize;
 
     /// Dirty bit key for offfchain storage
     pub const CACHE_DIRTY_KEY: &[u8] = b"dirty";

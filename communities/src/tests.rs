@@ -202,7 +202,7 @@ fn new_community_works() {
         ));
         let cid = CommunityIdentifier::from(blake2_256(&(location.clone(), bs.clone()).encode()));
         let cids = EncointerCommunities::community_identifiers();
-        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
         assert!(cids.contains(&cid));
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
@@ -232,12 +232,12 @@ fn two_communities_in_same_bucket_works() {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
         };
-        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
         let location2 = Location {
             lat: T::from_num(0),
             lon: T::from_num(-0.015),
         };
-        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
         assert_ok!(EncointerCommunities::new_community(
@@ -322,7 +322,7 @@ fn add_location_works() {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
         };
-        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
@@ -331,7 +331,7 @@ fn add_location_works() {
             lat: T::from_num(0),
             lon: T::from_num(-0.015),
         };
-        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
         EncointerCommunities::add_location(Origin::root(), cid, location2);
@@ -347,7 +347,7 @@ fn add_location_works() {
             lat: T::from_num(0),
             lon: T::from_num(0.015),
         };
-        let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon, BUCKET_RESOLUTION).unwrap();
 
         EncointerCommunities::add_location(Origin::root(), cid, location3);
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash3), vec![location3]);
@@ -363,7 +363,7 @@ fn remove_location_works() {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
         };
-        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
@@ -372,7 +372,7 @@ fn remove_location_works() {
             lat: T::from_num(0),
             lon: T::from_num(-0.015),
         };
-        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, GEO_HASH_LENGTH).unwrap();
+        let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
         EncointerCommunities::add_location(Origin::root(), cid, location2);
