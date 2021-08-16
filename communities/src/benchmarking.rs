@@ -9,12 +9,11 @@ use encointer_primitives::{
 
 use log::{info, warn};
 
-const NUM_LOCATIONS : u32 =  500000;
+const NUM_LOCATIONS : u32 =  500_000;
 
 fn get_location(i:u32) -> Location {
     // splits the world into 1m locations
-    let max_locations = 1000000;
-    assert!(i < max_locations );
+    assert!(i < 1_000_000 );
 
     // lat from -40 to 40
     let lat = (i / 1000) as f64 * 0.08 - 40.0;
