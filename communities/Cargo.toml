@@ -71,7 +71,7 @@ approx = "0.3.0"
 
 [dependencies.geohash]
 default-features = false
-git = "https://github.com/pifragile/geohash.git"
+git = "https://github.com/encointer/geohash"
 branch = "master"
 
 [dev-dependencies.externalities]
