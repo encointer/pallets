@@ -1255,8 +1255,9 @@ dependencies = [
 [[package]]
 name = "geohash"
 version = "0.11.1-alpha.0"
-source = "git+https://github.com/encointer/geohash?branch=master#1fd88eb4cd3a2db448d3766677e043800c66385f"
+source = "git+https://github.com/encointer/geohash?branch=master#a4f31108934f0022420c4dbbdc76a3bf60a54a04"
 dependencies = [
+ "parity-scale-codec",
  "substrate-fixed",
 ]
 
