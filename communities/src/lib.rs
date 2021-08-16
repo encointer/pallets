@@ -103,7 +103,7 @@ decl_module! {
 
             Self::validate_location(&location)?;
             // All checks done, now mutate state
-            let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+            let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             let mut locations: Vec<Location> = Vec::new();
 
             // insert cid into cids_by_geohash map
@@ -139,7 +139,7 @@ decl_module! {
         pub fn add_location(origin, cid: CommunityIdentifier, location: Location) {
             ensure_root(origin)?;
             Self::validate_location(&location)?;
-            let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+            let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             // insert location into locations
             let mut locations = Self::locations(&cid, &geo_hash);
             match locations.binary_search(&location) {
@@ -163,7 +163,7 @@ decl_module! {
         #[weight = 10_000]
         pub fn remove_location(origin, cid: CommunityIdentifier,location: Location) {
             ensure_root(origin)?;
-            let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+            let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             //remove location from locations(cid,geohash)
             let mut locations = Self::locations(&cid, &geo_hash);
             let mut locations_len = 0;
@@ -362,7 +362,7 @@ impl<T: Config> Module<T> {
         }
 
         // if we assume MIN_SOLAR_TIME = 1 second and maximum latitude = 78 degrees
-        // and maximum human speed 83 m/s and a GEO_HASH_LENGTH of 5
+        // and maximum human speed 83 m/s and a BUCKET_RESOLUTION of 5
         // it is save to only consider the direct neighbours of the current bucket,
         // because it takes more more than 1 second solar time to traverse 1 bucket.
 
@@ -413,7 +413,7 @@ impl<T: Config> Module<T> {
     }
     fn get_nearby_locations(location: &Location) -> Result<Vec<Location>, Error<T>> {
         let mut result: Vec<Location> = Vec::new();
-        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, GEO_HASH_LENGTH).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+        let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
         let mut relevant_buckets = Self::get_relevant_neighbor_buckets(&geo_hash, location)?;
         relevant_buckets.push(geo_hash);
 
