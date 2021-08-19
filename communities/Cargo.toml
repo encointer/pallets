@@ -7,6 +7,13 @@ edition = "2018"
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 
+[dependencies.frame-benchmarking]
+version = "3.1.0"
+default-features = false
+git = "https://github.com/paritytech/substrate.git" 
+branch = "master"
+optional = true
+
 [dependencies.encointer-primitives]
 default-features = false
 package = "encointer-primitives"
@@ -89,4 +96,5 @@ std = [
 	"fixed/std",
 	"encointer-primitives/std",
 ]
+runtime-benchmarks = ["frame-benchmarking"]
 
