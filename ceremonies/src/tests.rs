@@ -149,6 +149,7 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
         .unwrap()
         .lon
         .lossy_into();
+
     let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)
         + cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING)
         + cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING)
@@ -282,7 +283,6 @@ fn attest_all(
             ).sign(*a)
         );
     }
-
     assert_ok!(EncointerCeremonies::attest_claims(
         Origin::signed(attestor),
         claims
@@ -302,7 +302,23 @@ fn perform_bootstrapping_ceremony(
     n_locations: u32,
 ) -> CommunityIdentifier {
     let bootstrappers: Vec<sr25519::Pair> = custom_bootstrappers.unwrap_or_else(|| bootstrappers());
-    let cid = register_test_community::<TestRuntime>(Some(bootstrappers.clone()), n_locations);
+    let cid = register_test_community::<TestRuntime>(Some(bootstrappers.clone()), 0.0, 0.0);
+    if n_locations > 70 {
+        panic!("Too many locations.")
+    }
+    for i in 1..n_locations {
+        let coord = i as f64;
+        let location = Location {
+            lat: Degree::from_num(coord),
+            lon: Degree::from_num(coord),
+        };
+
+        match EncointerCommunities::add_location(Origin::root(), cid, location) {
+            Ok(_v) => (),
+            Err(e) => panic!("{:?}", e),
+        }
+
+    }
     bootstrappers
         .iter()
         .for_each(|b| register(b.public().into(), cid, None).unwrap());
@@ -313,7 +329,7 @@ fn perform_bootstrapping_ceremony(
     // ASSIGNING
     run_to_next_phase();
     // ATTESTING
-    let loc = Location::default();
+    let loc = EncointerCommunities::get_locations(&cid)[0];
     let time = correct_meetup_time(&cid, 1);
 
     for i in 0..bootstrappers.len() {
@@ -321,7 +337,6 @@ fn perform_bootstrapping_ceremony(
         let claimant = bs.remove(i);
         attest_all(account_id(&claimant), &bs.iter().collect(), cid, cindex, 1, loc, time, 6);
     }
-
     run_to_next_phase();
     // REGISTERING
     cid
@@ -352,7 +367,7 @@ fn fully_attest_meetup(
             }
         }
         println!("  length of attestors: {}", others.len());
-        let loc = EncointerCommunities::locations(&cid)[(mindex - 1) as usize];
+        let loc  = EncointerCommunities::get_locations(&cid)[(mindex - 1) as usize];
         let time = correct_meetup_time(&cid, mindex);
         attest_all(
             (*p).clone(),
@@ -1232,7 +1247,10 @@ fn get_meetup_time_works() {
         System::set_block_number(0);
         run_to_block(1);
 
-        let cid = register_test_community::<TestRuntime>(None, 3);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+        EncointerCommunities::add_location(Origin::root(), cid, Location{ lat: Degree::from_num(1.0), lon: Degree::from_num(1.0)}).ok();
+        EncointerCommunities::add_location(Origin::root(), cid, Location{ lat: Degree::from_num(2.0), lon: Degree::from_num(2.0)}).ok();
+
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(

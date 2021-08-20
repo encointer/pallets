@@ -22,7 +22,7 @@ use encointer_primitives::balances::BalanceType;
 use frame_support::parameter_types;
 use frame_support::traits::{Get, PalletInfo};
 use polkadot_parachain::primitives::Sibling;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::traits::{IdentifyAccount};
 use sp_runtime::{MultiSignature, Perbill};
 use std::cell::RefCell;
 use xcm::v0::NetworkId;
@@ -42,7 +42,7 @@ pub use timestamp;
 pub use frame_support_test;
 
 pub use sp_core::H256;
-pub use sp_runtime::traits::BlakeTwo256;
+pub use sp_runtime::traits::{BlakeTwo256, Verify};
 
 pub mod helpers;
 pub mod storage;

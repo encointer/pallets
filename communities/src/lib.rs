@@ -46,9 +46,10 @@ use encointer_primitives::{
         CommunityMetadata as CommunityMetadataType, Degree, Location, LossyFrom,
         NominalIncome as NominalIncomeType,
     },
+    scheduler::{CeremonyPhaseType},
 };
 
-pub trait Config: frame_system::Config {
+pub trait Config: frame_system::Config + encointer_scheduler::Config {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
@@ -137,6 +138,8 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn add_location(origin, cid: CommunityIdentifier, location: Location) {
+            ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+                "locations can only be added in Registration Phase");
             ensure_root(origin)?;
             Self::validate_location(&location)?;
             let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
@@ -162,6 +165,8 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn remove_location(origin, cid: CommunityIdentifier,location: Location) {
+            ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+                "locations can only be removed in Registration Phase");
             ensure_root(origin)?;
             let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             //remove location from locations(cid,geohash)
@@ -457,6 +462,10 @@ impl<T: Config> Module<T> {
     pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
         Self::ensure_cid_exists(cid).ok()?;
         Some(Self::community_metadata(cid).name)
+    }
+
+    pub fn get_locations(cid:&CommunityIdentifier) -> Vec<Location>{
+        <Locations>::iter_prefix_values(&cid).reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect()).unwrap()
     }
 }
 

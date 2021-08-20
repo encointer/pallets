@@ -19,6 +19,11 @@ default-features = false
 package = "encointer-primitives"
 path = "../primitives"
 
+[dependencies.encointer-scheduler]
+default-features = false
+path = "../scheduler"
+package = "pallet-encointer-scheduler"
+
 [dependencies.fixed]
 default-features = false
 git = "https://github.com/encointer/substrate-fixed"

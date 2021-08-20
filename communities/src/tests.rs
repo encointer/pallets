@@ -36,11 +36,21 @@ impl Config for TestRuntime {
 
 pub type System = frame_system::Pallet<TestRuntime>;
 pub type EncointerCommunities = Module<TestRuntime>;
+pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
+
+impl encointer_scheduler::Config for TestRuntime {
+    type Event = ();
+    type OnCeremonyPhaseChange = ();
+    type MomentsPerDay = ();
+}
+impl_timestamp!(TestRuntime, EncointerScheduler);
+
 
 impl_frame_system!(TestRuntime);
 impl_balances!(TestRuntime, System);
 impl_encointer_communities!(TestRuntime);
 impl_outer_origin_for_runtime!(TestRuntime);
+
 
 pub struct ExtBuilder;
 
@@ -334,7 +344,7 @@ fn add_location_works() {
         let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
-        EncointerCommunities::add_location(Origin::root(), cid, location2);
+        EncointerCommunities::add_location(Origin::root(), cid, location2).ok();
         let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
         let mut expected_locations = vec![location, location2];
         locations.sort();
@@ -349,7 +359,7 @@ fn add_location_works() {
         };
         let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon, BUCKET_RESOLUTION).unwrap();
 
-        EncointerCommunities::add_location(Origin::root(), cid, location3);
+        EncointerCommunities::add_location(Origin::root(), cid, location3).ok();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash3), vec![location3]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash3), vec![cid]);
     });
@@ -375,7 +385,7 @@ fn remove_location_works() {
         let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
-        EncointerCommunities::add_location(Origin::root(), cid, location2);
+        EncointerCommunities::add_location(Origin::root(), cid, location2).ok();
         let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
         let mut expected_locations = vec![location, location2];
         locations.sort();
@@ -384,12 +394,12 @@ fn remove_location_works() {
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
         // remove first location
-        EncointerCommunities::remove_location(Origin::root(), cid, location);
+        EncointerCommunities::remove_location(Origin::root(), cid, location).ok();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location2]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
         // remove second location
-        EncointerCommunities::remove_location(Origin::root(), cid, location2);
+        EncointerCommunities::remove_location(Origin::root(), cid, location2).ok();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![]);
 
@@ -462,7 +472,7 @@ fn new_community_with_near_pole_locations_fails() {
 
         assert!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
-            location,
+            a,
             bs,
             Default::default(),
             None,
@@ -497,19 +507,20 @@ fn new_community_near_dateline_fails() {
     });
 }
 
+
+/// for the following test we are looking at the following neighboring geo hashes
+/// sbh2m	sbh2q	sbh2r
+/// sbh2j	sbh2n	sbh2p
+/// kzurv	kzury	kzurz
+/// the hash in the center(sbh2n) has the following specs:
+/// center: lat: 0.02197265625 , lon: 40.01220703125
+/// lat min: 0
+/// lat max: 0.0439453125
+/// lon min: 39.990234375
+/// lon max: 40.0341796875
+///
 #[test]
 fn get_relevant_neighbor_buckets_works() {
-    /// for the following test we are looking at the following neighboring geo hashes
-    /// sbh2m	sbh2q	sbh2r
-    /// sbh2j	sbh2n	sbh2p
-    /// kzurv	kzury	kzurz
-    /// the hash in the center(sbh2n) has the following specs:
-    /// center: lat: 0.02197265625 , lon: 40.01220703125
-    /// lat min: 0
-    /// lat max: 0.0439453125
-    /// lon min: 39.990234375
-    /// lon max: 40.0341796875
-    ///
     ExtBuilder::build().execute_with(|| {
         // center location should not make it necessary to check any other buckets
         let bucket = string_to_geohash("sbh2n");
@@ -613,19 +624,20 @@ fn get_relevant_neighbor_buckets_works() {
 }
 
 
+/// for the following test we are looking at the following neighboring geo hashes
+/// sbh2m	sbh2q	sbh2r
+/// sbh2j	sbh2n	sbh2p
+/// kzurv	kzury	kzurz
+/// the hash in the center(sbh2n) has the following specs:
+/// center: lat: 0.02197265625 , lon: 40.01220703125
+/// lat min: 0
+/// lat max: 0.0439453125
+/// lon min: 39.990234375
+/// lon max: 40.0341796875
+///
+///
 #[test]
 fn get_nearby_locations_works() {
-    /// for the following test we are looking at the following neighboring geo hashes
-    /// sbh2m	sbh2q	sbh2r
-    /// sbh2j	sbh2n	sbh2p
-    /// kzurv	kzury	kzurz
-    /// the hash in the center(sbh2n) has the following specs:
-    /// center: lat: 0.02197265625 , lon: 40.01220703125
-    /// lat min: 0
-    /// lat max: 0.0439453125
-    /// lon min: 39.990234375
-    /// lon max: 40.0341796875
-    ///
     ExtBuilder::build().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let cid2 = register_test_community::<TestRuntime>(None, 1.0, 1.0);
@@ -672,19 +684,19 @@ fn get_nearby_locations_works() {
         };
 
         // same bucket, same cid
-        EncointerCommunities::add_location(Origin::root(), cid, location2);
+        EncointerCommunities::add_location(Origin::root(), cid, location2).ok();
         // same bucket different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location3);
+        EncointerCommunities::add_location(Origin::root(), cid2, location3).ok();
         //different bucket, same cid
-        EncointerCommunities::add_location(Origin::root(), cid, location4);
+        EncointerCommunities::add_location(Origin::root(), cid, location4).ok();
         // different bucket, different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location5);
+        EncointerCommunities::add_location(Origin::root(), cid2, location5).ok();
         // different bucket, different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location6);
+        EncointerCommunities::add_location(Origin::root(), cid2, location6).ok();
         // location far away, same cid
-        EncointerCommunities::add_location(Origin::root(), cid, location7);
+        EncointerCommunities::add_location(Origin::root(), cid, location7).ok();
         // location far away different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location8);
+        EncointerCommunities::add_location(Origin::root(), cid2, location8).ok();
 
         let mut result = EncointerCommunities::get_nearby_locations(&location).unwrap();
         let mut expected_result = vec![location2, location3, location4, location5, location6];
@@ -699,7 +711,7 @@ fn get_nearby_locations_works() {
 #[test]
 fn validate_location_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+        register_test_community::<TestRuntime>(None, 0.0, 0.0);
 
         // close location
         let location = Location {
@@ -726,6 +738,58 @@ fn validate_location_works() {
             lon: T::from_num(-179.9),
         };
         assert!(EncointerCommunities::validate_location(&location).is_err());
+
+    });
+}
+
+#[test]
+fn get_locations_works() {
+    ExtBuilder::build().execute_with(|| {
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+        let cid2 = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+        let location0 = Location {
+            lat: T::from_num(0.0),
+            lon: T::from_num(0.0),
+        };
+
+        let location1 = Location {
+            lat: T::from_num(2.0),
+            lon: T::from_num(2.0),
+        };
+
+
+        let location2 = Location {
+            lat: T::from_num(3.0),
+            lon: T::from_num(3.0),
+        };
+
+
+        let location3 = Location {
+            lat: T::from_num(4.0),
+            lon: T::from_num(4.0),
+        };
+
+        let location4 = Location {
+            lat: T::from_num(5.0),
+            lon: T::from_num(5.0),
+        };
+
+        let location5 = Location {
+            lat: T::from_num(6.0),
+            lon: T::from_num(6.0),
+        };
+        assert!(EncointerCommunities::add_location(Origin::root(), cid, location1).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::root(), cid2, location2).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::root(), cid, location3).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::root(), cid2, location4).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::root(), cid, location5).is_ok());
+
+        let mut result = EncointerCommunities::get_locations(&cid);
+        let mut expected_result = vec![location0, location1, location3, location5];
+        result.sort();
+        expected_result.sort();
+        assert_eq!(result, expected_result);
 
     });
 }

@@ -28,7 +28,7 @@ use encointer_primitives::{
 use test_utils::{helpers::register_test_community, *};
 
 fn create_cid() -> CommunityIdentifier {
-    return register_test_community::<TestRuntime>(None, 2);
+    return register_test_community::<TestRuntime>(None, 0.0, 0.0);
 }
 
 fn alice() -> AccountId { AccountKeyring::Alice.into() }

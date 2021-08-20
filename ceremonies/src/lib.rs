@@ -373,9 +373,10 @@ impl<T: Config> Module<T> {
         for cid in cids.iter() {
             let pcount = <ParticipantCount>::get((cid, cindex));
             let ecount = <EndorseesCount>::get((cid, cindex));
-            // FIXME
-            //let n_locations = <encointer_communities::Module<T>>::locations(cid).len();
-            let n_locations = 1000;
+
+            let n_locations = <encointer_communities::Module<T>>::get_locations(cid).len();
+
+
 
             let mut bootstrappers =
                 Vec::with_capacity(<encointer_communities::Module<T>>::bootstrappers(cid).len());
@@ -611,9 +612,7 @@ impl<T: Config> Module<T> {
         cid: &CommunityIdentifier,
         meetup_idx: MeetupIndexType,
     ) -> Option<Location> {
-        // FIXME
-        // let locations = <encointer_communities::Module<T>>::locations(&cid);
-        let locations : Vec<Location> = Vec::new();
+        let locations = <encointer_communities::Module<T>>::get_locations(cid);
         if (meetup_idx > 0) && (meetup_idx <= locations.len() as MeetupIndexType) {
             Some(locations[(meetup_idx - 1) as usize])
         } else {

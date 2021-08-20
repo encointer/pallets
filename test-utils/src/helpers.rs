@@ -41,7 +41,7 @@ pub fn bootstrappers() -> Vec<sr25519::Pair> {
     .collect();
 }
 
-/// register a simple test community with N meetup locations and defined bootstrappers
+/// register a simple test community with a specified location and defined bootstrappers
 pub fn register_test_community<Runtime>(
     custom_bootstrappers: Option<Vec<sr25519::Pair>>,
     lat: f64,

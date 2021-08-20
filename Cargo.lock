@@ -2643,6 +2643,7 @@ dependencies = [
  "frame-system",
  "geohash",
  "log",
+ "pallet-encointer-scheduler",
  "parity-scale-codec",
  "serde",
  "sp-core",

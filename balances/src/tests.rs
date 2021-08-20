@@ -131,7 +131,7 @@ fn transfer_should_work() {
 fn demurrage_should_work() {
     ExtBuilder::default().build().execute_with(|| {
         let alice = AccountKeyring::Alice.to_account_id();
-        let cid = register_test_community::<TestRuntime>(None, 3);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,
@@ -157,7 +157,7 @@ fn transfer_with_demurrage_exceeding_amount_should_fail() {
     let alice = AccountKeyring::Alice.to_account_id();
     let bob = AccountKeyring::Bob.to_account_id();
     ExtBuilder::default().build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 3);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(
             cid,
