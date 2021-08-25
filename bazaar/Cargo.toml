@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-bazaar"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
