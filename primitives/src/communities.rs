@@ -51,7 +51,7 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 }
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord)]
 pub struct Location {
     pub lat: Degree,
     pub lon: Degree,
@@ -182,7 +182,17 @@ pub mod consts {
     pub const MAX_SPEED_MPS: i32 = 83; // [m/s] max speed over ground of adversary
     pub const MIN_SOLAR_TRIP_TIME_S: i32 = 1; // [s] minimum adversary trip time between two locations measured in local (solar) time.
 
-    pub const DATELINE_DISTANCE_M: u32 = 1_000_000; // meetups may not be closer to dateline (or poles) than this
+    // sun travels at a speed of 24h * 3600s / 360° = 240s/°
+    // 1 degree of longitude in km at latitude x = cos(x) * 111.3194
+    // seconds per degree with speed v in m/s =
+    // (cos(x) * 111.3194) / (v/1000)
+    // (cos(x) * 111.3194) / (83/1000) = 240, solve for x ==> x == 79.6917
+    // above a latitude with absolute value > 79.6917, a human can travel faster than the sun
+    // when he moves along the same latitude, so it simplifies things to exclude those locations.
+    // as the northern most population is at 78 degrees, we use 78
+    pub const MAX_ABS_LATITUDE: Degree = Degree::from_bits(78i128 << 64);
+
+    pub const DATELINE_DISTANCE_M: u32 = 1_000_000; // meetups may not be closer to dateline than this
 
     pub const NORTH_POLE: Location = Location {
         lon: Degree::from_bits(0i128),
@@ -200,6 +210,12 @@ pub mod consts {
     // dec2hex(6371000,8)
     // in meters
     pub const MEAN_EARTH_RADIUS: I32F0 = I32F0::from_bits(0x006136B8);
+
+    // dec2hex(111319,8)
+    // in meters
+    pub const METERS_PER_DEGREE_AT_EQUATOR : I32F0 = I32F0::from_bits(0x0001B2D7);
+
+    pub const BUCKET_RESOLUTION : usize = 5usize;
 
     /// Dirty bit key for offfchain storage
     pub const CACHE_DIRTY_KEY: &[u8] = b"dirty";

@@ -31,10 +31,16 @@ mod tokens {
 mod communities {
     pub use encointer_communities::Event;
 }
+
+mod scheduler {
+    pub use super::encointer_scheduler::Event;
+}
+
 impl_outer_event! {
     pub enum TestEvent for TestRuntime {
         tokens<T>,
         communities<T>,
+        scheduler,
         frame_system<T>,
     }
 }
@@ -48,6 +54,16 @@ impl_frame_system!(TestRuntime, TestEvent);
 
 pub type System = frame_system::Pallet<TestRuntime>;
 pub type EncointerBazaar = Module<TestRuntime>;
+
+pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
+
+
+impl encointer_scheduler::Config for TestRuntime {
+    type Event = TestEvent;
+    type OnCeremonyPhaseChange = ();
+    type MomentsPerDay = ();
+}
+impl_timestamp!(TestRuntime, EncointerScheduler);
 
 impl encointer_communities::Config for TestRuntime {
     type Event = TestEvent;

@@ -41,10 +41,11 @@ pub fn bootstrappers() -> Vec<sr25519::Pair> {
     .collect();
 }
 
-/// register a simple test community with N meetup locations and defined bootstrappers
+/// register a simple test community with a specified location and defined bootstrappers
 pub fn register_test_community<Runtime>(
     custom_bootstrappers: Option<Vec<sr25519::Pair>>,
-    n_locations: u32,
+    lat: f64,
+    lon: f64,
 ) -> CommunityIdentifier
 where
     Runtime: encointer_communities::Config,
@@ -59,21 +60,18 @@ where
 
     let prime = &bs[0];
 
-    let mut loc = Vec::with_capacity(n_locations as usize);
-    for l in 0..n_locations {
-        loc.push(Location {
-            lat: Degree::from_num(l),
-            lon: Degree::from_num(l),
-        })
-    }
+    let location = Location {
+            lat: Degree::from_num(lat),
+            lon: Degree::from_num(lon),
+        };
     encointer_communities::Module::<Runtime>::new_community(
         Runtime::Origin::signed(prime.clone()),
-        loc.clone(),
+        location.clone(),
         bs.clone(),
         Default::default(),
         None,
         None,
     )
     .unwrap();
-    CommunityIdentifier::from(blake2_256(&(loc, bs).encode()))
+    CommunityIdentifier::from(blake2_256(&(location.clone(), bs.clone()).encode()))
 }

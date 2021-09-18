@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-communities"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
@@ -18,6 +18,11 @@ optional = true
 default-features = false
 package = "encointer-primitives"
 path = "../primitives"
+
+[dependencies.encointer-scheduler]
+default-features = false
+path = "../scheduler"
+package = "pallet-encointer-scheduler"
 
 [dependencies.fixed]
 default-features = false
@@ -68,6 +73,11 @@ version = "1.0.101"
 
 [dev-dependencies]
 approx = "0.3.0"
+
+[dependencies.geohash]
+default-features = false
+git = "https://github.com/encointer/geohash"
+branch = "master"
 
 [dev-dependencies.externalities]
 package = "sp-externalities"

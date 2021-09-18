@@ -149,6 +149,7 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
         .unwrap()
         .lon
         .lossy_into();
+
     let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)
         + cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING)
         + cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING)
@@ -282,7 +283,6 @@ fn attest_all(
             ).sign(*a)
         );
     }
-
     assert_ok!(EncointerCeremonies::attest_claims(
         Origin::signed(attestor),
         claims
@@ -302,7 +302,23 @@ fn perform_bootstrapping_ceremony(
     n_locations: u32,
 ) -> CommunityIdentifier {
     let bootstrappers: Vec<sr25519::Pair> = custom_bootstrappers.unwrap_or_else(|| bootstrappers());
-    let cid = register_test_community::<TestRuntime>(Some(bootstrappers.clone()), n_locations);
+    let cid = register_test_community::<TestRuntime>(Some(bootstrappers.clone()), 0.0, 0.0);
+    if n_locations > 70 {
+        panic!("Too many locations.")
+    }
+    for i in 1..n_locations {
+        let coord = i as f64;
+        let location = Location {
+            lat: Degree::from_num(coord),
+            lon: Degree::from_num(coord),
+        };
+
+        match EncointerCommunities::add_location(Origin::root(), cid, location) {
+            Ok(_v) => (),
+            Err(e) => panic!("{:?}", e),
+        }
+
+    }
     bootstrappers
         .iter()
         .for_each(|b| register(b.public().into(), cid, None).unwrap());
@@ -313,7 +329,7 @@ fn perform_bootstrapping_ceremony(
     // ASSIGNING
     run_to_next_phase();
     // ATTESTING
-    let loc = Location::default();
+    let loc = EncointerCommunities::get_locations(&cid)[0];
     let time = correct_meetup_time(&cid, 1);
 
     for i in 0..bootstrappers.len() {
@@ -321,7 +337,6 @@ fn perform_bootstrapping_ceremony(
         let claimant = bs.remove(i);
         attest_all(account_id(&claimant), &bs.iter().collect(), cid, cindex, 1, loc, time, 6);
     }
-
     run_to_next_phase();
     // REGISTERING
     cid
@@ -352,7 +367,7 @@ fn fully_attest_meetup(
             }
         }
         println!("  length of attestors: {}", others.len());
-        let loc = EncointerCommunities::locations(&cid)[(mindex - 1) as usize];
+        let loc  = EncointerCommunities::get_locations(&cid)[(mindex - 1) as usize];
         let time = correct_meetup_time(&cid, mindex);
         attest_all(
             (*p).clone(),
@@ -372,7 +387,7 @@ fn fully_attest_meetup(
 #[test]
 fn registering_participant_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountId::from(AccountKeyring::Alice);
         let bob = AccountId::from(AccountKeyring::Bob);
         let cindex = EncointerScheduler::current_ceremony_index();
@@ -401,7 +416,7 @@ fn registering_participant_works() {
 #[test]
 fn registering_participant_twice_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountId::from(AccountKeyring::Alice);
         assert_ok!(register(alice.clone(), cid, None));
         assert!(register(alice.clone(), cid, None).is_err());
@@ -411,7 +426,7 @@ fn registering_participant_twice_fails() {
 #[test]
 fn registering_participant_in_wrong_phase_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountId::from(AccountKeyring::Alice);
         run_to_next_phase();
         assert_eq!(
@@ -425,7 +440,7 @@ fn registering_participant_in_wrong_phase_fails() {
 #[test]
 fn attest_claims_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -489,7 +504,7 @@ fn attest_claims_works() {
 #[test]
 fn attest_claims_for_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let cindex = EncointerScheduler::current_ceremony_index();
@@ -518,7 +533,7 @@ fn attest_claims_for_non_participant_fails_silently() {
 #[test]
 fn attest_claims_for_non_participant_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
         let eve = AccountKeyring::Eve.pair();
@@ -565,7 +580,7 @@ fn attest_claims_for_non_participant_fails() {
 #[test]
 fn attest_claims_with_non_participant_fails_silently() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let eve = AccountKeyring::Eve.pair();
@@ -594,7 +609,7 @@ fn attest_claims_with_non_participant_fails_silently() {
 #[test]
 fn attest_claims_with_wrong_meetup_index_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -632,7 +647,7 @@ fn attest_claims_with_wrong_meetup_index_fails() {
 #[test]
 fn attest_claims_with_wrong_ceremony_index_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -673,7 +688,7 @@ fn attest_claims_with_wrong_ceremony_index_fails() {
 #[test]
 fn attest_claims_with_wrong_timestamp_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -720,7 +735,7 @@ fn attest_claims_with_wrong_timestamp_fails() {
 #[test]
 fn attest_claims_with_wrong_location_fails() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
@@ -766,7 +781,7 @@ fn attest_claims_with_wrong_location_fails() {
 #[test]
 fn ballot_meetup_n_votes_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let charlie = AccountKeyring::Charlie.pair();
@@ -900,7 +915,7 @@ fn ballot_meetup_n_votes_works() {
 #[test]
 fn issue_reward_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
         let bob = AccountKeyring::Bob.pair();
         let charlie = AccountKeyring::Charlie.pair();
@@ -1140,7 +1155,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 #[test]
 fn endorsing_newbie_for_second_next_ceremony_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
         run_to_next_phase();
@@ -1232,7 +1247,10 @@ fn get_meetup_time_works() {
         System::set_block_number(0);
         run_to_block(1);
 
-        let cid = register_test_community::<TestRuntime>(None, 3);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+        EncointerCommunities::add_location(Origin::root(), cid, Location{ lat: Degree::from_num(1.0), lon: Degree::from_num(1.0)}).ok();
+        EncointerCommunities::add_location(Origin::root(), cid, Location{ lat: Degree::from_num(2.0), lon: Degree::from_num(2.0)}).ok();
+
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -1286,7 +1304,7 @@ fn get_meetup_time_works() {
 #[test]
 fn ceremony_index_and_purging_registry_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
         assert_ok!(register(alice.clone(), cid, None));
@@ -1326,7 +1344,7 @@ fn ceremony_index_and_purging_registry_works() {
 #[test]
 fn assigning_meetup_at_phase_change_and_purge_works() {
     ExtBuilder::build().execute_with(|| {
-        let cid = register_test_community::<TestRuntime>(None, 1);
+        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountId::from(AccountKeyring::Alice);
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);

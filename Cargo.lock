@@ -771,7 +771,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "encointer-primitives"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -1250,6 +1250,15 @@ checksum = "501466ecc8a30d1d3b7fc9229b122b2ce8ed6e9d9223f1138d4babb253e51817"
 dependencies = [
  "typenum",
  "version_check",
+]
+
+[[package]]
+name = "geohash"
+version = "0.11.1-alpha.0"
+source = "git+https://github.com/encointer/geohash?branch=master#a4f31108934f0022420c4dbbdc76a3bf60a54a04"
+dependencies = [
+ "parity-scale-codec",
+ "substrate-fixed",
 ]
 
 [[package]]
@@ -2524,7 +2533,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -2547,7 +2556,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -2598,7 +2607,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -2625,14 +2634,16 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "approx",
  "encointer-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "geohash",
  "log",
+ "pallet-encointer-scheduler",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -2673,7 +2684,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-personhood-oracle"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -2699,7 +2710,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -2721,7 +2732,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-sybil-gate-template"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4947,7 +4958,7 @@ dependencies = [
 
 [[package]]
 name = "test-utils"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
