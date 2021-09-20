@@ -121,6 +121,10 @@ decl_error! {
         OnlyParachainsAllowed,
         /// Unable to decode PersonhoodUniquenessRating request
         UnableToDecodeRequest,
+        /// former attendance has not been verified or has already been linked to other account
+        AttendanceUsed,
+        /// Bad Signature
+        BadSignature,
     }
 }
 
@@ -169,7 +173,7 @@ impl<T: Config> Module<T> {
                 &(p.community_identifier, p.ceremony_index),
                 &p.attendee_public
             ) == Reputation::VerifiedUnlinked,
-            "former attendance has not been verified or has already been linked to other account"
+            Error::<T>::AttendanceUsed
         );
         Self::verify_attendee_signature(p)
     }
@@ -182,7 +186,7 @@ impl<T: Config> Module<T> {
                 &(proof.prover_public.clone(), proof.ceremony_index.clone()).encode()[..],
                 &proof.attendee_public,
             ),
-            "bad attendee signature"
+            Error::<T>::BadSignature
         );
         Ok(())
     }
