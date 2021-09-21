@@ -17,18 +17,21 @@ tag = "v0.5.6"
 package = "substrate-fixed"
 
 [dependencies.sp-core]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-runtime]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.rstd]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"

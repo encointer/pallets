@@ -8,6 +8,7 @@ edition = "2018"
 log = { version = "0.4.14", default-features = false }
 
 [dependencies.rstd]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
@@ -30,12 +31,14 @@ package = "encointer-primitives"
 path = "../primitives"
 
 [dependencies.frame-support]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git"
@@ -46,6 +49,7 @@ approx = "0.3.0"
 tempdir = "0.3.7"
 
 [dev-dependencies.externalities]
+version = "0.10.0-dev"
 package = "sp-externalities"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
@@ -56,11 +60,13 @@ tag = "v0.5.6"
 package = "substrate-fixed"
 
 [dev-dependencies.balances]
+version = "4.0.0-dev"
 package = "pallet-balances"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.sp-core]
+version = "4.0.0-dev"
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
@@ -71,6 +77,7 @@ git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.sp-runtime]
+version = "4.0.0-dev"
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"

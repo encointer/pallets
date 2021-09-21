@@ -40,18 +40,21 @@ features = ["derive"]
 version = "2.1.1"
 
 [dependencies.rstd]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-support]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
@@ -63,18 +66,21 @@ git = "https://github.com/paritytech/polkadot"
 branch = "master"
 
 [dependencies.sp-core]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-runtime]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.timestamp]
+version = "4.0.0-dev"
 default-features = false
 package = "pallet-timestamp"
 git = "https://github.com/paritytech/substrate.git"
@@ -86,6 +92,7 @@ git = "https://github.com/paritytech/polkadot"
 branch = "master"
 
 [dependencies.sp-io]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-io"
 git = "https://github.com/paritytech/substrate.git"
