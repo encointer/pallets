@@ -325,7 +325,6 @@ decl_error! {
     pub enum Error for Module<T: Config> {
         ParticipantAlreadyRegistered,
         BadProofOfAttendanceSignature,
-        BadAttestationSignature,
         BadAttendeeSignature,
         MeetupLocationNotFound,
         MeetupTimeCalculationError,

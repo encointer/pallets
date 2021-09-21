@@ -259,18 +259,12 @@ decl_event!(
 
 decl_error! {
     pub enum Error for Module<T: Config> {
-        /// Too many locations supplied
-        TooManyLocations,
-        /// Too few locations supplied
-        TooFewLocations,
         /// Location is not a valid geolocation
         InvalidLocation,
         /// Invalid amount of bootstrappers supplied. Needs to be \[3, 12\]
         InvalidAmountBootstrappers,
         /// minimum distance violation to other location
         MinimumDistanceViolationToOtherLocation,
-        /// minimum distance violated towards pole
-        MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
         /// Can't register community that already exists
