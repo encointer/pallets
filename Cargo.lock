@@ -3240,13 +3240,14 @@ name = "pallet-encointer-bazaar-rpc"
 version = "0.1.0"
 dependencies = [
  "encointer-primitives",
- "jsonrpc-core 15.1.0",
- "jsonrpc-core-client 15.1.0",
- "jsonrpc-derive 15.1.0",
+ "jsonrpc-core 18.0.0",
+ "jsonrpc-core-client 18.0.0",
+ "jsonrpc-derive 18.0.0",
  "log",
  "pallet-encointer-bazaar-rpc-runtime-api",
  "parking_lot 0.11.1",
  "sc-rpc",
+ "sc-rpc-api",
  "sp-api",
  "sp-blockchain",
  "sp-core",

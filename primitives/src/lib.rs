@@ -25,6 +25,9 @@ pub mod scheduler;
 
 pub mod bs58_verify;
 pub mod random_permutation;
+pub mod random_number_generator;
 
 #[cfg(feature = "sybil")]
 pub mod sybil;
+
+pub use random_number_generator::RandomNumberGenerator;
