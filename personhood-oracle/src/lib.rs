@@ -96,7 +96,7 @@ decl_module! {
                 .ok_or(<Error<T>>::UnableToDecodeRequest)?
                 .into();
             let request = <Vec<ProofOfAttendanceOf<T>>>::decode(&mut rating_request.as_slice())
-                .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
+                .map_err(|_| <Error<T>>::OnlyParachainsAllowed)?;
 
             debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
             debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
