@@ -308,6 +308,13 @@ fn fully_attest_meetup(
     }
 }
 
+fn assert_error(actual: DispatchResult, expected: Error::<TestRuntime>) {
+    assert_eq!(match actual.clone().err().unwrap() {
+        sp_runtime::DispatchError::Module { index, error, message } => message,
+        _ => panic!(),
+    }.unwrap(), expected.as_str());
+}
+
 // unit tests ////////////////////////////////////////
 
 #[test]
@@ -1066,14 +1073,13 @@ fn endorsing_newbie_works_until_no_more_tickets() {
             ));
         }
 
-        assert_eq!(
+        assert_error(
             EncointerCeremonies::endorse_newcomer(
                 Origin::signed(alice.clone()),
                 cid,
-                account_id(&endorsees[AMOUNT_NEWBIE_TICKETS as usize])
-            )
-            .unwrap_err(),
-            DispatchError::Other("bootstrapper has run out of newbie tickets")
+                account_id(&endorsees[AMOUNT_NEWBIE_TICKETS as usize]),
+            ),
+            Error::<TestRuntime>::NoMoreNewbieTickets,
         );
     });
 }
@@ -1122,14 +1128,13 @@ fn endorsing_newbie_twice_fails() {
             (cid, cindex),
             &account_id(&zoran)
         ));
-        assert_eq!(
+        assert_error(
             EncointerCeremonies::endorse_newcomer(
                 Origin::signed(alice.clone()),
                 cid,
-                account_id(&zoran)
-            )
-            .unwrap_err(),
-            DispatchError::Other("newbie is already endorsed")
+                account_id(&zoran),
+            ),
+            Error::<TestRuntime>::AlreadyEndorsed
         );
     });
 }

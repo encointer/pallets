@@ -120,7 +120,7 @@ decl_module! {
         #[weight = 10_000]
         pub fn grant_reputation(origin, cid: CommunityIdentifier, reputable: T::AccountId) -> DispatchResult {
             let sender = ensure_signed(origin)?;
-            ensure!(sender == <encointer_scheduler::Module<T>>::ceremony_master(), "only the CeremonyMaster can call this function");
+            ensure!(sender == <encointer_scheduler::Module<T>>::ceremony_master(), Error::<T>::AuthorizationRequired);
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
             <ParticipantReputation<T>>::insert(&(cid, cindex-1), reputable, Reputation::VerifiedUnlinked);
             info!(target: LOG, "granting reputation to {:?}", sender);
@@ -131,10 +131,10 @@ decl_module! {
         pub fn register_participant(origin, cid: CommunityIdentifier, proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
-                "registering participants can only be done during REGISTERING phase");
+                Error::<T>::RegisteringPhaseRequired);
 
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                "CommunityIdentifier not found");
+                Error::<T>::InexistentCommunity);
 
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
@@ -148,12 +148,12 @@ decl_module! {
                 ok_or("[EncointerCeremonies]: Overflow adding new participant to registry")?;
             if let Some(p) = proof {
                 // we accept proofs from other communities as well. no need to ensure cid
-                ensure!(sender == p.prover_public, "supplied proof is not proving sender");
-                ensure!(p.ceremony_index < cindex, "proof is acausal");
-                ensure!(p.ceremony_index >= cindex-REPUTATION_LIFETIME, "proof is outdated");
+                ensure!(sender == p.prover_public, Error::<T>::WrongProofSubject);
+                ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
+                ensure!(p.ceremony_index >= cindex-REPUTATION_LIFETIME, Error::<T>::ProofOutdated);
                 ensure!(Self::participant_reputation(&(p.community_identifier, p.ceremony_index),
                     &p.attendee_public) == Reputation::VerifiedUnlinked,
-                    "former attendance has not been verified or has already been linked to other account");
+                    Error::<T>::AttendanceUnverifiedOrAlreadyUsed);
                 if Self::verify_attendee_signature(p.clone()).is_err() {
                     return Err(<Error<T>>::BadProofOfAttendanceSignature.into());
                 };
@@ -177,19 +177,19 @@ decl_module! {
         pub fn attest_claims(origin, claims: Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
-                "registering claims can only be done during ATTESTING phase");
+                Error::<T>::AttestationPhaseRequired);
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-            ensure!(!claims.is_empty(), "empty claims supplied");
+            ensure!(!claims.is_empty(), Error::<T>::NoClaimsSupplied);
             let cid = claims[0].community_identifier;
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                "CommunityIdentifier not found");
+                Error::<T>::InexistentCommunity);
 
             let meetup_index = Self::meetup_index((cid, cindex), &sender);
             let mut meetup_participants = Self::meetup_registry((cid, cindex), &meetup_index);
-            ensure!(meetup_participants.contains(&sender), "origin not part of this meetup");
+            ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
             meetup_participants.retain(|x| x != &sender);
             let num_registered = meetup_participants.len();
-            ensure!(claims.len() <= num_registered, "can\'t have more claims than other meetup participants");
+            ensure!(claims.len() <= num_registered, Error::<T>::TooManyClaims);
             let mut verified_attestees = vec!();
 
             let mlocation = if let Some(l) = Self::get_meetup_location(&cid, meetup_index)
@@ -288,20 +288,20 @@ decl_module! {
             let sender = ensure_signed(origin)?;
 
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                "CommunityIdentifier not found");
+                Error::<T>::InexistentCommunity);
 
             ensure!(<encointer_communities::Module<T>>::bootstrappers(&cid).contains(&sender),
-            "only bootstrappers can endorse newbies");
+            Error::<T>::AuthorizationRequired);
 
             ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < AMOUNT_NEWBIE_TICKETS,
-            "bootstrapper has run out of newbie tickets");
+            Error::<T>::NoMoreNewbieTickets);
 
             let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
             if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
                 cindex += 1;
             }
             ensure!(!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
-            "newbie is already endorsed");
+            Error::<T>::AlreadyEndorsed);
 
             <BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender,|b| *b += 1);
             debug!(target: LOG, "endorsed newbie: {:?}", newbie);
@@ -329,7 +329,33 @@ decl_error! {
         BadAttendeeSignature,
         MeetupLocationNotFound,
         MeetupTimeCalculationError,
-        NoValidClaims
+        NoValidClaims,
+        /// no claims supplied
+        NoClaimsSupplied,
+        /// sender doesn't have the necessary authority to perform action
+        AuthorizationRequired,
+        /// the action can only be performed during REGISTERING phase
+        RegisteringPhaseRequired,
+        /// the action can only be performed during ATTESTING phase
+        AttestationPhaseRequired,
+        /// CommunityIdentifier not found
+        InexistentCommunity,
+        /// proof is outdated
+        ProofOutdated,
+        /// proof is acausal
+        ProofAcausal,
+        /// supplied proof is not proving sender
+        WrongProofSubject,
+        /// former attendance has not been verified or has already been linked to other account
+        AttendanceUnverifiedOrAlreadyUsed,
+        /// origin not part of this meetup
+        OriginNotParticipant,
+        /// can't have more claims than other meetup participants
+        TooManyClaims,
+        /// bootstrapper has run out of newbie tickets
+        NoMoreNewbieTickets,
+        /// newbie is already endorsed
+        AlreadyEndorsed,
     }
 }
 
