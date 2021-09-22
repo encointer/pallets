@@ -208,10 +208,10 @@ parameter_types! {
 
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
-    ($t:ident, $module:ident) => {
+    ($t:ident, $ceremonies:ident) => {
         impl encointer_scheduler::Config for $t {
             type Event = Event;
-            type OnCeremonyPhaseChange = $module<$t>; //OnCeremonyPhaseChange;
+            type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
             type MomentsPerDay = MomentsPerDay;
         }
     };
@@ -222,7 +222,6 @@ macro_rules! impl_encointer_scheduler {
             type MomentsPerDay = MomentsPerDay;
         }
     };
-
 }
 
 parameter_types! {

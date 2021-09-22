@@ -25,10 +25,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(test)]
-#[macro_use]
-extern crate approx;
-
 use log::{debug, info, warn, trace};
 
 use frame_support::{
@@ -681,3 +677,8 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+#[macro_use]
+extern crate approx;
