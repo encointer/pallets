@@ -14,78 +14,40 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg(test)]
-
-use super::*;
-use frame_support::impl_outer_event;
-use frame_system;
-use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup};
+use crate as dut;
 
 use test_utils::*;
 
-mod tokens {
-    pub use crate::Event;
-}
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
+type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
-mod communities {
-    pub use encointer_communities::Event;
-}
-
-mod scheduler {
-    pub use super::encointer_scheduler::Event;
-}
-
-impl_outer_event! {
-    pub enum TestEvent for TestRuntime {
-        tokens<T>,
-        communities<T>,
-        scheduler,
-        frame_system<T>,
+frame_support::construct_runtime!(
+    pub enum TestRuntime where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Timestamp: timestamp::{Pallet, Call, Storage, Inherent},
+        EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+        EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
+        EncointerBazaar: dut::{Pallet, Call, Storage, Event<T>},
     }
+);
+
+impl dut::Config for TestRuntime {
+    type Event = Event;
 }
 
-// Workaround for https://github.com/rust-lang/rust/issues/26925 . Remove when sorted.
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct TestRuntime;
-
-impl_outer_origin_for_runtime!(TestRuntime);
-impl_frame_system!(TestRuntime, TestEvent);
-
-pub type System = frame_system::Pallet<TestRuntime>;
-pub type EncointerBazaar = Module<TestRuntime>;
-
-pub type EncointerScheduler = encointer_scheduler::Module<TestRuntime>;
-
-
-impl encointer_scheduler::Config for TestRuntime {
-    type Event = TestEvent;
-    type OnCeremonyPhaseChange = ();
-    type MomentsPerDay = ();
-}
+// boilerplate
+impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
+impl_encointer_balances!(TestRuntime);
+impl_encointer_communities!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime);
 
-impl encointer_communities::Config for TestRuntime {
-    type Event = TestEvent;
-}
-
-impl Config for TestRuntime {
-    type Event = TestEvent;
-}
-
-pub struct ExtBuilder {}
-
-impl Default for ExtBuilder {
-    fn default() -> Self {
-        Self {}
-    }
-}
-
-impl ExtBuilder {
-    pub fn build() -> runtime_io::TestExternalities {
-        let storage = frame_system::GenesisConfig::default()
-            .build_storage::<TestRuntime>()
-            .unwrap();
-        storage.into()
-    }
+// genesis values
+pub fn new_test_ext() -> sp_io::TestExternalities {
+    frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap().into()
 }

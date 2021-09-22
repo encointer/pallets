@@ -10,7 +10,7 @@ log = { version = "0.4.14", default-features = false }
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.codec]
@@ -29,22 +29,16 @@ default-features = false
 package = "encointer-primitives"
 path = "../primitives"
 
-[dependencies.runtime-io]
-default-features = false
-package = "sp-io"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies]
@@ -53,7 +47,7 @@ tempdir = "0.3.7"
 
 [dev-dependencies.externalities]
 package = "sp-externalities"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.fixed]
@@ -63,17 +57,22 @@ package = "substrate-fixed"
 
 [dev-dependencies.balances]
 package = "pallet-balances"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.sp-core]
 package = "sp-core"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dev-dependencies.sp-io]
+package = "sp-io"
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.sp-runtime]
 package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.encointer-balances]
@@ -91,7 +90,6 @@ std = [
 	"log/std",
 	"encointer-communities/std",
 	"encointer-primitives/std",
-	"runtime-io/std",
 	"frame-support/std",
 	"frame-system/std",
 ]
