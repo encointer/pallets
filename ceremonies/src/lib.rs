@@ -179,7 +179,7 @@ decl_module! {
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
                 Error::<T>::AttestationPhaseRequired);
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-            ensure!(!claims.is_empty(), Error::<T>::NoClaimsSupplied);
+            ensure!(!claims.is_empty(), Error::<T>::NoValidClaims);
             let cid = claims[0].community_identifier;
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 Error::<T>::InexistentCommunity);
@@ -323,14 +323,18 @@ decl_event!(
 
 decl_error! {
     pub enum Error for Module<T: Config> {
+        /// the participant is already registered
         ParticipantAlreadyRegistered,
+        /// verification of signature of attendee failed
         BadProofOfAttendanceSignature,
+        /// verification of signature of attendee failed
         BadAttendeeSignature,
+        /// meetup location was not found
         MeetupLocationNotFound,
+        /// meetup time calculation failed
         MeetupTimeCalculationError,
+        /// no valid claims were supplied
         NoValidClaims,
-        /// no claims supplied
-        NoClaimsSupplied,
         /// sender doesn't have the necessary authority to perform action
         AuthorizationRequired,
         /// the action can only be performed during REGISTERING phase
