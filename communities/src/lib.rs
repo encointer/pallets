@@ -33,7 +33,7 @@ use frame_system::{ensure_root, ensure_signed};
 use rstd::prelude::*;
 use rstd::result::Result;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
-use runtime_io::hashing::blake2_256;
+use sp_io::hashing::blake2_256;
 use sp_runtime::{DispatchResult, SaturatedConversion};
 
 use geohash::GeoHash;
@@ -129,8 +129,8 @@ decl_module! {
             demurrage.map(|d| <DemurragePerBlock>::insert(&cid, d));
             nominal_income.map(|i| <NominalIncome>::insert(&cid, i));
 
-            runtime_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
-            runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+            sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
+            sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
             Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
             info!(target: LOG, "registered community with cid: {:?}", cid);
@@ -202,8 +202,8 @@ decl_module! {
 
             <CommunityMetadata>::insert(&cid, &community_metadata);
 
-            runtime_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
-            runtime_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+            sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
+            sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
             Self::deposit_event(RawEvent::MetadataUpdated(cid));
             info!(target: LOG, "updated community metadata for cid: {:?}", cid);
@@ -475,6 +475,8 @@ extern crate approx;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod mock;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
