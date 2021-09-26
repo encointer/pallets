@@ -20,10 +20,10 @@
 
 use encointer_primitives::balances::BalanceType;
 use frame_support::parameter_types;
-use frame_support::traits::{Get, PalletInfo};
+use frame_support::traits::Get;
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::{IdentifyAccount};
-use sp_runtime::{MultiSignature, Perbill};
+use sp_runtime::{MultiSignature, Perbill, generic};
 use std::cell::RefCell;
 use xcm::v0::NetworkId;
 use xcm_builder::SiblingParachainConvertsVia;
@@ -62,9 +62,12 @@ thread_local! {
 pub type Signature = MultiSignature;
 /// An identifier for an account on this system.
 pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
+pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 
 pub type BlockNumber = u64;
 pub type Balance = u64;
+
+pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 
 pub struct ExistentialDeposit;
 impl Get<u64> for ExistentialDeposit {
@@ -83,13 +86,11 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_frame_system {
     ($t:ident) => {
-        impl_frame_system!($t, ());
-    };
-    ($t:ident, $event:ty) => {
+        use sp_runtime::traits::IdentityLookup;
         impl frame_system::Config for $t {
             type BaseCallFilter = ();
             type Origin = Origin;
-            type Call = ();
+            type Call = Call;
             type Index = u64;
             type BlockNumber = BlockNumber;
             type Hash = H256;
@@ -97,11 +98,11 @@ macro_rules! impl_frame_system {
             type AccountId = AccountId;
             type Lookup = IdentityLookup<Self::AccountId>;
             type Header = Header;
-            type Event = $event;
+            type Event = Event;
             type BlockHashCount = BlockHashCount;
             type DbWeight = ();
             type Version = ();
-            type PalletInfo = Info;
+            type PalletInfo = PalletInfo;
             type AccountData = balances::AccountData<u64>;
             type OnNewAccount = ();
             type OnKilledAccount = ();
@@ -151,7 +152,7 @@ macro_rules! impl_balances {
     ($t:ident, $system:ident) => {
         impl balances::Config for $t {
             type Balance = Balance;
-            type Event = ();
+            type Event = Event;
             type DustRemoval = ();
             type ExistentialDeposit = ExistentialDeposit;
             type AccountStore = System;
@@ -165,7 +166,7 @@ macro_rules! impl_balances {
 macro_rules! impl_encointer_balances {
     ($t:ident) => {
         impl encointer_balances::Config for $t {
-            type Event = ();
+            type Event = Event;
         }
     };
 }
@@ -174,7 +175,7 @@ macro_rules! impl_encointer_balances {
 macro_rules! impl_encointer_communities {
     ($t:ident) => {
         impl encointer_communities::Config for $t {
-            type Event = ();
+            type Event = Event;
         }
     };
 }
@@ -193,7 +194,7 @@ macro_rules! test_runtime {
 macro_rules! impl_encointer_ceremonies {
     ($t:ident) => {
         impl encointer_ceremonies::Config for $t {
-            type Event = ();
+            type Event = Event;
             type Public = <Signature as Verify>::Signer;
             type Signature = Signature;
             type RandomnessSource = frame_support_test::TestRandomness<$t>;
@@ -207,20 +208,18 @@ parameter_types! {
 
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
-    ($t:ident, $module:ident) => {
+    ($t:ident, $ceremonies:ident) => {
         impl encointer_scheduler::Config for $t {
-            type Event = ();
-            type OnCeremonyPhaseChange = $module<$t>; //OnCeremonyPhaseChange;
+            type Event = Event;
+            type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
             type MomentsPerDay = MomentsPerDay;
         }
     };
-}
-
-#[macro_export]
-macro_rules! impl_outer_origin_for_runtime {
     ($t:ident) => {
-        frame_support::impl_outer_origin! {
-            pub enum Origin for $t {}
+        impl encointer_scheduler::Config for $t {
+            type Event = Event;
+            type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
+            type MomentsPerDay = MomentsPerDay;
         }
     };
 }
@@ -230,26 +229,3 @@ parameter_types! {
 }
 
 pub type LocationConverter = SiblingParachainConvertsVia<Sibling, AccountId>;
-
-/// Todo: This was needed to be implement because substrate removed this default implementation.
-/// However, they did this because storage collisions can occur with this implementation.
-/// See: https://github.com/paritytech/substrate/issues/7949
-/// In this issue, it was encouraged to use `construct_runtime!` in tests from now on as well. Hence,
-/// we should probably do this too.
-///
-/// Example: https://github.com/paritytech/polkadot/pull/2409/files
-///
-/// Tracking Issue:
-impl PalletInfo for Info {
-    fn index<P: 'static>() -> Option<usize> {
-        Some(0)
-    }
-    fn name<P: 'static>() -> Option<&'static str> {
-        Some("test")
-    }
-}
-
-pub struct Info {
-    pub index: u8,
-    pub name: &'static str,
-}

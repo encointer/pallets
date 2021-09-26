@@ -23,12 +23,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod mock;
-mod tests;
-
-#[cfg(test)]
-extern crate approx;
-
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
@@ -196,3 +190,10 @@ impl<T: Config> Module<T>
         return OfferingRegistry::<T>::iter_prefix_values(bid).collect();
     }
 }
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+#[cfg(test)]
+extern crate approx;

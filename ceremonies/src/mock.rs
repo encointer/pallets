@@ -14,16 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Mock runtime for the encointer_balances module
+//! Mock runtime for the encointer_ceremonies module
 
-use crate as dut;
-
-use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
+pub use crate as dut;
 
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
+
+use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
+use encointer_primitives::{
+    scheduler::CeremonyPhaseType,
+    balances::BalanceType,
+    ceremonies::{ClaimOfAttendance, ProofOfAttendance}
+};
+
+pub type TestClaim = ClaimOfAttendance<Signature, AccountId, Moment>;
+pub type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
 frame_support::construct_runtime!(
     pub enum TestRuntime where
@@ -34,26 +42,50 @@ frame_support::construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Timestamp: timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+        EncointerCeremonies: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>, Config},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
     }
 );
 
 impl dut::Config for TestRuntime {
     type Event = Event;
+    type Public = <Signature as Verify>::Signer;
+    type Signature = Signature;
+    type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
 }
 
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_encointer_communities!(TestRuntime);
-impl_encointer_scheduler!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime, EncointerCeremonies);
+impl_encointer_balances!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-    dut::GenesisConfig{
+    encointer_balances::GenesisConfig {
         demurrage_per_block_default: Demurrage::from_bits(DEFAULT_DEMURRAGE),
+    }.assimilate_storage(&mut t).unwrap();
+    encointer_communities::GenesisConfig::<TestRuntime> {
+        community_master: AccountId::from(AccountKeyring::Alice),
+    }.assimilate_storage(&mut t).unwrap();
+    encointer_scheduler::GenesisConfig::<TestRuntime> {
+        current_phase: CeremonyPhaseType::REGISTERING,
+        current_ceremony_index: 1,
+        ceremony_master: AccountId::from(AccountKeyring::Alice),
+        phase_durations: vec![
+            (CeremonyPhaseType::REGISTERING, ONE_DAY),
+            (CeremonyPhaseType::ASSIGNING, ONE_DAY),
+            (CeremonyPhaseType::ATTESTING, ONE_DAY),
+        ],
+    }.assimilate_storage(&mut t).unwrap();
+    dut::GenesisConfig::<TestRuntime> {
+        ceremony_reward: BalanceType::from_num(1),
+        location_tolerance: LOCATION_TOLERANCE, // [m]
+        time_tolerance: TIME_TOLERANCE,         // [ms]
     }.assimilate_storage(&mut t).unwrap();
     t.into()
 }
+

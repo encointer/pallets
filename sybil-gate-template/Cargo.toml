@@ -81,7 +81,7 @@ branch = "master"
 git = "https://github.com/paritytech/polkadot.git"
 branch = "master"
 
-[dev-dependencies.balances]
+[dev-dependencies.pallet-balances]
 package = "pallet-balances"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"

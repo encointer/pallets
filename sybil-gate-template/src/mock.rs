@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate as dut;
+//! Mock runtime for the encointer sybil-gate template module
 
+use super::*;
+pub use crate as dut;
 use test_utils::*;
+use frame_support::dispatch::DispatchInfo;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -28,26 +31,34 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: timestamp::{Pallet, Call, Storage, Inherent},
-        EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-        EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
-        EncointerBazaar: dut::{Pallet, Call, Storage, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        EncointerSybilGate: dut::{Pallet, Call, Storage, Event<T>},
     }
 );
 
 impl dut::Config for TestRuntime {
     type Event = Event;
+    type Call = EmptyCall;
+    type XcmSender = ();
+    type Currency = balances::Pallet<TestRuntime>;
+    type Public = <Signature as Verify>::Signer;
+    type Signature = Signature;
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Decode, Encode)]
+pub struct EmptyCall(());
+impl GetDispatchInfo for EmptyCall {
+    fn get_dispatch_info(&self) -> DispatchInfo {
+        Default::default()
+    }
 }
 
 // boilerplate
 impl_frame_system!(TestRuntime);
-impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_encointer_balances!(TestRuntime);
-impl_encointer_communities!(TestRuntime);
-impl_encointer_scheduler!(TestRuntime);
+impl_balances!(TestRuntime, System);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
     frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap().into()
 }
+

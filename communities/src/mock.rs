@@ -14,9 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate as dut;
+//! Mock runtime for the encointer_communities module
+
+pub use crate as dut;
 
 use test_utils::*;
+
+use encointer_primitives::{
+    scheduler::CeremonyPhaseType,
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -29,10 +35,8 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Timestamp: timestamp::{Pallet, Call, Storage, Inherent},
-        EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-        EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
-        EncointerBazaar: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+		EncointerCommunities: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
     }
 );
 
@@ -43,11 +47,24 @@ impl dut::Config for TestRuntime {
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_encointer_balances!(TestRuntime);
-impl_encointer_communities!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap().into()
+    let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+    dut::GenesisConfig::<TestRuntime> {
+        community_master: AccountId::from(AccountKeyring::Alice),
+    }.assimilate_storage(&mut t).unwrap();
+    encointer_scheduler::GenesisConfig::<TestRuntime> {
+        current_phase: CeremonyPhaseType::REGISTERING,
+        current_ceremony_index: 1,
+        ceremony_master: AccountId::from(AccountKeyring::Alice),
+        phase_durations: vec![
+            (CeremonyPhaseType::REGISTERING, ONE_DAY),
+            (CeremonyPhaseType::ASSIGNING, ONE_DAY),
+            (CeremonyPhaseType::ATTESTING, ONE_DAY),
+        ],
+    }.assimilate_storage(&mut t).unwrap();
+    t.into()
 }
+

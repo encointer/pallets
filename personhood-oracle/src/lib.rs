@@ -189,4 +189,7 @@ impl<T: Config> Module<T> {
 }
 
 #[cfg(test)]
+mod mock;
+#[cfg(test)]
 mod tests;
+

@@ -36,45 +36,39 @@ branch = "master"
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
-[dependencies.runtime-io]
-default-features = false
-package = "sp-io"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-core]
 default-features = false
 package = "sp-core"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies]
 approx = "0.3.0"
 
-[dev-dependencies.runtime-io]
+[dev-dependencies.sp-io]
 package = "sp-io"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.runtime-interface]
 default-features = false
 package = "sp-runtime-interface"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.test-utils]
@@ -91,7 +85,6 @@ std = [
 	"frame-support/std",
 	"sp-core/std",
 	"sp-runtime/std",
-	"runtime-io/std",
 	"frame-system/std",
 	"encointer-communities/std",
 	"encointer-primitives/std",

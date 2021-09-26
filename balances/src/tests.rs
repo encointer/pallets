@@ -14,14 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Unit tests for the tokens module.
-
-#![cfg(test)]
+//! Unit tests for the encointer_balances module.
 
 use super::*;
 use fixed::{traits::LossyInto, transcendental::exp};
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
-use mock::{EncointerBalances, ExtBuilder, System, TestEvent, TestRuntime};
+use mock::{EncointerBalances, new_test_ext, System, Event, TestRuntime};
 
 use encointer_primitives::{
     balances::{consts::DEFAULT_DEMURRAGE, Demurrage},
@@ -31,7 +29,7 @@ use test_utils::{helpers::register_test_community, AccountKeyring};
 
 #[test]
 fn issue_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    new_test_ext().execute_with(|| {
         let cid = CommunityIdentifier::default();
         let alice = AccountKeyring::Alice.to_account_id();
         assert_ok!(EncointerBalances::issue(
@@ -52,7 +50,7 @@ fn issue_should_work() {
 
 #[test]
 fn burn_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    new_test_ext().execute_with(|| {
         let cid = CommunityIdentifier::default();
         let alice = AccountKeyring::Alice.to_account_id();
         assert_ok!(EncointerBalances::issue(
@@ -82,7 +80,7 @@ fn burn_should_work() {
 
 #[test]
 fn transfer_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    new_test_ext().execute_with(|| {
         System::set_block_number(System::block_number() + 1);
         System::on_initialize(System::block_number());
 
@@ -110,7 +108,7 @@ fn transfer_should_work() {
         let balance: f64 = EncointerBalances::total_issuance(cid).lossy_into();
         assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
 
-        let transferred_event = TestEvent::tokens(RawEvent::Transferred(
+        let transferred_event = Event::dut(RawEvent::Transferred(
             cid,
             alice.clone(),
             bob.clone(),
@@ -129,7 +127,7 @@ fn transfer_should_work() {
 
 #[test]
 fn demurrage_should_work() {
-    ExtBuilder::default().build().execute_with(|| {
+    new_test_ext().execute_with(|| {
         let alice = AccountKeyring::Alice.to_account_id();
         let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         System::set_block_number(0);
@@ -156,7 +154,7 @@ fn demurrage_should_work() {
 fn transfer_with_demurrage_exceeding_amount_should_fail() {
     let alice = AccountKeyring::Alice.to_account_id();
     let bob = AccountKeyring::Bob.to_account_id();
-    ExtBuilder::default().build().execute_with(|| {
+    new_test_ext().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         System::set_block_number(0);
         assert_ok!(EncointerBalances::issue(

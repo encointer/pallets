@@ -30,12 +30,6 @@ use log::debug;
 use rstd::convert::TryInto;
 use sp_runtime::traits::StaticLookup;
 
-mod mock;
-mod tests;
-#[cfg(test)]
-#[macro_use]
-extern crate approx;
-
 // Logger target
 const LOG: &str = "encointer";
 
@@ -219,3 +213,13 @@ impl<T: Config> Module<T> {
             .unwrap_or_else(|_| Self::demurrage_per_block_default())
     }
 }
+
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(test)]
+#[macro_use]
+extern crate approx;

@@ -14,12 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate as dut;
+//! Mock runtime for the encointer_scheduler module
+
+pub use crate as dut;
 
 use test_utils::*;
 
+use encointer_primitives::{
+    scheduler::CeremonyPhaseType,
+};
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
+
+pub fn master() -> AccountId {
+    AccountId::from(AccountKeyring::Alice)
+}
 
 frame_support::construct_runtime!(
     pub enum TestRuntime where
@@ -29,25 +39,33 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Timestamp: timestamp::{Pallet, Call, Storage, Inherent},
-        EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-        EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
-        EncointerBazaar: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerScheduler: dut::{Pallet, Call, Storage, Config<T>, Event},
     }
 );
 
 impl dut::Config for TestRuntime {
     type Event = Event;
+    type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
+    type MomentsPerDay = MomentsPerDay;
 }
 
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_encointer_balances!(TestRuntime);
-impl_encointer_communities!(TestRuntime);
-impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
-pub fn new_test_ext() -> sp_io::TestExternalities {
-    frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap().into()
+pub fn new_test_ext(phase_duration: u64) -> sp_io::TestExternalities {
+    let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+    dut::GenesisConfig::<TestRuntime> {
+        current_phase: CeremonyPhaseType::REGISTERING,
+        current_ceremony_index: 1,
+        ceremony_master: master(),
+        phase_durations: vec![
+            (CeremonyPhaseType::REGISTERING, phase_duration),
+            (CeremonyPhaseType::ASSIGNING, phase_duration),
+            (CeremonyPhaseType::ATTESTING, phase_duration),
+        ],
+    }.assimilate_storage(&mut t).unwrap();
+    t.into()
 }
+

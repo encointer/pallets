@@ -10,19 +10,13 @@ log = { version = "0.4.14", default-features = false }
 [dependencies.rstd]
 default-features = false
 package = "sp-std"
-git = "https://github.com/paritytech/substrate.git" 
-branch = "master"
-
-[dependencies.runtime-io]
-default-features = false
-package = "sp-io"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-runtime]
 default-features = false
 package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.encointer-scheduler]
@@ -54,13 +48,13 @@ version = "2.1.1"
 [dependencies.frame-support]
 default-features = false
 package = "frame-support"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
 default-features = false
 package = "frame-system"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.serde]
@@ -77,7 +71,7 @@ branch = "master"
 [dependencies.timestamp]
 default-features = false
 package = "pallet-timestamp"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies]
@@ -87,17 +81,23 @@ rstest = "0.6.4"
 
 [dev-dependencies.keystore]
 package = "sc-keystore"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.app-crypto]
 package = "sp-application-crypto"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.externalities]
 package = "sp-externalities"
-git = "https://github.com/paritytech/substrate.git" 
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
+[dev-dependencies.sp-io]
+default-features = false
+package = "sp-io"
+git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.test-utils]
@@ -109,7 +109,6 @@ std = [
 	"codec/std",
 	"log/std",
 	"rstd/std",
-	"runtime-io/std",
 	"serde",
 	"sp-runtime/std",
 	"sp-core/std",

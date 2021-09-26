@@ -182,3 +182,5 @@ impl<T: Config> OnTimestampSet<T::Moment> for Module<T> {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod mock;
