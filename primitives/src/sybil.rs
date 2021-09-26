@@ -19,7 +19,7 @@ use fixed::traits::Fixed;
 use rstd::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash};
-use xcm::v0::Junction;
+use xcm::v1::Junction;
 
 use crate::scheduler::CeremonyIndexType;
 use crate::sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT;
@@ -164,7 +164,7 @@ impl PersonhoodUniquenessRating {
 }
 
 pub fn sibling_junction(id: u32) -> (Junction, Junction) {
-    (Junction::Parent, Junction::Parachain(id))
+    (Junction::OnlyChild, Junction::Parachain(id))
 }
 
 pub mod consts {

@@ -25,7 +25,7 @@ use polkadot_parachain::primitives::Sibling;
 use sp_runtime::traits::{IdentifyAccount};
 use sp_runtime::{MultiSignature, Perbill, generic};
 use std::cell::RefCell;
-use xcm::v0::NetworkId;
+use xcm::v1::NetworkId;
 use xcm_builder::SiblingParachainConvertsVia;
 
 // convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.
@@ -88,29 +88,29 @@ macro_rules! impl_frame_system {
     ($t:ident) => {
         use sp_runtime::traits::IdentityLookup;
         impl frame_system::Config for $t {
-            type BaseCallFilter = ();
-            type Origin = Origin;
+            type BaseCallFilter = frame_support::traits::Everything;
+            type BlockWeights = ();
+            type BlockLength = ();
+            type AccountId = AccountId;
             type Call = Call;
+            type Lookup = IdentityLookup<Self::AccountId>;
             type Index = u64;
             type BlockNumber = BlockNumber;
             type Hash = H256;
             type Hashing = BlakeTwo256;
-            type AccountId = AccountId;
-            type Lookup = IdentityLookup<Self::AccountId>;
             type Header = Header;
             type Event = Event;
+            type Origin = Origin;
             type BlockHashCount = BlockHashCount;
             type DbWeight = ();
             type Version = ();
             type PalletInfo = PalletInfo;
-            type AccountData = balances::AccountData<u64>;
             type OnNewAccount = ();
             type OnKilledAccount = ();
-            type OnSetCode = ();
+            type AccountData = balances::AccountData<u64>;
             type SystemWeightInfo = ();
-            type BlockWeights = ();
-            type BlockLength = ();
             type SS58Prefix = ();
+            type OnSetCode = ();
         }
     };
 }
@@ -158,6 +158,8 @@ macro_rules! impl_balances {
             type AccountStore = System;
             type WeightInfo = ();
             type MaxLocks = ();
+            type MaxReserves = ();
+            type ReserveIdentifier = [u8; 8];
         }
     };
 }

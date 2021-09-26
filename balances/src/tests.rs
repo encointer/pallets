@@ -108,7 +108,7 @@ fn transfer_should_work() {
         let balance: f64 = EncointerBalances::total_issuance(cid).lossy_into();
         assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
 
-        let transferred_event = Event::dut(RawEvent::Transferred(
+        let transferred_event = Event::EncointerBalances(RawEvent::Transferred(
             cid,
             alice.clone(),
             bob.clone(),
