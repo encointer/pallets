@@ -14,21 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::mock::{dut, Origin, new_test_ext, TestRuntime, System, Timestamp, master};
-use crate::{CeremonyPhaseType, GenesisConfig, Module, Config};
-use crate::Module as EncointerSchedulerRaw;
+use crate::mock::{Origin, new_test_ext, TestRuntime, System, Timestamp, master};
+use crate::CeremonyPhaseType;
 
 use frame_support::traits::UnfilteredDispatchable;
 use frame_support::{
-    assert_ok, impl_outer_event,
+    assert_ok,
     traits::{OnFinalize, OnInitialize},
     pallet_prelude::ProvideInherent,
-};
-use sp_io::TestExternalities;
-use sp_core::H256;
-use sp_runtime::{
-    testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
 };
 use std::ops::Rem;
 
@@ -37,7 +30,7 @@ use test_utils::*;
 const TEN_MIN: u64 = 600_000;
 const ONE_DAY: u64 = 86_400_000;
 
-type EncointerScheduler = EncointerSchedulerRaw::<TestRuntime>;
+type EncointerScheduler = crate::Module::<TestRuntime>;
 
 /// Run until a particular block.
 pub fn run_to_block(n: u64) {
