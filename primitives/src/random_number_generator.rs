@@ -32,7 +32,7 @@ use sp_runtime::traits::{Hash, TrailingZeroInput};
 /// Example:
 /// ```
 /// use sp_runtime::traits::{Hash, BlakeTwo256};
-/// use sp_runtime::RandomNumberGenerator;
+/// use encointer_primitives::RandomNumberGenerator;
 /// let random_seed = BlakeTwo256::hash(b"Sixty-nine");
 /// let mut rng = <RandomNumberGenerator<BlakeTwo256>>::new(random_seed);
 /// assert_eq!(rng.pick_u32(100), 59);
