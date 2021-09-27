@@ -45,7 +45,6 @@ use rstd::{
 use codec::{Decode, Encode};
 use sp_runtime::{
     traits::{CheckedSub, IdentifyAccount, Member, Verify},
-    RandomNumberGenerator,
     SaturatedConversion
 };
 
@@ -55,6 +54,7 @@ use encointer_primitives::{
     ceremonies::*,
     communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
+    RandomNumberGenerator
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use encointer_primitives::random_permutation::RandomPermutation;
@@ -337,17 +337,17 @@ impl<T: Config> Module<T> {
     fn purge_registry(cindex: CeremonyIndexType) {
         let cids = <encointer_communities::Module<T>>::community_identifiers();
         for cid in cids.iter() {
-            <ParticipantRegistry<T>>::remove_prefix((cid, cindex));
-            <ParticipantIndex<T>>::remove_prefix((cid, cindex));
+            <ParticipantRegistry<T>>::remove_prefix((cid, cindex), None);
+            <ParticipantIndex<T>>::remove_prefix((cid, cindex), None);
             <ParticipantCount>::insert((cid, cindex), 0);
-            <Endorsees<T>>::remove_prefix((cid, cindex));
-            <MeetupRegistry<T>>::remove_prefix((cid, cindex));
-            <MeetupIndex<T>>::remove_prefix((cid, cindex));
+            <Endorsees<T>>::remove_prefix((cid, cindex), None);
+            <MeetupRegistry<T>>::remove_prefix((cid, cindex), None);
+            <MeetupIndex<T>>::remove_prefix((cid, cindex), None);
             <MeetupCount>::insert((cid, cindex), 0);
-            <AttestationRegistry<T>>::remove_prefix((cid, cindex));
-            <AttestationIndex<T>>::remove_prefix((cid, cindex));
+            <AttestationRegistry<T>>::remove_prefix((cid, cindex), None);
+            <AttestationIndex<T>>::remove_prefix((cid, cindex), None);
             <AttestationCount>::insert((cid, cindex), 0);
-            <MeetupParticipantCountVote<T>>::remove_prefix((cid, cindex));
+            <MeetupParticipantCountVote<T>>::remove_prefix((cid, cindex), None);
         }
         debug!(target: LOG, "purged registry for ceremony {}", cindex);
     }

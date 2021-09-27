@@ -28,30 +28,35 @@ tag = "v0.5.6"
 package = "substrate-fixed"
 
 [dependencies.rstd]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-runtime]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-support]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-core]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
@@ -61,11 +66,13 @@ branch = "master"
 approx = "0.3.0"
 
 [dev-dependencies.sp-io]
+version = "4.0.0-dev"
 package = "sp-io"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.runtime-interface]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-runtime-interface"
 git = "https://github.com/paritytech/substrate.git"

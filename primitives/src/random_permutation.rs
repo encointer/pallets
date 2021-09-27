@@ -17,7 +17,7 @@
 //! A simple trait that allows pseudo-random permutations on arbitrary `vec`s.
 
 use sp_runtime::traits::Hash;
-use sp_runtime::RandomNumberGenerator;
+use crate::RandomNumberGenerator;
 
 #[cfg(not(feature = "std"))]
 use rstd::vec::Vec;

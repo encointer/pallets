@@ -42,7 +42,7 @@ use polkadot_parachain::primitives::Sibling;
 use rstd::prelude::*;
 use sp_core::H256;
 use sp_runtime::traits::{AccountIdConversion, CheckedConversion, IdentifyAccount, Member, Verify};
-use xcm::v0::{Error as XcmError, OriginKind, SendXcm, Xcm};
+use xcm::v1::{Error as XcmError, OriginKind, SendXcm, Xcm};
 
 const LOG: &str = "encointer";
 

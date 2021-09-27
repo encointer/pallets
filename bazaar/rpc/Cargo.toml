@@ -5,28 +5,38 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
-jsonrpc-core = "15.0.0"
-jsonrpc-core-client = "15.0.0"
-jsonrpc-derive = "15.0.0"
+jsonrpc-core = "18.0.0"
+jsonrpc-core-client = "18.0.0"
+jsonrpc-derive = "18.0.0"
 log = "0.4.14"
 parking_lot = "0.11.1"
 
 [dependencies.sp-api]
+version = "4.0.0-dev"
 package = "sp-api"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-blockchain]
+version = "4.0.0-dev"
 package = "sp-blockchain"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sc-rpc]
+version = "4.0.0-dev"
 package = "sc-rpc"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
+[dependencies.sc-rpc-api]
+version = "0.10.0-dev"
+package = "sc-rpc-api"
+git = "https://github.com/paritytech/substrate.git"
+branch = "master"
+
 [dependencies.sp-runtime]
+version = "4.0.0-dev"
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
@@ -41,6 +51,7 @@ path = "../../primitives"
 [dev-dependencies]
 
 [dev-dependencies.sp-core]
+version = "4.0.0-dev"
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"

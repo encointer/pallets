@@ -8,7 +8,7 @@ edition = "2018"
 log = { version = "0.4.14", default-features = false }
 
 [dependencies.frame-benchmarking]
-version = "3.1.0"
+version = "4.0.0-dev"
 default-features = false
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
@@ -31,18 +31,21 @@ tag = "v0.5.6"
 package = "substrate-fixed"
 
 [dependencies.rstd]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-io]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-io"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-runtime]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
@@ -55,12 +58,14 @@ features = ["derive"]
 version = "2.1.1"
 
 [dependencies.frame-support]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git"
@@ -80,11 +85,13 @@ git = "https://github.com/encointer/geohash"
 branch = "master"
 
 [dev-dependencies.externalities]
+version = "0.10.0-dev"
 package = "sp-externalities"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.sp-core]
+version = "4.0.0-dev"
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"

@@ -123,7 +123,7 @@ decl_module! {
             ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
 
             BusinessRegistry::<T>::remove(cid, &sender);
-            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier::new(cid, sender.clone()));
+            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier::new(cid, sender.clone()), None);
 
             Self::deposit_event(RawEvent::BusinessDeleted(cid, sender));
 

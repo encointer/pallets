@@ -8,12 +8,14 @@ edition = "2018"
 log = { version = "0.4.14", default-features = false }
 
 [dependencies.rstd]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-std"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.sp-runtime]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-runtime"
 git = "https://github.com/paritytech/substrate.git"
@@ -46,12 +48,14 @@ features = ["derive"]
 version = "2.1.1"
 
 [dependencies.frame-support]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-support"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.frame-system]
+version = "4.0.0-dev"
 default-features = false
 package = "frame-system"
 git = "https://github.com/paritytech/substrate.git"
@@ -63,12 +67,14 @@ optional = true
 version = "1.0.101"
 
 [dependencies.sp-core]
+version = "4.0.0-dev"
 default-features = false
 package = "sp-core"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dependencies.timestamp]
+version = "4.0.0-dev"
 default-features = false
 package = "pallet-timestamp"
 git = "https://github.com/paritytech/substrate.git"
@@ -80,16 +86,19 @@ tempdir = "0.3.7"
 rstest = "0.6.4"
 
 [dev-dependencies.keystore]
+version = "4.0.0-dev"
 package = "sc-keystore"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.app-crypto]
+version = "4.0.0-dev"
 package = "sp-application-crypto"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
 
 [dev-dependencies.externalities]
+version = "0.10.0-dev"
 package = "sp-externalities"
 git = "https://github.com/paritytech/substrate.git"
 branch = "master"
