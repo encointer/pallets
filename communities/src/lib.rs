@@ -464,7 +464,7 @@ impl<T: Config> Module<T> {
         Some(Self::community_metadata(cid).name)
     }
 
-    pub fn get_locations(cid:&CommunityIdentifier) -> Vec<Location>{
+    pub fn get_locations(cid: &CommunityIdentifier) -> Vec<Location>{
         <Locations>::iter_prefix_values(&cid).reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect()).unwrap()
     }
 }
