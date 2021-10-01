@@ -49,9 +49,6 @@ pub struct Communities<Client, Block, S> {
 
 impl<C, Block, S> Communities<C, Block, S>
 where
-    Block: BlockT,
-    C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: CommunitiesRuntimeApi<Block>,
     S: 'static + OffchainStorage,
 {
     /// Create new `Communities` with the given reference to the client and to the offchain storage
@@ -90,32 +87,34 @@ where
         self.storage.write().set(STORAGE_PREFIX, key, &val.encode());
     }
 
-    fn refresh_cache(&self, at: Option<<Block as BlockT>::Hash>) {
+}
+
+macro_rules! refresh_cache {
+    ($self:ident, $at:ident) => {
         log::info!("refreshing cache.....");
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+        let api = $self.client.runtime_api();
+        let at = BlockId::hash($at.unwrap_or_else(|| $self.client.info().best_hash));
         let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err).unwrap();
         let mut cid_names: Vec<CidName> = vec![];
 
         cids.iter().for_each(|cid| {
-            self.get_storage(cid.as_ref()).map_or_else(
+            $self.get_storage(cid.as_ref()).map_or_else(
                 || warn_storage_inconsistency(cid),
                 |name| cid_names.push(CidName::new(*cid, name)),
             )
         });
 
-        self.set_storage(CIDS_KEY, &cid_names);
+        $self.set_storage(CIDS_KEY, &cid_names);
 
         cids.iter().for_each(|cid| {
             let cache_key = &(CIDS_KEY, cid).encode()[..];
             let loc = api.get_locations(&at, &cid).map_err(runtime_error_into_rpc_err).unwrap();
 
-            self.set_storage(cache_key, &loc);
+            $self.set_storage(cache_key, &loc);
         });
-        self.set_storage(CACHE_DIRTY_KEY, &false);
-    }
+        $self.set_storage(CACHE_DIRTY_KEY, &false);
+    };
 }
-
 
 impl<C, Block, S> CommunitiesApi<<Block as BlockT>::Hash> for Communities<C, Block, S>
 where
@@ -131,7 +130,7 @@ where
         }
 
         if self.cache_dirty() {
-            self.refresh_cache(at);
+            refresh_cache!(self, at);
         }
 
         match self.get_storage(CIDS_KEY) {
@@ -149,7 +148,7 @@ where
         }
 
         if self.cache_dirty() {
-            self.refresh_cache(at);
+            refresh_cache!(self, at);
         }
 
         let cache_key = &(CIDS_KEY, cid).encode()[..];
