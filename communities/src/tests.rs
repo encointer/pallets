@@ -301,6 +301,8 @@ fn updating_demurrage_works() {
 fn add_location_works() {
     new_test_ext().execute_with(|| {
         let cid = register_test_community(None, 0.0, 0.0);
+        let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
+
         let location = Location {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
@@ -317,7 +319,7 @@ fn add_location_works() {
         let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
-        EncointerCommunities::add_location(Origin::root(), cid, location2).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location2).ok();
         let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
         let mut expected_locations = vec![location, location2];
         locations.sort();
@@ -332,7 +334,7 @@ fn add_location_works() {
         };
         let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon, BUCKET_RESOLUTION).unwrap();
 
-        EncointerCommunities::add_location(Origin::root(), cid, location3).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location3).ok();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash3), vec![location3]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash3), vec![cid]);
     });
@@ -342,6 +344,8 @@ fn add_location_works() {
 fn remove_location_works() {
     new_test_ext().execute_with(|| {
         let cid = register_test_community(None, 0.0, 0.0);
+        let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
+
         let location = Location {
             lat: T::from_num(0i32),
             lon: T::from_num(0i32),
@@ -358,7 +362,7 @@ fn remove_location_works() {
         let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
         assert_eq!(geo_hash, geo_hash2);
 
-        EncointerCommunities::add_location(Origin::root(), cid, location2).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location2).ok();
         let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
         let mut expected_locations = vec![location, location2];
         locations.sort();
@@ -367,12 +371,12 @@ fn remove_location_works() {
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
         // remove first location
-        EncointerCommunities::remove_location(Origin::root(), cid, location).ok();
+        EncointerCommunities::remove_location(Origin::signed(some_bootstrapper.clone()), cid, location).ok();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location2]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
         // remove second location
-        EncointerCommunities::remove_location(Origin::root(), cid, location2).ok();
+        EncointerCommunities::remove_location(Origin::signed(some_bootstrapper.clone()), cid, location2).ok();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
         assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![]);
 
@@ -655,21 +659,22 @@ fn get_nearby_locations_works() {
             lat: T::from_num(45),
             lon: T::from_num(45),
         };
+        let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
 
         // same bucket, same cid
-        EncointerCommunities::add_location(Origin::root(), cid, location2).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location2).ok();
         // same bucket different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location3).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid2, location3).ok();
         //different bucket, same cid
-        EncointerCommunities::add_location(Origin::root(), cid, location4).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location4).ok();
         // different bucket, different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location5).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid2, location5).ok();
         // different bucket, different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location6).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid2, location6).ok();
         // location far away, same cid
-        EncointerCommunities::add_location(Origin::root(), cid, location7).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location7).ok();
         // location far away different cid
-        EncointerCommunities::add_location(Origin::root(), cid2, location8).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid2, location8).ok();
 
         let mut result = EncointerCommunities::get_nearby_locations(&location).unwrap();
         let mut expected_result = vec![location2, location3, location4, location5, location6];
@@ -752,11 +757,13 @@ fn get_locations_works() {
             lat: T::from_num(6.0),
             lon: T::from_num(6.0),
         };
-        assert!(EncointerCommunities::add_location(Origin::root(), cid, location1).is_ok());
-        assert!(EncointerCommunities::add_location(Origin::root(), cid2, location2).is_ok());
-        assert!(EncointerCommunities::add_location(Origin::root(), cid, location3).is_ok());
-        assert!(EncointerCommunities::add_location(Origin::root(), cid2, location4).is_ok());
-        assert!(EncointerCommunities::add_location(Origin::root(), cid, location5).is_ok());
+        let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
+
+        assert!(EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location1).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid2, location2).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location3).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid2, location4).is_ok());
+        assert!(EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, location5).is_ok());
 
         let mut result = EncointerCommunities::get_locations(&cid);
         let mut expected_result = vec![location0, location1, location3, location5];

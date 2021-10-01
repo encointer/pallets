@@ -52,6 +52,7 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Location {
     pub lat: Degree,
     pub lon: Degree,

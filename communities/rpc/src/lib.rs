@@ -24,8 +24,8 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
-use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
-use encointer_primitives::communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier};
+use encointer_communities_rpc_runtime_api::{CommunitiesApi as CommunitiesRuntimeApi, LocationSerialized};
+use encointer_primitives::communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier, Location};
 use parking_lot::RwLock;
 use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 
@@ -35,6 +35,9 @@ const CIDS_KEY: &[u8; 4] = b"cids";
 pub trait CommunitiesApi<BlockHash> {
     #[rpc(name = "communities_getAll")]
     fn communities_get_all(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
+
+    #[rpc(name = "communities_getLocations")]
+    fn communities_get_locations(&self, cid: CommunityIdentifier, at: Option<BlockHash>) -> Result<Vec<LocationSerialized>>;
 }
 
 pub struct Communities<Client, Block, S> {
@@ -44,7 +47,7 @@ pub struct Communities<Client, Block, S> {
     _marker: std::marker::PhantomData<Block>,
 }
 
-impl<C, B, S> Communities<C, B, S>
+impl<C, Block, S> Communities<C, Block, S>
 where
     S: 'static + OffchainStorage,
 {
@@ -83,6 +86,34 @@ where
     pub fn set_storage<V: Encode>(&self, key: &[u8], val: &V) {
         self.storage.write().set(STORAGE_PREFIX, key, &val.encode());
     }
+
+}
+
+macro_rules! refresh_cache {
+    ($self:ident, $at:ident) => {
+        log::info!("refreshing cache.....");
+        let api = $self.client.runtime_api();
+        let at = BlockId::hash($at.unwrap_or_else(|| $self.client.info().best_hash));
+        let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err).unwrap();
+        let mut cid_names: Vec<CidName> = vec![];
+
+        cids.iter().for_each(|cid| {
+            $self.get_storage(cid.as_ref()).map_or_else(
+                || warn_storage_inconsistency(cid),
+                |name| cid_names.push(CidName::new(*cid, name)),
+            )
+        });
+
+        $self.set_storage(CIDS_KEY, &cid_names);
+
+        cids.iter().for_each(|cid| {
+            let cache_key = &(CIDS_KEY, cid).encode()[..];
+            let loc = api.get_locations(&at, &cid).map_err(runtime_error_into_rpc_err).unwrap();
+
+            $self.set_storage(cache_key, &loc);
+        });
+        $self.set_storage(CACHE_DIRTY_KEY, &false);
+    };
 }
 
 impl<C, Block, S> CommunitiesApi<<Block as BlockT>::Hash> for Communities<C, Block, S>
@@ -92,37 +123,47 @@ where
     C::Api: CommunitiesRuntimeApi<Block>,
     S: 'static + OffchainStorage,
 {
+
     fn communities_get_all(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
         if !self.offchain_indexing {
             return Err(offchain_indexing_disabled_error("communities_getAll"));
         }
 
-        if !self.cache_dirty() {
-            return match self.get_storage(CIDS_KEY) {
+        if self.cache_dirty() {
+            refresh_cache!(self, at);
+        }
+
+        match self.get_storage(CIDS_KEY) {
                 Some(cids) => {
                     log::info!("Using cached community list: {:?}", cids);
                     Ok(cids)
                 }
                 None => Err(storage_not_found_error(CIDS_KEY)),
-            };
+        }
+    }
+
+    fn communities_get_locations(&self, cid: CommunityIdentifier, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<LocationSerialized>> {
+        if !self.offchain_indexing {
+            return Err(offchain_indexing_disabled_error("communities_getAll"));
         }
 
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-        let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err)?;
-        let mut cid_names: Vec<CidName> = vec![];
+        if self.cache_dirty() {
+            refresh_cache!(self, at);
+        }
 
-        cids.iter().for_each(|cid| {
-            self.get_storage(cid.as_ref()).map_or_else(
-                || warn_storage_inconsistency(cid),
-                |name| cid_names.push(CidName::new(*cid, name)),
-            )
-        });
-
-        self.set_storage(CIDS_KEY, &cid_names);
-        self.set_storage(CACHE_DIRTY_KEY, &false);
-
-        Ok(cid_names)
+        let cache_key = &(CIDS_KEY, cid).encode()[..];
+        match self.get_storage::<Vec<Location>>(cache_key) {
+                Some(loc) => {
+                    log::info!("Using cached location list with len {}", loc.len());
+                    let loc_ser = loc.iter().map(|l| {
+                        let mut ls = LocationSerialized::default();
+                        ls.copy_from_slice( &l.encode()[0..32]);
+                        ls
+                    }).collect();
+                    Ok(loc_ser)
+                }
+                None => Err(storage_not_found_error(cache_key)),
+        }
     }
 }
 

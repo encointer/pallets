@@ -138,9 +138,11 @@ decl_module! {
 
         #[weight = 10_000]
         pub fn add_location(origin, cid: CommunityIdentifier, location: Location) {
+            let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
                 "locations can only be added in Registration Phase");
-            ensure_root(origin)?;
+            Self::ensure_cid_exists(&cid)?;
+            Self::ensure_bootstrapper(sender, cid)?;
             Self::validate_location(&location)?;
             let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             // insert location into locations
@@ -164,10 +166,12 @@ decl_module! {
         }
 
         #[weight = 10_000]
-        pub fn remove_location(origin, cid: CommunityIdentifier,location: Location) {
+        pub fn remove_location(origin, cid: CommunityIdentifier, location: Location) {
+            let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
                 "locations can only be removed in Registration Phase");
-            ensure_root(origin)?;
+            Self::ensure_cid_exists(&cid)?;
+            Self::ensure_bootstrapper(sender, cid)?;
             let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
             //remove location from locations(cid,geohash)
             let mut locations = Self::locations(&cid, &geo_hash);
@@ -212,6 +216,7 @@ decl_module! {
         #[weight = 10_000]
         fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
             ensure_root(origin)?;
+            Self::ensure_cid_exists(&cid)?;
             validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
             Self::ensure_cid_exists(&cid)?;
 
@@ -223,6 +228,7 @@ decl_module! {
         #[weight = 10_000]
         fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: NominalIncomeType) {
             ensure_root(origin)?;
+            Self::ensure_cid_exists(&cid)?;
             validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
             Self::ensure_cid_exists(&cid)?;
 
@@ -278,7 +284,9 @@ decl_error! {
         /// Invalid location provided when computing geohash
         InvalidLocationForGeohash,
         /// Invalid Geohash provided
-        InvalidGeohash
+        InvalidGeohash,
+        /// sender is not authorized
+        BadOrigin
     }
 }
 
@@ -305,6 +313,13 @@ impl<T: Config> Module<T> {
             true => Ok(()),
             false => Err(<Error<T>>::CommunityInexistent)?,
         }
+    }
+
+    fn ensure_bootstrapper(sender: T::AccountId, cid: CommunityIdentifier) -> DispatchResult {
+        if !Self::bootstrappers(cid).contains(&sender) {
+            Err(<Error<T>>::BadOrigin.into())
+        }
+        else { Ok(()) }
     }
 
     pub fn is_valid_location(loc: &Location) -> bool {
@@ -464,7 +479,7 @@ impl<T: Config> Module<T> {
         Some(Self::community_metadata(cid).name)
     }
 
-    pub fn get_locations(cid:&CommunityIdentifier) -> Vec<Location>{
+    pub fn get_locations(cid: &CommunityIdentifier) -> Vec<Location>{
         <Locations>::iter_prefix_values(&cid).reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect()).unwrap()
     }
 }

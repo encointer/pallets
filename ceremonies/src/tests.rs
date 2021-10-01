@@ -239,7 +239,7 @@ fn perform_bootstrapping_ceremony(
             lon: Degree::from_num(coord),
         };
 
-        match EncointerCommunities::add_location(Origin::root(), cid, location) {
+        match EncointerCommunities::add_location(Origin::signed(bootstrappers[0].public().into()), cid, location) {
             Ok(_v) => (),
             Err(e) => panic!("{:?}", e),
         }
@@ -1174,8 +1174,9 @@ fn get_meetup_time_works() {
         run_to_block(1);
 
         let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-        EncointerCommunities::add_location(Origin::root(), cid, Location{ lat: Degree::from_num(1.0), lon: Degree::from_num(1.0)}).ok();
-        EncointerCommunities::add_location(Origin::root(), cid, Location{ lat: Degree::from_num(2.0), lon: Degree::from_num(2.0)}).ok();
+        let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, Location{ lat: Degree::from_num(1.0), lon: Degree::from_num(1.0)}).ok();
+        EncointerCommunities::add_location(Origin::signed(some_bootstrapper), cid, Location{ lat: Degree::from_num(2.0), lon: Degree::from_num(2.0)}).ok();
 
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
