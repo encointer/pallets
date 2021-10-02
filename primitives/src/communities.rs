@@ -216,6 +216,7 @@ pub mod consts {
     // in meters
     pub const METERS_PER_DEGREE_AT_EQUATOR : I32F0 = I32F0::from_bits(0x0001B2D7);
 
+    /// the number of base32 digits to use (as opposed to number of bits or bytes of information)
     pub const BUCKET_RESOLUTION : usize = 5usize;
 
     /// Dirty bit key for offfchain storage

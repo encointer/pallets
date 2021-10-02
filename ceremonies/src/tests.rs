@@ -1167,17 +1167,23 @@ fn endorsing_two_newbies_works() {
 
 // integration tests ////////////////////////////////
 
-#[test]
-fn get_meetup_time_works() {
+#[rstest(lat_micro, lon_micro,
+case(0, 0),
+case(1_000_000, 1_000_000),
+case(0, 2_234_567),
+case(2_000_000, 155_000_000),
+case(1_000_000, -2_000_000),
+case(-31_000_000, -155_000_000),
+)]
+fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
     new_test_ext().execute_with(|| {
         System::set_block_number(0);
         run_to_block(1);
 
-        let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-        let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
-        EncointerCommunities::add_location(Origin::signed(some_bootstrapper.clone()), cid, Location{ lat: Degree::from_num(1.0), lon: Degree::from_num(1.0)}).ok();
-        EncointerCommunities::add_location(Origin::signed(some_bootstrapper), cid, Location{ lat: Degree::from_num(2.0), lon: Degree::from_num(2.0)}).ok();
-
+        let cid = register_test_community::<TestRuntime>(None, lat_micro as f64 / 1_000_000.0, lon_micro as f64 / 1_000_000.0);
+        // locations will not generally be returned in the order they were registered
+        // and meetups will be at randomized locations after https://github.com/encointer/pallets/issues/65
+        // that would break this test if we had more than one location registered
 
         assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
         assert_eq!(
@@ -1205,25 +1211,18 @@ fn get_meetup_time_works() {
             CeremonyPhaseType::ATTESTING
         );
 
-        assert_eq!(
-            EncointerCeremonies::get_meetup_time(&cid, 1),
-            Some(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2)
-        );
+        let mtime = if lon_micro >= 0 {
+            GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2
+               - (lon_micro * ONE_DAY as i64 / 360_000_000) as u64
+        } else {
+            GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2
+                + (lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
+        };
 
-        assert_eq!(
-            EncointerCeremonies::get_meetup_time(&cid, 2),
-            Some(
-                GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2
-                    - 1 * ONE_DAY / 360
-            )
-        );
-
-        assert_eq!(
-            EncointerCeremonies::get_meetup_time(&cid, 3),
-            Some(
-                GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2
-                    - 2 * ONE_DAY / 360
-            )
+        let tol = 60_000; // [ms]
+        assert!(tol >
+            (EncointerCeremonies::get_meetup_time(&cid, 1).unwrap() as i64 -
+            mtime as i64).abs() as u64
         );
     });
 }
