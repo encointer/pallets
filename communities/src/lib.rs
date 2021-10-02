@@ -163,6 +163,7 @@ decl_module! {
                     <CommunityIdentifiersByGeohash>::insert(&geo_hash, cids);
                 }
             }
+            sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
         }
 
         #[weight = 10_000]
@@ -196,6 +197,7 @@ decl_module! {
                     Err(_) => ()
                 }
             }
+            sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
         }
 
         #[weight = 10_000]
