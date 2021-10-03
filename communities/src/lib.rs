@@ -33,7 +33,6 @@ use frame_system::{ensure_root, ensure_signed};
 use rstd::prelude::*;
 use rstd::result::Result;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
-use sp_io::hashing::blake2_256;
 use sp_runtime::{DispatchResult, SaturatedConversion};
 
 use geohash::GeoHash;
@@ -98,7 +97,7 @@ decl_module! {
                 validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
             }
 
-            let cid = CommunityIdentifier::from(blake2_256(&(location.clone(), bootstrappers.clone()).encode()));
+            let cid = CommunityIdentifier::new(location, bootstrappers.clone()).map_err(|_| Error::<T>::InvalidLocation)?;
             let cids = Self::community_identifiers();
             ensure!(!cids.contains(&cid), Error::<T>::CommunityAlreadyRegistered);
 

@@ -21,6 +21,7 @@ pub mod bazaar;
 pub mod ceremonies;
 pub mod common;
 pub mod communities;
+pub mod error;
 pub mod scheduler;
 
 pub mod bs58_verify;

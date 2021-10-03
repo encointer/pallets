@@ -18,7 +18,7 @@ use crate::AccountId;
 use codec::Encode;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::traits::OriginTrait;
-use sp_core::{blake2_256, sr25519, Pair};
+use sp_core::{sr25519, Pair};
 use sp_keyring::AccountKeyring;
 
 /// shorthand to convert Pair to AccountId
@@ -73,5 +73,5 @@ where
         None,
     )
     .unwrap();
-    CommunityIdentifier::from(blake2_256(&(location.clone(), bs.clone()).encode()))
+    CommunityIdentifier::new(location, bs).unwrap()
 }

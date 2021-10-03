@@ -14,9 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+use bs58;
 use codec::{Decode, Encode};
+use concat_arrays::concat_arrays;
+use crc::{Crc, CRC_32_CKSUM};
 use fixed::types::I64F64;
-use sp_core::{RuntimeDebug, H256};
+use geohash::GeoHash;
+use sp_core::RuntimeDebug;
+use std::fmt;
+use std::fmt::Formatter;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -25,12 +31,12 @@ use crate::balances::Demurrage;
 use crate::common::{validate_ascii, validate_ipfs_cid, IpfsCid, IpfsValidationError, PalletString, AsByteOrNoop};
 
 pub use fixed::traits::{LossyFrom, LossyInto};
+use crate::error::CommunityIdentifierError;
 
 pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I64F64;
 pub type NominalIncome = I64F64;
-pub type CommunityIdentifier = H256;
 
 /// Ensure that the demurrage is in a sane range.
 ///
@@ -50,12 +56,66 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
     Ok(())
 }
 
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct CommunityIdentifier {
+    geohash: [u8; 5],
+    digest: [u8; 4],
+}
+
+
+fn fmt(cid: &CommunityIdentifier, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "{}{}", std::str::from_utf8(&cid.geohash).unwrap(), bs58::encode(cid.digest).into_string())
+}
+
+impl fmt::Display for CommunityIdentifier {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        fmt(self, f)
+    }
+}
+
+impl fmt::Debug for CommunityIdentifier {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        fmt(self, f)
+    }
+}
+
+impl CommunityIdentifier {
+    pub fn new<AccountId: Encode>(location: Location, bootstrappers: Vec<AccountId>) -> Result<CommunityIdentifier, CommunityIdentifierError> {
+        let geohash = GeoHash::try_from_params(location.lat, location.lon, 5);
+        match geohash {
+            Ok(v) => {
+                let mut geohash_cropped = [0u8; 5];
+                geohash_cropped.clone_from_slice(&v[0..5]);
+
+                let crc_engine = Crc::<u32>::new(&CRC_32_CKSUM);
+                let mut digest = crc_engine.digest();
+                digest.update(&(bootstrappers).encode());
+                Ok(CommunityIdentifier {
+                    geohash: geohash_cropped,
+                    digest: digest.finalize().to_be_bytes(),
+                })},
+            Err(_) => Err(CommunityIdentifierError::InvalidCoordinateRange())
+        }
+    }
+
+    pub fn as_array(self) -> [u8; 9] {
+        concat_arrays!(self.geohash, self.digest)
+    }
+}
+
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Location {
     pub lat: Degree,
     pub lon: Degree,
+}
+
+impl Location {
+    pub fn new(lat: Degree, lon: Degree) -> Location {
+        Location { lat, lon}
+    }
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -229,7 +289,7 @@ mod tests {
     use crate::common::{IpfsValidationError};
     use crate::communities::{
         validate_demurrage, validate_nominal_income, CommunityMetadata, CommunityMetadataError,
-        Demurrage, NominalIncome,
+        Demurrage, NominalIncome, Location, CommunityIdentifier, Degree
     };
 
     #[test]
@@ -274,5 +334,18 @@ mod tests {
                 IpfsValidationError::InvalidBase58(Bs58Error::NonBs58Character(0))
             ))
         );
+    }
+
+    #[test]
+    fn format_communityidentifier_works() {
+        let empty = Vec::<i64>::new();
+        assert_eq!(CommunityIdentifier::new(Location::new(Degree::from_num(48.669), Degree::from_num(-4.329)), empty.clone())
+                       .unwrap().to_string(), "gbsuv7YXq9G");
+        assert_eq!(CommunityIdentifier::new(Location::new(Degree::from_num(50.0), Degree::from_num(15.0)), empty.clone())
+                       .unwrap().to_string(), "u2fsm7YXq9G");
+        assert_eq!(CommunityIdentifier::new(Location::new(Degree::from_num(-60.0), Degree::from_num(10.0)), empty.clone())
+                       .unwrap().to_string(), "hjr4e7YXq9G");
+        assert_eq!(CommunityIdentifier::new(Location::new(Degree::from_num(-89.5), Degree::from_num(-87.0)), empty.clone())
+                       .unwrap().to_string(), "4044u7YXq9G");
     }
 }
