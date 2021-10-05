@@ -90,7 +90,9 @@ decl_module! {
 decl_error! {
     /// Error for token module.
     pub enum Error for Module<T: Config> {
+        /// the balance is too low to perform this action
         BalanceTooLow,
+        /// the total issuance would overflow
         TotalIssuanceOverflow,
     }
 }

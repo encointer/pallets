@@ -96,7 +96,7 @@ decl_module! {
                 .ok_or(<Error<T>>::UnableToDecodeRequest)?
                 .into();
             let request = <Vec<ProofOfAttendanceOf<T>>>::decode(&mut rating_request.as_slice())
-                .map_err(|_| <Error<T>>::UnableToDecodeRequest)?;
+                .map_err(|_| <Error<T>>::OnlyParachainsAllowed)?;
 
             debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
             debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
@@ -121,6 +121,10 @@ decl_error! {
         OnlyParachainsAllowed,
         /// Unable to decode PersonhoodUniquenessRating request
         UnableToDecodeRequest,
+        /// former attendance has not been verified or has already been linked to other account
+        AttendanceUsed,
+        /// Bad Signature
+        BadSignature,
     }
 }
 
@@ -169,7 +173,7 @@ impl<T: Config> Module<T> {
                 &(p.community_identifier, p.ceremony_index),
                 &p.attendee_public
             ) == Reputation::VerifiedUnlinked,
-            "former attendance has not been verified or has already been linked to other account"
+            Error::<T>::AttendanceUsed
         );
         Self::verify_attendee_signature(p)
     }
@@ -182,7 +186,7 @@ impl<T: Config> Module<T> {
                 &(proof.prover_public.clone(), proof.ceremony_index.clone()).encode()[..],
                 &proof.attendee_public,
             ),
-            "bad attendee signature"
+            Error::<T>::BadSignature
         );
         Ok(())
     }

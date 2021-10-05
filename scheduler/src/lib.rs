@@ -25,7 +25,7 @@
 
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
-    decl_event, decl_module, decl_storage,
+    decl_event, decl_module, decl_storage, decl_error,
     dispatch::DispatchResult,
     ensure,
     storage::StorageValue,
@@ -79,7 +79,7 @@ decl_module! {
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn next_phase(origin) -> DispatchResult {
             let sender = ensure_signed(origin)?;
-            ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
+            ensure!(sender == <CeremonyMaster<T>>::get(), Error::<T>::AuthorizationRequired);
             Self::progress_phase()?;
             Ok(())
         }
@@ -88,7 +88,7 @@ decl_module! {
         #[weight = (1000, DispatchClass::Operational, Pays::No)]
         pub fn push_by_one_day(origin) -> DispatchResult {
             let sender = ensure_signed(origin)?;
-            ensure!(sender == <CeremonyMaster<T>>::get(), "only the CeremonyMaster can call this function");
+            ensure!(sender == <CeremonyMaster<T>>::get(), Error::<T>::AuthorizationRequired);
             let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
             <NextPhaseTimestamp<T>>::put(tnext);
             Ok(())
@@ -101,6 +101,13 @@ decl_event!(
         PhaseChangedTo(CeremonyPhaseType),
     }
 );
+
+decl_error! {
+    pub enum Error for Module<T: Config> {
+        /// sender doesn't have the necessary authority to perform action
+        AuthorizationRequired,
+    }
+}
 
 impl<T: Config> Module<T> {
     // implicitly assuming Moment to be unix epoch!

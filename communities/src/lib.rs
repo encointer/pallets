@@ -100,7 +100,7 @@ decl_module! {
 
             let cid = CommunityIdentifier::from(blake2_256(&(location.clone(), bootstrappers.clone()).encode()));
             let cids = Self::community_identifiers();
-            ensure!(!cids.contains(&cid), "community already registered");
+            ensure!(!cids.contains(&cid), Error::<T>::CommunityAlreadyRegistered);
 
             Self::validate_location(&location)?;
             // All checks done, now mutate state
@@ -140,7 +140,7 @@ decl_module! {
         pub fn add_location(origin, cid: CommunityIdentifier, location: Location) {
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
-                "locations can only be added in Registration Phase");
+                Error::<T>::RegistrationPhaseRequired);
             Self::ensure_cid_exists(&cid)?;
             Self::ensure_bootstrapper(sender, cid)?;
             Self::validate_location(&location)?;
@@ -170,7 +170,7 @@ decl_module! {
         pub fn remove_location(origin, cid: CommunityIdentifier, location: Location) {
             let sender = ensure_signed(origin)?;
             ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
-                "locations can only be removed in Registration Phase");
+                Error::<T>::RegistrationPhaseRequired);
             Self::ensure_cid_exists(&cid)?;
             Self::ensure_bootstrapper(sender, cid)?;
             let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
@@ -259,18 +259,12 @@ decl_event!(
 
 decl_error! {
     pub enum Error for Module<T: Config> {
-        /// Too many locations supplied
-        TooManyLocations,
-        /// Too few locations supplied
-        TooFewLocations,
         /// Location is not a valid geolocation
         InvalidLocation,
         /// Invalid amount of bootstrappers supplied. Needs to be \[3, 12\]
         InvalidAmountBootstrappers,
         /// minimum distance violation to other location
         MinimumDistanceViolationToOtherLocation,
-        /// minimum distance violated towards pole
-        MinimumDistanceViolationToPole,
         /// minimum distance violated towards dateline
         MinimumDistanceViolationToDateLine,
         /// Can't register community that already exists
@@ -288,7 +282,9 @@ decl_error! {
         /// Invalid Geohash provided
         InvalidGeohash,
         /// sender is not authorized
-        BadOrigin
+        BadOrigin,
+        /// Locations can only be added in Registration Phase
+        RegistrationPhaseRequired,
     }
 }
 
