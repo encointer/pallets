@@ -27,22 +27,22 @@
 
 use log::{debug, info, trace, warn};
 
+use codec::{Decode, Encode};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
 	dispatch::DispatchResult,
 	ensure,
+	sp_std::cmp::min,
 	storage::{StorageDoubleMap, StorageMap},
 	traits::{Get, Randomness},
 };
 use frame_system::ensure_signed;
 
-use sp_std::{cmp::min, collections::btree_set::BTreeSet, prelude::*, vec};
-
-use codec::{Decode, Encode};
 use sp_runtime::{
 	traits::{CheckedSub, IdentifyAccount, Member, Verify},
 	SaturatedConversion,
 };
+use sp_std::{prelude::*, vec};
 
 use encointer_primitives::{
 	balances::BalanceType,
@@ -51,7 +51,6 @@ use encointer_primitives::{
 		*,
 	},
 	communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
-	random_permutation::RandomPermutation,
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
 };
@@ -81,18 +80,32 @@ decl_storage! {
 
 		// everyone who registered for a ceremony
 		// caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-		ParticipantRegistry get(fn participant_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
-		ParticipantIndex get(fn participant_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
-		ParticipantCount get(fn participant_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+		BootstrapperRegistry get(fn bootstrapper_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
+		BootstrapperIndex get(fn bootstrapper_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
+		BootstrapperCount get(fn bootstrapper_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+
+		ReputableRegistry get(fn reputable_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
+		ReputableIndex get(fn reputable_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
+		ReputableCount get(fn reputable_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+
+		EndorseeRegistry get(fn endorsee_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
+		EndorseeIndex get(fn endorsee_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
+		EndorseeCount get(fn endorsee_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+
+		NewbieRegistry get(fn newbie_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
+		NewbieIndex get(fn newbie_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
+		NewbieCount get(fn newbie_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+
+		AssignmentCounts get(fn assignment_counts): map hasher(blake2_128_concat) CommunityCeremony => AssignmentCount;
+
+		Assignments get(fn assignments): map hasher(blake2_128_concat) CommunityCeremony => Assignment;
+
 		ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
 		// newbies granted a ticket from a bootstrapper for the next ceremony. See https://substrate.dev/recipes/map-set.html for the rationale behind the double_map approach.
 		Endorsees get(fn endorsees): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ();
 		EndorseesCount get(fn endorsees_count): map hasher(blake2_128_concat) CommunityCeremony => u64;
 
-		// all meetups for each ceremony mapping to a vec of participants
-		// caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-		MeetupRegistry get(fn meetup_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) MeetupIndexType => Vec<T::AccountId>;
-		MeetupIndex get(fn meetup_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => MeetupIndexType;
+
 		MeetupCount get(fn meetup_count): map hasher(blake2_128_concat) CommunityCeremony => MeetupIndexType;
 
 		// collect fellow meetup participants accounts who attested key account
@@ -108,6 +121,8 @@ decl_storage! {
 		LocationTolerance get(fn location_tolerance) config(): u32;
 		// [ms] time tolerance for meetup moment
 		TimeTolerance get(fn time_tolerance) config(): T::Moment;
+
+		IssuedRewards get(fn issued_rewards): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) MeetupIndexType => ();
 	}
 }
 
@@ -137,15 +152,11 @@ decl_module! {
 
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
-			if <ParticipantIndex<T>>::contains_key((cid, cindex), &sender) {
+			if Self::is_registered(cid, cindex, &sender) {
 				return Err(<Error<T>>::ParticipantAlreadyRegistered.into());
 			}
 
-			let count = <ParticipantCount>::get((cid, cindex));
-
-			let new_count = count.checked_add(1).
-				ok_or("[EncointerCeremonies]: Overflow adding new participant to registry")?;
-			if let Some(p) = proof {
+			if let Some(p) = &proof {
 				// we accept proofs from other communities as well. no need to ensure cid
 				ensure!(sender == p.prover_public, Error::<T>::WrongProofSubject);
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
@@ -164,9 +175,8 @@ decl_module! {
 				<ParticipantReputation<T>>::insert((cid, cindex),
 					&sender, Reputation::UnverifiedReputable);
 			};
-			<ParticipantRegistry<T>>::insert((cid, cindex), &new_count, &sender);
-			<ParticipantIndex<T>>::insert((cid, cindex), &sender, &new_count);
-			<ParticipantCount>::insert((cid, cindex), new_count);
+
+			Self::register(cid, cindex, &sender, proof.is_some())?;
 
 			debug!(target: LOG, "registered participant: {:?}", sender);
 			Ok(())
@@ -183,17 +193,17 @@ decl_module! {
 			ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
 				Error::<T>::InexistentCommunity);
 
-			let meetup_index = Self::meetup_index((cid, cindex), &sender);
-			let mut meetup_participants = Self::meetup_registry((cid, cindex), &meetup_index);
+			let meetup_index = Self::get_meetup_index((cid, cindex), &sender)?;
+			let mut meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index);
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			meetup_participants.retain(|x| x != &sender);
 			let num_registered = meetup_participants.len();
 			ensure!(claims.len() <= num_registered, Error::<T>::TooManyClaims);
 			let mut verified_attestees = vec!();
 
-			let mlocation = if let Some(l) = Self::get_meetup_location(&cid, meetup_index)
+			let mlocation = if let Some(l) = Self::get_meetup_location((cid, cindex), meetup_index)
 				{ l } else { return Err(<Error<T>>::MeetupLocationNotFound.into()) };
-			let mtime = if let Some(t) = Self::get_meetup_time(&cid, meetup_index)
+			let mtime = if let Some(t) = Self::get_meetup_time((cid, cindex), meetup_index)
 				{ t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
 			debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
 				meetup_index, mlocation, mtime, cid);
@@ -308,6 +318,12 @@ decl_module! {
 			<EndorseesCount>::mutate((cid, cindex), |c| *c += 1);
 			Ok(())
 		}
+
+		#[weight = 10_000]
+		pub fn claim_rewards(origin, cid: CommunityIdentifier) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+			Self::issue_rewards(&sender, &cid)
+		}
 	}
 }
 
@@ -358,146 +374,446 @@ decl_error! {
 		NoMoreNewbieTickets,
 		/// newbie is already endorsed
 		AlreadyEndorsed,
+		/// Participant is not registered
+		ParticipantIsNotRegistered,
+		/// No locations are available for assigning participants
+		NoLocationsAvailable,
+		/// Trying to issue rewards in a phase that is not REGISTERING
+		WrongPhaseForClaimingRewards,
+		/// Trying to issue rewards for a meetup for which ubi was already issued
+		RewardsAlreadyIssued,
+		/// Trying to claim UBI for a meetup where votes are not dependable
+		VotesNotDependable,
+		/// Overflow adding user to registry
+		RegistryOverflow,
 	}
 }
 
+fn ceil_division(dividend: u64, divisor: u64) -> u64 {
+	(dividend + divisor - 1) / divisor
+}
+
 impl<T: Config> Module<T> {
+	fn register(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		sender: &T::AccountId,
+		is_reputable: bool,
+	) -> Result<(), Error<T>> {
+		if <encointer_communities::Module<T>>::bootstrappers(cid).contains(&sender) {
+			let participant_index = <BootstrapperCount>::get((cid, cindex))
+				.checked_add(1)
+				.ok_or(Error::<T>::RegistryOverflow)?;
+			<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+			<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+			<BootstrapperCount>::insert((cid, cindex), participant_index);
+		} else if is_reputable {
+			let participant_index = <ReputableCount>::get((cid, cindex))
+				.checked_add(1)
+				.ok_or(Error::<T>::RegistryOverflow)?;
+			<ReputableRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+			<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+			<ReputableCount>::insert((cid, cindex), participant_index);
+		} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
+			let participant_index = <EndorseeCount>::get((cid, cindex))
+				.checked_add(1)
+				.ok_or(Error::<T>::RegistryOverflow)?;
+			<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+			<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+			<EndorseeCount>::insert((cid, cindex), participant_index);
+		} else {
+			let participant_index = <NewbieCount>::get((cid, cindex))
+				.checked_add(1)
+				.ok_or(Error::<T>::RegistryOverflow)?;
+			<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+			<NewbieIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+			<NewbieCount>::insert((cid, cindex), participant_index);
+		}
+		Ok(())
+	}
+
+	fn is_registered(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		sender: &T::AccountId,
+	) -> bool {
+		<BootstrapperIndex<T>>::contains_key((cid, cindex), &sender) ||
+			<ReputableIndex<T>>::contains_key((cid, cindex), &sender) ||
+			<EndorseeIndex<T>>::contains_key((cid, cindex), &sender) ||
+			<NewbieIndex<T>>::contains_key((cid, cindex), &sender)
+	}
+
 	fn purge_registry(cindex: CeremonyIndexType) {
 		let cids = <encointer_communities::Module<T>>::community_identifiers();
 		for cid in cids.iter() {
-			<ParticipantRegistry<T>>::remove_prefix((cid, cindex), None);
-			<ParticipantIndex<T>>::remove_prefix((cid, cindex), None);
-			<ParticipantCount>::insert((cid, cindex), 0);
+			<BootstrapperRegistry<T>>::remove_prefix((cid, cindex), None);
+			<BootstrapperIndex<T>>::remove_prefix((cid, cindex), None);
+			<BootstrapperCount>::insert((cid, cindex), 0);
+
+			<ReputableRegistry<T>>::remove_prefix((cid, cindex), None);
+			<ReputableIndex<T>>::remove_prefix((cid, cindex), None);
+			<ReputableCount>::insert((cid, cindex), 0);
+
+			<EndorseeRegistry<T>>::remove_prefix((cid, cindex), None);
+			<EndorseeIndex<T>>::remove_prefix((cid, cindex), None);
+			<EndorseeCount>::insert((cid, cindex), 0);
+
+			<NewbieRegistry<T>>::remove_prefix((cid, cindex), None);
+			<NewbieIndex<T>>::remove_prefix((cid, cindex), None);
+			<NewbieCount>::insert((cid, cindex), 0);
+
+			<AssignmentCounts>::insert((cid, cindex), AssignmentCount::default());
+
+			Assignments::remove((cid, cindex));
+
 			<Endorsees<T>>::remove_prefix((cid, cindex), None);
-			<MeetupRegistry<T>>::remove_prefix((cid, cindex), None);
-			<MeetupIndex<T>>::remove_prefix((cid, cindex), None);
 			<MeetupCount>::insert((cid, cindex), 0);
 			<AttestationRegistry<T>>::remove_prefix((cid, cindex), None);
 			<AttestationIndex<T>>::remove_prefix((cid, cindex), None);
 			<AttestationCount>::insert((cid, cindex), 0);
 			<MeetupParticipantCountVote<T>>::remove_prefix((cid, cindex), None);
+
+			<IssuedRewards>::remove_prefix((cid, cindex), None);
 		}
 		debug!(target: LOG, "purged registry for ceremony {}", cindex);
 	}
 
-	// this function is expensive, so it should later be processed off-chain within SubstraTEE-worker
-	// currently the complexity is O(n) where n is the number of registered participants
-	fn assign_meetups() {
-		let cids = <encointer_communities::Module<T>>::community_identifiers();
-		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+	fn generate_meetup_assignment_params(community_ceremony: CommunityCeremony) -> DispatchResult {
+		let meetup_multiplier = 10u64;
+		let assignment_count =
+			Self::create_assignment_count(community_ceremony, meetup_multiplier)?;
 
-		let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
-			// we don't need to pass a subject here, as this is only called once in a block.
-			// However, without subject this should be initialized outside the community loop, otherwise
-			// every community gets the same sequence of permutations if there are the same amount of
-			// people per category (bootstrappers, reputables, etc.).
-			T::RandomnessSource::random_seed().0,
+		let num_meetups =
+			ceil_division(assignment_count.get_number_of_participants(), meetup_multiplier);
+
+		Assignments::insert(
+			community_ceremony,
+			Assignment {
+				bootstrappers_reputables: Self::generate_assignment_function_params(
+					assignment_count.bootstrappers + assignment_count.reputables,
+					num_meetups,
+				),
+				endorsees: Self::generate_assignment_function_params(
+					assignment_count.endorsees,
+					num_meetups,
+				),
+				newbies: Self::generate_assignment_function_params(
+					assignment_count.newbies,
+					num_meetups,
+				),
+				locations: Self::generate_location_assignment_params(community_ceremony),
+			},
 		);
 
+		<AssignmentCounts>::insert(community_ceremony, assignment_count);
+		<MeetupCount>::insert(community_ceremony, num_meetups);
+		Ok(())
+	}
+
+	fn generate_location_assignment_params(
+		community_ceremony: CommunityCeremony,
+	) -> AssignmentParams {
+		let num_locations =
+			<encointer_communities::Module<T>>::get_locations(&community_ceremony.0).len() as u64;
+		AssignmentParams {
+			m: num_locations,
+			s1: Self::find_coprime_below(num_locations),
+			s2: Self::find_prime_below(num_locations),
+		}
+	}
+
+	fn find_coprime_below(upper_bound: u64) -> u64 {
+		if upper_bound > 1 {
+			return upper_bound - 1
+		} else {
+			return 0
+		}
+	}
+
+	fn create_assignment_count(
+		community_ceremony: CommunityCeremony,
+		meetup_multiplier: u64,
+	) -> Result<AssignmentCount, Error<T>> {
+		let num_locations =
+			<encointer_communities::Module<T>>::get_locations(&community_ceremony.0).len() as u64;
+		if num_locations == 0 {
+			return Err(<Error<T>>::NoLocationsAvailable.into())
+		}
+
+		let num_assigned_bootstrappers = Self::bootstrapper_count(community_ceremony);
+		let num_reputables = Self::reputable_count(community_ceremony);
+		let max_num_meetups =
+			min(num_locations, Self::find_prime_below(num_assigned_bootstrappers + num_reputables));
+
+		let mut available_slots = max_num_meetups * meetup_multiplier - num_assigned_bootstrappers;
+
+		let num_assigned_reputables = min(num_reputables, available_slots);
+		available_slots -= num_assigned_reputables;
+
+		let num_assigned_endorsees = min(Self::endorsee_count(community_ceremony), available_slots);
+		available_slots -= num_assigned_endorsees;
+
+		let num_assigned_newbies = min(
+			min(Self::newbie_count(community_ceremony), available_slots),
+			(num_assigned_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3,
+		);
+
+		Ok(AssignmentCount {
+			bootstrappers: num_assigned_bootstrappers,
+			reputables: num_assigned_reputables,
+			endorsees: num_assigned_endorsees,
+			newbies: num_assigned_newbies,
+		})
+	}
+
+	fn generate_all_meetup_assignment_params() -> DispatchResult {
+		let cids = <encointer_communities::Module<T>>::community_identifiers();
+		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 		for cid in cids.iter() {
-			let pcount = <ParticipantCount>::get((cid, cindex));
-			let ecount = <EndorseesCount>::get((cid, cindex));
+			Self::generate_meetup_assignment_params((*cid, cindex)).ok();
+		}
+		Ok(())
+	}
 
-			let n_locations = <encointer_communities::Module<T>>::get_locations(cid).len();
-
-			let mut bootstrappers =
-				Vec::with_capacity(<encointer_communities::Module<T>>::bootstrappers(cid).len());
-			let mut reputables = Vec::with_capacity(pcount as usize);
-			let mut endorsees = Vec::with_capacity(ecount as usize);
-			let mut newbies = Vec::with_capacity(pcount as usize);
-
-			// TODO: upfront random permutation
-			for p in 1..=pcount {
-				let participant = <ParticipantRegistry<T>>::get((cid, cindex), &p);
-				if Self::participant_reputation((cid, cindex), &participant) ==
-					Reputation::UnverifiedReputable
-				{
-					reputables.push(participant);
-				} else if <encointer_communities::Module<T>>::bootstrappers(cid)
-					.contains(&participant)
-				{
-					bootstrappers.push(participant);
-				} else if <Endorsees<T>>::contains_key((cid, cindex), &participant) {
-					endorsees.push(participant)
-				} else {
-					newbies.push(participant);
-				}
+	fn is_prime(n: u64) -> bool {
+		if n <= 3 {
+			return n > 1
+		}
+		if n % 2 == 0 || n % 3 == 0 {
+			return false
+		}
+		if n < 25 {
+			return true
+		}
+		let mut i: u64 = 5;
+		while i.pow(2) <= n {
+			if n % i == 0u64 || n % (i + 2u64) == 0u64 {
+				return false
 			}
+			i += 6u64;
+		}
+		return true
+	}
 
-			// n == amount of valid registrations that fit into the meetups
-			let mut n = bootstrappers.len() + reputables.len();
-			n += min(newbies.len(), n / 2);
-			n += endorsees.len();
+	fn find_prime_below(mut n: u64) -> u64 {
+		if n <= 2 {
+			return 2u64
+		}
+		if n % 2 == 0 {
+			n -= 1;
+		}
+		while n > 0 {
+			if Self::is_prime(n) {
+				return n
+			}
+			n -= 2;
+		}
+		2u64
+	}
 
-			if n < 3 {
-				debug!(target: LOG, "no meetups assigned for cid {:?}", cid);
+	fn mod_inv(a: i64, module: i64) -> i64 {
+		let mut mn = (module, a);
+		let mut xy = (0, 1);
+
+		while mn.1 != 0 {
+			xy = (xy.1, xy.0 - (mn.0 / mn.1) * xy.1);
+			mn = (mn.1, mn.0 % mn.1);
+		}
+
+		while xy.0 < 0 {
+			xy.0 += module;
+		}
+		xy.0
+	}
+
+	fn validate_equal_mapping(
+		num_participants: u64,
+		assignment_params: AssignmentParams,
+		n: u64,
+	) -> bool {
+		if num_participants < 2 {
+			return true
+		}
+
+		let mut meetup_index_count: Vec<u64> = vec![0; n as usize];
+		let meetup_index_count_max = ceil_division(num_participants - assignment_params.m, n);
+		for i in assignment_params.m..num_participants {
+			let meetup_index = Self::assignment_fn(i, assignment_params, n);
+			meetup_index_count[meetup_index as usize] += 1;
+			if meetup_index_count[meetup_index as usize] > meetup_index_count_max {
+				return false
+			}
+		}
+		true
+	}
+
+	fn get_random_nonzero_group_element(m: u64) -> u64 {
+		let mut random_source =
+			RandomNumberGenerator::<T::Hashing>::new(T::RandomnessSource::random_seed().0);
+
+		// random number in [1, m-1]
+		(random_source.pick_usize((m - 2) as usize) + 1) as u64
+	}
+
+	fn generate_assignment_function_params(
+		num_participants: u64,
+		num_meetups: u64,
+	) -> AssignmentParams {
+		let max_skips = 200;
+		let m = Self::find_prime_below(num_participants);
+		let mut skip_count = 0;
+		let mut s1 = Self::get_random_nonzero_group_element(m);
+		let mut s2 = Self::get_random_nonzero_group_element(m);
+
+		while skip_count <= max_skips {
+			s1 = Self::get_random_nonzero_group_element(m);
+			s2 = Self::get_random_nonzero_group_element(m);
+			if Self::validate_equal_mapping(
+				num_participants,
+				AssignmentParams { m, s1, s2 },
+				num_meetups,
+			) {
+				break
+			} else {
+				skip_count += 1;
+			}
+		}
+		return AssignmentParams { m, s1, s2 }
+	}
+
+	fn assignment_fn_inverse(
+		meetup_index: u64,
+		assignment_params: AssignmentParams,
+		n: u64,
+		num_participants: u64,
+	) -> Vec<ParticipantIndexType> {
+		let mut result: Vec<ParticipantIndexType> = vec![];
+		let mut max_index = (assignment_params.m as i64 - meetup_index as i64) / n as i64;
+		// ceil
+		if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(n as i64) != 0 {
+			max_index += 1;
+		}
+
+		for i in 0..max_index {
+			let t1 = (n as i64 * i as i64 + meetup_index as i64 - assignment_params.s2 as i64)
+				.rem_euclid(assignment_params.m as i64);
+			let t2 = Self::mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
+			let t3 = (t1 * t2).rem_euclid(assignment_params.m as i64);
+			if t3 >= num_participants as i64 {
 				continue
 			}
-
-			// ensure that every meetup has at least one experienced participant
-			n = min(n, (bootstrappers.len() + reputables.len()) * 12);
-
-			// capping the amount a participants prevents assigning more meetups than there are locations.
-			if n > n_locations * 12 {
-				warn!(target: LOG, "Meetup Locations exhausted for cid: {:?}", cid);
-				n = n_locations * 12;
+			result.push(t3 as u64);
+			if t3 < num_participants as i64 - assignment_params.m as i64 {
+				result.push(t3 as u64 + assignment_params.m)
 			}
+		}
+		result
+	}
 
-			// if we don't need the results immediately, chaining iterators is the fastest to
-			// concatenate `vec`s. If we need to collect, it is the slowest.
-			let all_participants = bootstrappers
-				.into_iter()
-				.chain(
-					reputables
-						.random_permutation(&mut random_source)
-						.unwrap_or_default()
-						.into_iter(),
-				)
-				.chain(
-					endorsees
-						.random_permutation(&mut random_source)
-						.unwrap_or_default()
-						.into_iter(),
-				)
-				.chain(
-					newbies.random_permutation(&mut random_source).unwrap_or_default().into_iter(),
-				);
+	fn assignment_fn(
+		participant_index: ParticipantIndexType,
+		assignment_params: AssignmentParams,
+		n: u64,
+	) -> MeetupIndexType {
+		((participant_index * assignment_params.s1 + assignment_params.s2) % assignment_params.m) %
+			n
+	}
 
-			let mut n_meetups = n / 12;
-			if n.rem_euclid(12) > 0 {
-				n_meetups += 1;
+	fn get_meetup_index(
+		community_ceremony: CommunityCeremony,
+		participant: &T::AccountId,
+	) -> Result<MeetupIndexType, Error<T>> {
+		let meetup_count = Self::meetup_count(community_ceremony);
+
+		let assignment = Self::assignments(community_ceremony);
+
+		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
+			let participant_index = Self::bootstrapper_index(community_ceremony, &participant) - 1;
+			return Ok(Self::assignment_fn(
+				participant_index,
+				assignment.bootstrappers_reputables,
+				meetup_count,
+			) + 1)
+		}
+		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
+			let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
+			return Ok(Self::assignment_fn(
+				participant_index + Self::assignment_counts(community_ceremony).bootstrappers,
+				assignment.bootstrappers_reputables,
+				meetup_count,
+			) + 1)
+		}
+
+		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
+			let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
+			return Ok(Self::assignment_fn(participant_index, assignment.endorsees, meetup_count) + 1)
+		}
+
+		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
+			let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
+			return Ok(Self::assignment_fn(participant_index, assignment.newbies, meetup_count) + 1)
+		}
+		Err(<Error<T>>::ParticipantIsNotRegistered.into())
+	}
+
+	fn get_meetup_participants(
+		community_ceremony: CommunityCeremony,
+		mut meetup_index: MeetupIndexType,
+	) -> Vec<T::AccountId> {
+		let mut result: Vec<T::AccountId> = vec![];
+		let meetup_count = Self::meetup_count(community_ceremony);
+
+		// meetup index conversion from 1 based to 0 based
+		meetup_index -= 1;
+		assert!(meetup_index < meetup_count);
+
+		let params = Self::assignments(community_ceremony);
+
+		let assigned = Self::assignment_counts(community_ceremony);
+
+		let bootstrappers_reputables = Self::assignment_fn_inverse(
+			meetup_index,
+			params.bootstrappers_reputables,
+			meetup_count,
+			assigned.bootstrappers + assigned.reputables,
+		);
+		for p in bootstrappers_reputables {
+			if p < assigned.bootstrappers {
+				result.push(Self::bootstrapper_registry(community_ceremony, &(p + 1)));
+			} else if p < assigned.bootstrappers + assigned.reputables {
+				result.push(Self::reputable_registry(
+					community_ceremony,
+					&(p - assigned.bootstrappers + 1),
+				));
 			}
+		}
 
-			let mut meetups = Vec::with_capacity(n_meetups);
-			for _i in 0..n_meetups {
-				meetups.push(Vec::with_capacity(12))
+		let endorsees = Self::assignment_fn_inverse(
+			meetup_index,
+			params.endorsees,
+			meetup_count,
+			assigned.endorsees,
+		);
+		for p in endorsees {
+			if p < assigned.endorsees {
+				result.push(Self::endorsee_registry(community_ceremony, &(p + 1)));
 			}
+		}
 
-			// fill meetup slots one by one in this order: bootstrappers, reputables, endorsees, newbies
-			for (i, p) in all_participants.take(n).enumerate() {
-				meetups[i % n_meetups].push(p);
+		let newbies = Self::assignment_fn_inverse(
+			meetup_index,
+			params.newbies,
+			meetup_count,
+			assigned.newbies,
+		);
+		for p in newbies {
+			if p < assigned.newbies {
+				result.push(Self::newbie_registry(community_ceremony, &(p + 1)));
 			}
+		}
 
-            if !meetups.is_empty() {
-                // commit result to state
-                <MeetupCount>::insert((cid, cindex), n_meetups as MeetupIndexType);
-                for (i, m) in meetups.iter().enumerate() {
-                    let _idx = (i + 1) as MeetupIndexType;
-                    for p in meetups[i].iter() {
-                        <MeetupIndex<T>>::insert((cid, cindex), p, &_idx);
-                    }
-                    <MeetupRegistry<T>>::insert((cid, cindex), &_idx, m.clone());
-                }
-            };
-            debug!(
-                target: LOG,
-                "assigned {} meetups for cid {:?}",
-                meetups.len(),
-                cid
-            );
-        }
-        debug!(target: LOG, "meetup assignments done");
-    }
+		return result
+	}
 
 	fn verify_attendee_signature(
 		proof: ProofOfAttendance<T::Signature, T::AccountId>,
@@ -511,155 +827,146 @@ impl<T: Config> Module<T> {
 		}
 	}
 
-    // this function takes O(n) for n meetups, so it should later be processed off-chain within
-    // SubstraTEE-worker together with the entire registry
-    // as this function can only be called by the ceremony state machine, it could actually work out fine
-    // on-chain. It would just delay the next block once per ceremony cycle.
-    fn issue_rewards() {
-        if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
-            return;
-        }
-        let cids = <encointer_communities::Module<T>>::community_identifiers();
-        for cid in cids.iter() {
-            let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
-            let meetup_count = Self::meetup_count((cid, cindex));
-            let reward = Self::nominal_income(cid);
+	fn issue_rewards(participant: &T::AccountId, cid: &CommunityIdentifier) -> DispatchResult {
+		if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
+		}
 
-            for m in 1..=meetup_count {
-                // first, evaluate votes on how many participants showed up
-                let (n_confirmed, n_honest_participants) =
-                    match Self::ballot_meetup_n_votes(cid, cindex, m) {
-                        Some(nn) => nn,
-                        _ => {
-                            warn!(
-                                target: LOG,
-                                "ignoring meetup {} because votes are not dependable",
-                                m
-                            );
-                            continue;
-                        }
-                    };
-                let meetup_participants = Self::meetup_registry((cid, cindex), &m);
-                for p in &meetup_participants {
-                    if Self::meetup_participant_count_vote((cid, cindex), &p) != n_confirmed {
-                        debug!(
-                            target: LOG,
-                            "skipped participant because of wrong participant count vote: {:?}",
-                            p
-                        );
-                        continue;
-                    }
-                    let attestees = Self::attestation_registry(
-                        (cid, cindex),
-                        &Self::attestation_index((cid, cindex), &p),
-                    );
-                    if attestees.len() < (n_honest_participants - 1) as usize {
-                        debug!(
-                            target: LOG,
-                            "skipped participant because didn't testify for honest peers: {:?}",
-                            p
-                        );
-                        continue;
-                    }
+		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
+		let reward = Self::nominal_income(cid);
+		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)?;
 
-					let mut was_attested_count = 0u32;
-					for other_participant in &meetup_participants {
-						if other_participant == p {
-							continue
-						}
-						let attestees_from_other = Self::attestation_registry(
-							(cid, cindex),
-							&Self::attestation_index((cid, cindex), &other_participant),
-						);
-						if attestees_from_other.contains(&p) {
-							was_attested_count += 1;
-						}
-					}
+		if <IssuedRewards>::contains_key((cid, cindex), meetup_index) {
+			return Err(<Error<T>>::RewardsAlreadyIssued.into())
+		}
 
-					if was_attested_count < (n_honest_participants - 1) {
-						debug!(
-							"skipped participant because of too few attestations ({}): {:?}",
-							was_attested_count, p
-						);
-						continue
-					}
+		// first, evaluate votes on how many participants showed up
+		let (n_confirmed, n_honest_participants) =
+			match Self::ballot_meetup_n_votes(cid, cindex, meetup_index) {
+				Some(nn) => nn,
+				_ => return Err(<Error<T>>::VotesNotDependable.into()),
+			};
+		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index);
+		for participant in &meetup_participants {
+			if Self::meetup_participant_count_vote((cid, cindex), &participant) != n_confirmed {
+				debug!(
+					target: LOG,
+					"skipped participant because of wrong participant count vote: {:?}",
+					participant
+				);
+				continue
+			}
+			let attestees = Self::attestation_registry(
+				(cid, cindex),
+				&Self::attestation_index((*cid, cindex), &participant),
+			);
+			if attestees.len() < (n_honest_participants - 1) as usize {
+				debug!(
+					target: LOG,
+					"skipped participant because didn't testify for honest peers: {:?}",
+					participant
+				);
+				continue
+			}
 
-					trace!(target: LOG, "participant merits reward: {:?}", p);
-					if <encointer_balances::Module<T>>::issue(*cid, &p, reward).is_ok() {
-						<ParticipantReputation<T>>::insert(
-							(cid, cindex),
-							&p,
-							Reputation::VerifiedUnlinked,
-						);
-					}
+			let mut was_attested_count = 0u32;
+			for other_participant in &meetup_participants {
+				if other_participant == participant {
+					continue
+				}
+				let attestees_from_other = Self::attestation_registry(
+					(cid, cindex),
+					&Self::attestation_index((cid, cindex), &other_participant),
+				);
+				if attestees_from_other.contains(&participant) {
+					was_attested_count += 1;
 				}
 			}
+
+			if was_attested_count < (n_honest_participants - 1) {
+				debug!(
+					"skipped participant because of too few attestations ({}): {:?}",
+					was_attested_count, participant
+				);
+				continue
+			}
+
+			trace!(target: LOG, "participant merits reward: {:?}", participant);
+			if <encointer_balances::Module<T>>::issue(*cid, &participant, reward).is_ok() {
+				<ParticipantReputation<T>>::insert(
+					(cid, cindex),
+					&participant,
+					Reputation::VerifiedUnlinked,
+				);
+			}
 		}
+		<IssuedRewards>::insert((cid, cindex), meetup_index, ());
 		info!(target: LOG, "issuing rewards completed");
+		Ok(())
 	}
 
-    fn ballot_meetup_n_votes(
-        cid: &CommunityIdentifier,
-        cindex: CeremonyIndexType,
-        meetup_idx: MeetupIndexType,
-    ) -> Option<(u32, u32)> {
-        let meetup_participants = Self::meetup_registry((cid, cindex), &meetup_idx);
-        // first element is n, second the count of votes for n
-        let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
-        for p in meetup_participants {
-            let this_vote = match Self::meetup_participant_count_vote((cid, cindex), &p) {
-                n if n > 0 => n,
-                _ => continue,
-            };
-            match n_vote_candidates.iter().position(|&(n, _c)| n == this_vote) {
-                Some(idx) => n_vote_candidates[idx].1 += 1,
-                _ => n_vote_candidates.insert(0, (this_vote, 1)),
-            };
-        }
-        if n_vote_candidates.is_empty() {
-            return None;
-        }
-        // sort by descending vote count
-        n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
-        if n_vote_candidates[0].1 < 3 {
-            return None;
-        }
-        Some(n_vote_candidates[0])
-    }
+	fn ballot_meetup_n_votes(
+		cid: &CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		meetup_idx: MeetupIndexType,
+	) -> Option<(u32, u32)> {
+		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_idx);
+		// first element is n, second the count of votes for n
+		let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
+		for p in meetup_participants {
+			let this_vote = match Self::meetup_participant_count_vote((cid, cindex), &p) {
+				n if n > 0 => n,
+				_ => continue,
+			};
+			match n_vote_candidates.iter().position(|&(n, _c)| n == this_vote) {
+				Some(idx) => n_vote_candidates[idx].1 += 1,
+				_ => n_vote_candidates.insert(0, (this_vote, 1)),
+			};
+		}
+		if n_vote_candidates.is_empty() {
+			return None
+		}
+		// sort by descending vote count
+		n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
+		if n_vote_candidates[0].1 < 3 {
+			return None
+		}
+		Some(n_vote_candidates[0])
+	}
 
-    pub fn get_meetup_location(
-        cid: &CommunityIdentifier,
-        meetup_idx: MeetupIndexType,
-    ) -> Option<Location> {
-        let locations = <encointer_communities::Module<T>>::get_locations(cid);
-        if (meetup_idx > 0) && (meetup_idx <= locations.len() as MeetupIndexType) {
-            Some(locations[(meetup_idx - 1) as usize])
-        } else {
-            None
-        }
-    }
+	pub fn get_meetup_location(
+		cc: CommunityCeremony,
+		meetup_idx: MeetupIndexType,
+	) -> Option<Location> {
+		let locations = <encointer_communities::Module<T>>::get_locations(&cc.0);
+		let assignment_params = Self::assignments(cc).locations;
+		let location_idx =
+			Self::assignment_fn(meetup_idx, assignment_params, locations.len() as u64);
+		if (location_idx >= 0) && (location_idx < locations.len() as u64) {
+			Some(locations[(location_idx) as usize])
+		} else {
+			None
+		}
+	}
 
-    // this function only works during ATTESTING, so we're keeping it for private use
-    fn get_meetup_time(
-        cid: &CommunityIdentifier,
-        meetup_idx: MeetupIndexType,
-    ) -> Option<T::Moment> {
-        if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
-            return None;
-        }
-        if meetup_idx == 0 {
-            return None;
-        }
-        let duration =
-            <encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
-        let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
-        let mlocation = Self::get_meetup_location(&cid, meetup_idx)?;
-        let day = T::MomentsPerDay::get();
-        let perdegree = day / T::Moment::from(360u32);
-        let start = next - duration;
-        // rounding to the lower integer degree. Max error: 240s = 4min
-        let abs_lon: u32 = i64::lossy_from(mlocation.lon.abs()).saturated_into();
-        let abs_lon_time = T::Moment::from(abs_lon) * perdegree;
+	// this function only works during ATTESTING, so we're keeping it for private use
+	fn get_meetup_time(cc: CommunityCeremony, meetup_idx: MeetupIndexType) -> Option<T::Moment> {
+		if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
+			return None
+		}
+		if meetup_idx == 0 {
+			return None
+		}
+		let duration =
+			<encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
+		let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
+		let mlocation = Self::get_meetup_location(cc, meetup_idx)?;
+		let day = T::MomentsPerDay::get();
+		let perdegree = day / T::Moment::from(360u32);
+		let start = next - duration;
+		// rounding to the lower integer degree. Max error: 240s = 4min
+		let abs_lon: u32 = i64::lossy_from(mlocation.lon.abs()).saturated_into();
+		let abs_lon_time = T::Moment::from(abs_lon) * perdegree;
 
 		if mlocation.lon < Degree::from_num(0) {
 			Some(start + day / T::Moment::from(2u32) + abs_lon_time)
@@ -686,13 +993,15 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::ASSIGNING => {
-				Self::assign_meetups();
+				Self::generate_all_meetup_assignment_params().ok();
 			},
 			CeremonyPhaseType::ATTESTING => {},
 			CeremonyPhaseType::REGISTERING => {
-				Self::issue_rewards();
 				let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-				Self::purge_registry(cindex - 1);
+				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
+				if cindex > 2 {
+					Self::purge_registry(cindex - 2);
+				}
 			},
 		}
 	}

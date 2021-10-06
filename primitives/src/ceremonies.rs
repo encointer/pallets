@@ -222,3 +222,48 @@ mod tests {
 		assert!(claim.verify_signature())
 	}
 }
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, Default)]
+pub struct AssignmentCount {
+	pub bootstrappers: ParticipantIndexType,
+	pub reputables: ParticipantIndexType,
+	pub endorsees: ParticipantIndexType,
+	pub newbies: ParticipantIndexType,
+}
+
+impl AssignmentCount {
+	pub fn get_number_of_participants(&self) -> u64 {
+		self.bootstrappers + self.reputables + self.endorsees + self.newbies
+	}
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct Assignment {
+	pub bootstrappers_reputables: AssignmentParams,
+	pub endorsees: AssignmentParams,
+	pub newbies: AssignmentParams,
+	pub locations: AssignmentParams,
+}
+
+impl Default for Assignment {
+	fn default() -> Self {
+		Assignment {
+			bootstrappers_reputables: AssignmentParams::default(),
+			endorsees: AssignmentParams::default(),
+			newbies: AssignmentParams::default(),
+			locations: AssignmentParams::default(),
+		}
+	}
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct AssignmentParams {
+	pub m: u64,
+	pub s1: u64,
+	pub s2: u64,
+}
+impl Default for AssignmentParams {
+	fn default() -> Self {
+		AssignmentParams { m: 0, s1: 0, s2: 0 }
+	}
+}
