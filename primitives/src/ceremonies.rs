@@ -214,3 +214,19 @@ mod tests {
         assert!(claim.verify_signature())
     }
 }
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
+pub struct AssignmentParams {
+    pub m: u64,
+    pub s1: u64,
+    pub s2: u64
+}
+impl Default for AssignmentParams {
+    fn default() -> Self {
+        AssignmentParams{
+            m: 0,
+            s1: 0,
+            s2: 0
+        }
+    }
+}

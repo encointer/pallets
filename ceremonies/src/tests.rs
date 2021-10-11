@@ -1485,26 +1485,35 @@ fn get_assignment_params_works() {
         let cid = perform_bootstrapping_ceremony(None, 1);
         let cindex = EncointerScheduler::current_ceremony_index();
 
-        assert_eq!(EncointerCeremonies::m_bootstrappers_reputables((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::s1_bootstrappers_reputables((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::s2_bootstrappers_reputables((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::m_endorsees((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::s1_endorsees((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::s2_endorsees((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::m_newbies((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::s1_newbies((cid, cindex)), 0);
-        assert_eq!(EncointerCeremonies::s2_newbies((cid, cindex)), 0);
+        let assignment_params_bootstrappers_reputables = EncointerCeremonies::assignment_params_bootstrappers_reputables((cid, cindex));
+        let assignment_params_endrosees = EncointerCeremonies::assignment_params_endorsees((cid, cindex));
+        let assignment_params_newbies = EncointerCeremonies::assignment_params_newbies((cid, cindex));
+
+        assert_eq!(assignment_params_bootstrappers_reputables.m, 0);
+        assert_eq!(assignment_params_bootstrappers_reputables.s1, 0);
+        assert_eq!(assignment_params_bootstrappers_reputables.s2, 0);
+        assert_eq!(assignment_params_endrosees.m, 0);
+        assert_eq!(assignment_params_endrosees.s1, 0);
+        assert_eq!(assignment_params_endrosees.s2, 0);
+        assert_eq!(assignment_params_newbies.m, 0);
+        assert_eq!(assignment_params_newbies.s1, 0);
+        assert_eq!(assignment_params_newbies.s2, 0);
 
         run_to_next_phase();
-        assert!(EncointerCeremonies::m_bootstrappers_reputables((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s1_bootstrappers_reputables((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s2_bootstrappers_reputables((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::m_endorsees((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s1_endorsees((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s2_endorsees((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::m_newbies((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s1_newbies((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s2_newbies((cid, cindex)) > 0);
+
+        let assignment_params_bootstrappers_reputables = EncointerCeremonies::assignment_params_bootstrappers_reputables((cid, cindex));
+        let assignment_params_endrosees = EncointerCeremonies::assignment_params_endorsees((cid, cindex));
+        let assignment_params_newbies = EncointerCeremonies::assignment_params_newbies((cid, cindex));
+
+        assert!(assignment_params_bootstrappers_reputables.m >  0);
+        assert!(assignment_params_bootstrappers_reputables.s1 > 0);
+        assert!(assignment_params_bootstrappers_reputables.s2 > 0);
+        assert!(assignment_params_endrosees.m > 0);
+        assert!(assignment_params_endrosees.s1 > 0);
+        assert!(assignment_params_endrosees.s2 > 0);
+        assert!(assignment_params_newbies.m > 0);
+        assert!(assignment_params_newbies.s1 > 0);
+        assert!(assignment_params_newbies.s2 > 0);
 
 
     });
@@ -1590,17 +1599,27 @@ fn get_meetup_index_works() {
         EndorseeIndex::<TestRuntime>::insert((cid, cindex), p3.clone(), 3);
         NewbieIndex::<TestRuntime>::insert((cid, cindex), p4.clone(), 4);
 
-        <S1BootstrappersReputables>::insert((cid, cindex), 1);
-        <S2BootstrappersReputables>::insert((cid, cindex), 1);
-        <MBootstrappersReputables>::insert((cid, cindex), 2);
+        let assignment_params_bootstrappers_reputables = AssignmentParams {
+            m: 2,
+            s1: 1,
+            s2: 1,
+        };
 
-        <S1Endorsees>::insert((cid, cindex), 2);
-        <S2Endorsees>::insert((cid, cindex), 3);
-        <MEndorsees>::insert((cid, cindex), 5);
+        let assignment_params_endorsees = AssignmentParams {
+            m: 5,
+            s1: 2,
+            s2: 3,
+        };
 
-        <S1Newbies>::insert((cid, cindex), 2);
-        <S2Newbies>::insert((cid, cindex), 3);
-        <MNewbies>::insert((cid, cindex), 5);
+        let assignment_params_newbies = AssignmentParams {
+            m: 5,
+            s1: 2,
+            s2: 3,
+        };
+
+        AssignmentParamsBootstrappersReputables::insert((cid, cindex), assignment_params_bootstrappers_reputables);
+        AssignmentParamsEndorsees::insert((cid, cindex), assignment_params_endorsees);
+        AssignmentParamsNewbies::insert((cid, cindex), assignment_params_newbies);
 
         assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p1).unwrap(), 1);
         assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p2).unwrap(), 0);
@@ -1644,17 +1663,29 @@ fn get_meetup_participants_works() {
 
         MeetupCount::insert((cid, cindex), 2);
 
-        <S1BootstrappersReputables>::insert((cid, cindex), 2);
-        <S2BootstrappersReputables>::insert((cid, cindex), 3);
-        <MBootstrappersReputables>::insert((cid, cindex), 5);
+        let assignment_params_bootstrappers_reputables = AssignmentParams {
+            m: 5,
+            s1: 2,
+            s2: 3,
+        };
 
-        <S1Endorsees>::insert((cid, cindex), 2);
-        <S2Endorsees>::insert((cid, cindex), 1);
-        <MEndorsees>::insert((cid, cindex), 3);
+        let assignment_params_endorsees = AssignmentParams {
+            m: 3,
+            s1: 2,
+            s2: 1,
+        };
 
-        <S1Newbies>::insert((cid, cindex), 1);
-        <S2Newbies>::insert((cid, cindex), 2);
-        <MNewbies>::insert((cid, cindex), 3);
+        let assignment_params_newbies = AssignmentParams {
+            m: 3,
+            s1: 1,
+            s2: 2,
+        };
+
+        AssignmentParamsBootstrappersReputables::insert((cid, cindex), assignment_params_bootstrappers_reputables);
+        AssignmentParamsEndorsees::insert((cid, cindex), assignment_params_endorsees);
+        AssignmentParamsNewbies::insert((cid, cindex), assignment_params_newbies);
+
+
 
         let mut m0_expected_participants = [participants[1].clone(), participants[2].clone(), participants[3].clone(), participants[7].clone(), participants[8].clone(), participants[9].clone(), participants[10].clone()];
         let mut m1_expected_participants = [participants[0].clone(), participants[4].clone(), participants[5].clone(), participants[6].clone(), participants[11].clone()];
@@ -1691,22 +1722,26 @@ fn generate_meetup_assignment_params_works(n_locations: u64, n_bootstrappers: u6
         assert_eq!(EncointerCeremonies::assigned_endorsee_count((cid, cindex)), exp_n_assigned_endorsees);
         assert_eq!(EncointerCeremonies::assigned_newbie_count((cid, cindex)), exp_n_assigned_newbies);
 
-        assert_eq!(EncointerCeremonies::m_bootstrappers_reputables((cid, cindex)), exp_m_bootstrappers_reputables);
-        assert!(EncointerCeremonies::s1_bootstrappers_reputables((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s1_bootstrappers_reputables((cid, cindex)) < exp_m_bootstrappers_reputables);
-        assert!(EncointerCeremonies::s2_bootstrappers_reputables((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s2_bootstrappers_reputables((cid, cindex)) < exp_m_bootstrappers_reputables);
+        let assignment_params_bootstrappers_reputables = EncointerCeremonies::assignment_params_bootstrappers_reputables((cid, cindex));
+        let assignment_params_endrosees = EncointerCeremonies::assignment_params_endorsees((cid, cindex));
+        let assignment_params_newbies = EncointerCeremonies::assignment_params_newbies((cid, cindex));
 
-        assert_eq!(EncointerCeremonies::m_endorsees((cid, cindex)), exp_m_endorsees);
-        assert!(EncointerCeremonies::s1_endorsees((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s1_endorsees((cid, cindex)) < exp_m_endorsees);
-        assert!(EncointerCeremonies::s2_endorsees((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s2_endorsees((cid, cindex)) < exp_m_endorsees);
+        assert_eq!(assignment_params_bootstrappers_reputables.m, exp_m_bootstrappers_reputables);
+        assert!(assignment_params_bootstrappers_reputables.s1 > 0);
+        assert!(assignment_params_bootstrappers_reputables.s1 < exp_m_bootstrappers_reputables);
+        assert!(assignment_params_bootstrappers_reputables.s2 > 0);
+        assert!(assignment_params_bootstrappers_reputables.s2 < exp_m_bootstrappers_reputables);
 
-        assert_eq!(EncointerCeremonies::m_newbies((cid, cindex)), exp_m_newbies);
-        assert!(EncointerCeremonies::s1_newbies((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s1_newbies((cid, cindex)) < exp_m_newbies);
-        assert!(EncointerCeremonies::s2_newbies((cid, cindex)) > 0);
-        assert!(EncointerCeremonies::s2_newbies((cid, cindex)) < exp_m_newbies);
+        assert_eq!(assignment_params_endrosees.m, exp_m_endorsees);
+        assert!(assignment_params_endrosees.s1 > 0);
+        assert!(assignment_params_endrosees.s1 < exp_m_endorsees);
+        assert!(assignment_params_endrosees.s2 > 0);
+        assert!(assignment_params_endrosees.s2 < exp_m_endorsees);
+
+        assert_eq!(assignment_params_newbies.m, exp_m_newbies);
+        assert!(assignment_params_newbies.s1 > 0);
+        assert!(assignment_params_newbies.s1 < exp_m_newbies);
+        assert!(assignment_params_newbies.s2 > 0);
+        assert!(assignment_params_newbies.s2 < exp_m_newbies);
     });
 }
