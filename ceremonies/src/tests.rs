@@ -255,12 +255,12 @@ fn perform_bootstrapping_ceremony(
     run_to_next_phase();
     // ATTESTING
     let loc = EncointerCommunities::get_locations(&cid)[0];
-    let time = correct_meetup_time(&cid, 0);
+    let time = correct_meetup_time(&cid, 1);
 
     for i in 0..bootstrappers.len() {
         let mut bs = bootstrappers.clone();
         let claimant = bs.remove(i);
-        attest_all(account_id(&claimant), &bs.iter().collect(), cid, cindex, 0, loc, time, 6);
+        attest_all(account_id(&claimant), &bs.iter().collect(), cid, cindex, 1, loc, time, 6);
     }
     run_to_next_phase();
     // REGISTERING
@@ -287,7 +287,7 @@ fn fully_attest_meetup(
                 }
             }
         }
-        let loc  = EncointerCommunities::get_locations(&cid)[(mindex) as usize];
+        let loc  = EncointerCommunities::get_locations(&cid)[(mindex - 1) as usize];
         let time = correct_meetup_time(&cid, mindex);
 
         attest_all(
@@ -456,16 +456,16 @@ fn attest_claims_works() {
         // ATTESTING
         assert_eq!(
             EncointerCeremonies::get_meetup_index((cid, cindex), &account_id(&alice)).unwrap(),
-            0
+            1
         );
         let loc = Location::default();
-        let time = correct_meetup_time(&cid, 0);
+        let time = correct_meetup_time(&cid, 1);
         attest_all(
             account_id(&alice),
             &vec![&bob, &ferdie],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             3,
@@ -475,7 +475,7 @@ fn attest_claims_works() {
             &vec![&alice, &ferdie],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             3,
@@ -497,7 +497,7 @@ fn attest_claims_works() {
             &vec![&bob, &ferdie],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             3,
@@ -523,9 +523,9 @@ fn attest_claims_for_non_participant_fails_silently() {
             &vec![&bob, &alice],
             cid,
             1,
-            0,
+            1,
             Location::default(),
-            correct_meetup_time(&cid, 0),
+            correct_meetup_time(&cid, 1),
             3,
         );
         assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 1);
@@ -549,14 +549,14 @@ fn attest_claims_for_non_participant_fails() {
         // ATTESTING
         let mut eve_claims: Vec<TestClaim> = vec![];
         let loc = Location::default();
-        let time = correct_meetup_time(&cid, 0);
+        let time = correct_meetup_time(&cid, 1);
         eve_claims.insert(
             0,
             signed_claim(
                 &alice,
                 cid,
                 cindex,
-                0,
+                1,
                 loc,
                 time,
                 3,
@@ -568,7 +568,7 @@ fn attest_claims_for_non_participant_fails() {
                 &ferdie,
                 cid,
                 cindex,
-                0,
+                1,
                 loc,
                 time,
                 3,
@@ -599,9 +599,9 @@ fn attest_claims_with_non_participant_fails_silently() {
             &vec![&bob, &eve],
             cid,
             1,
-            0,
+            1,
             Location::default(),
-            correct_meetup_time(&cid, 0),
+            correct_meetup_time(&cid, 1),
             3,
         );
         assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 1);
@@ -624,10 +624,10 @@ fn attest_claims_with_wrong_meetup_index_fails() {
         run_to_next_phase();
         // ATTESTING
         let loc = Location::default();
-        let time = correct_meetup_time(&cid, 0);
+        let time = correct_meetup_time(&cid, 1);
         let mut alice_claims: Vec<TestClaim> = vec![];
         alice_claims.push(
-            signed_claim(&bob, cid, 1, 0, loc, time, 3),
+            signed_claim(&bob, cid, 1, 1, loc, time, 3),
         );
         let bogus_claim = signed_claim(&ferdie, cid, 1,
                                        1 + 99,
@@ -662,10 +662,10 @@ fn attest_claims_with_wrong_ceremony_index_fails() {
         run_to_next_phase();
         // ATTESTING
         let loc = Location::default();
-        let time = correct_meetup_time(&cid, 0);
+        let time = correct_meetup_time(&cid, 1);
         let mut alice_attestations: Vec<TestClaim> = vec![];
         alice_attestations.push(
-            signed_claim(&bob, cid, 1, 0, loc, time, 3),
+            signed_claim(&bob, cid, 1, 1, loc, time, 3),
         );
         let bogus_claim = signed_claim(
             &ferdie,
@@ -707,7 +707,7 @@ fn attest_claims_with_wrong_timestamp_fails() {
             lat: Degree::from_num(0),
         };
         // too late!
-        let time = correct_meetup_time(&cid, 0) + TIME_TOLERANCE + 1;
+        let time = correct_meetup_time(&cid, 1) + TIME_TOLERANCE + 1;
         let mut alice_claims: Vec<TestClaim> = vec![];
         alice_claims.push(signed_claim(
             &bob,
@@ -753,7 +753,7 @@ fn attest_claims_with_wrong_location_fails() {
         // too far away!
         let mut loc = Location::default();
         loc.lon += Degree::from_num(0.01); // ~1.11km east of meetup location along equator
-        let time = correct_meetup_time(&cid, 0);
+        let time = correct_meetup_time(&cid, 1);
         let mut alice_claims: Vec<TestClaim> = vec![];
         alice_claims.push(signed_claim(
             &bob,
@@ -802,13 +802,13 @@ fn ballot_meetup_n_votes_works() {
         run_to_next_phase();
         // ATTESTING
         let loc = Location::default();
-        let time = correct_meetup_time(&cid, 0);
+        let time = correct_meetup_time(&cid, 1);
         attest_all(
             account_id(&alice),
             &vec![&bob, &charlie, &dave, &eve, &ferdie],
             cid,
             cindex,
-            0,
+            1,
             loc,
             time,
             5,
@@ -818,14 +818,14 @@ fn ballot_meetup_n_votes_works() {
             &vec![&alice],
             cid,
             cindex,
-            0,
+            1,
             loc,
             time,
             6,
         );
         // assert that majority vote was successful
         assert_eq!(
-            EncointerCeremonies::ballot_meetup_n_votes(&cid, cindex, 0),
+            EncointerCeremonies::ballot_meetup_n_votes(&cid, cindex, 1),
             Some((5, 5))
         );
 
@@ -834,7 +834,7 @@ fn ballot_meetup_n_votes_works() {
             &vec![&bob],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             5,
@@ -844,7 +844,7 @@ fn ballot_meetup_n_votes_works() {
             &vec![&alice],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             5,
@@ -854,7 +854,7 @@ fn ballot_meetup_n_votes_works() {
             &vec![&charlie, &dave],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             4,
@@ -864,20 +864,20 @@ fn ballot_meetup_n_votes_works() {
             &vec![&eve, &ferdie],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             6,
         );
         // votes should be (4, 2), (5, 2), (6, 2)
-        assert!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 0) == None);
+        assert!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1) == None);
 
         attest_all(
             account_id(&alice),
             &vec![&bob, &charlie],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             5,
@@ -887,7 +887,7 @@ fn ballot_meetup_n_votes_works() {
             &vec![&alice],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             5,
@@ -897,7 +897,7 @@ fn ballot_meetup_n_votes_works() {
             &vec![&dave],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             4,
@@ -907,13 +907,13 @@ fn ballot_meetup_n_votes_works() {
             &vec![&eve, &ferdie],
             cid,
             1,
-            0,
+            1,
             loc,
             time,
             6,
         );
         // votes should be (5, 3), (6, 2), (4, 1)
-        assert_eq!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 0), Some((5, 3)));
+        assert_eq!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1), Some((5, 3)));
     });
 }
 
@@ -932,13 +932,13 @@ fn issue_reward_works() {
         register_charlie_dave_eve(cid);
 
         let loc = Location::default();
-        let time = correct_meetup_time(&cid, 0);
+        let time = correct_meetup_time(&cid, 1);
 
         let claim_base = TestClaim::new_unsigned(
             account_id(&alice),
             cindex,
             cid,
-            0,
+            1,
             loc,
             time,
             5,
@@ -1298,7 +1298,7 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 
         let tol = 60_000; // [ms]
         assert!(tol >
-            (EncointerCeremonies::get_meetup_time(&cid, 0).unwrap() as i64 -
+            (EncointerCeremonies::get_meetup_time(&cid, 1).unwrap() as i64 -
             mtime as i64).abs() as u64
         );
     });
@@ -1369,7 +1369,7 @@ fn grow_population_works() {
         run_to_next_phase();
         // WITNESSING
 
-        fully_attest_meetup(cid, participants.clone(), 0);
+        fully_attest_meetup(cid, participants.clone(), 1);
 
 
         run_to_next_phase();
@@ -1391,7 +1391,7 @@ fn grow_population_works() {
 
         run_to_next_phase();
 
-        fully_attest_meetup(cid, participants.clone(), 0);
+        fully_attest_meetup(cid, participants.clone(), 1);
 
         run_to_next_phase();
         // REGISTERING
@@ -1412,8 +1412,8 @@ fn grow_population_works() {
 
         run_to_next_phase();
         // WITNESSING
-        fully_attest_meetup(cid, participants.clone(), 0);
         fully_attest_meetup(cid, participants.clone(), 1);
+        fully_attest_meetup(cid, participants.clone(), 2);
 
         run_to_next_phase();
         // REGISTERING
@@ -1621,10 +1621,10 @@ fn get_meetup_index_works() {
         AssignmentParamsEndorsees::insert((cid, cindex), assignment_params_endorsees);
         AssignmentParamsNewbies::insert((cid, cindex), assignment_params_newbies);
 
-        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p1).unwrap(), 1);
-        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p2).unwrap(), 0);
-        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p3).unwrap(), 2);
-        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p4).unwrap(), 4);
+        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p1).unwrap(), 2);
+        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p2).unwrap(), 1);
+        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p3).unwrap(), 3);
+        assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p4).unwrap(), 5);
 
     });
 }
@@ -1689,8 +1689,8 @@ fn get_meetup_participants_works() {
 
         let mut m0_expected_participants = [participants[1].clone(), participants[2].clone(), participants[3].clone(), participants[7].clone(), participants[8].clone(), participants[9].clone(), participants[10].clone()];
         let mut m1_expected_participants = [participants[0].clone(), participants[4].clone(), participants[5].clone(), participants[6].clone(), participants[11].clone()];
-        let mut m0_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 0);
-        let mut m1_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
+        let mut m0_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
+        let mut m1_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 2);
 
         m0_expected_participants.sort();
         m1_expected_participants.sort();

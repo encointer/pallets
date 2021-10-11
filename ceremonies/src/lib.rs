@@ -653,32 +653,35 @@ impl<T: Config> Module<T> {
         if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
             let AssignmentParams { m, s1, s2 } = Self::assignment_params_bootstrappers_reputables(community_ceremony);
             let participant_index = Self::bootstrapper_index(community_ceremony, &participant) - 1;
-            return Ok(Self::assignment_fn(participant_index, s1, s2, m, meetup_count));
+            return Ok(Self::assignment_fn(participant_index, s1, s2, m, meetup_count) + 1);
         }
         if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
             let AssignmentParams { m, s1, s2 } = Self::assignment_params_bootstrappers_reputables(community_ceremony);
             let num_bootstrappers = Self::assigned_bootstrapper_count(community_ceremony);
             let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
-            return Ok(Self::assignment_fn(participant_index + num_bootstrappers, s1, s2, m, meetup_count));
+            return Ok(Self::assignment_fn(participant_index + num_bootstrappers, s1, s2, m, meetup_count) + 1);
         }
 
         if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
             let AssignmentParams { m, s1, s2 } = Self::assignment_params_endorsees(community_ceremony);
             let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
-            return Ok(Self::assignment_fn(participant_index, s1, s2, m, meetup_count));
+            return Ok(Self::assignment_fn(participant_index, s1, s2, m, meetup_count) + 1);
         }
 
         if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
             let AssignmentParams { m, s1, s2 } = Self::assignment_params_newbies(community_ceremony);
             let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
-            return Ok(Self::assignment_fn(participant_index, s1, s2, m, meetup_count));
+            return Ok(Self::assignment_fn(participant_index, s1, s2, m, meetup_count) + 1);
         }
         Err(<Error<T>>::ParticipantIsNotRegistered.into())
     }
 
-    fn get_meetup_participants(community_ceremony: CommunityCeremony, meetup_index: MeetupIndexType) -> Vec<T::AccountId> {
+    fn get_meetup_participants(community_ceremony: CommunityCeremony, mut meetup_index: MeetupIndexType) -> Vec<T::AccountId> {
         let mut result: Vec<T::AccountId> = vec![];
         let meetup_count = Self::meetup_count(community_ceremony);
+
+        // meetup index conversion from 1 based to 0 based
+        meetup_index -=1;
         assert!(meetup_index < meetup_count);
 
         let params_br = Self::assignment_params_bootstrappers_reputables(community_ceremony);
@@ -743,7 +746,7 @@ impl<T: Config> Module<T> {
             let meetup_count = Self::meetup_count((cid, cindex));
             let reward = Self::nominal_income(cid);
 
-            for m in 0..meetup_count {
+            for m in 1..=meetup_count {
                 // first, evaluate votes on how many participants showed up
                 let (n_confirmed, n_honest_participants) =
                     match Self::ballot_meetup_n_votes(cid, cindex, m) {
@@ -852,8 +855,8 @@ impl<T: Config> Module<T> {
         meetup_idx: MeetupIndexType,
     ) -> Option<Location> {
         let locations = <encointer_communities::Module<T>>::get_locations(cid);
-        if meetup_idx < locations.len() as MeetupIndexType {
-            Some(locations[(meetup_idx) as usize])
+        if (meetup_idx > 0) && (meetup_idx <= locations.len() as MeetupIndexType) {
+            Some(locations[(meetup_idx - 1) as usize])
         } else {
             None
         }
@@ -865,6 +868,9 @@ impl<T: Config> Module<T> {
         meetup_idx: MeetupIndexType,
     ) -> Option<T::Moment> {
         if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
+            return None;
+        }
+        if meetup_idx == 0 {
             return None;
         }
         let duration =
