@@ -418,6 +418,8 @@ decl_error! {
         AlreadyEndorsed,
         /// Participant is not registered
         ParticipantIsNotRegistered,
+        /// No locations are available for assigning participants
+        NoLocationsAvailable,
     }
 }
 
@@ -472,7 +474,7 @@ impl<T: Config> Module<T> {
         debug!(target: LOG, "purged registry for ceremony {}", cindex);
     }
 
-    fn generate_meetup_assignment_params(community_ceremony: CommunityCeremony) {
+    fn generate_meetup_assignment_params(community_ceremony: CommunityCeremony) -> DispatchResult {
         let meetup_multiplier = 10u64;
         let num_locations = <encointer_communities::Module<T>>::get_locations(&community_ceremony.0).len() as u64;
         let num_boostrappers = Self::bootstrapper_count(community_ceremony);
@@ -480,7 +482,9 @@ impl<T: Config> Module<T> {
         let num_endorsees = Self::endorsee_count(community_ceremony);
         let num_newbies = Self::newbie_count(community_ceremony);
 
-        if num_locations == 0 {panic!("There must be at least 1 available location")}
+        if num_locations == 0 {
+            return Err(<Error<T>>::NoLocationsAvailable.into())
+        }
         let mut num_meetups = min(num_locations, Self::find_prime_below(num_boostrappers + num_reputables));
 
         let num_allowed_bootstrappers = num_boostrappers;
@@ -528,14 +532,16 @@ impl<T: Config> Module<T> {
         <AllowedEndorseeCount>::insert(community_ceremony, num_allowed_endorsees);
         <AllowedNewbieCount>::insert(community_ceremony, num_allowed_newbies);
         <MeetupCount>::insert(community_ceremony, num_meetups);
+        Ok(())
     }
 
-    fn generate_all_meetup_assignment_params() {
+    fn generate_all_meetup_assignment_params() -> DispatchResult{
         let cids = <encointer_communities::Module<T>>::community_identifiers();
         let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
         for cid in cids.iter() {
-            Self::generate_meetup_assignment_params((*cid, cindex));
+            Self::generate_meetup_assignment_params((*cid, cindex)).ok();
         }
+        Ok(())
     }
 
     fn is_prime(n: u64) -> bool {
@@ -943,7 +949,7 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
     fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
         match new_phase {
             CeremonyPhaseType::ASSIGNING => {
-                Self::generate_all_meetup_assignment_params();
+                Self::generate_all_meetup_assignment_params().ok();
             }
             CeremonyPhaseType::ATTESTING => {}
             CeremonyPhaseType::REGISTERING => {

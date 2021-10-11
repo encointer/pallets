@@ -1684,7 +1684,7 @@ fn generate_meetup_assignment_params_works(n_locations: u64, n_bootstrappers: u6
         EndorseeCount::insert((cid, cindex), n_endorsees);
         NewbieCount::insert((cid, cindex), n_newbies);
 
-        EncointerCeremonies::generate_meetup_assignment_params((cid, cindex));
+        EncointerCeremonies::generate_meetup_assignment_params((cid, cindex)).ok();
 
         assert_eq!(EncointerCeremonies::allowed_bootstrapper_count((cid, cindex)), exp_n_allowed_bootstrappers);
         assert_eq!(EncointerCeremonies::allowed_reputable_count((cid, cindex)), exp_n_allowed_reputables);
