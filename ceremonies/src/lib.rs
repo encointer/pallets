@@ -95,10 +95,10 @@ decl_storage! {
         NewbieCount get(fn newbie_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
 
 
-        AllowedBootstrapperCount get(fn allowed_bootstrapper_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
-        AllowedReputableCount get(fn allowed_reputable_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
-        AllowedEndorseeCount get(fn allowed_endorsee_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
-        AllowedNewbieCount get(fn allowed_newbie_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+        AssignedBootstrapperCount get(fn assigned_bootstrapper_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+        AssignedReputableCount get(fn assigned_reputable_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+        AssignedEndorseeCount get(fn assigned_endorsee_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+        AssignedNewbieCount get(fn assigned_newbie_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
 
 
         S1BootstrappersReputables get(fn s1_bootstrappers_reputables): map hasher(blake2_128_concat) CommunityCeremony => u64;
@@ -444,10 +444,10 @@ impl<T: Config> Module<T> {
             <NewbieCount>::insert((cid, cindex), 0);
 
 
-            <AllowedBootstrapperCount>::insert((cid, cindex), 0);
-            <AllowedReputableCount>::insert((cid, cindex), 0);
-            <AllowedEndorseeCount>::insert((cid, cindex), 0);
-            <AllowedNewbieCount>::insert((cid, cindex), 0);
+            <AssignedBootstrapperCount>::insert((cid, cindex), 0);
+            <AssignedReputableCount>::insert((cid, cindex), 0);
+            <AssignedEndorseeCount>::insert((cid, cindex), 0);
+            <AssignedNewbieCount>::insert((cid, cindex), 0);
 
 
             <S1BootstrappersReputables>::insert((cid, cindex), 0);
@@ -487,22 +487,22 @@ impl<T: Config> Module<T> {
         }
         let mut num_meetups = min(num_locations, Self::find_prime_below(num_boostrappers + num_reputables));
 
-        let num_allowed_bootstrappers = num_boostrappers;
+        let num_assigned_bootstrappers = num_boostrappers;
 
-        let mut available_slots = num_meetups * meetup_multiplier - num_allowed_bootstrappers;
+        let mut available_slots = num_meetups * meetup_multiplier - num_assigned_bootstrappers;
 
 
-        let num_allowed_reputables = min(num_reputables, available_slots);
-        available_slots -= num_allowed_reputables;
+        let num_assigned_reputables = min(num_reputables, available_slots);
+        available_slots -= num_assigned_reputables;
 
-        let num_allowed_endorsees = min(num_endorsees, available_slots);
-        available_slots -= num_allowed_endorsees;
+        let num_assigned_endorsees = min(num_endorsees, available_slots);
+        available_slots -= num_assigned_endorsees;
 
-        let max_allowed_newbies = (num_allowed_bootstrappers + num_allowed_reputables + num_allowed_endorsees) / 3;
-        let mut num_allowed_newbies = min(num_newbies, available_slots);
-        num_allowed_newbies = min(num_allowed_newbies, max_allowed_newbies);
+        let max_assigned_newbies = (num_assigned_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3;
+        let mut num_assigned_newbies = min(num_newbies, available_slots);
+        num_assigned_newbies = min(num_assigned_newbies, max_assigned_newbies);
 
-        let num_participants = num_allowed_bootstrappers + num_allowed_reputables + num_allowed_endorsees + num_allowed_newbies;
+        let num_participants = num_assigned_bootstrappers + num_assigned_reputables + num_assigned_endorsees + num_assigned_newbies;
 
         num_meetups = num_participants / meetup_multiplier;
 
@@ -510,9 +510,9 @@ impl<T: Config> Module<T> {
         if num_participants % meetup_multiplier != 0 {num_meetups += 1;}
 
 
-        let (m_br, s1_br, s2_br) = Self::get_m_s1_s2(num_allowed_bootstrappers + num_allowed_reputables, num_meetups);
-        let (m_e, s1_e, s2_e) = Self::get_m_s1_s2(num_allowed_endorsees, num_meetups);
-        let (m_n, s1_n, s2_n) = Self::get_m_s1_s2(num_allowed_newbies, num_meetups);
+        let (m_br, s1_br, s2_br) = Self::get_m_s1_s2(num_assigned_bootstrappers + num_assigned_reputables, num_meetups);
+        let (m_e, s1_e, s2_e) = Self::get_m_s1_s2(num_assigned_endorsees, num_meetups);
+        let (m_n, s1_n, s2_n) = Self::get_m_s1_s2(num_assigned_newbies, num_meetups);
 
         <S1BootstrappersReputables>::insert(community_ceremony, s1_br);
         <S1Endorsees>::insert(community_ceremony, s1_e);
@@ -527,10 +527,10 @@ impl<T: Config> Module<T> {
         <MEndorsees>::insert(community_ceremony, m_e);
         <MNewbies>::insert(community_ceremony, m_n);
 
-        <AllowedBootstrapperCount>::insert(community_ceremony, num_allowed_bootstrappers);
-        <AllowedReputableCount>::insert(community_ceremony, num_allowed_reputables);
-        <AllowedEndorseeCount>::insert(community_ceremony, num_allowed_endorsees);
-        <AllowedNewbieCount>::insert(community_ceremony, num_allowed_newbies);
+        <AssignedBootstrapperCount>::insert(community_ceremony, num_assigned_bootstrappers);
+        <AssignedReputableCount>::insert(community_ceremony, num_assigned_reputables);
+        <AssignedEndorseeCount>::insert(community_ceremony, num_assigned_endorsees);
+        <AssignedNewbieCount>::insert(community_ceremony, num_assigned_newbies);
         <MeetupCount>::insert(community_ceremony, num_meetups);
         Ok(())
     }
@@ -703,7 +703,7 @@ impl<T: Config> Module<T> {
         }
         if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
             let (m, s1, s2) = Self::get_assignment_params_bootstrappers_reputables(community_ceremony);
-            let num_bootstrappers = Self::allowed_bootstrapper_count(community_ceremony);
+            let num_bootstrappers = Self::assigned_bootstrapper_count(community_ceremony);
             let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
             return Ok(Self::assignment_fn(participant_index + num_bootstrappers, s1, s2, m, meetup_count));
         }
@@ -731,30 +731,30 @@ impl<T: Config> Module<T> {
         let (m_e, s1_e, s2_e) = Self::get_assignment_params_endorsees(community_ceremony);
         let (m_n, s1_n, s2_n) = Self::get_assignment_params_newbies(community_ceremony);
 
-        let allowed_b = Self::allowed_bootstrapper_count(community_ceremony);
-        let allowed_r = Self::allowed_reputable_count(community_ceremony);
-        let allowed_e = Self::allowed_endorsee_count(community_ceremony);
-        let allowed_n = Self::allowed_newbie_count(community_ceremony);
+        let assigned_b = Self::assigned_bootstrapper_count(community_ceremony);
+        let assigned_r = Self::assigned_reputable_count(community_ceremony);
+        let assigned_e = Self::assigned_endorsee_count(community_ceremony);
+        let assigned_n = Self::assigned_newbie_count(community_ceremony);
 
-        let bootstrappers_reputables = Self::assignment_fn_inverse(meetup_index, s1_br, s2_br, m_br, meetup_count, allowed_b + allowed_r);
+        let bootstrappers_reputables = Self::assignment_fn_inverse(meetup_index, s1_br, s2_br, m_br, meetup_count, assigned_b + assigned_r);
         for p in bootstrappers_reputables {
-            if p < allowed_b {
+            if p < assigned_b {
                 result.push(Self::bootstrapper_registry(community_ceremony, &(p + 1)));
-            } else if p < allowed_b + allowed_r {
-                result.push(Self::reputable_registry(community_ceremony, &(p - allowed_b + 1)));
+            } else if p < assigned_b + assigned_r {
+                result.push(Self::reputable_registry(community_ceremony, &(p - assigned_b + 1)));
             }
         }
 
-        let endorsees = Self::assignment_fn_inverse(meetup_index, s1_e, s2_e, m_e, meetup_count, allowed_e);
+        let endorsees = Self::assignment_fn_inverse(meetup_index, s1_e, s2_e, m_e, meetup_count, assigned_e);
         for p in endorsees {
-            if p < allowed_e {
+            if p < assigned_e {
                 result.push(Self::endorsee_registry(community_ceremony, &(p + 1)));
             }
         }
 
-        let newbies = Self::assignment_fn_inverse(meetup_index, s1_n, s2_n, m_n, meetup_count, allowed_n);
+        let newbies = Self::assignment_fn_inverse(meetup_index, s1_n, s2_n, m_n, meetup_count, assigned_n);
         for p in newbies {
-            if p < allowed_n {
+            if p < assigned_n {
                 result.push(Self::newbie_registry(community_ceremony, &(p + 1)));
             }
         }

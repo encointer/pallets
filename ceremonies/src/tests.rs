@@ -1583,7 +1583,7 @@ fn get_meetup_index_works() {
         MeetupCount::insert((cid, cindex), 10);
 
         BootstrapperIndex::<TestRuntime>::insert((cid, cindex), p1.clone(), 1);
-        AllowedBootstrapperCount::insert((cid, cindex), 1);
+        AssignedBootstrapperCount::insert((cid, cindex), 1);
 
         ReputableIndex::<TestRuntime>::insert((cid, cindex), p2.clone(), 1);
 
@@ -1622,23 +1622,23 @@ fn get_meetup_participants_works() {
         BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[0].clone());
         BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[1].clone());
         BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[2].clone());
-        AllowedBootstrapperCount::insert((cid, cindex), 3);
+        AssignedBootstrapperCount::insert((cid, cindex), 3);
 
 
         ReputableRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[3].clone());
         ReputableRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[4].clone());
         ReputableRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[5].clone());
-        AllowedReputableCount::insert((cid, cindex), 3);
+        AssignedReputableCount::insert((cid, cindex), 3);
 
         EndorseeRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[6].clone());
         EndorseeRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[7].clone());
         EndorseeRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[8].clone());
-        AllowedEndorseeCount::insert((cid, cindex), 3);
+        AssignedEndorseeCount::insert((cid, cindex), 3);
 
         NewbieRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[9].clone());
         NewbieRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[10].clone());
         NewbieRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[11].clone());
-        AllowedNewbieCount::insert((cid, cindex), 3);
+        AssignedNewbieCount::insert((cid, cindex), 3);
 
 
 
@@ -1671,11 +1671,11 @@ fn get_meetup_participants_works() {
     });
 }
 
-#[rstest(n_locations, n_bootstrappers, n_reputables, n_endorsees, n_newbies, exp_m_bootstrappers_reputables, exp_m_endorsees, exp_m_newbies, exp_n_allowed_bootstrappers, exp_n_allowed_reputables, exp_n_allowed_endorsees, exp_n_allowed_newbies,
+#[rstest(n_locations, n_bootstrappers, n_reputables, n_endorsees, n_newbies, exp_m_bootstrappers_reputables, exp_m_endorsees, exp_m_newbies, exp_n_assigned_bootstrappers, exp_n_assigned_reputables, exp_n_assigned_endorsees, exp_n_assigned_newbies,
 case(3,7,12,6,13,19,5,5,7,12,6,5),
 case(10,1,1,20,13,2,17,2,1,1,18,0),
 )]
-fn generate_meetup_assignment_params_works(n_locations: u64, n_bootstrappers: u64, n_reputables: u64, n_endorsees: u64, n_newbies: u64, exp_m_bootstrappers_reputables: u64, exp_m_endorsees: u64, exp_m_newbies: u64, exp_n_allowed_bootstrappers: u64, exp_n_allowed_reputables: u64, exp_n_allowed_endorsees: u64, exp_n_allowed_newbies: u64) {
+fn generate_meetup_assignment_params_works(n_locations: u64, n_bootstrappers: u64, n_reputables: u64, n_endorsees: u64, n_newbies: u64, exp_m_bootstrappers_reputables: u64, exp_m_endorsees: u64, exp_m_newbies: u64, exp_n_assigned_bootstrappers: u64, exp_n_assigned_reputables: u64, exp_n_assigned_endorsees: u64, exp_n_assigned_newbies: u64) {
     new_test_ext().execute_with(|| {
         let cid = perform_bootstrapping_ceremony(None, n_locations as u32);
         let cindex = EncointerScheduler::current_ceremony_index();
@@ -1686,10 +1686,10 @@ fn generate_meetup_assignment_params_works(n_locations: u64, n_bootstrappers: u6
 
         EncointerCeremonies::generate_meetup_assignment_params((cid, cindex)).ok();
 
-        assert_eq!(EncointerCeremonies::allowed_bootstrapper_count((cid, cindex)), exp_n_allowed_bootstrappers);
-        assert_eq!(EncointerCeremonies::allowed_reputable_count((cid, cindex)), exp_n_allowed_reputables);
-        assert_eq!(EncointerCeremonies::allowed_endorsee_count((cid, cindex)), exp_n_allowed_endorsees);
-        assert_eq!(EncointerCeremonies::allowed_newbie_count((cid, cindex)), exp_n_allowed_newbies);
+        assert_eq!(EncointerCeremonies::assigned_bootstrapper_count((cid, cindex)), exp_n_assigned_bootstrappers);
+        assert_eq!(EncointerCeremonies::assigned_reputable_count((cid, cindex)), exp_n_assigned_reputables);
+        assert_eq!(EncointerCeremonies::assigned_endorsee_count((cid, cindex)), exp_n_assigned_endorsees);
+        assert_eq!(EncointerCeremonies::assigned_newbie_count((cid, cindex)), exp_n_assigned_newbies);
 
         assert_eq!(EncointerCeremonies::m_bootstrappers_reputables((cid, cindex)), exp_m_bootstrappers_reputables);
         assert!(EncointerCeremonies::s1_bootstrappers_reputables((cid, cindex)) > 0);
