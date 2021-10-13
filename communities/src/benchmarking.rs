@@ -39,7 +39,7 @@ benchmarks! {
 
     // setup test community
     PalletModule::<T>::new_community(RawOrigin::Signed(caller.clone()).into(), get_location(0), bootstrappers.clone(), community_metadata.clone(), demurrage.clone(), nominal_income.clone());
-    let cid = CommunityIdentifier::from(blake2_256(&(get_location(0).clone(), bootstrappers.clone()).encode()));
+    let cid = CommunityIdentifier::new(get_location(0).clone(), bootstrappers.clone()).unwrap();
     for j in 1..i-1 {
         assert!(PalletModule::<T>::add_location(RawOrigin::Root.into(), cid, get_location(j)).is_ok());
     }

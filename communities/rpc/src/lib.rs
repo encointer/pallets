@@ -98,7 +98,7 @@ macro_rules! refresh_cache {
         let mut cid_names: Vec<CidName> = vec![];
 
         cids.iter().for_each(|cid| {
-            $self.get_storage(cid.as_ref()).map_or_else(
+            $self.get_storage(&cid.as_array()).map_or_else(
                 || warn_storage_inconsistency(cid),
                 |name| cid_names.push(CidName::new(*cid, name)),
             )

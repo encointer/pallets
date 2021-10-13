@@ -17,7 +17,7 @@
 use super::*;
 use mock::{EncointerCommunities, dut, Origin, new_test_ext, TestRuntime};
 use frame_support::assert_ok;
-use sp_core::{hashing::blake2_256, sr25519};
+use sp_core::sr25519;
 
 use test_utils::{helpers::{bootstrappers, account_id}, *};
 
@@ -55,7 +55,7 @@ pub fn register_test_community(
         None,
     )
         .unwrap();
-    CommunityIdentifier::from(blake2_256(&(location.clone(), bs.clone()).encode()))
+    CommunityIdentifier::new(location.clone(), bs).unwrap()
 }
 
 
@@ -183,7 +183,7 @@ fn new_community_works() {
             None,
             None
         ));
-        let cid = CommunityIdentifier::from(blake2_256(&(location.clone(), bs.clone()).encode()));
+        let cid = CommunityIdentifier::new(location.clone(), bs.clone()).unwrap();
         let cids = EncointerCommunities::community_identifiers();
         let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
         assert!(cids.contains(&cid));
@@ -205,6 +205,7 @@ fn two_communities_in_same_bucket_works() {
         let bob = AccountId::from(AccountKeyring::Bob);
         let charlie = AccountId::from(AccountKeyring::Charlie);
         let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+        let bs2 = vec![bob.clone(), charlie.clone(), alice.clone()];
         let community_meta: CommunityMetadataType = CommunityMetadataType {
             name: "Default".into(),
             symbol: "DEF".into(),
@@ -235,14 +236,14 @@ fn two_communities_in_same_bucket_works() {
         assert_ok!(EncointerCommunities::new_community(
             Origin::signed(alice.clone()),
             location2,
-            bs.clone(),
+            bs2.clone(),
             community_meta.clone(),
             None,
             None
         ));
 
-        let cid = CommunityIdentifier::from(blake2_256(&(location.clone(), bs.clone()).encode()));
-        let cid2 = CommunityIdentifier::from(blake2_256(&(location2.clone(), bs.clone()).encode()));
+        let cid = CommunityIdentifier::new(location.clone(), bs.clone()).unwrap();
+        let cid2 = CommunityIdentifier::new(location2.clone(), bs2.clone()).unwrap();
         let cids = EncointerCommunities::community_identifiers();
 
         assert!(cids.contains(&cid));
@@ -261,7 +262,6 @@ fn two_communities_in_same_bucket_works() {
 
     });
 }
-
 
 #[test]
 fn updating_nominal_income_works() {
@@ -378,8 +378,7 @@ fn remove_location_works() {
         // remove second location
         EncointerCommunities::remove_location(Origin::signed(some_bootstrapper.clone()), cid, location2).ok();
         assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
-        assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![]);
-
+        assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), Vec::<CommunityIdentifier>::new());
     });
 }
 
