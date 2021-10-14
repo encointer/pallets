@@ -3134,14 +3134,10 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-balances",
- "pallet-encointer-balances",
  "pallet-encointer-communities",
  "parity-scale-codec",
- "sp-core",
  "sp-io",
  "sp-std",
- "substrate-fixed",
  "test-utils",
 ]
 
