@@ -16,11 +16,11 @@ encointer-primitives = { path = "../../primitives"}
 encointer-communities-rpc-runtime-api = { package = "pallet-encointer-communities-rpc-runtime-api", path = "runtime-api"}
 
 # substrate deps
-sc-rpc =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-rpc-api =  { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-api =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-blockchain =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [dev-dependencies]
-sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }

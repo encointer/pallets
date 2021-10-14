@@ -15,12 +15,12 @@ encointer-communities = { package = "pallet-encointer-communities", path = "../c
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
-frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
