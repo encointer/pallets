@@ -308,7 +308,7 @@ fn fully_attest_meetup(
 
 fn assert_error(actual: DispatchResult, expected: Error::<TestRuntime>) {
     assert_eq!(match actual.clone().err().unwrap() {
-        sp_runtime::DispatchError::Module { index, error, message } => message,
+        sp_runtime::DispatchError::Module { index: _, error: _, message } => message,
         _ => panic!(),
     }.unwrap(), expected.as_str());
 }
