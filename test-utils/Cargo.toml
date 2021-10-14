@@ -16,17 +16,17 @@ encointer-communities = { package = "pallet-encointer-communities", path = "../c
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler"}
 
 # substrate deps
-sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-benchmarking =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-support-test =  { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-balances =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-inherents =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-keyring =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 # polkadot deps

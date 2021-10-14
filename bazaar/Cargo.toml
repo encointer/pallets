@@ -18,21 +18,21 @@ frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/su
 frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
 fixed = { package = "substrate-fixed", tag = "v0.5.6", git = "https://github.com/encointer/substrate-fixed"}
 pallet-balances =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
 test-utils = { path = "../test-utils"}
 
 [features]
 default = ["std"]
 std = [
-	"sp-std/std",
 	"codec/std",
 	"log/std",
-	"encointer-communities/std",
-	"encointer-primitives/std",
 	"frame-support/std",
 	"frame-system/std",
+	"sp-std/std",
+	"encointer-communities/std",
+	"encointer-primitives/std",
 ]

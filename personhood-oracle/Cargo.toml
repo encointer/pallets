@@ -16,12 +16,12 @@ encointer-communities = { package = "pallet-encointer-communities", path = "../c
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
-sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 # polkadot deps
@@ -39,18 +39,18 @@ default = ["std"]
 std = [
     "codec/std",
     "log/std",
-    "sp-std/std",
-    "frame-system/std",
     "frame-support/std",
-    "xcm/std",
+    "frame-system/std",
+    "pallet-timestamp/std",
+    "polkadot-parachain/std",
     "sp-core/std",
     "sp-io/std",
+    "sp-std/std",
     "sp-runtime/std",
-    "pallet-timestamp/std",
+    "xcm/std",
+    "encointer-balances/std",
     "encointer-ceremonies/std",
     "encointer-communities/std",
-    "encointer-scheduler/std",
-    "encointer-balances/std",
     "encointer-primitives/std",
-    "polkadot-parachain/std"
+    "encointer-scheduler/std",
 ]

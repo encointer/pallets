@@ -29,13 +29,13 @@ test-utils = { path = "../test-utils"}
 default = ["std"]
 std = [
 	"codec/std",
+	"fixed/std",
 	"log/std",
-	"sp-std/std",
 	"frame-support/std",
 	"frame-system/std",
 	"sp-core/std",
+	"sp-std/std",
 	"sp-runtime/std",
 	"encointer-communities/std",
 	"encointer-primitives/std",
-	"fixed/std",
 ]
