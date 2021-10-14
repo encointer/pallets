@@ -22,6 +22,9 @@ use sp_runtime::traits::{BlakeTwo256, Hash};
 use xcm::prelude::X1;
 use xcm::opaque::v1::{MultiLocation, Junction::Parachain};
 
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
+
 use crate::scheduler::CeremonyIndexType;
 use crate::sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT;
 
