@@ -11,10 +11,10 @@ concat-arrays = { version = "0.1.2", default-features = false }
 crc = "2.0.0"
 log = { version = "0.4.14", default-features = false }
 fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, git = "https://github.com/encointer/substrate-fixed"}
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
+serde = { version = "1.0.101", default-features = false, features = ["derive","alloc"] }
 
 # encointer deps
-geohash = { default-features = false, git = "https://github.com/encointer/geohash", branch = "master" }
+geohash = { git = "https://github.com/encointer/geohash", branch = "master" }
 
 # substrate deps
 rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
@@ -34,9 +34,8 @@ sybil = ["xcm"]
 std = [
     "codec/std",
     "fixed/std",
-    "fixed/serde",
     "rstd/std",
-    "serde",
+    "serde/std",
     "sp-core/std",
     "sp-core/full_crypto",
     "sp-runtime/std",

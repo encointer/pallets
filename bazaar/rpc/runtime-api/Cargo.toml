@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 # encointer deps
-encointer-primitives = { path = "../../../primitives"}
+encointer-primitives = { path = "../../../primitives", default-features = false }
 
 # substrate deps
 frame-support =  { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
@@ -16,8 +16,8 @@ sp-std =  { version = "4.0.0-dev", default-features = false, git = "https://gith
 [features]
 default = ["std"]
 std = [
+    "frame-support/std",
     "sp-std/std",
     "sp-api/std",
     "encointer-primitives/std",
-    "frame-support/std",
 ]
