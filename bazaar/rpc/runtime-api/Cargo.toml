@@ -5,33 +5,18 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
+# encointer deps
+encointer-primitives = { path = "../../../primitives"}
 
-[dependencies.sp-api]
-default-features = false
-package = "sp-api"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-support]
-default-features = false
-package = "frame-support"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.rstd]
-default-features = false
-package = "sp-std"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.encointer-primitives]
-default-features = false
-path = "../../../primitives"
+# substrate deps
+frame-support =  { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api =  { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-std =  { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [features]
 default = ["std"]
 std = [
-    "rstd/std",
+    "sp-std/std",
     "sp-api/std",
     "encointer-primitives/std",
     "frame-support/std",
