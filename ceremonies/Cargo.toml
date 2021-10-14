@@ -18,14 +18,14 @@ encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../sched
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
 approx = "0.5.0"
 rstest = "0.6.4"
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = { path = "../test-utils" }
 
 [features]
@@ -35,9 +35,7 @@ std = [
 	"log/std",
 	"frame-support/std",
 	"frame-system/std",
-	"sp-core/std",
 	"sp-std/std",
-	"sp-runtime/std",
 	"pallet-timestamp/std",
 	"encointer-balances/std",
 	"encointer-communities/std",

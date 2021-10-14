@@ -18,9 +18,7 @@ encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../sched
 # substrate deps
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
@@ -30,6 +28,7 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 
 [dev-dependencies]
 hex = { version = "*" }
+sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = { path = "../test-utils" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot.git", branch = "master" }
 
@@ -40,10 +39,8 @@ std = [
     "log/std",
     "frame-support/std",
     "frame-system/std",
-    "pallet-timestamp/std",
     "polkadot-parachain/std",
     "sp-core/std",
-    "sp-io/std",
     "sp-std/std",
     "sp-runtime/std",
     "xcm/std",

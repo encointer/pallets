@@ -13,13 +13,11 @@ fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false,
 encointer-primitives = { path = "../primitives", default-features = false, features = ["sybil"]}
 
 # substrate deps
-sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 # polkadot deps
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
@@ -27,6 +25,7 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 
 [dev-dependencies]
 hex = { version = "*" }
+sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 test-utils = { path = "../test-utils" }
 
@@ -34,16 +33,14 @@ test-utils = { path = "../test-utils" }
 default = ["std"]
 std = [
     "codec/std",
-    "log/std",
-    "sp-std/std",
     "fixed/std",
     "frame-system/std",
     "frame-support/std",
-    "xcm/std",
+    "log/std",
+    "polkadot-parachain/std",
     "sp-core/std",
-    "sp-io/std",
     "sp-runtime/std",
-    "pallet-timestamp/std",
+    "sp-std/std",
+    "xcm/std",
     "encointer-primitives/std",
-    "polkadot-parachain/std"
 ]

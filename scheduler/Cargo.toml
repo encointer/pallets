@@ -15,12 +15,11 @@ encointer-primitives = { path = "../primitives", default-features = false }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
+sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = { path = "../test-utils" }
 
 [features]
@@ -31,8 +30,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-timestamp/std",
-	"sp-core/std",
-	"sp-io/std",
 	"sp-std/std",
 	"sp-runtime/std",
 	"encointer-primitives/std",
