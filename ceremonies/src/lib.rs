@@ -36,7 +36,7 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 
-use rstd::{
+use sp_std::{
 	prelude::*,
     vec,
     cmp::min,

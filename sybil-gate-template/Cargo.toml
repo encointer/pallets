@@ -13,7 +13,7 @@ fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false,
 encointer-primitives = { path = "../primitives", default-features = false, features = ["sybil"]}
 
 # substrate deps
-rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
@@ -36,7 +36,7 @@ default = ["std"]
 std = [
     "codec/std",
     "log/std",
-    "rstd/std",
+    "sp-std/std",
     "fixed/std",
     "frame-system/std",
     "frame-support/std",

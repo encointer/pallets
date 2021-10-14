@@ -16,7 +16,7 @@
 
 use codec::{Decode, Encode};
 use fixed::traits::Fixed;
-use rstd::vec::Vec;
+use sp_std::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash};
 use xcm::prelude::X1;

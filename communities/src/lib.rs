@@ -30,8 +30,8 @@ use frame_support::{
     storage::{StorageMap, StorageValue},
 };
 use frame_system::{ensure_root, ensure_signed};
-use rstd::prelude::*;
-use rstd::result::Result;
+use sp_std::prelude::*;
+use sp_std::result::Result;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 

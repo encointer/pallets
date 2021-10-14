@@ -16,7 +16,7 @@ encointer-communities = { package = "pallet-encointer-communities", path = "../c
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
-rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
@@ -39,7 +39,7 @@ default = ["std"]
 std = [
     "codec/std",
     "log/std",
-    "rstd/std",
+    "sp-std/std",
     "frame-system/std",
     "frame-support/std",
     "xcm/std",

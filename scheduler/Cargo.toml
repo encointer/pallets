@@ -12,7 +12,7 @@ codec = { package = "parity-scale-codec", version = "2.1.1", default-features = 
 encointer-primitives = { path = "../primitives", default-features = false }
 
 # substrate deps
-rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
@@ -28,7 +28,7 @@ default = ["std"]
 std = [
 	"codec/std",
 	"log/std",
-	"rstd/std",
+	"sp-std/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"pallet-timestamp/std",

@@ -26,7 +26,7 @@ use frame_support::{decl_error, decl_event, decl_module, dispatch::DispatchResul
 use frame_system::ensure_signed;
 use log::{debug, warn};
 use polkadot_parachain::primitives::Sibling;
-use rstd::prelude::*;
+use sp_std::prelude::*;
 use sp_core::H256;
 use sp_runtime::traits::{AccountIdConversion, Verify};
 use xcm::v1::{Error as XcmError, OriginKind, SendXcm, Xcm};

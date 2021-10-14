@@ -20,7 +20,7 @@ use sp_runtime::traits::Hash;
 use crate::RandomNumberGenerator;
 
 #[cfg(not(feature = "std"))]
-use rstd::vec::Vec;
+use sp_std::vec::Vec;
 
 /// Pseudo-random permutation. It's as secure as the combination of the seed with which the
 /// RandomNumberGenerator is constructed and the hash function it uses to cycle the elements.

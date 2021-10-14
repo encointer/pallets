@@ -30,7 +30,7 @@ pub type AttestationIndexType = u64;
 pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 
 #[cfg(not(feature = "std"))]
-use rstd::vec::Vec;
+use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
 use sp_core::Pair;

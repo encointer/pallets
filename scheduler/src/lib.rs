@@ -34,8 +34,8 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 use log::info;
-use rstd::ops::Rem;
-use rstd::prelude::*;
+use sp_std::ops::Rem;
+use sp_std::prelude::*;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
 
 pub trait Config: frame_system::Config + pallet_timestamp::Config {

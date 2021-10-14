@@ -27,7 +27,7 @@ use frame_support::{
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::debug;
-use rstd::convert::TryInto;
+use sp_std::convert::TryInto;
 use sp_runtime::traits::StaticLookup;
 
 // Logger target
