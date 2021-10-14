@@ -13,9 +13,9 @@ encointer-primitives = { path = "../primitives", default-features = false }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 
 # substrate deps
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
 [dev-dependencies]
 sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }

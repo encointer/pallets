@@ -29,7 +29,7 @@ sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 # polkadot deps
-xcm = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot" , branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
