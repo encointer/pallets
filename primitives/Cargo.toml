@@ -29,7 +29,7 @@ xcm = { optional = true, default-features = false, git = "https://github.com/par
 test-utils = { path = "../test-utils" }
 
 [features]
-default = ["std"]
+default = ["std", "serde_derive"]
 sybil = ["xcm"]
 serde_derive = [
     "fixed/serde",
