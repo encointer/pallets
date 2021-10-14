@@ -26,10 +26,9 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-f
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
 
 [dev-dependencies]
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-pallet-balances =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-test-utils = { path = "../test-utils" }
 hex = { version = "*" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]

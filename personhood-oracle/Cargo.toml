@@ -31,7 +31,6 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 [dev-dependencies]
 hex = { version = "*" }
 test-utils = { path = "../test-utils"}
-xcm-builder = { git = "https://github.com/paritytech/polkadot.git", branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot.git", branch = "master" }
 
 [features]

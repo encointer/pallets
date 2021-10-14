@@ -3206,7 +3206,6 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-core",
- "sp-externalities",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -3264,7 +3263,6 @@ dependencies = [
  "sp-std",
  "test-utils",
  "xcm",
- "xcm-builder",
  "xcm-executor",
 ]
 
@@ -3294,7 +3292,6 @@ dependencies = [
  "frame-system",
  "hex",
  "log",
- "pallet-balances",
  "pallet-timestamp",
  "parity-scale-codec",
  "polkadot-parachain",
