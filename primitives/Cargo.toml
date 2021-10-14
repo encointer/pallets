@@ -6,6 +6,8 @@ edition = "2018"
 
 [dependencies.bs58]
 package = "bs58"
+default-features = false
+features = ["alloc"]
 version = "0.4.0"
 
 [dependencies.codec]
@@ -73,6 +75,7 @@ path = "../test-utils"
 default = ["std"]
 sybil = ["xcm"]
 std = [
+    "bs58/std",
     "codec/std",
     "fixed/std",
     "fixed/serde",

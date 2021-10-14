@@ -21,8 +21,7 @@ use crc::{Crc, CRC_32_CKSUM};
 use fixed::types::I64F64;
 use geohash::GeoHash;
 use sp_core::RuntimeDebug;
-use std::fmt;
-use std::fmt::Formatter;
+use rstd::{prelude::Vec, fmt, fmt::Formatter};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -65,7 +64,7 @@ pub struct CommunityIdentifier {
 
 
 fn fmt(cid: &CommunityIdentifier, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "{}{}", std::str::from_utf8(&cid.geohash).unwrap(), bs58::encode(cid.digest).into_string())
+    write!(f, "{}{}", rstd::str::from_utf8(&cid.geohash).unwrap(), bs58::encode(cid.digest).into_string())
 }
 
 impl fmt::Display for CommunityIdentifier {
