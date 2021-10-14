@@ -4,84 +4,42 @@ version = "0.7.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
-[dependencies.bs58]
-package = "bs58"
-default-features = false
-features = ["alloc"]
-version = "0.4.0"
+[dependencies]
+bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
+codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
+concat-arrays = { version = "0.1.2", default-features = false }
+crc = "2.0.0"
+fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, git = "https://github.com/encointer/substrate-fixed" }
+geohash = { git = "https://github.com/encointer/geohash", branch = "master" }
+log = { version = "0.4.14", default-features = false }
+serde = { version = "1.0.101", optional = true, default-features = false, features = ["derive","alloc"] }
 
-[dependencies.codec]
-default-features = false
-package = "parity-scale-codec"
-features = ["derive"]
-version = "2.1.1"
+# substrate deps
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
-[dependencies.concat-arrays]
-default-features = false
-version = "0.1.2"
+# polkadot deps
+xcm = { optional = true, default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 
-[dependencies.crc]
-package = "crc"
-version = "2.0.0"
-
-[dependencies.fixed]
-default-features = false
-git = "https://github.com/encointer/substrate-fixed"
-tag = "v0.5.6"
-package = "substrate-fixed"
-
-[dependencies.geohash]
-default-features = false
-git = "https://github.com/encointer/geohash"
-branch = "master"
-
-[dependencies.sp-core]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-core"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-runtime]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.rstd]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-std"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.xcm]
-default-features = false
-optional = true
-package = "xcm"
-git = "https://github.com/paritytech/polkadot.git"
-branch = "master"
-
-[dependencies.serde]
-features = ["derive"]
-optional = true
-version = "1.0.101"
-
-[dev-dependencies.test-utils]
-path = "../test-utils"
+[dev-dependencies]
+test-utils = { path = "../test-utils" }
 
 [features]
-default = ["std"]
+default = ["std", "serde_derive"]
 sybil = ["xcm"]
+serde_derive = [
+    "fixed/serde",
+    "serde",
+]
 std = [
     "bs58/std",
     "codec/std",
     "fixed/std",
-    "fixed/serde",
-    "rstd/std",
-    "serde",
+    "serde/std",
     "sp-core/std",
     "sp-core/full_crypto",
+    "sp-std/std",
     "sp-runtime/std",
 ]

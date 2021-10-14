@@ -15,6 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use approx::assert_abs_diff_eq;
 use mock::{EncointerCommunities, dut, Origin, new_test_ext, TestRuntime};
 use frame_support::assert_ok;
 use sp_core::sr25519;

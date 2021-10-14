@@ -30,8 +30,8 @@ use frame_support::{
     storage::{StorageMap, StorageValue},
 };
 use frame_system::{ensure_root, ensure_signed};
-use rstd::prelude::*;
-use rstd::result::Result;
+use sp_std::prelude::*;
+use sp_std::result::Result;
 use fixed::transcendental::{asin, cos, powi, sin, sqrt};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 
@@ -480,10 +480,6 @@ impl<T: Config> Module<T> {
         <Locations>::iter_prefix_values(&cid).reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect()).unwrap()
     }
 }
-
-#[cfg(test)]
-#[macro_use]
-extern crate approx;
 
 #[cfg(test)]
 mod tests;

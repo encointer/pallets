@@ -17,6 +17,9 @@
 use codec::{Decode, Encode};
 use sp_core::RuntimeDebug;
 
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
+
 /// Simple Bs58 verification adapted from https://github.com/mycorrhiza/bs58-rs
 pub struct Bs58verify {}
 
@@ -64,6 +67,7 @@ impl Bs58verify {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum Bs58Error {
     /// Non ascii character at index
     NonAsciiCharacter(u8),

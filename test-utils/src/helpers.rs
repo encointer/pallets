@@ -15,7 +15,6 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::AccountId;
-use codec::Encode;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::traits::OriginTrait;
 use sp_core::{sr25519, Pair};

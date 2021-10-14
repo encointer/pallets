@@ -19,7 +19,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
-use rstd::vec::Vec;
+use sp_std::vec::Vec;
 
 use encointer_primitives::{common::PalletString, communities::CommunityIdentifier};
 

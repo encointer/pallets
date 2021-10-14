@@ -36,7 +36,7 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 
-use rstd::{
+use sp_std::{
 	prelude::*,
     vec,
     cmp::min,
@@ -64,7 +64,7 @@ const LOG: &str = "encointer";
 
 pub trait Config:
     frame_system::Config
-    + timestamp::Config
+    + pallet_timestamp::Config
     + encointer_communities::Config
     + encointer_balances::Config
     + encointer_scheduler::Config
@@ -708,6 +708,3 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 mod tests;
 #[cfg(test)]
 mod mock;
-#[cfg(test)]
-#[macro_use]
-extern crate approx;

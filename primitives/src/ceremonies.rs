@@ -18,6 +18,9 @@ use codec::{Decode, Encode};
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash, IdentifyAccount, Verify};
 
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
+
 use crate::communities::{CommunityIdentifier, Location};
 use crate::scheduler::CeremonyIndexType;
 
@@ -27,12 +30,13 @@ pub type AttestationIndexType = u64;
 pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 
 #[cfg(not(feature = "std"))]
-use rstd::vec::Vec;
+use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
 use sp_core::Pair;
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum Reputation {
     // no attestations for attendance claim
     Unverified,
@@ -51,6 +55,7 @@ impl Default for Reputation {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
     pub claimant_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
@@ -164,6 +169,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct ProofOfAttendance<Signature, AccountId> {
     pub prover_public: AccountId,
     pub ceremony_index: CeremonyIndexType,

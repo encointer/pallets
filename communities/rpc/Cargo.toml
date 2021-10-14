@@ -11,36 +11,16 @@ jsonrpc-derive = "18.0.0"
 log = "0.4.14"
 parking_lot = "0.11.1"
 
-[dependencies.sp-api]
-package = "sp-api"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
+# local deps
+encointer-primitives = { path = "../../primitives" }
+encointer-communities-rpc-runtime-api = { package = "pallet-encointer-communities-rpc-runtime-api", path = "runtime-api" }
 
-[dependencies.sp-blockchain]
-package = "sp-blockchain"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sc-rpc]
-package = "sc-rpc"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-runtime]
-package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.encointer-communities-rpc-runtime-api]
-package = "pallet-encointer-communities-rpc-runtime-api"
-path = "runtime-api"
-
-[dependencies.encointer-primitives]
-path = "../../primitives"
+# substrate deps
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [dev-dependencies]
-
-[dev-dependencies.sp-core]
-package = "sp-core"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }

@@ -5,109 +5,32 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
+codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
 
-[dependencies.encointer-primitives]
-default-features = false
-package = "encointer-primitives"
-path = "../primitives"
+# local deps
+encointer-primitives = { path = "../primitives", default-features = false }
 
-[dependencies.rstd]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-std"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-io]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-io"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-runtime]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.codec]
-default-features = false
-package = "parity-scale-codec"
-features = ["derive"]
-version = "2.1.1"
-
-[dependencies.frame-support]
-version = "4.0.0-dev"
-default-features = false
-package = "frame-support"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-system]
-version = "4.0.0-dev"
-default-features = false
-package = "frame-system"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.timestamp]
-version = "4.0.0-dev"
-default-features = false
-package = "pallet-timestamp"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.serde]
-features = ["derive"]
-optional = true
-version = "1.0.101"
-
-[dependencies.sp-core]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-core"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.keystore]
-version = "4.0.0-dev"
-package = "sc-keystore"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
+# substrate deps
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
 [dev-dependencies]
-tempdir = "0.3.7"
-
-[dev-dependencies.app-crypto]
-version = "4.0.0-dev"
-package = "sp-application-crypto"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.externalities]
-version = "0.10.0-dev"
-package = "sp-externalities"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.test-utils]
-path = "../test-utils"
+sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
 std = [
 	"codec/std",
 	"log/std",
-	"rstd/std",
-	"sp-io/std",
-	"serde",
-	"sp-runtime/std",
-	"timestamp/std",
-	"sp-core/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-timestamp/std",
+	"sp-std/std",
+	"sp-runtime/std",
 	"encointer-primitives/std",
 ]

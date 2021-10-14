@@ -17,10 +17,13 @@
 use codec::{Decode, Encode};
 use sp_core::RuntimeDebug;
 
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
+
 use crate::bs58_verify::{Bs58Error, Bs58verify};
 
 #[cfg(not(feature = "std"))]
-use rstd::vec::Vec;
+use sp_std::vec::Vec;
 
 /// Substrate runtimes provide no string type. Hence, for arbitrary data of varying length the
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
@@ -70,6 +73,7 @@ pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum IpfsValidationError {
     /// Invalid length supplied. Should be 46. Is: \[length\]
     InvalidLength(u8),

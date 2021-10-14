@@ -17,6 +17,7 @@
 use super::*;
 use mock::{EncointerCeremonies, EncointerBalances, EncointerScheduler, EncointerCommunities, Timestamp, Origin, new_test_ext, System, TestRuntime, TestClaim, TestProofOfAttendance};
 
+use approx::assert_abs_diff_eq;
 use encointer_primitives::{
     communities::{CommunityIdentifier, Degree, Location, LossyInto},
     scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -29,9 +30,6 @@ use frame_support::{
 use rstest::*;
 use sp_core::crypto::Ss58Codec;
 use sp_core::{sr25519, Pair, U256};
-use sp_runtime::{
-    DispatchError,
-};
 use std::ops::Rem;
 
 use test_utils::{
@@ -63,7 +61,7 @@ fn run_to_next_phase() {
 }
 
 pub fn set_timestamp(t: u64) {
-    let _ = <timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
+    let _ = <pallet_timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
         .dispatch_bypass_filter(Origin::none());
 }
 
@@ -310,7 +308,7 @@ fn fully_attest_meetup(
 
 fn assert_error(actual: DispatchResult, expected: Error::<TestRuntime>) {
     assert_eq!(match actual.clone().err().unwrap() {
-        sp_runtime::DispatchError::Module { index, error, message } => message,
+        sp_runtime::DispatchError::Module { index: _, error: _, message } => message,
         _ => panic!(),
     }.unwrap(), expected.as_str());
 }

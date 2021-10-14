@@ -30,7 +30,7 @@ use frame_support::{
     storage::{StorageDoubleMap, IterableStorageDoubleMap},
 };
 use frame_system::ensure_signed;
-use rstd::prelude::*;
+use sp_std::prelude::*;
 
 use encointer_primitives::{
     bazaar::{BusinessIdentifier, BusinessData, OfferingData, OfferingIdentifier},
@@ -195,5 +195,3 @@ impl<T: Config> Module<T>
 mod mock;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-extern crate approx;

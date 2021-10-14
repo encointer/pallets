@@ -40,7 +40,7 @@ impl dut::Config for TestRuntime {
     type Event = Event;
     type Call = EmptyCall;
     type XcmSender = ();
-    type Currency = balances::Pallet<TestRuntime>;
+    type Currency = Balances;
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
 }

@@ -1,16 +1,16 @@
 [workspace]
 members = [
-    'scheduler',
     'balances',
-    'communities',
-    'communities/rpc',
-    'communities/rpc/runtime-api',
-    'ceremonies',
     'bazaar',
     'bazaar/rpc',
     'bazaar/rpc/runtime-api',
-    'sybil-gate-template',
+    'ceremonies',
+    'communities',
+    'communities/rpc',
+    'communities/rpc/runtime-api',
     'personhood-oracle',
     'primitives',
+    'scheduler',
+    'sybil-gate-template',
     'test-utils'
 ]

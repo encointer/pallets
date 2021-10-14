@@ -4,100 +4,32 @@ version = "0.7.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
-[dependencies.encointer-ceremonies]
-path = "../ceremonies"
-package = "pallet-encointer-ceremonies"
+[dependencies]
+log = { version = "0.4.14" }
 
-[dependencies.encointer-communities]
-path = "../communities"
-package = "pallet-encointer-communities"
+# local deps
+encointer-primitives = { path = "../primitives" }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances" }
+encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler" }
 
-[dependencies.encointer-primitives]
-package = "encointer-primitives"
-features = ["sybil"]
-path = "../primitives"
+# substrate deps
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-support-test = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-keyring =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
-[dependencies.codec]
-package = "parity-scale-codec"
-features = ["derive"]
-version = "2.1.1"
-
-[dependencies.rstd]
-package = "sp-std"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-system]
-package = "frame-system"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-support]
-package = "frame-support"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-support-test]
-package = "frame-support-test"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-core]
-package = "sp-core"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-runtime]
-package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.polkadot-parachain]
-default-features = false
-git = "https://github.com/paritytech/polkadot"
-branch = "master"
-
-[dependencies.xcm]
-git = "https://github.com/paritytech/polkadot"
-branch = "master"
-
-[dependencies.xcm-builder]
-git = "https://github.com/paritytech/polkadot.git"
-branch = "master"
-
-[dependencies.xcm-executor]
-git = "https://github.com/paritytech/polkadot.git"
-branch = "master"
-
-[dependencies.balances]
-package = "pallet-balances"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-keyring]
-package = "sp-keyring"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-io]
-package = "sp-io"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.inherents]
-package = "sp-inherents"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.encointer-scheduler]
-path = "../scheduler"
-package = "pallet-encointer-scheduler"
-
-[dependencies.encointer-balances]
-path = "../balances"
-package = "pallet-encointer-balances"
-
-[dependencies.timestamp]
-package = "pallet-timestamp"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
+# polkadot deps
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
