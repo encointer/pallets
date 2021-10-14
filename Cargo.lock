@@ -5573,7 +5573,6 @@ dependencies = [
  "sp-keyring",
  "sp-runtime",
  "sp-std",
- "substrate-fixed",
  "xcm",
  "xcm-builder",
  "xcm-executor",

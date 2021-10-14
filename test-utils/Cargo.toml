@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 log = { version = "0.4.14" }
-fixed = { package = "substrate-fixed", tag = "v0.5.6", git = "https://github.com/encointer/substrate-fixed" }
 
 # local deps
 encointer-primitives = { path = "../primitives" }
