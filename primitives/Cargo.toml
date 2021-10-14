@@ -10,7 +10,7 @@ codec = { package = "parity-scale-codec", version = "2.1.1", default-features = 
 concat-arrays = { version = "0.1.2", default-features = false }
 crc = "2.0.0"
 log = { version = "0.4.14", default-features = false }
-fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, git = "https://github.com/encointer/substrate-fixed"}
+fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, features = ["serde"] , git = "https://github.com/encointer/substrate-fixed"}
 serde = { version = "1.0.101", default-features = false, features = ["derive","alloc"] }
 
 # encointer deps
