@@ -3231,6 +3231,7 @@ dependencies = [
  "pallet-encointer-communities-rpc-runtime-api",
  "parking_lot 0.11.2",
  "sc-rpc",
+ "sc-rpc-api",
  "sp-api",
  "sp-blockchain",
  "sp-core",
@@ -3242,6 +3243,7 @@ name = "pallet-encointer-communities-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
  "encointer-primitives",
+ "frame-support",
  "sp-api",
  "sp-std",
 ]
