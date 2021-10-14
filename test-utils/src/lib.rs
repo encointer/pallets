@@ -36,9 +36,11 @@ pub use encointer_balances;
 pub use encointer_ceremonies;
 pub use encointer_communities;
 pub use encointer_scheduler;
-pub use frame_system;
 pub use pallet_balances;
 pub use pallet_timestamp;
+pub use frame_system;
+pub use frame_support_test;
+pub use sp_runtime;
 
 pub use sp_core::H256;
 pub use sp_runtime::traits::{BlakeTwo256, Verify};
@@ -106,7 +108,7 @@ macro_rules! impl_frame_system {
             type PalletInfo = PalletInfo;
             type OnNewAccount = ();
             type OnKilledAccount = ();
-            type AccountData = balances::AccountData<u64>;
+            type AccountData = pallet_balances::AccountData<u64>;
             type SystemWeightInfo = ();
             type SS58Prefix = ();
             type OnSetCode = ();
@@ -122,7 +124,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_timestamp {
     ($t:ident, $scheduler:ident) => {
-        impl timestamp::Config for $t {
+        impl pallet_timestamp::Config for $t {
             type Moment = Moment;
             type OnTimestampSet = $scheduler;
             type MinimumPeriod = MinimumPeriod;
@@ -130,7 +132,7 @@ macro_rules! impl_timestamp {
         }
     };
     ($t:ident) => {
-        impl timestamp::Config for $t {
+        impl pallet_timestamp::Config for $t {
             type Moment = Moment;
             type OnTimestampSet = ();
             type MinimumPeriod = MinimumPeriod;
@@ -149,7 +151,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_balances {
     ($t:ident, $system:ident) => {
-        impl balances::Config for $t {
+        impl pallet_balances::Config for $t {
             type Balance = Balance;
             type Event = Event;
             type DustRemoval = ();

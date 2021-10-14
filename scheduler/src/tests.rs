@@ -45,7 +45,7 @@ pub fn run_to_block(n: u64) {
 }
 
 pub fn set_timestamp(t: u64) {
-    let _ = <timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
+    let _ = <pallet_timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
         .dispatch_bypass_filter(Origin::none());
 }
 

@@ -34,7 +34,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: timestamp::{Pallet, Call, Storage, Inherent},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
     }

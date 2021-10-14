@@ -195,5 +195,3 @@ impl<T: Config> Module<T>
 mod mock;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-extern crate approx;
