@@ -5,8 +5,8 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
-log = { version = "0.4.14", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
+log = { version = "0.4.14", default-features = false }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }

@@ -5,7 +5,7 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
-# encointer deps
+# local deps
 encointer-primitives = { path = "../../../primitives", default-features = false }
 
 # substrate deps
