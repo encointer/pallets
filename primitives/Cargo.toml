@@ -5,7 +5,7 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
-bs58 = "0.4.0"
+bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
 codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
 concat-arrays = { version = "0.1.2", default-features = false }
 crc = "2.0.0"
@@ -14,7 +14,7 @@ fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false,
 serde = { version = "1.0.101", default-features = false, features = ["derive","alloc"] }
 
 # encointer deps
-geohash = { git = "https://github.com/encointer/geohash", branch = "master" }
+geohash = { default-features = false, git = "https://github.com/encointer/geohash", branch = "master" }
 
 # substrate deps
 rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
@@ -23,7 +23,7 @@ sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 # polkadot deps
-xcm = { git = "https://github.com/paritytech/polkadot", optional = true , branch = "master" }
+xcm = { optional = true, default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 [dev-dependencies]
 test-utils = { path = "../test-utils" }
@@ -32,6 +32,7 @@ test-utils = { path = "../test-utils" }
 default = ["std"]
 sybil = ["xcm"]
 std = [
+    "bs58/std",
     "codec/std",
     "fixed/std",
     "rstd/std",
