@@ -23,9 +23,6 @@ tempdir = "0.3.7"
 fixed = { package = "substrate-fixed", tag = "v0.5.6", git = "https://github.com/encointer/substrate-fixed"}
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
 test-utils = { path = "../test-utils"}
 
