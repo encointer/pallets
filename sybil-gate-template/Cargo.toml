@@ -6,90 +6,29 @@ edition = "2018"
 
 [dependencies]
 log = { version = "0.4.14", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
+fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, git = "https://github.com/encointer/substrate-fixed"}
 
-[dependencies.encointer-primitives]
-default-features = false
-package = "encointer-primitives"
-features = ["sybil"]
-path = "../primitives"
+# local deps
+encointer-primitives = { path = "../primitives", default-features = false, features = ["sybil"]}
 
-[dependencies.fixed]
-default-features = false
-git = "https://github.com/encointer/substrate-fixed"
-tag = "v0.5.6"
-package = "substrate-fixed"
+# substrate deps
+rstd = { package = "sp-std", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
-[dependencies.codec]
-default-features = false
-package = "parity-scale-codec"
-features = ["derive"]
-version = "2.1.1"
-
-[dependencies.rstd]
-default-features = false
-package = "sp-std"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-system]
-default-features = false
-package = "frame-system"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-support]
-default-features = false
-package = "frame-support"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-core]
-default-features = false
-package = "sp-core"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.sp-runtime]
-default-features = false
-package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.timestamp]
-default-features = false
-package = "pallet-timestamp"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.xcm]
-default-features = false
-git = "https://github.com/paritytech/polkadot"
-branch = "master"
-
-[dependencies.sp-io]
-default-features = false
-package = "sp-io"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.polkadot-parachain]
-default-features = false
-git = "https://github.com/paritytech/polkadot"
-branch = "master"
-
-[dev-dependencies.xcm-executor]
-git = "https://github.com/paritytech/polkadot.git"
-branch = "master"
-
-[dev-dependencies.pallet-balances]
-package = "pallet-balances"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.test-utils]
-path = "../test-utils"
+# polkadot deps
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
 
 [dev-dependencies]
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+test-utils = { path = "../test-utils" }
 hex = { version = "*" }
 
 [features]
@@ -105,7 +44,7 @@ std = [
     "sp-core/std",
     "sp-io/std",
     "sp-runtime/std",
-    "timestamp/std",
+    "pallet-timestamp/std",
     "encointer-primitives/std",
     "polkadot-parachain/std"
 ]

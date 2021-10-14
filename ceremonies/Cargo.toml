@@ -6,111 +6,28 @@ edition = "2018"
 
 [dependencies]
 log = { version = "0.4.14", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
 
-[dependencies.rstd]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-std"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
+# local deps
+encointer-primitives = { path = "../primitives", default-features = false }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
-[dependencies.sp-runtime]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-runtime"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.encointer-scheduler]
-default-features = false
-path = "../scheduler"
-package = "pallet-encointer-scheduler"
-
-[dependencies.encointer-communities]
-default-features = false
-path = "../communities"
-package = "pallet-encointer-communities"
-
-[dependencies.encointer-balances]
-default-features = false
-path = "../balances"
-package = "pallet-encointer-balances"
-
-[dependencies.encointer-primitives]
-default-features = false
-package = "encointer-primitives"
-path = "../primitives"
-
-[dependencies.codec]
-default-features = false
-package = "parity-scale-codec"
-features = ["derive"]
-version = "2.1.1"
-
-[dependencies.frame-support]
-version = "4.0.0-dev"
-default-features = false
-package = "frame-support"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.frame-system]
-version = "4.0.0-dev"
-default-features = false
-package = "frame-system"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.serde]
-features = ["derive"]
-optional = true
-version = "1.0.101"
-
-[dependencies.sp-core]
-version = "4.0.0-dev"
-default-features = false
-package = "sp-core"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dependencies.timestamp]
-version = "4.0.0-dev"
-default-features = false
-package = "pallet-timestamp"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
+# substrate deps
+rstd = { package = "sp-std", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
 approx = "0.3.0"
 tempdir = "0.3.7"
 rstest = "0.6.4"
-
-[dev-dependencies.keystore]
-version = "4.0.0-dev"
-package = "sc-keystore"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.app-crypto]
-version = "4.0.0-dev"
-package = "sp-application-crypto"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.externalities]
-version = "0.10.0-dev"
-package = "sp-externalities"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.sp-io]
-default-features = false
-package = "sp-io"
-git = "https://github.com/paritytech/substrate.git"
-branch = "master"
-
-[dev-dependencies.test-utils]
-path = "../test-utils"
+test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
@@ -118,10 +35,9 @@ std = [
 	"codec/std",
 	"log/std",
 	"rstd/std",
-	"serde",
 	"sp-runtime/std",
 	"sp-core/std",
-	"timestamp/std",
+	"pallet-timestamp/std",
 	"frame-support/std",
 	"frame-system/std",
 	"encointer-communities/std",
