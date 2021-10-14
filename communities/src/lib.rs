@@ -482,10 +482,6 @@ impl<T: Config> Module<T> {
 }
 
 #[cfg(test)]
-#[macro_use]
-extern crate approx;
-
-#[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod mock;

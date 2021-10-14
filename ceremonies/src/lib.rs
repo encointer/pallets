@@ -708,6 +708,3 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 mod tests;
 #[cfg(test)]
 mod mock;
-#[cfg(test)]
-#[macro_use]
-extern crate approx;

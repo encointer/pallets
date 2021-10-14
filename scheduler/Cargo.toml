@@ -21,7 +21,6 @@ sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
-tempdir = "0.3.7"
 test-utils = { path = "../test-utils" }
 
 [features]
