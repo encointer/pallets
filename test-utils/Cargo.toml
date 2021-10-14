@@ -5,15 +5,15 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2018"
 
 [dependencies]
-log = { version = "0.4.14"}
-fixed = { package = "substrate-fixed", tag = "v0.5.6", git = "https://github.com/encointer/substrate-fixed"}
+log = { version = "0.4.14" }
+fixed = { package = "substrate-fixed", tag = "v0.5.6", git = "https://github.com/encointer/substrate-fixed" }
 
 # local deps
-encointer-primitives = { path = "../primitives"}
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances"}
-encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies"}
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities"}
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler"}
+encointer-primitives = { path = "../primitives" }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances" }
+encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler" }
 
 # substrate deps
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }

@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, git = "https://github.com/encointer/substrate-fixed"}
+fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, git = "https://github.com/encointer/substrate-fixed" }
 
 # encointer deps
 geohash = { default-features = false, git = "https://github.com/encointer/geohash", branch = "master" }

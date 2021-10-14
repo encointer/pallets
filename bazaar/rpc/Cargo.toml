@@ -12,7 +12,7 @@ log = "0.4.14"
 parking_lot = "0.11.1"
 
 # local deps
-encointer-primitives = { path = "../../primitives"}
+encointer-primitives = { path = "../../primitives" }
 encointer-bazaar-rpc-runtime-api = { package = "pallet-encointer-bazaar-rpc-runtime-api", path = "runtime-api" }
 
 # substrate deps
