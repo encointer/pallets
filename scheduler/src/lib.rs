@@ -38,7 +38,7 @@ use rstd::ops::Rem;
 use rstd::prelude::*;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
 
-pub trait Config: frame_system::Config + timestamp::Config {
+pub trait Config: frame_system::Config + pallet_timestamp::Config {
     type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
     type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
     type MomentsPerDay: Get<Self::Moment>;
@@ -147,7 +147,7 @@ impl<T: Config> Module<T> {
         let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING)
             + <PhaseDurations<T>>::get(CeremonyPhaseType::ASSIGNING)
             + <PhaseDurations<T>>::get(CeremonyPhaseType::ATTESTING);
-        let now = <timestamp::Pallet<T>>::now();
+        let now = <pallet_timestamp::Pallet<T>>::now();
 
         let tnext = if tnext < now {
             let gap = now - tnext;

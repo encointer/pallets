@@ -13,13 +13,13 @@ fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false,
 encointer-primitives = { path = "../primitives", default-features = false, features = ["sybil"]}
 
 # substrate deps
-rstd = { package = "sp-std", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 # polkadot deps
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }
@@ -27,7 +27,7 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 
 [dev-dependencies]
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-balances =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = { path = "../test-utils" }
 hex = { version = "*" }
 

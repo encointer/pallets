@@ -13,16 +13,16 @@ encointer-primitives = { path = "../primitives", default-features = false }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 
 # substrate deps
-rstd = { package = "sp-std", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
 approx = "0.3.0"
 tempdir = "0.3.7"
 fixed = { package = "substrate-fixed", tag = "v0.5.6", git = "https://github.com/encointer/substrate-fixed"}
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-balances =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
 test-utils = { path = "../test-utils"}
 

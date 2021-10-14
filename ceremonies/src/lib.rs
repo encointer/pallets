@@ -64,7 +64,7 @@ const LOG: &str = "encointer";
 
 pub trait Config:
     frame_system::Config
-    + timestamp::Config
+    + pallet_timestamp::Config
     + encointer_communities::Config
     + encointer_balances::Config
     + encointer_scheduler::Config

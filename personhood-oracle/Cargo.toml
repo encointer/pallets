@@ -16,13 +16,13 @@ encointer-communities = { package = "pallet-encointer-communities", path = "../c
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
-rstd = { package = "sp-std", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 # polkadot deps
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "master" }

@@ -12,13 +12,13 @@ codec = { package = "parity-scale-codec", version = "2.1.1", default-features = 
 encointer-primitives = { path = "../primitives", default-features = false }
 
 # substrate deps
-rstd = { package = "sp-std", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-system = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-frame-support = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+rstd = { package = "sp-std", version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-system =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+frame-support =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+pallet-timestamp =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-core =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
+sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false , branch = "master" }
 
 [dev-dependencies]
 tempdir = "0.3.7"
