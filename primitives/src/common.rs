@@ -17,6 +17,9 @@
 use codec::{Decode, Encode};
 use sp_core::RuntimeDebug;
 
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
+
 use crate::bs58_verify::{Bs58Error, Bs58verify};
 
 #[cfg(not(feature = "std"))]
@@ -70,6 +73,7 @@ pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum IpfsValidationError {
     /// Invalid length supplied. Should be 46. Is: \[length\]
     InvalidLength(u8),

@@ -15,15 +15,16 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 
 use crate::common::PalletString;
 use crate::communities::CommunityIdentifier;
 
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BusinessIdentifier<AccountId> {
     pub community_identifier: CommunityIdentifier,
     pub controller: AccountId,
@@ -39,7 +40,7 @@ impl<AccountId> BusinessIdentifier<AccountId> {
 }
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BusinessData {
     pub url: PalletString,
     pub last_oid: u32,
@@ -54,7 +55,7 @@ impl BusinessData {
 pub type OfferingIdentifier = u32;
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct OfferingData {
     pub url: PalletString,
 }

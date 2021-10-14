@@ -26,6 +26,7 @@ use crate::scheduler::CeremonyIndexType;
 use crate::sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct IssuePersonhoodUniquenessRatingCall {
     call_index: [u8; 2],
     request: OpaqueRequest,
@@ -69,6 +70,7 @@ impl IssuePersonhoodUniquenessRatingCall {
 
 /// Contains the necessary information to ask for an XCM return message.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Copy)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CallMetadata {
     /// The index must match the position of the module in `construct_runtime!`.
     pallet_index: u8,
@@ -95,6 +97,7 @@ impl CallMetadata {
 /// This allows to generically call the sybil-personhood-oracle, whose response calls the method with the
 /// index defined in the `SybilResponse`
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Copy)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum SybilResponse {
     Faucet = 1,
 }
@@ -106,6 +109,7 @@ impl Default for SybilResponse {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct SybilResponseCall {
     call_index: [u8; 2],
     request_hash: H256,
@@ -134,6 +138,7 @@ impl SybilResponseCall {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct PersonhoodUniquenessRating {
     attested: CeremonyIndexType,
     last_n_ceremonies: CeremonyIndexType,

@@ -23,7 +23,7 @@ use geohash::GeoHash;
 use sp_core::RuntimeDebug;
 use rstd::{prelude::Vec, fmt, fmt::Formatter};
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
 use crate::balances::Demurrage;
@@ -56,7 +56,7 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CommunityIdentifier {
     geohash: [u8; 5],
     digest: [u8; 4],
@@ -105,7 +105,7 @@ impl CommunityIdentifier {
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Location {
     pub lat: Degree,
     pub lon: Degree,
@@ -118,7 +118,7 @@ impl Location {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CommunityMetadata {
     /// utf8 encoded name
     pub name: PalletString,
@@ -133,7 +133,7 @@ pub struct CommunityMetadata {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CidName {
     pub cid: CommunityIdentifier,
     pub name: PalletString,
@@ -213,6 +213,7 @@ impl Default for CommunityMetadata {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CommunityMetadataError {
     /// Invalid ascii character at \[index\]
     InvalidAscii(u8),
@@ -226,7 +227,7 @@ pub enum CommunityMetadataError {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Theme {
     // Todo: extend
     /// primary theme color from which the accent colors are derived by the material app design guide line

@@ -18,7 +18,7 @@ use codec::{Decode, Encode};
 use fixed::types::I64F64;
 use sp_core::RuntimeDebug;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
 // We're working with fixpoint here.
@@ -26,7 +26,7 @@ pub type BalanceType = I64F64;
 pub type Demurrage = I64F64;
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Copy)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BalanceEntry<BlockNumber> {
     /// The balance of the account after last manual adjustment
     pub principal: BalanceType,
