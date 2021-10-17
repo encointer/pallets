@@ -483,14 +483,15 @@ impl<T: Config> Module<T> {
             }
 
             if !meetups.is_empty() {
+                let mut meetup_indices: Vec<MeetupIndexType>  = (1..=n_locations as MeetupIndexType).collect();
+                meetup_indices =  meetup_indices.random_permutation(&mut random_source).unwrap_or_default();
                 // commit result to state
                 <MeetupCount>::insert((cid, cindex), n_meetups as MeetupIndexType);
                 for (i, m) in meetups.iter().enumerate() {
-                    let _idx = (i + 1) as MeetupIndexType;
                     for p in meetups[i].iter() {
-                        <MeetupIndex<T>>::insert((cid, cindex), p, &_idx);
+                        <MeetupIndex<T>>::insert((cid, cindex), p, &meetup_indices[i]);
                     }
-                    <MeetupRegistry<T>>::insert((cid, cindex), &_idx, m.clone());
+                    <MeetupRegistry<T>>::insert((cid, cindex), &meetup_indices[i], m.clone());
                 }
             };
             debug!(
@@ -526,10 +527,9 @@ impl<T: Config> Module<T> {
         let cids = <encointer_communities::Module<T>>::community_identifiers();
         for cid in cids.iter() {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
-            let meetup_count = Self::meetup_count((cid, cindex));
             let reward = Self::nominal_income(cid);
 
-            for m in 1..=meetup_count {
+            for m in 1..=<encointer_communities::Module<T>>::get_locations(cid).len() as MeetupIndexType {
                 // first, evaluate votes on how many participants showed up
                 let (n_confirmed, n_honest_participants) =
                     match Self::ballot_meetup_n_votes(cid, cindex, m) {
