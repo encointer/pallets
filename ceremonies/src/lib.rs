@@ -40,6 +40,7 @@ use sp_std::{
 	prelude::*,
     vec,
     cmp::min,
+    collections::btree_set::BTreeSet
 };
 
 use codec::{Decode, Encode};
@@ -529,10 +530,11 @@ impl<T: Config> Module<T> {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
             let reward = Self::nominal_income(cid);
 
-            for m in 1..=<encointer_communities::Module<T>>::get_locations(cid).len() as MeetupLocationIndexType {
+            for m in MeetupLocationIndex::<T>::iter_prefix_values((cid, cindex))
+                .collect::<BTreeSet<MeetupLocationIndexType>>().iter() {
                 // first, evaluate votes on how many participants showed up
                 let (n_confirmed, n_honest_participants) =
-                    match Self::ballot_meetup_n_votes(cid, cindex, m) {
+                    match Self::ballot_meetup_n_votes(cid, cindex, *m) {
                         Some(nn) => nn,
                         _ => {
                             warn!(
