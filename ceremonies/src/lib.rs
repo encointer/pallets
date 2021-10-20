@@ -484,15 +484,15 @@ impl<T: Config> Module<T> {
             }
 
             if !meetups.is_empty() {
-                let mut meetup_location_indices: Vec<MeetupLocationIndexType>  = (1..=n_locations as MeetupLocationIndexType).collect();
-                meetup_location_indices =  meetup_location_indices.random_permutation(&mut random_source).unwrap_or_default();
+                let mut location_assignments: Vec<MeetupLocationIndexType>  = (1..=n_locations as MeetupLocationIndexType).collect();
+                location_assignments =  location_assignments.random_permutation(&mut random_source).unwrap_or_default();
                 // commit result to state
                 <MeetupCount>::insert((cid, cindex), n_meetups as MeetupLocationIndexType);
                 for (i, m) in meetups.iter().enumerate() {
                     for p in meetups[i].iter() {
-                        <MeetupLocationIndex<T>>::insert((cid, cindex), p, &meetup_location_indices[i]);
+                        <MeetupLocationIndex<T>>::insert((cid, cindex), p, &location_assignments[i]);
                     }
-                    <MeetupRegistry<T>>::insert((cid, cindex), &meetup_location_indices[i], m.clone());
+                    <MeetupRegistry<T>>::insert((cid, cindex), &location_assignments[i], m.clone());
                 }
             };
             debug!(
