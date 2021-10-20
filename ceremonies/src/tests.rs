@@ -65,7 +65,7 @@ pub fn set_timestamp(t: u64) {
 }
 
 /// get correct meetup time for a certain cid and meetup
-fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Moment {
+fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupLocationIndexType) -> Moment {
     //assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
     let cindex = EncointerScheduler::current_ceremony_index() as u64;
     let mlon: f64 = EncointerCeremonies::get_meetup_location(cid, mindex)
@@ -86,7 +86,7 @@ fn signed_claim(
     claimant: &sr25519::Pair,
     cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
-    mindex: MeetupIndexType,
+    mindex: MeetupLocationIndexType,
     location: Location,
     timestamp: Moment,
     participant_count: u32,
@@ -187,7 +187,7 @@ fn attest_all(
     attestees: &Vec<&sr25519::Pair>,
     cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
-    mindex: MeetupIndexType,
+    mindex: MeetupLocationIndexType,
     location: Location,
     timestamp: Moment,
     n_participants: u32,
@@ -287,7 +287,7 @@ fn fully_attest_meetup(
             .flatten()
             .collect();
 
-        let mindex = EncointerCeremonies::meetup_index((cid, EncointerScheduler::current_ceremony_index()), meetup.get(0).unwrap());
+        let mindex = EncointerCeremonies::meetup_location_index((cid, EncointerScheduler::current_ceremony_index()), meetup.get(0).unwrap());
         let loc  = EncointerCommunities::get_locations(&cid)[(mindex - 1) as usize];
         let time = correct_meetup_time(&cid, mindex);
         attest_all(
@@ -389,7 +389,7 @@ fn attest_claims_works() {
         run_to_next_phase();
         // ATTESTING
         assert_eq!(
-            EncointerCeremonies::meetup_index((cid, cindex), &account_id(&alice)),
+            EncointerCeremonies::meetup_location_index((cid, cindex), &account_id(&alice)),
             1
         );
         let loc = Location::default();
@@ -546,7 +546,7 @@ fn attest_claims_with_non_participant_fails_silently() {
 }
 
 #[test]
-fn attest_claims_with_wrong_meetup_index_fails() {
+fn attest_claims_with_wrong_meetup_location_index_fails() {
     new_test_ext().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
@@ -1286,15 +1286,15 @@ fn assigning_meetup_at_phase_change_and_purge_works() {
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);
         assert_eq!(
-            EncointerCeremonies::meetup_index((cid, cindex), &alice),
+            EncointerCeremonies::meetup_location_index((cid, cindex), &alice),
             NONE
         );
         run_to_next_phase();
-        assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &alice), 1);
+        assert_eq!(EncointerCeremonies::meetup_location_index((cid, cindex), &alice), 1);
         run_to_next_phase();
         run_to_next_phase();
         assert_eq!(
-            EncointerCeremonies::meetup_index((cid, cindex), &alice),
+            EncointerCeremonies::meetup_location_index((cid, cindex), &alice),
             NONE
         );
     });
@@ -1437,7 +1437,7 @@ fn assigning_meetup_works(
             exp_meetups.len() as u64
         );
 
-        for size in 0..exp_meetups.iter().map(|v| *v as MeetupIndexType).max().unwrap(){
+        for size in 0..exp_meetups.iter().map(|v| *v as MeetupLocationIndexType).max().unwrap(){
             assert_eq!(
                 get_meetups_by_size(cid, size as usize).len(),
                 exp_meetups.iter().filter(|v| *v == &(size as usize)).count()
