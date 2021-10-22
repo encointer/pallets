@@ -979,6 +979,7 @@ fn issue_reward_works() {
 
         run_to_next_phase();
         // REGISTERING
+        EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).ok();
 
         let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
         assert_abs_diff_eq!(
@@ -1018,6 +1019,13 @@ fn issue_reward_works() {
             EncointerCeremonies::participant_reputation((cid, cindex), &account_id(&ferdie)),
             Reputation::Unverified
         );
+
+        // Claiming twice does not work for any of the meetup participants
+        assert!(EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).is_err());
+        assert!(EncointerCeremonies::issue_rewards(&account_id(&bob), &cid).is_err());
+        assert!(EncointerCeremonies::issue_rewards(&account_id(&charlie), &cid).is_err());
+        assert!(EncointerCeremonies::issue_rewards(&account_id(&dave), &cid).is_err());
+        assert!(EncointerCeremonies::issue_rewards(&account_id(&ferdie), &cid).is_err());
     });
 }
 
@@ -1032,6 +1040,7 @@ fn bootstrapping_works() {
         let eve = AccountKeyring::Eve.pair();
         let ferdie = AccountKeyring::Ferdie.pair();
 
+        EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).ok();
         let cindex = EncointerScheduler::current_ceremony_index();
 
         assert_eq!(
@@ -1330,9 +1339,13 @@ fn ceremony_index_and_purging_registry_works() {
             alice
         );
         run_to_next_phase();
+
+        run_to_next_phase();
+        run_to_next_phase();
+        run_to_next_phase();
         // now again registering
         let new_cindex = EncointerScheduler::current_ceremony_index();
-        assert_eq!(new_cindex, cindex + 1);
+        assert_eq!(new_cindex, cindex + 2);
         assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
         assert_eq!(
             EncointerCeremonies::bootstrapper_registry((cid, cindex), &1),
@@ -1374,6 +1387,9 @@ fn grow_population_works() {
 
         run_to_next_phase();
         // REGISTERING
+        for pair in participants.iter() {
+            EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+        }
 
         let cindex = EncointerScheduler::current_ceremony_index();
         // register everybody again. also those who didn't have the chance last time
@@ -1395,6 +1411,9 @@ fn grow_population_works() {
 
         run_to_next_phase();
         // REGISTERING
+        for pair in participants.iter() {
+            EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+        }
 
         let cindex = EncointerScheduler::current_ceremony_index();
         // register everybody again. also those who didn't have the chance last time
@@ -1417,6 +1436,10 @@ fn grow_population_works() {
 
         run_to_next_phase();
         // REGISTERING
+        for pair in participants.iter() {
+            EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+        }
+
         let cindex = EncointerScheduler::current_ceremony_index();
         let mut proof_count = 0;
         for pair in participants.iter() {

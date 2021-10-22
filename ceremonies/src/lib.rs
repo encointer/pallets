@@ -126,6 +126,8 @@ decl_storage! {
         LocationTolerance get(fn location_tolerance) config(): u32;
         // [ms] time tolerance for meetup moment
         TimeTolerance get(fn time_tolerance) config(): T::Moment;
+
+        IssuedRewards get(fn issued_rewards): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) MeetupIndexType => ();
     }
 }
 
@@ -356,6 +358,12 @@ decl_module! {
             <EndorseesCount>::mutate((cid, cindex), |c| *c += 1);
             Ok(())
         }
+
+        #[weight = 10_000]
+        pub fn claim_rewards(origin, cid: CommunityIdentifier) -> DispatchResult {
+            let sender = ensure_signed(origin)?;
+            Self::issue_rewards(&sender, &cid)
+        }
     }
 }
 
@@ -410,6 +418,12 @@ decl_error! {
         ParticipantIsNotRegistered,
         /// No locations are available for assigning participants
         NoLocationsAvailable,
+        /// Trying to issue rewards in a phase that is not REGISTERING
+        WrongPhaseForClaimingRewards,
+        /// Trying to issue rewards for a meetup for which ubi was already issued
+        RewardsAlreadyIssued,
+        /// Trying to claim UBI for a meetup where votes are not depandable
+        VotesNotDependable,
     }
 }
 
@@ -732,93 +746,87 @@ impl<T: Config> Module<T> {
         }
     }
 
-    // this function takes O(n) for n meetups, so it should later be processed off-chain within
-    // SubstraTEE-worker together with the entire registry
-    // as this function can only be called by the ceremony state machine, it could actually work out fine
-    // on-chain. It would just delay the next block once per ceremony cycle.
-    fn issue_rewards() {
+
+    fn issue_rewards(participant: &T::AccountId, cid:&CommunityIdentifier) -> DispatchResult {
         if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
-            return;
+            return Err(<Error<T>>::WrongPhaseForClaimingRewards.into());
         }
-        let cids = <encointer_communities::Module<T>>::community_identifiers();
-        for cid in cids.iter() {
-            let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
-            let meetup_count = Self::meetup_count((cid, cindex));
-            let reward = Self::nominal_income(cid);
 
-            for m in 1..=meetup_count {
-                // first, evaluate votes on how many participants showed up
-                let (n_confirmed, n_honest_participants) =
-                    match Self::ballot_meetup_n_votes(cid, cindex, m) {
-                        Some(nn) => nn,
-                        _ => {
-                            warn!(
-                                target: LOG,
-                                "ignoring meetup {} because votes are not dependable",
-                                m
-                            );
-                            continue;
-                        }
-                    };
-                let meetup_participants = Self::get_meetup_participants((*cid, cindex), m);
-                for p in &meetup_participants {
-                    if Self::meetup_participant_count_vote((cid, cindex), &p) != n_confirmed {
-                        debug!(
-                            target: LOG,
-                            "skipped participant because of wrong participant count vote: {:?}",
-                            p
-                        );
-                        continue;
-                    }
-                    let attestees = Self::attestation_registry(
-                        (cid, cindex),
-                        &Self::attestation_index((*cid, cindex), &p),
-                    );
-                    if attestees.len() < (n_honest_participants - 1) as usize {
-                        debug!(
-                            target: LOG,
-                            "skipped participant because didn't testify for honest peers: {:?}",
-                            p
-                        );
-                        continue;
-                    }
+        let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
+        let reward = Self::nominal_income(cid);
+        let m = Self::get_meetup_index((*cid, cindex), participant)?;
 
-                    let mut was_attested_count = 0u32;
-                    for other_participant in &meetup_participants {
-                        if other_participant == p {
-                            continue;
-                        }
-                        let attestees_from_other = Self::attestation_registry(
-                            (cid, cindex),
-                            &Self::attestation_index((cid, cindex), &other_participant),
-                        );
-                        if attestees_from_other.contains(&p) {
-                            was_attested_count += 1;
-                        }
-                    }
+        if <IssuedRewards>::contains_key((cid, cindex), m) {
+            return Err(<Error<T>>::RewardsAlreadyIssued.into());
+        }
 
-                    if was_attested_count < (n_honest_participants - 1)
-                    {
-                        debug!(
-                            "skipped participant because of too few attestations ({}): {:?}",
-                            was_attested_count,
-                            p
-                        );
-                        continue;
-                    }
+        // first, evaluate votes on how many participants showed up
+        let (n_confirmed, n_honest_participants) =
+            match Self::ballot_meetup_n_votes(cid, cindex, m) {
+                Some(nn) => nn,
+                _ => {
+                    return Err(<Error<T>>::VotesNotDependable.into());
+                }
+            };
+        let meetup_participants = Self::get_meetup_participants((*cid, cindex), m);
+        for p in &meetup_participants {
+            if Self::meetup_participant_count_vote((cid, cindex), &p) != n_confirmed {
+                debug!(
+                    target: LOG,
+                    "skipped participant because of wrong participant count vote: {:?}",
+                    p
+                );
+                continue;
+            }
+            let attestees = Self::attestation_registry(
+                (cid, cindex),
+                &Self::attestation_index((*cid, cindex), &p),
+            );
+            if attestees.len() < (n_honest_participants - 1) as usize {
+                debug!(
+                    target: LOG,
+                    "skipped participant because didn't testify for honest peers: {:?}",
+                    p
+                );
+                continue;
+            }
 
-                    trace!(target: LOG, "participant merits reward: {:?}", p);
-                    if <encointer_balances::Module<T>>::issue(*cid, &p, reward).is_ok() {
-                        <ParticipantReputation<T>>::insert(
-                            (cid, cindex),
-                            &p,
-                            Reputation::VerifiedUnlinked,
-                        );
-                    }
+            let mut was_attested_count = 0u32;
+            for other_participant in &meetup_participants {
+                if other_participant == p {
+                    continue;
+                }
+                let attestees_from_other = Self::attestation_registry(
+                    (cid, cindex),
+                    &Self::attestation_index((cid, cindex), &other_participant),
+                );
+                if attestees_from_other.contains(&p) {
+                    was_attested_count += 1;
                 }
             }
+
+            if was_attested_count < (n_honest_participants - 1)
+            {
+                debug!(
+                    "skipped participant because of too few attestations ({}): {:?}",
+                    was_attested_count,
+                    p
+                );
+                continue;
+            }
+
+            trace!(target: LOG, "participant merits reward: {:?}", p);
+            if <encointer_balances::Module<T>>::issue(*cid, &p, reward).is_ok() {
+                <ParticipantReputation<T>>::insert(
+                    (cid, cindex),
+                    &p,
+                    Reputation::VerifiedUnlinked,
+                );
+            }
         }
+        <IssuedRewards>::insert((cid, cindex), m, ());
         info!(target: LOG, "issuing rewards completed");
+        Ok(())
     }
 
     fn ballot_meetup_n_votes(
@@ -913,9 +921,11 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
             }
             CeremonyPhaseType::ATTESTING => {}
             CeremonyPhaseType::REGISTERING => {
-                Self::issue_rewards();
                 let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-                Self::purge_registry(cindex - 1);
+                // Clean up with a time delay, such that participants can claim their UBI in the following cycle.
+                if cindex > 2 {
+                    Self::purge_registry(cindex - 2);
+                }
             }
         }
     }
