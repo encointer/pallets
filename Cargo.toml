@@ -14,3 +14,6 @@ members = [
     'sybil-gate-template',
     'test-utils'
 ]
+
+[patch."https://github.com/encointer/substrate-fixed"]
+substrate-fixed = { path = "../substrate-fixed"}
