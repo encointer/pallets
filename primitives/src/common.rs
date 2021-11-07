@@ -16,6 +16,7 @@
 
 use codec::{Decode, Encode};
 use sp_core::RuntimeDebug;
+use scale_info::TypeInfo;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -72,7 +73,7 @@ pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
     Bs58verify::verify(&cid.as_bytes_or_noop()).map_err(|e| IpfsValidationError::InvalidBase58(e))
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum IpfsValidationError {
     /// Invalid length supplied. Should be 46. Is: \[length\]

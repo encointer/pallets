@@ -58,6 +58,7 @@ use encointer_primitives::{
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use encointer_primitives::random_permutation::RandomPermutation;
+use scale_info::TypeInfo;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -71,7 +72,7 @@ pub trait Config:
 {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     type Public: IdentifyAccount<AccountId = Self::AccountId>;
-    type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode;
+    type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
     type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
 }
 

@@ -15,13 +15,14 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
 pub type CeremonyIndexType = u32;
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CeremonyPhaseType {
     REGISTERING,

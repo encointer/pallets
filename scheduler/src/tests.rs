@@ -17,11 +17,9 @@
 use crate::mock::{Origin, new_test_ext, TestRuntime, System, Timestamp, master};
 use crate::CeremonyPhaseType;
 
-use frame_support::traits::UnfilteredDispatchable;
 use frame_support::{
     assert_ok,
     traits::{OnFinalize, OnInitialize},
-    pallet_prelude::ProvideInherent,
 };
 use std::ops::Rem;
 
@@ -45,8 +43,7 @@ pub fn run_to_block(n: u64) {
 }
 
 pub fn set_timestamp(t: u64) {
-    let _ = <pallet_timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
-        .dispatch_bypass_filter(Origin::none());
+    let _ = pallet_timestamp::Pallet::<TestRuntime>::set(Origin::none(),t);
 }
 
 #[test]

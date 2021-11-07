@@ -7,8 +7,9 @@ edition = "2018"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-fixed = { package = "substrate-fixed", tag = "v0.5.6", default-features = false, git = "https://github.com/encointer/substrate-fixed" }
+fixed = { package = "substrate-fixed", tag = "v0.5.7", default-features = false, git = "https://github.com/encointer/substrate-fixed" }
 geohash = { default-features = false, git = "https://github.com/encointer/geohash", branch = "master" }
+scale-info = { version = "1.0", default-features = false }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
@@ -35,6 +36,7 @@ std = [
 	"fixed/std",
 	"frame-support/std",
 	"frame-system/std",
+	"scale-info/std",
 	"sp-io/std",
 	"sp-std/std",
 	"sp-runtime/std",

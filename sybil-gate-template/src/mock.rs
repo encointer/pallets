@@ -18,6 +18,7 @@
 
 use super::*;
 pub use crate as dut;
+use scale_info::TypeInfo;
 use test_utils::*;
 use frame_support::dispatch::DispatchInfo;
 
@@ -45,7 +46,7 @@ impl dut::Config for TestRuntime {
     type Signature = Signature;
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Decode, Encode)]
+#[derive(Clone, PartialEq, Eq, Debug, Decode, Encode, TypeInfo)]
 pub struct EmptyCall(());
 impl GetDispatchInfo for EmptyCall {
     fn get_dispatch_info(&self) -> DispatchInfo {
