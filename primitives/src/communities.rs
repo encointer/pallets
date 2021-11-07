@@ -22,6 +22,7 @@ use fixed::types::I64F64;
 use geohash::GeoHash;
 use sp_core::RuntimeDebug;
 use sp_std::{prelude::Vec, fmt, fmt::Formatter};
+use scale_info::TypeInfo;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -55,7 +56,7 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
     Ok(())
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CommunityIdentifier {
     geohash: [u8; 5],
@@ -104,7 +105,7 @@ impl CommunityIdentifier {
 }
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Location {
     pub lat: Degree,
@@ -117,7 +118,7 @@ impl Location {
     }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CommunityMetadata {
     /// utf8 encoded name
@@ -132,7 +133,7 @@ pub struct CommunityMetadata {
     pub url: Option<PalletString>,
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CidName {
     pub cid: CommunityIdentifier,
@@ -212,7 +213,7 @@ impl Default for CommunityMetadata {
     }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CommunityMetadataError {
     /// Invalid ascii character at \[index\]
@@ -226,7 +227,7 @@ pub enum CommunityMetadataError {
     TooManyCharactersInUrl(u8),
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Theme {
     // Todo: extend

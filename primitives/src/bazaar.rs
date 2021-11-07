@@ -16,6 +16,7 @@
 
 use codec::{Decode, Encode};
 use sp_core::RuntimeDebug;
+use scale_info::TypeInfo;
 
 use crate::common::PalletString;
 use crate::communities::CommunityIdentifier;
@@ -23,7 +24,7 @@ use crate::communities::CommunityIdentifier;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BusinessIdentifier<AccountId> {
     pub community_identifier: CommunityIdentifier,
@@ -39,7 +40,7 @@ impl<AccountId> BusinessIdentifier<AccountId> {
     }
 }
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BusinessData {
     pub url: PalletString,
@@ -54,7 +55,7 @@ impl BusinessData {
 
 pub type OfferingIdentifier = u32;
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq)]
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct OfferingData {
     pub url: PalletString,

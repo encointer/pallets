@@ -15,6 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use fixed::traits::Fixed;
 use sp_std::vec::Vec;
 use sp_core::{RuntimeDebug, H256};
@@ -28,7 +29,7 @@ use serde::{Deserialize, Serialize};
 use crate::scheduler::CeremonyIndexType;
 use crate::sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT;
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct IssuePersonhoodUniquenessRatingCall {
     call_index: [u8; 2],
@@ -72,7 +73,7 @@ impl IssuePersonhoodUniquenessRatingCall {
 }
 
 /// Contains the necessary information to ask for an XCM return message.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Copy)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Copy, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CallMetadata {
     /// The index must match the position of the module in `construct_runtime!`.
@@ -99,7 +100,7 @@ impl CallMetadata {
 
 /// This allows to generically call the sybil-personhood-oracle, whose response calls the method with the
 /// index defined in the `SybilResponse`
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Copy)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum SybilResponse {
     Faucet = 1,
@@ -111,7 +112,7 @@ impl Default for SybilResponse {
     }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct SybilResponseCall {
     call_index: [u8; 2],
@@ -140,7 +141,7 @@ impl SybilResponseCall {
     }
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct PersonhoodUniquenessRating {
     attested: CeremonyIndexType,

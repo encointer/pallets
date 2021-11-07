@@ -19,6 +19,7 @@
 //! created from a single initial seed hash.
 
 use codec::{Encode, Decode};
+use scale_info::TypeInfo;
 use sp_runtime::traits::{Hash, TrailingZeroInput};
 
 /// Pseudo-random number streamer. This retains the state of the random number stream. It's as
@@ -45,7 +46,7 @@ use sp_runtime::traits::{Hash, TrailingZeroInput};
 /// If you're persisting it over blocks, be aware that the sequence will start to repeat. This won't
 /// be a practical issue unless you're using tiny hash types (e.g. 64-bit) and pulling hundred of
 /// megabytes of data from it.
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, TypeInfo)]
 pub struct RandomNumberGenerator<Hashing: Hash> {
     current: Hashing::Output,
     offset: u32,
