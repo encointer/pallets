@@ -142,7 +142,7 @@ decl_module! {
 
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: call.weight(), call: call.encode().into() };
             debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
-            match T::XcmSender::send_xcm(sibling_junction(parachain_id).into(), message) {
+            match T::XcmSender::send_xcm(sibling_junction(parachain_id), message) {
                 Ok(()) => {
                     <PendingRequests<T>>::insert(&request_hash, &sender);
                     Self::deposit_event(RawEvent::PersonhoodUniquenessRatingRequestSentSuccess(sender, request_hash, parachain_id))

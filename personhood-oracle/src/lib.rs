@@ -107,7 +107,7 @@ decl_module! {
             let call =  SybilResponseCall::new(&response, request_hash, confidence);
             let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: response.weight(), call: call.encode().into() };
 
-            match T::XcmSender::send_xcm(sibling_junction(para_id).into(), message) {
+            match T::XcmSender::send_xcm(sibling_junction(para_id), message) {
                 Ok(()) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentSuccess(request_hash, para_id)),
                 Err(e) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentFailure(request_hash, para_id, e)),
             }
