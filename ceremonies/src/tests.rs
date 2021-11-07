@@ -24,8 +24,7 @@ use encointer_primitives::{
 };
 use frame_support::{
     assert_ok,
-    pallet_prelude::ProvideInherent,
-    traits::{OnFinalize, OnInitialize, UnfilteredDispatchable}
+    traits::{OnFinalize, OnInitialize}
 };
 use rstest::*;
 use sp_core::crypto::Ss58Codec;
@@ -61,8 +60,7 @@ fn run_to_next_phase() {
 }
 
 pub fn set_timestamp(t: u64) {
-    let _ = <pallet_timestamp::Pallet<TestRuntime> as ProvideInherent>::Call::set(t)
-        .dispatch_bypass_filter(Origin::none());
+    let _ = pallet_timestamp::Pallet::<TestRuntime>::set(Origin::none(),t);
 }
 
 /// get correct meetup time for a certain cid and meetup
