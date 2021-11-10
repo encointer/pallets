@@ -26,7 +26,7 @@ use crate::communities::{CommunityIdentifier, Location};
 use crate::scheduler::CeremonyIndexType;
 
 pub type ParticipantIndexType = u64;
-pub type MeetupIndexType = u64;
+pub type MeetupLocationIndexType = u64;
 pub type AttestationIndexType = u64;
 pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 
@@ -61,7 +61,7 @@ pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
     pub claimant_public: AccountId,
     pub ceremony_index: CeremonyIndexType,
     pub community_identifier: CommunityIdentifier,
-    pub meetup_index: MeetupIndexType,
+    pub meetup_location_index: MeetupLocationIndexType,
     pub location: Location,
     pub timestamp: Moment,
     pub number_of_participants_confirmed: u32,
@@ -73,7 +73,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
         claimant_public: AccountId,
         ceremony_index: CeremonyIndexType,
         community_identifier: CommunityIdentifier,
-        meetup_index: MeetupIndexType,
+        meetup_location_index: MeetupLocationIndexType,
         location: Location,
         timestamp: Moment,
         number_of_participants_confirmed: u32,
@@ -83,7 +83,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
             claimant_public,
             ceremony_index,
             community_identifier,
-            meetup_index,
+            meetup_location_index,
             location,
             timestamp,
             number_of_participants_confirmed,
@@ -95,7 +95,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
         claimant_public: AccountId,
         ceremony_index: CeremonyIndexType,
         community_identifier: CommunityIdentifier,
-        meetup_index: MeetupIndexType,
+        meetup_location_index: MeetupLocationIndexType,
         location: Location,
         timestamp: Moment,
         number_of_participants_confirmed: u32,
@@ -104,7 +104,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
             claimant_public,
             ceremony_index,
             community_identifier,
-            meetup_index,
+            meetup_location_index,
             location,
             timestamp,
             number_of_participants_confirmed,
@@ -133,7 +133,7 @@ impl<Signature, AccountId: Clone + Encode, Moment: Encode + Copy>
             self.claimant_public.clone(),
             self.ceremony_index,
             self.community_identifier,
-            self.meetup_index,
+            self.meetup_location_index,
             self.location,
             self.timestamp,
             self.number_of_participants_confirmed,

@@ -27,7 +27,6 @@ use frame_support::{
     traits::{OnFinalize, OnInitialize}
 };
 use rstest::*;
-use sp_core::crypto::Ss58Codec;
 use sp_core::{sr25519, Pair, U256};
 use std::ops::Rem;
 
@@ -64,7 +63,7 @@ pub fn set_timestamp(t: u64) {
 }
 
 /// get correct meetup time for a certain cid and meetup
-fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Moment {
+fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupLocationIndexType) -> Moment {
     //assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
     let cindex = EncointerScheduler::current_ceremony_index() as u64;
     let mlon: f64 = EncointerCeremonies::get_meetup_location(cid, mindex)
@@ -85,7 +84,7 @@ fn signed_claim(
     claimant: &sr25519::Pair,
     cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
-    mindex: MeetupIndexType,
+    mindex: MeetupLocationIndexType,
     location: Location,
     timestamp: Moment,
     participant_count: u32,
@@ -186,7 +185,7 @@ fn attest_all(
     attestees: &Vec<&sr25519::Pair>,
     cid: CommunityIdentifier,
     cindex: CeremonyIndexType,
-    mindex: MeetupIndexType,
+    mindex: MeetupLocationIndexType,
     location: Location,
     timestamp: Moment,
     n_participants: u32,
@@ -264,38 +263,36 @@ fn perform_bootstrapping_ceremony(
     cid
 }
 
+fn fully_attest_meetups(
+    cid: CommunityIdentifier,
+    keys: Vec<sr25519::Pair>,
+) {
+    get_meetups(cid).into_iter().for_each(|meetup|
+        fully_attest_meetup(cid, keys.clone(), meetup));
+}
+
 /// perform full attestation of all participants for a given meetup
 fn fully_attest_meetup(
     cid: CommunityIdentifier,
     keys: Vec<sr25519::Pair>,
-    mindex: MeetupIndexType,
+    meetup: Vec<AccountId>,
 ) {
-    let cindex = EncointerScheduler::current_ceremony_index();
-    let meetup = EncointerCeremonies::meetup_registry((cid, cindex), mindex);
     for p in meetup.iter() {
-        let mut others = Vec::with_capacity(meetup.len() - 1);
-        println!("participant {}", p.to_ss58check());
-        for o in meetup.iter() {
-            println!("attestor {}", o.to_ss58check());
-            if o == p {
-                println!("same same");
-                continue;
-            }
-            for pair in keys.iter() {
-                println!("checking {}", pair.public().to_ss58check());
-                if account_id(pair) == *o {
-                    others.push(pair.clone());
-                }
-            }
-        }
-        println!("  length of attestors: {}", others.len());
+
+        let others: Vec<&sr25519::Pair> = meetup.iter()
+            .filter(|o| o != &p)
+            .map(|o| keys.iter().filter(move |pair| account_id(pair) == *o))
+            .flatten()
+            .collect();
+
+        let mindex = EncointerCeremonies::meetup_location_index((cid, EncointerScheduler::current_ceremony_index()), meetup.get(0).unwrap());
         let loc  = EncointerCommunities::get_locations(&cid)[(mindex - 1) as usize];
         let time = correct_meetup_time(&cid, mindex);
         attest_all(
             (*p).clone(),
-            &others.iter().collect(),
+            &others,
             cid,
-            cindex,
+            EncointerScheduler::current_ceremony_index(),
             mindex,
             loc,
             time,
@@ -309,6 +306,17 @@ fn assert_error(actual: DispatchResult, expected: Error::<TestRuntime>) {
         sp_runtime::DispatchError::Module { index: _, error: _, message } => message,
         _ => panic!(),
     }.unwrap(), expected.as_str());
+}
+
+fn get_meetups(cid: CommunityIdentifier) -> Vec<Vec<AccountId>> {
+    MeetupRegistry::<TestRuntime>::iter_prefix_values((
+        cid,
+        EncointerScheduler::current_ceremony_index(),
+    )).collect()
+}
+
+fn get_meetups_by_size(cid: CommunityIdentifier, size: usize) -> Vec<Vec<AccountId>> {
+    get_meetups(cid).into_iter().filter(|meetup| meetup.len() == size).collect()
 }
 
 // unit tests ////////////////////////////////////////
@@ -379,7 +387,7 @@ fn attest_claims_works() {
         run_to_next_phase();
         // ATTESTING
         assert_eq!(
-            EncointerCeremonies::meetup_index((cid, cindex), &account_id(&alice)),
+            EncointerCeremonies::meetup_location_index((cid, cindex), &account_id(&alice)),
             1
         );
         let loc = Location::default();
@@ -536,7 +544,7 @@ fn attest_claims_with_non_participant_fails_silently() {
 }
 
 #[test]
-fn attest_claims_with_wrong_meetup_index_fails() {
+fn attest_claims_with_wrong_meetup_location_index_fails() {
     new_test_ext().execute_with(|| {
         let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
         let alice = AccountKeyring::Alice.pair();
@@ -1276,15 +1284,15 @@ fn assigning_meetup_at_phase_change_and_purge_works() {
         let cindex = EncointerScheduler::current_ceremony_index();
         register_alice_bob_ferdie(cid);
         assert_eq!(
-            EncointerCeremonies::meetup_index((cid, cindex), &alice),
+            EncointerCeremonies::meetup_location_index((cid, cindex), &alice),
             NONE
         );
         run_to_next_phase();
-        assert_eq!(EncointerCeremonies::meetup_index((cid, cindex), &alice), 1);
+        assert_eq!(EncointerCeremonies::meetup_location_index((cid, cindex), &alice), 1);
         run_to_next_phase();
         run_to_next_phase();
         assert_eq!(
-            EncointerCeremonies::meetup_index((cid, cindex), &alice),
+            EncointerCeremonies::meetup_location_index((cid, cindex), &alice),
             NONE
         );
     });
@@ -1303,41 +1311,38 @@ fn grow_population_works() {
             .iter()
             .for_each(|p| register(account_id(&p), cid, None).unwrap());
 
-        let cindex = EncointerScheduler::current_ceremony_index();
         run_to_next_phase();
-        // ASSIGNING
-        assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
-        let meetup2_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
 
+        // ASSIGNING
+        assert_eq!(get_meetups(cid).len(), 1);
         // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-        assert_eq!(meetup2_1.len(), 9);
+        assert_eq!(get_meetups_by_size(cid, 9).len(), 1);
 
         run_to_next_phase();
         // WITNESSING
-        fully_attest_meetup(cid, participants.clone(), 1);
+
+        fully_attest_meetups(cid, participants.clone());
 
         run_to_next_phase();
         // REGISTERING
 
-        let cindex = EncointerScheduler::current_ceremony_index();
         // register everybody again. also those who didn't have the chance last time
         for pair in participants.iter() {
-            let proof = get_proof(cid, cindex - 1, pair);
+            let proof = get_proof(cid, EncointerScheduler::current_ceremony_index() - 1, pair);
             register(account_id(&pair), cid, proof).unwrap();
         }
         run_to_next_phase();
+
         // ASSIGNING
-        assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
-        let meetup3_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
-        let meetup3_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
+        let meetups: Vec<Vec<AccountId>> = get_meetups(cid);
+        assert_eq!(meetups.len(), 2);
         // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-        assert_eq!(meetup3_1.len(), 7);
-        assert_eq!(meetup3_2.len(), 6);
+        assert_eq!(get_meetups_by_size(cid, 7).len(), 1);
+        assert_eq!(get_meetups_by_size(cid, 6).len(), 1);
 
         run_to_next_phase();
         // WITNESSING
-        fully_attest_meetup(cid, participants.clone(), 1);
-        fully_attest_meetup(cid, participants.clone(), 2);
+        fully_attest_meetups(cid, participants.clone());
 
         run_to_next_phase();
         // REGISTERING
@@ -1354,18 +1359,16 @@ fn grow_population_works() {
         run_to_next_phase();
         // ASSIGNING
         assert_eq!(proof_count, 13);
-        assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
-        let meetup4_1 = EncointerCeremonies::meetup_registry((cid, cindex), 1);
-        let meetup4_2 = EncointerCeremonies::meetup_registry((cid, cindex), 2);
 
+        let meetups: Vec<Vec<AccountId>> = get_meetups(cid);
+        assert_eq!(meetups.len(), 2);
         // whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-        assert_eq!(meetup4_1.len(), 10); // 7(B + R) + 2N
-        assert_eq!(meetup4_2.len(), 9); // 6(B + R) + 3N
+        assert_eq!(get_meetups_by_size(cid, 10).len(), 1);
+        assert_eq!(get_meetups_by_size(cid, 9).len(), 1);
 
         run_to_next_phase();
         // WITNESSING
-        fully_attest_meetup(cid, participants.clone(), 1);
-        fully_attest_meetup(cid, participants.clone(), 2);
+        fully_attest_meetups(cid, participants.clone());
 
         run_to_next_phase();
         // REGISTERING
@@ -1432,12 +1435,11 @@ fn assigning_meetup_works(
             exp_meetups.len() as u64
         );
 
-        for (i, m) in exp_meetups.into_iter().enumerate() {
+        for size in 0..exp_meetups.iter().map(|v| *v as MeetupLocationIndexType).max().unwrap(){
             assert_eq!(
-                EncointerCeremonies::meetup_registry((cid, cindex), (i + 1) as MeetupIndexType)
-                    .len(),
-                m
-            );
+                get_meetups_by_size(cid, size as usize).len(),
+                exp_meetups.iter().filter(|v| *v == &(size as usize)).count()
+            )
         }
     });
 }
@@ -1475,9 +1477,7 @@ fn grow_community(
         assert!(m_count > 0);
         run_to_next_phase(); // WITNESSING
 
-        for i in 1..=m_count {
-            fully_attest_meetup(cid, participants.clone(), i);
-        }
+        fully_attest_meetups(cid, participants.clone());
 
         run_to_next_phase(); // REGISTERING
 

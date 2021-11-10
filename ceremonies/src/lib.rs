@@ -40,6 +40,7 @@ use sp_std::{
 	prelude::*,
     vec,
     cmp::min,
+    collections::btree_set::BTreeSet
 };
 
 use codec::{Decode, Encode};
@@ -93,9 +94,9 @@ decl_storage! {
 
         // all meetups for each ceremony mapping to a vec of participants
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-        MeetupRegistry get(fn meetup_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) MeetupIndexType => Vec<T::AccountId>;
-        MeetupIndex get(fn meetup_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => MeetupIndexType;
-        MeetupCount get(fn meetup_count): map hasher(blake2_128_concat) CommunityCeremony => MeetupIndexType;
+        MeetupRegistry get(fn meetup_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) MeetupLocationIndexType => Vec<T::AccountId>;
+        MeetupLocationIndex get(fn meetup_location_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => MeetupLocationIndexType;
+        MeetupCount get(fn meetup_count): map hasher(blake2_128_concat) CommunityCeremony => MeetupLocationIndexType;
 
         // collect fellow meetup participants accounts who attested key account
         // caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
@@ -185,20 +186,20 @@ decl_module! {
             ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
                 Error::<T>::InexistentCommunity);
 
-            let meetup_index = Self::meetup_index((cid, cindex), &sender);
-            let mut meetup_participants = Self::meetup_registry((cid, cindex), &meetup_index);
+            let meetup_location_index = Self::meetup_location_index((cid, cindex), &sender);
+            let mut meetup_participants = Self::meetup_registry((cid, cindex), &meetup_location_index);
             ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
             meetup_participants.retain(|x| x != &sender);
             let num_registered = meetup_participants.len();
             ensure!(claims.len() <= num_registered, Error::<T>::TooManyClaims);
             let mut verified_attestees = vec!();
 
-            let mlocation = if let Some(l) = Self::get_meetup_location(&cid, meetup_index)
+            let mlocation = if let Some(l) = Self::get_meetup_location(&cid, meetup_location_index)
                 { l } else { return Err(<Error<T>>::MeetupLocationNotFound.into()) };
-            let mtime = if let Some(t) = Self::get_meetup_time(&cid, meetup_index)
+            let mtime = if let Some(t) = Self::get_meetup_time(&cid, meetup_location_index)
                 { t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
             debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
-                meetup_index, mlocation, mtime, cid);
+                meetup_location_index, mlocation, mtime, cid);
             for claim in claims.iter() {
                 let claimant = &claim.claimant_public;
                 if claimant == &sender {
@@ -221,10 +222,10 @@ decl_module! {
                         "ignoring claim with wrong community identifier: {:?}",
                         claim.community_identifier);
                     continue };
-                if claim.meetup_index != meetup_index {
+                if claim.meetup_location_index != meetup_location_index {
                     warn!(target: LOG,
                         "ignoring claim with wrong meetup index: {}",
-                        claim.meetup_index);
+                        claim.meetup_location_index);
                     continue };
                 if !<encointer_communities::Module<T>>::is_valid_location(
                     &claim.location) {
@@ -372,7 +373,7 @@ impl<T: Config> Module<T> {
             <ParticipantCount>::insert((cid, cindex), 0);
             <Endorsees<T>>::remove_prefix((cid, cindex), None);
             <MeetupRegistry<T>>::remove_prefix((cid, cindex), None);
-            <MeetupIndex<T>>::remove_prefix((cid, cindex), None);
+            <MeetupLocationIndex<T>>::remove_prefix((cid, cindex), None);
             <MeetupCount>::insert((cid, cindex), 0);
             <AttestationRegistry<T>>::remove_prefix((cid, cindex), None);
             <AttestationIndex<T>>::remove_prefix((cid, cindex), None);
@@ -484,14 +485,15 @@ impl<T: Config> Module<T> {
             }
 
             if !meetups.is_empty() {
+                let mut location_assignments: Vec<MeetupLocationIndexType>  = (1..=n_locations as MeetupLocationIndexType).collect();
+                location_assignments =  location_assignments.random_permutation(&mut random_source).unwrap_or_default();
                 // commit result to state
-                <MeetupCount>::insert((cid, cindex), n_meetups as MeetupIndexType);
+                <MeetupCount>::insert((cid, cindex), n_meetups as MeetupLocationIndexType);
                 for (i, m) in meetups.iter().enumerate() {
-                    let _idx = (i + 1) as MeetupIndexType;
                     for p in meetups[i].iter() {
-                        <MeetupIndex<T>>::insert((cid, cindex), p, &_idx);
+                        <MeetupLocationIndex<T>>::insert((cid, cindex), p, &location_assignments[i]);
                     }
-                    <MeetupRegistry<T>>::insert((cid, cindex), &_idx, m.clone());
+                    <MeetupRegistry<T>>::insert((cid, cindex), &location_assignments[i], m.clone());
                 }
             };
             debug!(
@@ -527,13 +529,13 @@ impl<T: Config> Module<T> {
         let cids = <encointer_communities::Module<T>>::community_identifiers();
         for cid in cids.iter() {
             let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
-            let meetup_count = Self::meetup_count((cid, cindex));
             let reward = Self::nominal_income(cid);
 
-            for m in 1..=meetup_count {
+            for m in MeetupLocationIndex::<T>::iter_prefix_values((cid, cindex))
+                .collect::<BTreeSet<MeetupLocationIndexType>>().iter() {
                 // first, evaluate votes on how many participants showed up
                 let (n_confirmed, n_honest_participants) =
-                    match Self::ballot_meetup_n_votes(cid, cindex, m) {
+                    match Self::ballot_meetup_n_votes(cid, cindex, *m) {
                         Some(nn) => nn,
                         _ => {
                             warn!(
@@ -608,9 +610,9 @@ impl<T: Config> Module<T> {
     fn ballot_meetup_n_votes(
         cid: &CommunityIdentifier,
         cindex: CeremonyIndexType,
-        meetup_idx: MeetupIndexType,
+        meetup_location_idx: MeetupLocationIndexType,
     ) -> Option<(u32, u32)> {
-        let meetup_participants = Self::meetup_registry((cid, cindex), &meetup_idx);
+        let meetup_participants = Self::meetup_registry((cid, cindex), &meetup_location_idx);
         // first element is n, second the count of votes for n
         let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
         for p in meetup_participants {
@@ -636,11 +638,11 @@ impl<T: Config> Module<T> {
 
     pub fn get_meetup_location(
         cid: &CommunityIdentifier,
-        meetup_idx: MeetupIndexType,
+        meetup_location_idx: MeetupLocationIndexType,
     ) -> Option<Location> {
         let locations = <encointer_communities::Module<T>>::get_locations(cid);
-        if (meetup_idx > 0) && (meetup_idx <= locations.len() as MeetupIndexType) {
-            Some(locations[(meetup_idx - 1) as usize])
+        if (meetup_location_idx > 0) && (meetup_location_idx <= locations.len() as MeetupLocationIndexType) {
+            Some(locations[(meetup_location_idx - 1) as usize])
         } else {
             None
         }
@@ -649,18 +651,18 @@ impl<T: Config> Module<T> {
     // this function only works during ATTESTING, so we're keeping it for private use
     fn get_meetup_time(
         cid: &CommunityIdentifier,
-        meetup_idx: MeetupIndexType,
+        meetup_location_idx: MeetupLocationIndexType,
     ) -> Option<T::Moment> {
         if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
             return None;
         }
-        if meetup_idx == 0 {
+        if meetup_location_idx == 0 {
             return None;
         }
         let duration =
             <encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
         let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
-        let mlocation = Self::get_meetup_location(&cid, meetup_idx)?;
+        let mlocation = Self::get_meetup_location(&cid, meetup_location_idx)?;
         let day = T::MomentsPerDay::get();
         let perdegree = day / T::Moment::from(360u32);
         let start = next - duration;
