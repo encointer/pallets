@@ -21,7 +21,7 @@ use crc::{Crc, CRC_32_CKSUM};
 use fixed::types::I64F64;
 use geohash::GeoHash;
 use sp_core::RuntimeDebug;
-use sp_std::{prelude::Vec, fmt, fmt::Formatter};
+use sp_std::{prelude::Vec, fmt, fmt::Formatter, str::FromStr};
 use scale_info::TypeInfo;
 
 #[cfg(feature = "serde_derive")]
@@ -102,6 +102,41 @@ impl CommunityIdentifier {
     pub fn as_array(self) -> [u8; 9] {
         concat_arrays!(self.geohash, self.digest)
     }
+}
+
+impl FromStr for CommunityIdentifier {
+	type Err = bs58::decode::Error;
+
+	fn from_str(cid: &str) -> Result<Self, Self::Err> {
+		let mut geohash: [u8; 5] = [0u8; 5];
+		let mut digest: [u8; 4] = [0u8; 4];
+
+		geohash.clone_from_slice(&cid[..5].as_bytes());
+		digest.clone_from_slice(&bs58::decode(&cid[5..]).into_vec()
+			.map_err(decorate_bs58_err)?);
+
+		Ok(Self {
+			geohash,
+			digest,
+		})
+	}
+}
+
+/// If we just returned the error as is, it would be confusing, as the index size is not the actual
+/// index of the &str passed to the `CommunityIdentifier::from_str` method. Hence, we increase the
+/// index by the geohash size.
+///
+///
+fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
+	use bs58::decode::Error as Bs58Err;
+	match err {
+		Bs58Err::InvalidCharacter {
+			character, index
+		} => Bs58Err::InvalidCharacter {
+			character, index: index + 5
+		},
+		err => err
+	}
 }
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
@@ -292,6 +327,8 @@ mod tests {
         validate_demurrage, validate_nominal_income, CommunityMetadata, CommunityMetadataError,
         Demurrage, NominalIncome, Location, CommunityIdentifier, Degree
     };
+	use sp_std::str::FromStr;
+	use std::assert_matches::assert_matches;
 
     #[test]
     fn demurrage_smaller_0_fails() {
@@ -349,4 +386,19 @@ mod tests {
         assert_eq!(CommunityIdentifier::new(Location::new(Degree::from_num(-89.5), Degree::from_num(-87.0)), empty.clone())
                        .unwrap().to_string(), "4044u7YXq9G");
     }
+
+	#[test]
+	fn cid_from_str_works() {
+		assert_eq!(CommunityIdentifier::from_str("gbsuv7YXq9G").unwrap().to_string(), "gbsuv7YXq9G")
+	}
+
+	#[test]
+	fn invalid_cid_from_str_errs() {
+		assert_matches!(
+            CommunityIdentifier::from_str("gbsuv7YXq9l").unwrap_err(),
+            bs58::decode::Error::InvalidCharacter {
+				character: 'l',
+				index: 10,
+    	})
+	}
 }
