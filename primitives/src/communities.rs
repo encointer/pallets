@@ -65,8 +65,14 @@ pub struct CommunityIdentifier {
 
 
 fn fmt(cid: &CommunityIdentifier, f: &mut Formatter<'_>) -> fmt::Result {
-    write!(f, "{}{}", sp_std::str::from_utf8(&cid.geohash).unwrap(), bs58::encode(cid.digest).into_string())
-}
+    match sp_std::str::from_utf8(&cid.geohash) {
+        Ok(geohash_str) => write!(f, "{}{}", geohash_str, bs58::encode(cid.digest).into_string()),
+        Err(e) => {
+            log::error!("[Cid.fmt] {:?}", e);
+            Err(fmt::Error)
+            }
+        }
+    }
 
 impl fmt::Display for CommunityIdentifier {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
