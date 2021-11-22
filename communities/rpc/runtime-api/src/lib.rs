@@ -29,9 +29,9 @@ pub type LocationSerialized = [u8; 32];
 
 sp_api::decl_runtime_apis! {
 
-    pub trait CommunitiesApi {
-        fn get_cids() -> Vec<CommunityIdentifier>;
-        fn get_name(cid: &CommunityIdentifier) -> Option<PalletString>;
-        fn get_locations(cid: &CommunityIdentifier) -> Vec<LocationSerialized>;
-    }
+	pub trait CommunitiesApi {
+		fn get_cids() -> Vec<CommunityIdentifier>;
+		fn get_name(cid: &CommunityIdentifier) -> Option<PalletString>;
+		fn get_locations(cid: &CommunityIdentifier) -> Vec<LocationSerialized>;
+	}
 }

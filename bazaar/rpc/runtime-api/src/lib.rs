@@ -22,16 +22,16 @@
 use sp_std::vec::Vec;
 
 use encointer_primitives::{
-    bazaar::{OfferingData, BusinessIdentifier, BusinessData}, communities::CommunityIdentifier,
+	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
+	communities::CommunityIdentifier,
 };
-use sp_api::{Encode, Decode};
-
+use sp_api::{Decode, Encode};
 
 sp_api::decl_runtime_apis! {
-    pub trait BazaarApi<AccountId>
-    where AccountId: Encode + Decode
-    {
-        fn get_offerings(business: &BusinessIdentifier<AccountId>) -> Vec<OfferingData>;
-        fn get_businesses(community: &CommunityIdentifier) -> Vec<(AccountId, BusinessData)>;
-    }
+	pub trait BazaarApi<AccountId>
+	where AccountId: Encode + Decode
+	{
+		fn get_offerings(business: &BusinessIdentifier<AccountId>) -> Vec<OfferingData>;
+		fn get_businesses(community: &CommunityIdentifier) -> Vec<(AccountId, BusinessData)>;
+	}
 }

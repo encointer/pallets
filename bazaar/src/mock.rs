@@ -22,22 +22,22 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-    pub enum TestRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-        EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
+	pub enum TestRuntime where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
-        EncointerBazaar: dut::{Pallet, Call, Storage, Event<T>},
-    }
+		EncointerBazaar: dut::{Pallet, Call, Storage, Event<T>},
+	}
 );
 
 impl dut::Config for TestRuntime {
-    type Event = Event;
+	type Event = Event;
 }
 
 // boilerplate
@@ -49,5 +49,8 @@ impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap().into()
+	frame_system::GenesisConfig::default()
+		.build_storage::<TestRuntime>()
+		.unwrap()
+		.into()
 }

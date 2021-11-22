@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::mock::{TestRuntime, new_test_ext, Origin};
+use crate::mock::{new_test_ext, Origin, TestRuntime};
 use frame_support::assert_ok;
 use sp_core::H256;
 use xcm_executor::traits::Convert;
@@ -26,55 +26,55 @@ type SybilGate = crate::Module<TestRuntime>;
 
 #[test]
 fn faucet_works() {
-    new_test_ext().execute_with(|| {
-        assert_ok!(SybilGate::request_personhood_uniqueness_rating(
-            Origin::signed(AccountKeyring::Alice.into()),
-            2,
-            1,
-            Default::default(),
-            SybilResponse::default()
-        ));
-    })
+	new_test_ext().execute_with(|| {
+		assert_ok!(SybilGate::request_personhood_uniqueness_rating(
+			Origin::signed(AccountKeyring::Alice.into()),
+			2,
+			1,
+			Default::default(),
+			SybilResponse::default()
+		));
+	})
 }
 
 #[test]
 fn faucet_returns_err_if_proof_too_weak() {
-    let sibling = sibling_junction(1863);
-    let account = LocationConverter::convert_ref(&sibling.clone().into()).unwrap();
-    let alice: AccountId = AccountKeyring::Alice.into();
-    let request_hash = H256::default();
+	let sibling = sibling_junction(1863);
+	let account = LocationConverter::convert_ref(&sibling.clone().into()).unwrap();
+	let alice: AccountId = AccountKeyring::Alice.into();
+	let request_hash = H256::default();
 
-    new_test_ext().execute_with(|| {
-        PendingRequests::<TestRuntime>::insert(request_hash, &alice);
+	new_test_ext().execute_with(|| {
+		PendingRequests::<TestRuntime>::insert(request_hash, &alice);
 
-        assert_eq!(
-            SybilGate::faucet(
-                Origin::signed(account),
-                request_hash,
-                PersonhoodUniquenessRating::default()
-            )
-            .unwrap_err(),
-            Error::<TestRuntime>::PersonhoodUniquenessRatingTooWeak.into()
-        );
-    })
+		assert_eq!(
+			SybilGate::faucet(
+				Origin::signed(account),
+				request_hash,
+				PersonhoodUniquenessRating::default()
+			)
+			.unwrap_err(),
+			Error::<TestRuntime>::PersonhoodUniquenessRatingTooWeak.into()
+		);
+	})
 }
 
 #[test]
 fn faucet_returns_err_for_unexpected_request() {
-    let sibling = sibling_junction(1863);
-    let account = LocationConverter::convert_ref(&sibling.clone().into()).unwrap();
+	let sibling = sibling_junction(1863);
+	let account = LocationConverter::convert_ref(&sibling.clone().into()).unwrap();
 
-    new_test_ext().execute_with(|| {
-        assert!(SybilGate::faucet(
-            Origin::signed(account),
-            Default::default(),
-            PersonhoodUniquenessRating::default()
-        )
-        .is_err());
-    })
+	new_test_ext().execute_with(|| {
+		assert!(SybilGate::faucet(
+			Origin::signed(account),
+			Default::default(),
+			PersonhoodUniquenessRating::default()
+		)
+		.is_err());
+	})
 }
 
 #[test]
 fn test_enum_encode() {
-    assert_eq!(SybilResponse::Faucet as u8, 1);
+	assert_eq!(SybilResponse::Faucet as u8, 1);
 }

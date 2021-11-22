@@ -25,13 +25,13 @@ pub type CeremonyIndexType = u32;
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CeremonyPhaseType {
-    REGISTERING,
-    ASSIGNING,
-    ATTESTING,
+	REGISTERING,
+	ASSIGNING,
+	ATTESTING,
 }
 
 impl Default for CeremonyPhaseType {
-    fn default() -> Self {
-        CeremonyPhaseType::REGISTERING
-    }
+	fn default() -> Self {
+		CeremonyPhaseType::REGISTERING
+	}
 }

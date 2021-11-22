@@ -19,11 +19,9 @@
 //extern crate node_primitives;
 
 use encointer_primitives::balances::BalanceType;
-use frame_support::parameter_types;
-use frame_support::traits::Get;
+use frame_support::{parameter_types, traits::Get};
 use polkadot_parachain::primitives::Sibling;
-use sp_runtime::traits::{IdentifyAccount};
-use sp_runtime::{MultiSignature, Perbill, generic};
+use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
 use std::cell::RefCell;
 use xcm::v1::NetworkId;
 use xcm_builder::SiblingParachainConvertsVia;
@@ -36,10 +34,10 @@ pub use encointer_balances;
 pub use encointer_ceremonies;
 pub use encointer_communities;
 pub use encointer_scheduler;
+pub use frame_support_test;
+pub use frame_system;
 pub use pallet_balances;
 pub use pallet_timestamp;
-pub use frame_system;
-pub use frame_support_test;
 pub use sp_runtime;
 
 pub use sp_core::H256;
@@ -57,7 +55,7 @@ pub const LOCATION_TOLERANCE: u32 = 1000; // [m]
 pub const ZERO: BalanceType = BalanceType::from_bits(0x0);
 
 thread_local! {
-    static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
+	static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
 }
 /// The signature type used by accounts/transactions.
 pub type Signature = MultiSignature;
@@ -72,163 +70,163 @@ pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 
 pub struct ExistentialDeposit;
 impl Get<u64> for ExistentialDeposit {
-    fn get() -> u64 {
-        EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
-    }
+	fn get() -> u64 {
+		EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
+	}
 }
 
 parameter_types! {
-    pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: u32 = 1024;
-    pub const MaximumBlockLength: u32 = 2 * 1024;
-    pub const AvailableBlockRatio: Perbill = Perbill::one();
+	pub const BlockHashCount: u64 = 250;
+	pub const MaximumBlockWeight: u32 = 1024;
+	pub const MaximumBlockLength: u32 = 2 * 1024;
+	pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
 
 #[macro_export]
 macro_rules! impl_frame_system {
-    ($t:ident) => {
-        use sp_runtime::traits::IdentityLookup;
-        impl frame_system::Config for $t {
-            type BaseCallFilter = frame_support::traits::Everything;
-            type BlockWeights = ();
-            type BlockLength = ();
-            type AccountId = AccountId;
-            type Call = Call;
-            type Lookup = IdentityLookup<Self::AccountId>;
-            type Index = u64;
-            type BlockNumber = BlockNumber;
-            type Hash = H256;
-            type Hashing = BlakeTwo256;
-            type Header = Header;
-            type Event = Event;
-            type Origin = Origin;
-            type BlockHashCount = BlockHashCount;
-            type DbWeight = ();
-            type Version = ();
-            type PalletInfo = PalletInfo;
-            type OnNewAccount = ();
-            type OnKilledAccount = ();
-            type AccountData = pallet_balances::AccountData<u64>;
-            type SystemWeightInfo = ();
-            type SS58Prefix = ();
-            type OnSetCode = ();
-        }
-    };
+	($t:ident) => {
+		use sp_runtime::traits::IdentityLookup;
+		impl frame_system::Config for $t {
+			type BaseCallFilter = frame_support::traits::Everything;
+			type BlockWeights = ();
+			type BlockLength = ();
+			type AccountId = AccountId;
+			type Call = Call;
+			type Lookup = IdentityLookup<Self::AccountId>;
+			type Index = u64;
+			type BlockNumber = BlockNumber;
+			type Hash = H256;
+			type Hashing = BlakeTwo256;
+			type Header = Header;
+			type Event = Event;
+			type Origin = Origin;
+			type BlockHashCount = BlockHashCount;
+			type DbWeight = ();
+			type Version = ();
+			type PalletInfo = PalletInfo;
+			type OnNewAccount = ();
+			type OnKilledAccount = ();
+			type AccountData = pallet_balances::AccountData<u64>;
+			type SystemWeightInfo = ();
+			type SS58Prefix = ();
+			type OnSetCode = ();
+		}
+	};
 }
 
 pub type Moment = u64;
 parameter_types! {
-    pub const MinimumPeriod: Moment = 1;
+	pub const MinimumPeriod: Moment = 1;
 }
 
 #[macro_export]
 macro_rules! impl_timestamp {
-    ($t:ident, $scheduler:ident) => {
-        impl pallet_timestamp::Config for $t {
-            type Moment = Moment;
-            type OnTimestampSet = $scheduler;
-            type MinimumPeriod = MinimumPeriod;
-            type WeightInfo = ();
-        }
-    };
-    ($t:ident) => {
-        impl pallet_timestamp::Config for $t {
-            type Moment = Moment;
-            type OnTimestampSet = ();
-            type MinimumPeriod = MinimumPeriod;
-            type WeightInfo = ();
-        }
-    };
+	($t:ident, $scheduler:ident) => {
+		impl pallet_timestamp::Config for $t {
+			type Moment = Moment;
+			type OnTimestampSet = $scheduler;
+			type MinimumPeriod = MinimumPeriod;
+			type WeightInfo = ();
+		}
+	};
+	($t:ident) => {
+		impl pallet_timestamp::Config for $t {
+			type Moment = Moment;
+			type OnTimestampSet = ();
+			type MinimumPeriod = MinimumPeriod;
+			type WeightInfo = ();
+		}
+	};
 }
 
 parameter_types! {
-    pub const TransferFee: Balance = 0;
-    pub const CreationFee: Balance = 0;
-    pub const TransactionBaseFee: u64 = 0;
-    pub const TransactionByteFee: u64 = 0;
+	pub const TransferFee: Balance = 0;
+	pub const CreationFee: Balance = 0;
+	pub const TransactionBaseFee: u64 = 0;
+	pub const TransactionByteFee: u64 = 0;
 }
 
 #[macro_export]
 macro_rules! impl_balances {
-    ($t:ident, $system:ident) => {
-        impl pallet_balances::Config for $t {
-            type Balance = Balance;
-            type Event = Event;
-            type DustRemoval = ();
-            type ExistentialDeposit = ExistentialDeposit;
-            type AccountStore = System;
-            type WeightInfo = ();
-            type MaxLocks = ();
-            type MaxReserves = ();
-            type ReserveIdentifier = [u8; 8];
-        }
-    };
+	($t:ident, $system:ident) => {
+		impl pallet_balances::Config for $t {
+			type Balance = Balance;
+			type Event = Event;
+			type DustRemoval = ();
+			type ExistentialDeposit = ExistentialDeposit;
+			type AccountStore = System;
+			type WeightInfo = ();
+			type MaxLocks = ();
+			type MaxReserves = ();
+			type ReserveIdentifier = [u8; 8];
+		}
+	};
 }
 
 #[macro_export]
 macro_rules! impl_encointer_balances {
-    ($t:ident) => {
-        impl encointer_balances::Config for $t {
-            type Event = Event;
-        }
-    };
+	($t:ident) => {
+		impl encointer_balances::Config for $t {
+			type Event = Event;
+		}
+	};
 }
 
 #[macro_export]
 macro_rules! impl_encointer_communities {
-    ($t:ident) => {
-        impl encointer_communities::Config for $t {
-            type Event = Event;
-        }
-    };
+	($t:ident) => {
+		impl encointer_communities::Config for $t {
+			type Event = Event;
+		}
+	};
 }
 
 #[macro_export]
 macro_rules! test_runtime {
-    ($t:ident, $system:ident, $scheduler:ident) => {
-        impl_frame_system!($t);
-        impl_balances!($t, $system);
-        impl_timestamp!($t, $scheduler);
-        impl_outer_origin_for_runtime!($t);
-    };
+	($t:ident, $system:ident, $scheduler:ident) => {
+		impl_frame_system!($t);
+		impl_balances!($t, $system);
+		impl_timestamp!($t, $scheduler);
+		impl_outer_origin_for_runtime!($t);
+	};
 }
 
 #[macro_export]
 macro_rules! impl_encointer_ceremonies {
-    ($t:ident) => {
-        impl encointer_ceremonies::Config for $t {
-            type Event = Event;
-            type Public = <Signature as Verify>::Signer;
-            type Signature = Signature;
-            type RandomnessSource = frame_support_test::TestRandomness<$t>;
-        }
-    };
+	($t:ident) => {
+		impl encointer_ceremonies::Config for $t {
+			type Event = Event;
+			type Public = <Signature as Verify>::Signer;
+			type Signature = Signature;
+			type RandomnessSource = frame_support_test::TestRandomness<$t>;
+		}
+	};
 }
 
 parameter_types! {
-    pub const MomentsPerDay: u64 = 86_400_000; // [ms/d]
+	pub const MomentsPerDay: u64 = 86_400_000; // [ms/d]
 }
 
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
-    ($t:ident, $ceremonies:ident) => {
-        impl encointer_scheduler::Config for $t {
-            type Event = Event;
-            type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
-            type MomentsPerDay = MomentsPerDay;
-        }
-    };
-    ($t:ident) => {
-        impl encointer_scheduler::Config for $t {
-            type Event = Event;
-            type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
-            type MomentsPerDay = MomentsPerDay;
-        }
-    };
+	($t:ident, $ceremonies:ident) => {
+		impl encointer_scheduler::Config for $t {
+			type Event = Event;
+			type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
+			type MomentsPerDay = MomentsPerDay;
+		}
+	};
+	($t:ident) => {
+		impl encointer_scheduler::Config for $t {
+			type Event = Event;
+			type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
+			type MomentsPerDay = MomentsPerDay;
+		}
+	};
 }
 
 parameter_types! {
-    pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
 }
 
 pub type LocationConverter = SiblingParachainConvertsVia<Sibling, AccountId>;
