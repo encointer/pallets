@@ -20,6 +20,9 @@ pub mod bs58_verify;
 pub mod random_number_generator;
 pub mod random_permutation;
 
+#[cfg(feature = "serde_derive")]
+pub mod serde;
+
 pub use bs58_verify::*;
 pub use random_number_generator::*;
 pub use random_permutation::*;

@@ -27,6 +27,9 @@ use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "serde_derive")]
+use ep_core::serde::serialize_array;
+
 use crate::{
 	balances::Demurrage,
 	common::{
@@ -63,7 +66,9 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CommunityIdentifier {
+	#[cfg_attr(feature = "std", serde(with = "serialize_array"))]
 	geohash: [u8; 5],
+	#[cfg_attr(feature = "std", serde(with = "serialize_array"))]
 	digest: [u8; 4],
 }
 
@@ -103,6 +108,7 @@ impl CommunityIdentifier {
 				let crc_engine = Crc::<u32>::new(&CRC_32_CKSUM);
 				let mut digest = crc_engine.digest();
 				digest.update(&(bootstrappers).encode());
+
 				Ok(CommunityIdentifier {
 					geohash: geohash_cropped,
 					digest: digest.finalize().to_be_bytes(),
@@ -409,6 +415,9 @@ mod tests {
 
 	#[test]
 	fn cid_from_str_works() {
+		use codec::Encode;
+		println!("[Cid] {:?}", CommunityIdentifier::from_str("gbsuv7YXq9G").unwrap().encode());
+
 		assert_eq!(CommunityIdentifier::from_str("gbsuv7YXq9G").unwrap().to_string(), "gbsuv7YXq9G")
 	}
 
@@ -418,5 +427,23 @@ mod tests {
 			CommunityIdentifier::from_str("gbsuv7YXq9l").unwrap_err(),
 			bs58::decode::Error::InvalidCharacter { character: 'l', index: 10 }
 		)
+	}
+
+	#[test]
+	fn cid_serializes_correctly() {
+		assert_eq!(
+			serde_json::to_string(&CommunityIdentifier::from_str("gbsuv7YXq9G").unwrap()).unwrap(),
+			"{\"geohash\":\"0x6762737576\",\"digest\":\"0xffffffff\"}"
+		)
+	}
+
+	#[test]
+	fn cid_deserializes_correctly() {
+		let cid_json = "{\"geohash\":\"0x6762737576\",\"digest\":\"0xffffffff\"}";
+
+		assert_eq!(
+			serde_json::from_str::<CommunityIdentifier>(cid_json).unwrap(),
+			CommunityIdentifier::from_str("gbsuv7YXq9G").unwrap()
+		);
 	}
 }
