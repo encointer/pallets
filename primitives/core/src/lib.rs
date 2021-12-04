@@ -15,17 +15,11 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(test, feature(assert_matches))]
 
-pub mod balances;
-pub mod bazaar;
-pub mod ceremonies;
-pub mod common;
-pub mod communities;
-pub mod error;
-pub mod scheduler;
+pub mod bs58_verify;
+pub mod random_number_generator;
+pub mod random_permutation;
 
-#[cfg(feature = "sybil")]
-pub mod sybil;
-
-pub use ep_core::*;
+pub use bs58_verify::*;
+pub use random_number_generator::*;
+pub use random_permutation::*;
