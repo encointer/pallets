@@ -16,90 +16,119 @@
 
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
+use sc_rpc::DenyUnsafe;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
-use sc_rpc::DenyUnsafe;
 
 use encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;
-use encointer_primitives::{communities::CommunityIdentifier, bazaar::BusinessIdentifier};
-use encointer_primitives::bazaar::{OfferingData, BusinessData};
+use encointer_primitives::{
+	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
+	communities::CommunityIdentifier,
+};
 
 #[rpc]
 pub trait BazaarApi<BlockHash, AccountId>
-    where AccountId: 'static + Encode + Decode + Send + Sync, {
-    #[rpc(name = "bazaar_getBusinesses")]
-    fn get_businesses(&self, cid: CommunityIdentifier, at: Option<BlockHash>) -> Result<Vec<BusinessData>>;
-    #[rpc(name = "bazaar_getOfferings")]
-    fn get_offerings(&self, cid: CommunityIdentifier, at: Option<BlockHash>) -> Result<Vec<OfferingData>>;
-    #[rpc(name = "bazaar_getOfferingsForBusiness")]
-    fn get_offerings_for_business(&self, bid: BusinessIdentifier<AccountId>, at: Option<BlockHash>) -> Result<Vec<OfferingData>>;
+where
+	AccountId: 'static + Encode + Decode + Send + Sync,
+{
+	#[rpc(name = "bazaar_getBusinesses")]
+	fn get_businesses(
+		&self,
+		cid: CommunityIdentifier,
+		at: Option<BlockHash>,
+	) -> Result<Vec<BusinessData>>;
+	#[rpc(name = "bazaar_getOfferings")]
+	fn get_offerings(
+		&self,
+		cid: CommunityIdentifier,
+		at: Option<BlockHash>,
+	) -> Result<Vec<OfferingData>>;
+	#[rpc(name = "bazaar_getOfferingsForBusiness")]
+	fn get_offerings_for_business(
+		&self,
+		bid: BusinessIdentifier<AccountId>,
+		at: Option<BlockHash>,
+	) -> Result<Vec<OfferingData>>;
 }
 
 pub struct Bazaar<Client, Block, AccountId> {
-    client: Arc<Client>,
-    _marker: std::marker::PhantomData<(Block, AccountId)>,
-    deny_unsafe: DenyUnsafe,
+	client: Arc<Client>,
+	_marker: std::marker::PhantomData<(Block, AccountId)>,
+	deny_unsafe: DenyUnsafe,
 }
 
-impl<Client, Block, AccountId> Bazaar<Client, Block, AccountId>
+impl<Client, Block, AccountId> Bazaar<Client, Block, AccountId> {
+	/// Create new `Bazaar` instance with the given reference to the client.
+	pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
+		Bazaar { client, _marker: Default::default(), deny_unsafe }
+	}
+}
+
+impl<Client, Block, AccountId> BazaarApi<<Block as BlockT>::Hash, AccountId>
+	for Bazaar<Client, Block, AccountId>
+where
+	AccountId: 'static + Clone + Encode + Decode + Send + Sync,
+	Block: BlockT,
+	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+	Client::Api: BazaarRuntimeApi<Block, AccountId>,
 {
-    /// Create new `Bazaar` instance with the given reference to the client.
-    pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
-        Bazaar {
-            client,
-            _marker: Default::default(),
-            deny_unsafe
-        }
-    }
-}
+	fn get_businesses(
+		&self,
+		cid: CommunityIdentifier,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> Result<Vec<BusinessData>> {
+		self.deny_unsafe.check_if_safe()?;
 
-impl<Client, Block, AccountId> BazaarApi<<Block as BlockT>::Hash, AccountId> for Bazaar<Client, Block, AccountId>
-    where
-        AccountId: 'static + Clone + Encode + Decode + Send + Sync,
-        Block: BlockT,
-        Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-        Client::Api: BazaarRuntimeApi<Block, AccountId> {
-    fn get_businesses(&self, cid: CommunityIdentifier, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<BusinessData>> {
-        self.deny_unsafe.check_if_safe()?;
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		return Ok(api
+			.get_businesses(&at, &cid)
+			.map_err(runtime_error_into_rpc_err)?
+			.iter()
+			.map(|bid| bid.1.clone())
+			.collect())
+	}
 
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-        return Ok(api.get_businesses(&at, &cid)
-            .map_err(runtime_error_into_rpc_err)?.iter()
-            .map(|bid| bid.1.clone())
-            .collect());
-    }
+	fn get_offerings(
+		&self,
+		cid: CommunityIdentifier,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> Result<Vec<OfferingData>> {
+		self.deny_unsafe.check_if_safe()?;
 
-    fn get_offerings(&self, cid: CommunityIdentifier, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<OfferingData>> {
-        self.deny_unsafe.check_if_safe()?;
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		return Ok(api
+			.get_businesses(&at, &cid)
+			.map_err(runtime_error_into_rpc_err)?
+			.iter()
+			.flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0.clone())))
+			.flatten()
+			.collect())
+	}
 
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-        return Ok(api.get_businesses(&at, &cid)
-            .map_err(runtime_error_into_rpc_err)?.iter()
-            .flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0.clone())))
-            .flatten()
-            .collect());
-    }
+	fn get_offerings_for_business(
+		&self,
+		bid: BusinessIdentifier<AccountId>,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> Result<Vec<OfferingData>> {
+		self.deny_unsafe.check_if_safe()?;
 
-    fn get_offerings_for_business(&self, bid: BusinessIdentifier<AccountId>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<OfferingData>> {
-        self.deny_unsafe.check_if_safe()?;
-
-        let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-        return Ok(api.get_offerings(&at, &bid).map_err(runtime_error_into_rpc_err)?);
-    }
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		return Ok(api.get_offerings(&at, &bid).map_err(runtime_error_into_rpc_err)?)
+	}
 }
 
 const RUNTIME_ERROR: i64 = 1; // Arbitrary number, but substrate uses the same
 
 /// Converts a runtime trap into an RPC error.
 fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-    Error {
-        code: ErrorCode::ServerError(RUNTIME_ERROR),
-        message: "Runtime trapped".into(),
-        data: Some(format!("{:?}", err).into()),
-    }
+	Error {
+		code: ErrorCode::ServerError(RUNTIME_ERROR),
+		message: "Runtime trapped".into(),
+		data: Some(format!("{:?}", err).into()),
+	}
 }

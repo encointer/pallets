@@ -20,33 +20,31 @@ pub use crate as dut;
 
 use test_utils::*;
 
-use encointer_primitives::{
-    scheduler::CeremonyPhaseType,
-};
+use encointer_primitives::scheduler::CeremonyPhaseType;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 pub fn master() -> AccountId {
-    AccountId::from(AccountKeyring::Alice)
+	AccountId::from(AccountKeyring::Alice)
 }
 
 frame_support::construct_runtime!(
-    pub enum TestRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+	pub enum TestRuntime where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: dut::{Pallet, Call, Storage, Config<T>, Event},
-    }
+	}
 );
 
 impl dut::Config for TestRuntime {
-    type Event = Event;
-    type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
-    type MomentsPerDay = MomentsPerDay;
+	type Event = Event;
+	type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
+	type MomentsPerDay = MomentsPerDay;
 }
 
 // boilerplate
@@ -55,17 +53,18 @@ impl_timestamp!(TestRuntime, EncointerScheduler);
 
 // genesis values
 pub fn new_test_ext(phase_duration: u64) -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-    dut::GenesisConfig::<TestRuntime> {
-        current_phase: CeremonyPhaseType::REGISTERING,
-        current_ceremony_index: 1,
-        ceremony_master: master(),
-        phase_durations: vec![
-            (CeremonyPhaseType::REGISTERING, phase_duration),
-            (CeremonyPhaseType::ASSIGNING, phase_duration),
-            (CeremonyPhaseType::ATTESTING, phase_duration),
-        ],
-    }.assimilate_storage(&mut t).unwrap();
-    t.into()
+	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	dut::GenesisConfig::<TestRuntime> {
+		current_phase: CeremonyPhaseType::REGISTERING,
+		current_ceremony_index: 1,
+		ceremony_master: master(),
+		phase_durations: vec![
+			(CeremonyPhaseType::REGISTERING, phase_duration),
+			(CeremonyPhaseType::ASSIGNING, phase_duration),
+			(CeremonyPhaseType::ATTESTING, phase_duration),
+		],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	t.into()
 }
-

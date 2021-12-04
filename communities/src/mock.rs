@@ -20,28 +20,26 @@ pub use crate as dut;
 
 use test_utils::*;
 
-use encointer_primitives::{
-    scheduler::CeremonyPhaseType,
-};
+use encointer_primitives::scheduler::CeremonyPhaseType;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-    pub enum TestRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+	pub enum TestRuntime where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
-    }
+	}
 );
 
 impl dut::Config for TestRuntime {
-    type Event = Event;
+	type Event = Event;
 }
 
 // boilerplate
@@ -51,20 +49,21 @@ impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-    dut::GenesisConfig::<TestRuntime> {
-        community_master: AccountId::from(AccountKeyring::Alice),
-    }.assimilate_storage(&mut t).unwrap();
-    encointer_scheduler::GenesisConfig::<TestRuntime> {
-        current_phase: CeremonyPhaseType::REGISTERING,
-        current_ceremony_index: 1,
-        ceremony_master: AccountId::from(AccountKeyring::Alice),
-        phase_durations: vec![
-            (CeremonyPhaseType::REGISTERING, ONE_DAY),
-            (CeremonyPhaseType::ASSIGNING, ONE_DAY),
-            (CeremonyPhaseType::ATTESTING, ONE_DAY),
-        ],
-    }.assimilate_storage(&mut t).unwrap();
-    t.into()
+	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	dut::GenesisConfig::<TestRuntime> { community_master: AccountId::from(AccountKeyring::Alice) }
+		.assimilate_storage(&mut t)
+		.unwrap();
+	encointer_scheduler::GenesisConfig::<TestRuntime> {
+		current_phase: CeremonyPhaseType::REGISTERING,
+		current_ceremony_index: 1,
+		ceremony_master: AccountId::from(AccountKeyring::Alice),
+		phase_durations: vec![
+			(CeremonyPhaseType::REGISTERING, ONE_DAY),
+			(CeremonyPhaseType::ASSIGNING, ONE_DAY),
+			(CeremonyPhaseType::ATTESTING, ONE_DAY),
+		],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	t.into()
 }
-

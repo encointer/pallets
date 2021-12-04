@@ -24,171 +24,170 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage,
-    dispatch::DispatchResult,
-    ensure,
-    storage::{StorageDoubleMap, IterableStorageDoubleMap},
+	decl_error, decl_event, decl_module, decl_storage,
+	dispatch::DispatchResult,
+	ensure,
+	storage::{IterableStorageDoubleMap, StorageDoubleMap},
 };
 use frame_system::ensure_signed;
 use sp_std::prelude::*;
 
 use encointer_primitives::{
-    bazaar::{BusinessIdentifier, BusinessData, OfferingData, OfferingIdentifier},
-    communities::CommunityIdentifier,
-    common::PalletString,
+	bazaar::{BusinessData, BusinessIdentifier, OfferingData, OfferingIdentifier},
+	common::PalletString,
+	communities::CommunityIdentifier,
 };
 
 pub trait Config: frame_system::Config + encointer_communities::Config {
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Config> as Bazaar {
-        pub BusinessRegistry get(fn business_registry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BusinessData;
-        pub OfferingRegistry get(fn offering_registry): double_map hasher(blake2_128_concat) BusinessIdentifier<T::AccountId>, hasher(blake2_128_concat) OfferingIdentifier => OfferingData;
-    }
+	trait Store for Module<T: Config> as Bazaar {
+		pub BusinessRegistry get(fn business_registry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BusinessData;
+		pub OfferingRegistry get(fn offering_registry): double_map hasher(blake2_128_concat) BusinessIdentifier<T::AccountId>, hasher(blake2_128_concat) OfferingIdentifier => OfferingData;
+	}
 }
 
 decl_event! {
-    pub enum Event<T> where <T as frame_system::Config>::AccountId {
-        /// Event emitted when a business is created. [community, who]
-        BusinessCreated(CommunityIdentifier, AccountId),
-        /// Event emitted when a business is updated. [community, who]
-        BusinessUpdated(CommunityIdentifier, AccountId),
-        /// Event emitted when a business is deleted. [community, who]
-        BusinessDeleted(CommunityIdentifier, AccountId),
-        /// Event emitted when an offering is created. [community, who, oid]
-        OfferingCreated(CommunityIdentifier, AccountId, OfferingIdentifier),
-        /// Event emitted when an offering is updated. [community, who, oid]
-        OfferingUpdated(CommunityIdentifier, AccountId, OfferingIdentifier),
-        /// Event emitted when an offering is deleted. [community, who, oid]
-        OfferingDeleted(CommunityIdentifier, AccountId, OfferingIdentifier),
-    }
+	pub enum Event<T> where <T as frame_system::Config>::AccountId {
+		/// Event emitted when a business is created. [community, who]
+		BusinessCreated(CommunityIdentifier, AccountId),
+		/// Event emitted when a business is updated. [community, who]
+		BusinessUpdated(CommunityIdentifier, AccountId),
+		/// Event emitted when a business is deleted. [community, who]
+		BusinessDeleted(CommunityIdentifier, AccountId),
+		/// Event emitted when an offering is created. [community, who, oid]
+		OfferingCreated(CommunityIdentifier, AccountId, OfferingIdentifier),
+		/// Event emitted when an offering is updated. [community, who, oid]
+		OfferingUpdated(CommunityIdentifier, AccountId, OfferingIdentifier),
+		/// Event emitted when an offering is deleted. [community, who, oid]
+		OfferingDeleted(CommunityIdentifier, AccountId, OfferingIdentifier),
+	}
 }
 
 decl_error! {
-    pub enum Error for Module<T: Config> {
-        /// community identifier not found
-        InexistentCommunity,
-        /// business already registered for this cid
-        ExistingBusiness,
-        /// business does not exist
-        InexistentBusiness,
-        /// offering does not exist
-        InexistentOffering
-    }
+	pub enum Error for Module<T: Config> {
+		/// community identifier not found
+		InexistentCommunity,
+		/// business already registered for this cid
+		ExistingBusiness,
+		/// business does not exist
+		InexistentBusiness,
+		/// offering does not exist
+		InexistentOffering
+	}
 }
 
 decl_module! {
-    pub struct Module<T: Config> for enum Call where origin: T::Origin {
-        fn deposit_event() = default;
-        type Error = Error<T>;
+	pub struct Module<T: Config> for enum Call where origin: T::Origin {
+		fn deposit_event() = default;
+		type Error = Error<T>;
 
-        #[weight = 10_000]
-        pub fn create_business(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
-            // Check that the supplied community is actually registered
-            ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
-                Error::<T>::InexistentCommunity);
+		#[weight = 10_000]
+		pub fn create_business(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer
+			let sender = ensure_signed(origin)?;
+			// Check that the supplied community is actually registered
+			ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity);
 
-            ensure!(!BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::ExistingBusiness);
+			ensure!(!BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::ExistingBusiness);
 
-            BusinessRegistry::<T>::insert(cid, &sender, BusinessData::new(url, 1));
+			BusinessRegistry::<T>::insert(cid, &sender, BusinessData::new(url, 1));
 
-            Self::deposit_event(RawEvent::BusinessCreated(cid, sender));
+			Self::deposit_event(RawEvent::BusinessCreated(cid, sender));
 
-            Ok(())
-        }
+			Ok(())
+		}
 
-        #[weight = 10_000]
-        pub fn update_business(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
+		#[weight = 10_000]
+		pub fn update_business(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer
+			let sender = ensure_signed(origin)?;
 
-            ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
+			ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
 
-            BusinessRegistry::<T>::mutate(cid, &sender, |b| b.url = url);
+			BusinessRegistry::<T>::mutate(cid, &sender, |b| b.url = url);
 
-            Self::deposit_event(RawEvent::BusinessUpdated(cid, sender));
+			Self::deposit_event(RawEvent::BusinessUpdated(cid, sender));
 
-            Ok(())
-        }
+			Ok(())
+		}
 
-        #[weight = 10_000]
-        pub fn delete_business(origin, cid: CommunityIdentifier) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
+		#[weight = 10_000]
+		pub fn delete_business(origin, cid: CommunityIdentifier) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer
+			let sender = ensure_signed(origin)?;
 
-            ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
+			ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
 
-            BusinessRegistry::<T>::remove(cid, &sender);
-            OfferingRegistry::<T>::remove_prefix(BusinessIdentifier::new(cid, sender.clone()), None);
+			BusinessRegistry::<T>::remove(cid, &sender);
+			OfferingRegistry::<T>::remove_prefix(BusinessIdentifier::new(cid, sender.clone()), None);
 
-            Self::deposit_event(RawEvent::BusinessDeleted(cid, sender));
+			Self::deposit_event(RawEvent::BusinessDeleted(cid, sender));
 
-            Ok(())
-        }
+			Ok(())
+		}
 
-        #[weight = 10_000]
-        pub fn create_offering(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
+		#[weight = 10_000]
+		pub fn create_offering(origin, cid: CommunityIdentifier, url: PalletString) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer
+			let sender = ensure_signed(origin)?;
 
-            ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
+			ensure!(BusinessRegistry::<T>::contains_key(cid, &sender), Error::<T>::InexistentBusiness);
 
-            let oid = BusinessRegistry::<T>::get(cid, &sender).last_oid;
-            BusinessRegistry::<T>::mutate(cid, &sender, |b| b.last_oid = b.last_oid + 1);
-            OfferingRegistry::<T>::insert(BusinessIdentifier::new(cid, sender.clone()), oid, OfferingData::new(url));
+			let oid = BusinessRegistry::<T>::get(cid, &sender).last_oid;
+			BusinessRegistry::<T>::mutate(cid, &sender, |b| b.last_oid = b.last_oid + 1);
+			OfferingRegistry::<T>::insert(BusinessIdentifier::new(cid, sender.clone()), oid, OfferingData::new(url));
 
-            Self::deposit_event(RawEvent::OfferingCreated(cid, sender, oid));
+			Self::deposit_event(RawEvent::OfferingCreated(cid, sender, oid));
 
-            Ok(())
-        }
+			Ok(())
+		}
 
-        #[weight = 10_000]
-        pub fn update_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier, url: PalletString) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
+		#[weight = 10_000]
+		pub fn update_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier, url: PalletString) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer
+			let sender = ensure_signed(origin)?;
 
-            let business_identifier = BusinessIdentifier::new(cid, sender.clone());
+			let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
-            ensure!(OfferingRegistry::<T>::contains_key(&business_identifier, &oid), Error::<T>::InexistentOffering);
+			ensure!(OfferingRegistry::<T>::contains_key(&business_identifier, &oid), Error::<T>::InexistentOffering);
 
-            OfferingRegistry::<T>::mutate(business_identifier, oid, |o| o.url = url);
+			OfferingRegistry::<T>::mutate(business_identifier, oid, |o| o.url = url);
 
-            Self::deposit_event(RawEvent::OfferingUpdated(cid, sender, oid));
+			Self::deposit_event(RawEvent::OfferingUpdated(cid, sender, oid));
 
-            Ok(())
-        }
+			Ok(())
+		}
 
-        #[weight = 10_000]
-        pub fn delete_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier) -> DispatchResult {
-            // Check that the extrinsic was signed and get the signer
-            let sender = ensure_signed(origin)?;
+		#[weight = 10_000]
+		pub fn delete_offering(origin, cid: CommunityIdentifier, oid: OfferingIdentifier) -> DispatchResult {
+			// Check that the extrinsic was signed and get the signer
+			let sender = ensure_signed(origin)?;
 
-            let business_identifier = BusinessIdentifier::new(cid, sender.clone());
+			let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
-            ensure!(OfferingRegistry::<T>::contains_key(&business_identifier, &oid), Error::<T>::InexistentOffering);
+			ensure!(OfferingRegistry::<T>::contains_key(&business_identifier, &oid), Error::<T>::InexistentOffering);
 
-            OfferingRegistry::<T>::remove(business_identifier, oid);
+			OfferingRegistry::<T>::remove(business_identifier, oid);
 
-            Self::deposit_event(RawEvent::OfferingDeleted(cid, sender, oid));
+			Self::deposit_event(RawEvent::OfferingDeleted(cid, sender, oid));
 
-            Ok(())
-        }
-    }
+			Ok(())
+		}
+	}
 }
 
-impl<T: Config> Module<T>
-{
-    pub fn get_businesses(cid: &CommunityIdentifier) -> Vec<(T::AccountId, BusinessData)> {
-        return BusinessRegistry::<T>::iter_prefix(cid).collect();
-    }
+impl<T: Config> Module<T> {
+	pub fn get_businesses(cid: &CommunityIdentifier) -> Vec<(T::AccountId, BusinessData)> {
+		return BusinessRegistry::<T>::iter_prefix(cid).collect()
+	}
 
-    pub fn get_offerings(bid: &BusinessIdentifier<T::AccountId>) -> Vec<OfferingData> {
-        return OfferingRegistry::<T>::iter_prefix_values(bid).collect();
-    }
+	pub fn get_offerings(bid: &BusinessIdentifier<T::AccountId>) -> Vec<OfferingData> {
+		return OfferingRegistry::<T>::iter_prefix_values(bid).collect()
+	}
 }
 
 #[cfg(test)]

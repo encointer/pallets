@@ -15,8 +15,8 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
-use sp_core::RuntimeDebug;
 use scale_info::TypeInfo;
+use sp_core::RuntimeDebug;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -36,30 +36,30 @@ pub type PalletString = Vec<u8>;
 pub type PalletString = String;
 
 pub trait AsByteOrNoop {
-    fn as_bytes_or_noop(&self) -> &[u8];
+	fn as_bytes_or_noop(&self) -> &[u8];
 }
 
 impl AsByteOrNoop for PalletString {
-    #[cfg(feature = "std")]
-    fn as_bytes_or_noop(&self) -> &[u8] {
-        self.as_bytes()
-    }
+	#[cfg(feature = "std")]
+	fn as_bytes_or_noop(&self) -> &[u8] {
+		self.as_bytes()
+	}
 
-    #[cfg(not(feature = "std"))]
-    fn as_bytes_or_noop(&self) -> &[u8] {
-        self
-    }
+	#[cfg(not(feature = "std"))]
+	fn as_bytes_or_noop(&self) -> &[u8] {
+		self
+	}
 }
 
 pub type IpfsCid = PalletString;
 
 pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
-    for (i, c) in bytes.iter().enumerate() {
-        if *c > 127 {
-            return Err(i as u8);
-        }
-    }
-    Ok(())
+	for (i, c) in bytes.iter().enumerate() {
+		if *c > 127 {
+			return Err(i as u8)
+		}
+	}
+	Ok(())
 }
 
 // Only valid for current hashing algorithm of IPFS (sha256)
@@ -67,16 +67,16 @@ pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
 pub const MAX_HASH_SIZE: usize = 46;
 
 pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
-    if cid.len() != MAX_HASH_SIZE {
-        return Err(IpfsValidationError::InvalidLength(cid.len() as u8));
-    }
-    Bs58verify::verify(&cid.as_bytes_or_noop()).map_err(|e| IpfsValidationError::InvalidBase58(e))
+	if cid.len() != MAX_HASH_SIZE {
+		return Err(IpfsValidationError::InvalidLength(cid.len() as u8))
+	}
+	Bs58verify::verify(&cid.as_bytes_or_noop()).map_err(|e| IpfsValidationError::InvalidBase58(e))
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum IpfsValidationError {
-    /// Invalid length supplied. Should be 46. Is: \[length\]
-    InvalidLength(u8),
-    InvalidBase58(Bs58Error),
+	/// Invalid length supplied. Should be 46. Is: \[length\]
+	InvalidLength(u8),
+	InvalidBase58(Bs58Error),
 }

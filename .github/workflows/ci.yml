@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cancel_previous_runs:
+    name: Cancel Previous Runs
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: styfle/cancel-workflow-action@0.4.1
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
+  check:
+    name: Rust check ${{ matrix.check }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        check: [ cargo build --release,
+                 cargo test --all --features runtime-benchmarks,
+                 cargo fmt --all -- --check,
+          #                 cargo clippy -- -D warnings Todo: #59
+        ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Rust toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.rust-target }}-${{ matrix.check }}
+
+      - name: ${{ matrix.check }}
+        run: ${{ matrix.check }}

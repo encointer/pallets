@@ -15,11 +15,10 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
-use sp_core::RuntimeDebug;
 use scale_info::TypeInfo;
+use sp_core::RuntimeDebug;
 
-use crate::common::PalletString;
-use crate::communities::CommunityIdentifier;
+use crate::{common::PalletString, communities::CommunityIdentifier};
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -27,30 +26,27 @@ use serde::{Deserialize, Serialize};
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BusinessIdentifier<AccountId> {
-    pub community_identifier: CommunityIdentifier,
-    pub controller: AccountId,
+	pub community_identifier: CommunityIdentifier,
+	pub controller: AccountId,
 }
 
 impl<AccountId> BusinessIdentifier<AccountId> {
-    pub fn new(cid: CommunityIdentifier, bid: AccountId) -> BusinessIdentifier<AccountId> {
-        BusinessIdentifier {
-            community_identifier: cid,
-            controller: bid,
-        }
-    }
+	pub fn new(cid: CommunityIdentifier, bid: AccountId) -> BusinessIdentifier<AccountId> {
+		BusinessIdentifier { community_identifier: cid, controller: bid }
+	}
 }
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BusinessData {
-    pub url: PalletString,
-    pub last_oid: u32,
+	pub url: PalletString,
+	pub last_oid: u32,
 }
 
 impl BusinessData {
-    pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
-        return BusinessData { url, last_oid };
-    }
+	pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
+		return BusinessData { url, last_oid }
+	}
 }
 
 pub type OfferingIdentifier = u32;
@@ -58,11 +54,11 @@ pub type OfferingIdentifier = u32;
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct OfferingData {
-    pub url: PalletString,
+	pub url: PalletString,
 }
 
 impl OfferingData {
-    pub fn new(url: PalletString) -> OfferingData {
-        return OfferingData { url };
-    }
+	pub fn new(url: PalletString) -> OfferingData {
+		return OfferingData { url }
+	}
 }

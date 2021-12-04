@@ -19,15 +19,15 @@ use sp_core::offchain::storage::InMemOffchainStorage;
 
 #[test]
 fn caching_works() {
-    let storage = InMemOffchainStorage::default();
-    let client = ();
-    let communities: Communities<_, (), _> = Communities::new(Arc::new(client), storage, true);
+	let storage = InMemOffchainStorage::default();
+	let client = ();
+	let communities: Communities<_, (), _> = Communities::new(Arc::new(client), storage, true);
 
-    let cid_names = vec![CidName::new(Default::default(), "hello world".into())];
+	let cid_names = vec![CidName::new(Default::default(), "hello world".into())];
 
-    assert!(communities.cache_dirty());
-    communities.set_storage(CIDS_KEY, &cid_names);
-    communities.set_storage(CACHE_DIRTY_KEY, &false);
-    assert!(!communities.cache_dirty());
-    assert_eq!(communities.get_storage(CIDS_KEY), Some(cid_names));
+	assert!(communities.cache_dirty());
+	communities.set_storage(CIDS_KEY, &cid_names);
+	communities.set_storage(CACHE_DIRTY_KEY, &false);
+	assert!(!communities.cache_dirty());
+	assert_eq!(communities.get_storage(CIDS_KEY), Some(cid_names));
 }

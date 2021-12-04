@@ -18,40 +18,40 @@
 
 use super::*;
 pub use crate as dut;
+use frame_support::dispatch::DispatchInfo;
 use scale_info::TypeInfo;
 use test_utils::*;
-use frame_support::dispatch::DispatchInfo;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-    pub enum TestRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        EncointerSybilGate: dut::{Pallet, Call, Storage, Event<T>},
-    }
+	pub enum TestRuntime where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerSybilGate: dut::{Pallet, Call, Storage, Event<T>},
+	}
 );
 
 impl dut::Config for TestRuntime {
-    type Event = Event;
-    type Call = EmptyCall;
-    type XcmSender = ();
-    type Currency = Balances;
-    type Public = <Signature as Verify>::Signer;
-    type Signature = Signature;
+	type Event = Event;
+	type Call = EmptyCall;
+	type XcmSender = ();
+	type Currency = Balances;
+	type Public = <Signature as Verify>::Signer;
+	type Signature = Signature;
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Decode, Encode, TypeInfo)]
 pub struct EmptyCall(());
 impl GetDispatchInfo for EmptyCall {
-    fn get_dispatch_info(&self) -> DispatchInfo {
-        Default::default()
-    }
+	fn get_dispatch_info(&self) -> DispatchInfo {
+		Default::default()
+	}
 }
 
 // boilerplate
@@ -60,6 +60,8 @@ impl_balances!(TestRuntime, System);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap().into()
+	frame_system::GenesisConfig::default()
+		.build_storage::<TestRuntime>()
+		.unwrap()
+		.into()
 }
-

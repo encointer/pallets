@@ -26,8 +26,8 @@ pub mod error;
 pub mod scheduler;
 
 pub mod bs58_verify;
-pub mod random_permutation;
 pub mod random_number_generator;
+pub mod random_permutation;
 
 #[cfg(feature = "sybil")]
 pub mod sybil;
