@@ -66,9 +66,9 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CommunityIdentifier {
-	#[cfg_attr(feature = "std", serde(with = "serialize_array"))]
+	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_array"))]
 	geohash: [u8; 5],
-	#[cfg_attr(feature = "std", serde(with = "serialize_array"))]
+	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_array"))]
 	digest: [u8; 4],
 }
 
@@ -415,9 +415,6 @@ mod tests {
 
 	#[test]
 	fn cid_from_str_works() {
-		use codec::Encode;
-		println!("[Cid] {:?}", CommunityIdentifier::from_str("gbsuv7YXq9G").unwrap().encode());
-
 		assert_eq!(CommunityIdentifier::from_str("gbsuv7YXq9G").unwrap().to_string(), "gbsuv7YXq9G")
 	}
 

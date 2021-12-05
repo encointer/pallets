@@ -9,10 +9,10 @@ pub mod serialize_array {
 	use impl_serde::serialize::{deserialize_check_len, ExpectedLen};
 	use serde::Deserializer;
 
-	pub use deserialize_array as deserialize;
-
 	// default serialize is fine
 	pub use impl_serde::serialize::serialize;
+
+	pub use deserialize_array as deserialize;
 
 	pub fn deserialize_array<'de, D, const T: usize>(deserializer: D) -> Result<[u8; T], D::Error>
 	where
