@@ -982,6 +982,7 @@ dependencies = [
  "bs58",
  "concat-arrays",
  "crc",
+ "ep-core",
  "geohash",
  "log",
  "parity-scale-codec",
@@ -1013,6 +1014,17 @@ name = "environmental"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68b91989ae21441195d7d9b9993a2f9295c7e1a8c96255d8b729accddc124797"
+
+[[package]]
+name = "ep-core"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+]
 
 [[package]]
 name = "ethbloom"

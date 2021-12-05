@@ -10,6 +10,7 @@ members = [
     'communities/rpc/runtime-api',
     'personhood-oracle',
     'primitives',
+    'primitives/core',
     'scheduler',
     'sybil-gate-template',
     'test-utils'
