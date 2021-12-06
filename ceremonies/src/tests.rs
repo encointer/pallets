@@ -1234,12 +1234,12 @@ fn is_prime_works() {
 }
 
 #[test]
-fn generate_location_assignment_params_works() {
+fn find_coprime_below_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(EncointerCeremonies::find_coprime_below(0), 0);
-		assert_eq!(EncointerCeremonies::find_coprime_below(1), 0);
-		assert_eq!(EncointerCeremonies::find_coprime_below(5), 4);
-		assert_eq!(EncointerCeremonies::find_coprime_below(10), 9);
+		for i in 2..100 {
+			let coprime = EncointerCeremonies::find_coprime_below(i);
+			assert_eq!(EncointerCeremonies::get_greatest_common_denominator(coprime, i), 1)
+		}
 	});
 }
 

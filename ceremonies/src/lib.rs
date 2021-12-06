@@ -37,7 +37,8 @@ use frame_support::{
 	traits::{Get, Randomness},
 };
 use frame_system::ensure_signed;
-
+use itertools::Itertools;
+use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 use sp_runtime::{
 	traits::{CheckedSub, IdentifyAccount, Member, Verify},
 	SaturatedConversion,
@@ -523,11 +524,31 @@ impl<T: Config> Module<T> {
 	}
 
 	fn find_coprime_below(upper_bound: u64) -> u64 {
-		if upper_bound > 1 {
-			return upper_bound - 1
-		} else {
+		let mut range: Vec<u64> = (1..upper_bound).collect();
+		range.shuffle(&mut StdRng::seed_from_u64(Self::get_random_nonzero_group_element(
+			u32::MAX.into(),
+		)));
+		return *range.iter().find_or_first(|i| Self::is_coprime(upper_bound, **i)).unwrap_or(&0)
+	}
+
+	fn is_coprime(a: u64, b: u64) -> bool {
+		Self::get_greatest_common_denominator(a, b) == 1
+	}
+
+	fn get_greatest_common_denominator(a: u64, b: u64) -> u64 {
+		if a == 0 || b == 0 {
 			return 0
 		}
+
+		if a == b {
+			return a
+		};
+
+		if a > b {
+			return Self::get_greatest_common_denominator(a - b, b)
+		}
+
+		return Self::get_greatest_common_denominator(a, b - a)
 	}
 
 	fn create_assignment_count(
