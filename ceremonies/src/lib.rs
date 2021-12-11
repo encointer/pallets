@@ -383,11 +383,15 @@ decl_error! {
 		VotesNotDependable,
 		/// Overflow adding user to registry
 		RegistryOverflow,
+		/// CheckedMath operation error
+		CheckedMath,
 	}
 }
 
-fn ceil_division(dividend: u64, divisor: u64) -> u64 {
-	(dividend + divisor - 1) / divisor
+fn checked_ceil_division(dividend: u64, divisor: u64) -> Option<u64> {
+	let dd = dividend.checked_add(divisor)? - 1;
+
+	dd.checked_div(divisor)
 }
 
 impl<T: Config> Module<T> {
@@ -481,7 +485,8 @@ impl<T: Config> Module<T> {
 			Self::create_assignment_count(community_ceremony, meetup_multiplier)?;
 
 		let num_meetups =
-			ceil_division(assignment_count.get_number_of_participants(), meetup_multiplier);
+			checked_ceil_division(assignment_count.get_number_of_participants(), meetup_multiplier)
+				.ok_or(Error::<T>::CheckedMath)?;
 
 		Assignments::insert(
 			community_ceremony,
@@ -673,9 +678,10 @@ impl<T: Config> Module<T> {
 		}
 
 		let mut meetup_index_count: Vec<u64> = vec![0; n as usize];
-		let meetup_index_count_max = ceil_division(num_participants - assignment_params.m, n);
+		let meetup_index_count_max =
+			checked_ceil_division(num_participants - assignment_params.m, n).unwrap();
 		for i in assignment_params.m..num_participants {
-			let meetup_index = Self::assignment_fn(i, assignment_params, n);
+			let meetup_index = Self::assignment_fn(i, assignment_params, n).unwrap();
 			meetup_index_count[meetup_index as usize] += 1;
 			if meetup_index_count[meetup_index as usize] > meetup_index_count_max {
 				return false
@@ -747,13 +753,23 @@ impl<T: Config> Module<T> {
 		result
 	}
 
+	/// Assigns a participant to a meetup.
+	///
+	/// Returns an error if the checked math operations fail.
 	fn assignment_fn(
 		participant_index: ParticipantIndexType,
 		assignment_params: AssignmentParams,
 		n: u64,
-	) -> MeetupIndexType {
-		((participant_index * assignment_params.s1 + assignment_params.s2) % assignment_params.m) %
-			n
+	) -> Result<MeetupIndexType, Error<T>> {
+		let index = (participant_index
+			.checked_mul(assignment_params.s1)
+			.ok_or(Error::<T>::CheckedMath)?
+			.checked_add(assignment_params.s2)
+			.ok_or(Error::<T>::CheckedMath)? %
+			assignment_params.m) %
+			n;
+
+		Ok(index)
 	}
 
 	fn get_meetup_index(
@@ -770,7 +786,7 @@ impl<T: Config> Module<T> {
 				participant_index,
 				assignment.bootstrappers_reputables,
 				meetup_count,
-			) + 1)
+			)? + 1)
 		}
 		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
@@ -778,17 +794,19 @@ impl<T: Config> Module<T> {
 				participant_index + Self::assignment_counts(community_ceremony).bootstrappers,
 				assignment.bootstrappers_reputables,
 				meetup_count,
-			) + 1)
+			)? + 1)
 		}
 
 		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
-			return Ok(Self::assignment_fn(participant_index, assignment.endorsees, meetup_count) + 1)
+			return Ok(
+				Self::assignment_fn(participant_index, assignment.endorsees, meetup_count)? + 1
+			)
 		}
 
 		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
-			return Ok(Self::assignment_fn(participant_index, assignment.newbies, meetup_count) + 1)
+			return Ok(Self::assignment_fn(participant_index, assignment.newbies, meetup_count)? + 1)
 		}
 		Err(<Error<T>>::ParticipantIsNotRegistered.into())
 	}
@@ -978,7 +996,7 @@ impl<T: Config> Module<T> {
 		let locations = <encointer_communities::Module<T>>::get_locations(&cc.0);
 		let assignment_params = Self::assignments(cc).locations;
 		let location_idx =
-			Self::assignment_fn(meetup_idx, assignment_params, locations.len() as u64);
+			Self::assignment_fn(meetup_idx, assignment_params, locations.len() as u64).ok()?;
 		if (location_idx >= 0) && (location_idx < locations.len() as u64) {
 			Some(locations[(location_idx) as usize])
 		} else {

@@ -1324,7 +1324,8 @@ fn get_assignment_params_works() {
 fn assignment_fn_works() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(
-			EncointerCeremonies::assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5),
+			EncointerCeremonies::assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5)
+				.unwrap(),
 			1
 		)
 	});
@@ -1334,7 +1335,8 @@ fn check_assignment(num_participants: u64, assignment_params: AssignmentParams, 
 	let mut locations: Vec<u64> = vec![0; num_participants as usize];
 
 	for i in 0..num_participants {
-		locations[i as usize] = EncointerCeremonies::assignment_fn(i, assignment_params, n);
+		locations[i as usize] =
+			EncointerCeremonies::assignment_fn(i, assignment_params, n).unwrap();
 	}
 
 	let mut assigned_participants: Vec<bool> = vec![false; num_participants as usize];
