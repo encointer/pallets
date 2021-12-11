@@ -161,4 +161,13 @@ mod tests {
 		assert_eq!(mod_inv(69, 113), 95);
 		assert_eq!(mod_inv(111, 113), 56);
 	}
+
+	#[test]
+	fn greatest_common_denominator_works() {
+		assert_eq!(get_greatest_common_denominator(2, 7), 1);
+		assert_eq!(get_greatest_common_denominator(0, 1), 0);
+		assert_eq!(get_greatest_common_denominator(3, 9), 3);
+		assert_eq!(get_greatest_common_denominator(8, 36), 4);
+		assert_eq!(get_greatest_common_denominator(8, 1), 1);
+	}
 }
