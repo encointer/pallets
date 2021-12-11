@@ -46,7 +46,7 @@ use frame_support::{
 	traits::{Get, Randomness},
 };
 use frame_system::ensure_signed;
-use log::{debug, info, trace, warn};
+use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{CheckedSub, IdentifyAccount, Member, Verify},
@@ -602,7 +602,12 @@ impl<T: Config> Module<T> {
 		let cids = <encointer_communities::Module<T>>::community_identifiers();
 		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 		for cid in cids.iter() {
-			Self::generate_meetup_assignment_params((*cid, cindex)).ok();
+			if let Err(e) = Self::generate_meetup_assignment_params((*cid, cindex)) {
+				error!(
+					target: LOG,
+					"Could not generate meetup assignment params for cid: {:?}. {:?}", cid, e
+				);
+			}
 		}
 		Ok(())
 	}
