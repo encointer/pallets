@@ -81,6 +81,11 @@ impl<Hashing: Hash> RandomNumberGenerator<Hashing> {
 		}
 	}
 
+	/// Returns a number at least 1, at most `max`.
+	pub fn pick_non_zero_u32(&mut self, max: u32) -> u32 {
+		self.pick_u32(max - 1) + 1
+	}
+
 	/// Returns a number at least zero, at most `max`.
 	///
 	/// This returns a `usize`, but internally it only uses `u32` so avoid consensus problems.

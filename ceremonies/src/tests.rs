@@ -29,10 +29,11 @@ use frame_support::{
 	assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
+use itertools::Itertools;
 use rstest::*;
-use sp_core::{sr25519, Pair, U256};
+use sp_core::{sr25519, Pair, H256, U256};
+use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
-
 use test_utils::{
 	helpers::{account_id, bootstrappers, register_test_community},
 	*,
@@ -66,10 +67,13 @@ pub fn set_timestamp(t: u64) {
 }
 
 /// get correct meetup time for a certain cid and meetup
-fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupLocationIndexType) -> Moment {
+fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Moment {
 	//assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
 	let cindex = EncointerScheduler::current_ceremony_index() as u64;
-	let mlon: f64 = EncointerCeremonies::get_meetup_location(cid, mindex).unwrap().lon.lossy_into();
+	let mlon: f64 = EncointerCeremonies::get_meetup_location((*cid, cindex as u32), mindex)
+		.unwrap()
+		.lon
+		.lossy_into();
 
 	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
 		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING) +
@@ -84,7 +88,7 @@ fn signed_claim(
 	claimant: &sr25519::Pair,
 	cid: CommunityIdentifier,
 	cindex: CeremonyIndexType,
-	mindex: MeetupLocationIndexType,
+	mindex: MeetupIndexType,
 	location: Location,
 	timestamp: Moment,
 	participant_count: u32,
@@ -169,7 +173,7 @@ fn attest_all(
 	attestees: &Vec<&sr25519::Pair>,
 	cid: CommunityIdentifier,
 	cindex: CeremonyIndexType,
-	mindex: MeetupLocationIndexType,
+	mindex: MeetupIndexType,
 	location: Location,
 	timestamp: Moment,
 	n_participants: u32,
@@ -196,6 +200,14 @@ fn attest(attestor: AccountId, claims: Vec<TestClaim>) {
 	assert_ok!(EncointerCeremonies::attest_claims(Origin::signed(attestor), claims));
 }
 
+fn create_locations(n_locations: u32) -> Vec<Location> {
+	(1..n_locations)
+		.map(|i| i as f64)
+		.map(|i| Degree::from_num(i))
+		.map(|d| Location::new(d, d))
+		.collect()
+}
+
 /// perform bootstrapping ceremony for test community with either the supplied bootstrappers or the default bootstrappers
 fn perform_bootstrapping_ceremony(
 	custom_bootstrappers: Option<Vec<sr25519::Pair>>,
@@ -206,18 +218,14 @@ fn perform_bootstrapping_ceremony(
 	if n_locations > 70 {
 		panic!("Too many locations.")
 	}
-	for i in 1..n_locations {
-		let coord = i as f64;
-		let location = Location { lat: Degree::from_num(coord), lon: Degree::from_num(coord) };
 
-		match EncointerCommunities::add_location(
+	for location in create_locations(n_locations) {
+		EncointerCommunities::add_location(
 			Origin::signed(bootstrappers[0].public().into()),
 			cid,
 			location,
-		) {
-			Ok(_v) => (),
-			Err(e) => panic!("{:?}", e),
-		}
+		)
+		.unwrap();
 	}
 	bootstrappers
 		.iter()
@@ -229,7 +237,7 @@ fn perform_bootstrapping_ceremony(
 	// ASSIGNING
 	run_to_next_phase();
 	// ATTESTING
-	let loc = EncointerCommunities::get_locations(&cid)[0];
+	let loc = EncointerCeremonies::get_meetup_location((cid, cindex as u32), 1).unwrap();
 	let time = correct_meetup_time(&cid, 1);
 
 	for i in 0..bootstrappers.len() {
@@ -242,37 +250,38 @@ fn perform_bootstrapping_ceremony(
 	cid
 }
 
-fn fully_attest_meetups(cid: CommunityIdentifier, keys: Vec<sr25519::Pair>) {
-	get_meetups(cid)
-		.into_iter()
-		.for_each(|meetup| fully_attest_meetup(cid, keys.clone(), meetup));
-}
-
 /// perform full attestation of all participants for a given meetup
-fn fully_attest_meetup(cid: CommunityIdentifier, keys: Vec<sr25519::Pair>, meetup: Vec<AccountId>) {
-	for p in meetup.iter() {
-		let others: Vec<&sr25519::Pair> = meetup
-			.iter()
-			.filter(|o| o != &p)
-			.map(|o| keys.iter().filter(move |pair| account_id(pair) == *o))
-			.flatten()
-			.collect();
-
-		let mindex = EncointerCeremonies::meetup_location_index(
-			(cid, EncointerScheduler::current_ceremony_index()),
-			meetup.get(0).unwrap(),
-		);
-		let loc = EncointerCommunities::get_locations(&cid)[(mindex - 1) as usize];
+fn fully_attest_meetup(
+	cid: CommunityIdentifier,
+	keys: Vec<sr25519::Pair>,
+	mindex: MeetupIndexType,
+) {
+	let cindex = EncointerScheduler::current_ceremony_index();
+	let meetup_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), mindex);
+	for p in meetup_participants.iter() {
+		let mut others = Vec::with_capacity(meetup_participants.len() - 1);
+		for o in meetup_participants.iter() {
+			if o == p {
+				continue
+			}
+			for pair in keys.iter() {
+				if account_id(pair) == *o {
+					others.push(pair.clone());
+				}
+			}
+		}
+		let loc = EncointerCeremonies::get_meetup_location((cid, cindex as u32), mindex).unwrap();
 		let time = correct_meetup_time(&cid, mindex);
+
 		attest_all(
 			(*p).clone(),
-			&others,
+			&others.iter().collect(),
 			cid,
-			EncointerScheduler::current_ceremony_index(),
+			cindex,
 			mindex,
 			loc,
 			time,
-			meetup.len() as u32,
+			meetup_participants.len() as u32,
 		);
 	}
 }
@@ -288,18 +297,6 @@ fn assert_error(actual: DispatchResult, expected: Error<TestRuntime>) {
 	);
 }
 
-fn get_meetups(cid: CommunityIdentifier) -> Vec<Vec<AccountId>> {
-	MeetupRegistry::<TestRuntime>::iter_prefix_values((
-		cid,
-		EncointerScheduler::current_ceremony_index(),
-	))
-	.collect()
-}
-
-fn get_meetups_by_size(cid: CommunityIdentifier, size: usize) -> Vec<Vec<AccountId>> {
-	get_meetups(cid).into_iter().filter(|meetup| meetup.len() == size).collect()
-}
-
 // unit tests ////////////////////////////////////////
 
 #[test]
@@ -309,16 +306,64 @@ fn registering_participant_works() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		assert_eq!(EncointerCeremonies::participant_count((cid, cindex)), 0);
+
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
 		assert_ok!(register(alice.clone(), cid, None));
 
-		assert_eq!(EncointerCeremonies::participant_count((cid, cindex)), 1);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 1);
 		assert_ok!(register(bob.clone(), cid, None));
 
-		assert_eq!(EncointerCeremonies::participant_count((cid, cindex)), 2);
-		assert_eq!(EncointerCeremonies::participant_index((cid, cindex), &bob), 2);
-		assert_eq!(EncointerCeremonies::participant_registry((cid, cindex), &1), alice);
-		assert_eq!(EncointerCeremonies::participant_registry((cid, cindex), &2), bob);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 2);
+
+		assert_eq!(EncointerCeremonies::bootstrapper_index((cid, cindex), &bob), 2);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &2), bob);
+
+		let newbies = add_population(2, 2);
+		let newbie_1 = account_id(&newbies[0]);
+		let newbie_2 = account_id(&newbies[01]);
+		assert_ok!(register(newbie_1.clone(), cid, None));
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 1);
+
+		assert_ok!(register(newbie_2.clone(), cid, None));
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 2);
+		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &newbie_1), 1);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), &1), newbie_1);
+
+		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &newbie_2), 2);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), &2), newbie_2);
+
+		let newbies = add_population(2, 4);
+		let endorsee_1 = account_id(&newbies[0]);
+		let endorsee_2 = account_id(&newbies[1]);
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(alice.clone()),
+			cid,
+			endorsee_1.clone()
+		));
+
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(alice.clone()),
+			cid,
+			endorsee_2.clone()
+		));
+
+		assert_ok!(register(endorsee_1.clone(), cid, None));
+		assert_eq!(EncointerCeremonies::endorsee_count((cid, cindex)), 1);
+
+		assert_ok!(register(endorsee_2.clone(), cid, None));
+		assert_eq!(EncointerCeremonies::endorsee_count((cid, cindex)), 2);
+
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 2);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 2);
+
+		assert_eq!(EncointerCeremonies::endorsee_index((cid, cindex), &endorsee_1), 1);
+		assert_eq!(EncointerCeremonies::endorsee_registry((cid, cindex), &1), endorsee_1);
+
+		assert_eq!(EncointerCeremonies::endorsee_index((cid, cindex), &endorsee_2), 2);
+		assert_eq!(EncointerCeremonies::endorsee_registry((cid, cindex), &2), endorsee_2);
+
+		// Registering Reputables is tested in grow_population_works.
 	});
 }
 
@@ -356,7 +401,7 @@ fn attest_claims_works() {
 		run_to_next_phase();
 		// ATTESTING
 		assert_eq!(
-			EncointerCeremonies::meetup_location_index((cid, cindex), &account_id(&alice)),
+			EncointerCeremonies::get_meetup_index((cid, cindex), &account_id(&alice)).unwrap(),
 			1
 		);
 		let loc = Location::default();
@@ -461,7 +506,7 @@ fn attest_claims_with_non_participant_fails_silently() {
 }
 
 #[test]
-fn attest_claims_with_wrong_meetup_location_index_fails() {
+fn attest_claims_with_wrong_meetup_index_fails() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.pair();
@@ -657,6 +702,15 @@ fn issue_reward_works() {
 		register_charlie_dave_eve(cid);
 
 		let loc = Location::default();
+		Assignments::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
 		let time = correct_meetup_time(&cid, 1);
 
 		let claim_base = TestClaim::new_unsigned(account_id(&alice), cindex, cid, 1, loc, time, 5);
@@ -715,6 +769,7 @@ fn issue_reward_works() {
 
 		run_to_next_phase();
 		// REGISTERING
+		EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).ok();
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
 		assert_abs_diff_eq!(
@@ -754,6 +809,13 @@ fn issue_reward_works() {
 			EncointerCeremonies::participant_reputation((cid, cindex), &account_id(&ferdie)),
 			Reputation::Unverified
 		);
+
+		// Claiming twice does not work for any of the meetup participants
+		assert!(EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).is_err());
+		assert!(EncointerCeremonies::issue_rewards(&account_id(&bob), &cid).is_err());
+		assert!(EncointerCeremonies::issue_rewards(&account_id(&charlie), &cid).is_err());
+		assert!(EncointerCeremonies::issue_rewards(&account_id(&dave), &cid).is_err());
+		assert!(EncointerCeremonies::issue_rewards(&account_id(&ferdie), &cid).is_err());
 	});
 }
 
@@ -768,6 +830,7 @@ fn bootstrapping_works() {
 		let eve = AccountKeyring::Eve.pair();
 		let ferdie = AccountKeyring::Ferdie.pair();
 
+		EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).ok();
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		assert_eq!(
@@ -987,7 +1050,8 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 		// and meetups will be at randomized locations after https://github.com/encointer/pallets/issues/65
 		// that would break this test if we had more than one location registered
 
-		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		assert_eq!(cindex, 1);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
@@ -996,12 +1060,12 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 
 		run_to_next_phase();
 
-		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+		assert_eq!(cindex, 1);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
 
 		run_to_next_phase();
 
-		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+		assert_eq!(cindex, 1);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
 
 		let mtime = if lon_micro >= 0 {
@@ -1015,7 +1079,8 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 
 		let tol = 60_000; // [ms]
 		assert!(
-			tol > (EncointerCeremonies::get_meetup_time(&cid, 1).unwrap() as i64 - mtime as i64)
+			tol > (EncointerCeremonies::get_meetup_time((cid, cindex), 1).unwrap() as i64 -
+				mtime as i64)
 				.abs() as u64
 		);
 	});
@@ -1027,41 +1092,34 @@ fn ceremony_index_and_purging_registry_works() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let cindex = EncointerScheduler::current_ceremony_index();
+
 		assert_ok!(register(alice.clone(), cid, None));
-		assert_eq!(EncointerCeremonies::participant_registry((cid, cindex), &1), alice);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
 		run_to_next_phase();
 
 		// now assigning
-		assert_eq!(EncointerCeremonies::participant_registry((cid, cindex), &1), alice);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
 		run_to_next_phase();
 		// now attesting
-		assert_eq!(EncointerCeremonies::participant_registry((cid, cindex), &1), alice);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+		run_to_next_phase();
+
+		// still not purged
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+
+		// only after the next cycle everything should be purged
+		run_to_next_phase();
+		run_to_next_phase();
 		run_to_next_phase();
 		// now again registering
 		let new_cindex = EncointerScheduler::current_ceremony_index();
-		assert_eq!(new_cindex, cindex + 1);
-		assert_eq!(EncointerCeremonies::participant_count((cid, cindex)), 0);
+		assert_eq!(new_cindex, cindex + 2);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
 		assert_eq!(
-			EncointerCeremonies::participant_registry((cid, cindex), &1),
+			EncointerCeremonies::bootstrapper_registry((cid, cindex), &1),
 			AccountId::default()
 		);
-		assert_eq!(EncointerCeremonies::participant_index((cid, cindex), &alice), NONE);
-	});
-}
-
-#[test]
-fn assigning_meetup_at_phase_change_and_purge_works() {
-	new_test_ext().execute_with(|| {
-		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-		let alice = AccountId::from(AccountKeyring::Alice);
-		let cindex = EncointerScheduler::current_ceremony_index();
-		register_alice_bob_ferdie(cid);
-		assert_eq!(EncointerCeremonies::meetup_location_index((cid, cindex), &alice), NONE);
-		run_to_next_phase();
-		assert_eq!(EncointerCeremonies::meetup_location_index((cid, cindex), &alice), 1);
-		run_to_next_phase();
-		run_to_next_phase();
-		assert_eq!(EncointerCeremonies::meetup_location_index((cid, cindex), &alice), NONE);
+		assert_eq!(EncointerCeremonies::bootstrapper_index((cid, cindex), &alice), NONE);
 	});
 }
 
@@ -1076,41 +1134,73 @@ fn grow_population_works() {
 		participants.extend(add_population(14, participants.len()));
 		participants.iter().for_each(|p| register(account_id(&p), cid, None).unwrap());
 
+		let cindex = EncointerScheduler::current_ceremony_index();
 		run_to_next_phase();
-
 		// ASSIGNING
-		assert_eq!(get_meetups(cid).len(), 1);
-		// whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-		assert_eq!(get_meetups_by_size(cid, 9).len(), 1);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 0);
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 14);
+		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
 
 		run_to_next_phase();
 		// WITNESSING
 
-		fully_attest_meetups(cid, participants.clone());
+		fully_attest_meetup(cid, participants.clone(), 1);
 
 		run_to_next_phase();
 		// REGISTERING
+		for pair in participants.iter() {
+			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+		}
 
+		let cindex = EncointerScheduler::current_ceremony_index();
 		// register everybody again. also those who didn't have the chance last time
 		for pair in participants.iter() {
-			let proof = get_proof(cid, EncointerScheduler::current_ceremony_index() - 1, pair);
+			let proof = get_proof(cid, cindex - 1, pair);
 			register(account_id(&pair), cid, proof).unwrap();
 		}
 		run_to_next_phase();
-
 		// ASSIGNING
-		let meetups: Vec<Vec<AccountId>> = get_meetups(cid);
-		assert_eq!(meetups.len(), 2);
-		// whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-		assert_eq!(get_meetups_by_size(cid, 7).len(), 1);
-		assert_eq!(get_meetups_by_size(cid, 6).len(), 1);
+
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 2);
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 12);
+		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
 
 		run_to_next_phase();
-		// WITNESSING
-		fully_attest_meetups(cid, participants.clone());
+
+		fully_attest_meetup(cid, participants.clone(), 1);
 
 		run_to_next_phase();
 		// REGISTERING
+		for pair in participants.iter() {
+			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+		}
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+		// register everybody again. also those who didn't have the chance last time
+		for pair in participants.iter() {
+			let proof = get_proof(cid, cindex - 1, pair);
+			register(account_id(&pair), cid, proof).unwrap();
+		}
+		run_to_next_phase();
+		// ASSIGNING
+
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 4);
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 10);
+		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
+
+		run_to_next_phase();
+		// WITNESSING
+		fully_attest_meetup(cid, participants.clone(), 1);
+		fully_attest_meetup(cid, participants.clone(), 2);
+
+		run_to_next_phase();
+		// REGISTERING
+		for pair in participants.iter() {
+			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
 		let mut proof_count = 0;
@@ -1124,126 +1214,365 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// ASSIGNING
 		assert_eq!(proof_count, 13);
-
-		let meetups: Vec<Vec<AccountId>> = get_meetups(cid);
-		assert_eq!(meetups.len(), 2);
-		// whitepaper III-B Rule 3: no more than 1/3 participants without reputation
-		assert_eq!(get_meetups_by_size(cid, 10).len(), 1);
-		assert_eq!(get_meetups_by_size(cid, 9).len(), 1);
-
-		run_to_next_phase();
-		// WITNESSING
-		fully_attest_meetups(cid, participants.clone());
-
-		run_to_next_phase();
-		// REGISTERING
-
-		// TODO: whitepaper III-B Rule 1: minimize the number of participants that have met at previous ceremony
-		// TODO: whitepaper III-B Rule 2: maximize number of participants per meetup within 3<=N<=12
+		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
 	});
 }
 
-#[rstest(n_bootstrappers, n_reputables, n_endorsees, n_newbies, n_locations, exp_meetups,
-    case(8,0,0,4,3, vec![12]),
-    case(9,0,0,4,3, vec![7,6]),
-    case(3,7,3,3,3, vec![8,8]),
-    case(3,7,4,3,3, vec![9,8]),
-    case::do_not_assign_more_meetups_than_locations(3,7,50,0,3, vec![12,12,12]),
-    case::do_not_assign_more_meetups_than_there_are_experienced_participants(3,1,49,0,10, vec![12,12,12,12]),
-    case(12,48,12*AMOUNT_NEWBIE_TICKETS as usize,0,55, [12; 55].to_vec()),
-)]
-fn assigning_meetup_works(
-	n_bootstrappers: usize,
-	n_reputables: usize,
-	n_endorsees: usize,
-	n_newbies: usize,
-	n_locations: u32,
-	exp_meetups: Vec<usize>,
-) {
+#[test]
+fn validate_equal_mapping_works() {
 	new_test_ext().execute_with(|| {
-		let bs = add_population(n_bootstrappers, 0);
-		let cid = perform_bootstrapping_ceremony(Some(bs.clone()), n_locations);
-		let mut population: Vec<sr25519::Pair> = bs.clone();
-
-		if n_reputables > 0 {
-			// setup the community to be able to test assignment with given parameters
-			population = grow_community(population, cid, n_bootstrappers + n_reputables);
-			assert_eq!(population.len(), n_bootstrappers + n_reputables);
-		}
-
-		for e in 0..n_endorsees {
-			population.extend(add_population(1, population.len()));
-			assert_ok!(EncointerCeremonies::endorse_newcomer(
-				Origin::signed(account_id(&bs[e % n_bootstrappers]).clone()),
-				cid,
-				account_id(&population.last().unwrap())
-			));
-		}
-
-		population.extend(add_population(n_newbies, population.len()));
-		assert_eq!(population.len(), n_bootstrappers + n_reputables + n_endorsees + n_newbies);
-
-		// setup finished. Now registering all participants
-
-		let cindex = EncointerScheduler::current_ceremony_index();
-		population
-			.iter()
-			.for_each(|p| register(account_id(&p), cid, get_proof(cid, cindex - 1, p)).unwrap());
-
-		run_to_next_phase(); // ASSIGNING
-
-		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), exp_meetups.len() as u64);
-
-		for size in 0..exp_meetups.iter().map(|v| *v as MeetupLocationIndexType).max().unwrap() {
-			assert_eq!(
-				get_meetups_by_size(cid, size as usize).len(),
-				exp_meetups.iter().filter(|v| *v == &(size as usize)).count()
-			)
-		}
+		assert_eq!(
+			EncointerCeremonies::validate_equal_mapping(
+				2761,
+				AssignmentParams { m: 2753, s1: 2326, s2: 1099 },
+				427
+			),
+			false
+		);
+		assert_eq!(
+			EncointerCeremonies::validate_equal_mapping(
+				2761,
+				AssignmentParams { m: 2753, s1: 2325, s2: 1099 },
+				427
+			),
+			true
+		);
 	});
 }
 
-/// Grows the community until the specified amount. Returns all the key pairs of the community.
-fn grow_community(
-	bootstrappers: Vec<sr25519::Pair>,
-	cid: CommunityIdentifier,
-	amount: usize,
-) -> Vec<sr25519::Pair> {
-	assert!(bootstrappers.len() < amount as usize);
-
-	let mut participants = bootstrappers;
-	let curr_pop_size = participants.len();
-	participants.extend(add_population(amount - curr_pop_size, curr_pop_size));
-
-	let cindex = EncointerScheduler::current_ceremony_index();
-
-	let mut proofs: Vec<Option<TestProofOfAttendance>> =
-		participants.iter().map(|p| get_proof(cid, cindex - 1, p)).collect();
-
-	// the amount of proofs we get is the current amount bootstrappers + reputables (== whole community)
-	// if we assume that everyone participated in the last meetup.
-	while proofs.clone().iter().filter(|p| p.is_some()).count() < amount {
-		for (i, p) in participants.iter().enumerate() {
-			register(account_id(&p), cid, proofs[i].clone()).unwrap();
-		}
-
+#[test]
+fn get_assignment_params_works() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		run_to_next_phase(); // ASSIGNING
+		let assignment = EncointerCeremonies::assignments((cid, cindex));
 
-		let m_count = EncointerCeremonies::meetup_count((cid, cindex));
-		assert!(m_count > 0);
-		run_to_next_phase(); // WITNESSING
+		assert_eq!(assignment.bootstrappers_reputables.m, 0);
+		assert_eq!(assignment.bootstrappers_reputables.s1, 0);
+		assert_eq!(assignment.bootstrappers_reputables.s2, 0);
+		assert_eq!(assignment.endorsees.m, 0);
+		assert_eq!(assignment.endorsees.s1, 0);
+		assert_eq!(assignment.endorsees.s2, 0);
+		assert_eq!(assignment.newbies.m, 0);
+		assert_eq!(assignment.newbies.s1, 0);
+		assert_eq!(assignment.newbies.s2, 0);
 
-		fully_attest_meetups(cid, participants.clone());
+		run_to_next_phase();
 
-		run_to_next_phase(); // REGISTERING
+		let assignment = EncointerCeremonies::assignments((cid, cindex));
 
-		let cindex = EncointerScheduler::current_ceremony_index();
-		proofs = participants.iter().map(|p| get_proof(cid, cindex - 1, p)).collect();
+		assert!(assignment.bootstrappers_reputables.m > 0);
+		assert!(assignment.bootstrappers_reputables.s1 > 0);
+		assert!(assignment.bootstrappers_reputables.s2 > 0);
+		assert!(assignment.endorsees.m > 0);
+		assert!(assignment.endorsees.s1 > 0);
+		assert!(assignment.endorsees.s2 > 0);
+		assert!(assignment.newbies.m > 0);
+		assert!(assignment.newbies.s1 > 0);
+		assert!(assignment.newbies.s2 > 0);
+	});
+}
 
-		// sanity check that everything worked
-		assert!(proofs.clone().iter().filter(|p| p.is_some()).count() > 0);
+#[test]
+fn assignment_fn_works() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(
+			EncointerCeremonies::assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5)
+				.unwrap(),
+			1
+		)
+	});
+}
+
+fn check_assignment(num_participants: u64, assignment_params: AssignmentParams, n: u64) {
+	let mut locations: Vec<u64> = vec![0; num_participants as usize];
+
+	for i in 0..num_participants {
+		locations[i as usize] =
+			EncointerCeremonies::assignment_fn(i, assignment_params, n).unwrap();
 	}
 
-	participants
+	let mut assigned_participants: Vec<bool> = vec![false; num_participants as usize];
+
+	// inverse function yields the same result
+	for i in 0..n {
+		let participants =
+			EncointerCeremonies::assignment_fn_inverse(i, assignment_params, n, num_participants);
+		for p in participants {
+			assigned_participants[p as usize] = true;
+			assert_eq!(locations[p as usize], i)
+		}
+	}
+
+	// all participants were assigned
+	for val in assigned_participants {
+		assert!(val);
+	}
+}
+#[test]
+fn assignment_fn_inverse_works() {
+	new_test_ext().execute_with(|| {
+		let mut s1 = 78u64;
+		let mut s2 = 23u64;
+		let mut n = 12u64;
+		let mut num_participants = 118u64;
+		let mut m = 113u64;
+
+		let mut assignment_params = AssignmentParams { m, s1, s2 };
+		check_assignment(num_participants, assignment_params, n);
+
+		s1 = 1u64;
+		s2 = 1u64;
+		n = 2u64;
+		num_participants = 20u64;
+		m = 19u64;
+		assignment_params = AssignmentParams { m, s1, s2 };
+		check_assignment(num_participants, assignment_params, n);
+		s1 = 1u64;
+		s2 = 1u64;
+		n = 1u64;
+		num_participants = 10u64;
+		m = 7u64;
+		assignment_params = AssignmentParams { m, s1, s2 };
+		check_assignment(num_participants, assignment_params, n);
+	});
+}
+
+#[test]
+fn get_meetup_index_works() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		let participants = add_population(4, 0);
+		let p1 = account_id(&participants[0]);
+		let p2 = account_id(&participants[1]);
+		let p3 = account_id(&participants[2]);
+		let p4 = account_id(&participants[3]);
+
+		MeetupCount::insert((cid, cindex), 10);
+
+		BootstrapperIndex::<TestRuntime>::insert((cid, cindex), p1.clone(), 1);
+		AssignmentCounts::insert(
+			(cid, cindex),
+			AssignmentCount { bootstrappers: 1, reputables: 0, endorsees: 0, newbies: 0 },
+		);
+
+		ReputableIndex::<TestRuntime>::insert((cid, cindex), p2.clone(), 1);
+
+		EndorseeIndex::<TestRuntime>::insert((cid, cindex), p3.clone(), 3);
+		NewbieIndex::<TestRuntime>::insert((cid, cindex), p4.clone(), 4);
+
+		Assignments::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: AssignmentParams { m: 2, s1: 1, s2: 1 },
+				endorsees: AssignmentParams { m: 5, s1: 2, s2: 3 },
+				newbies: AssignmentParams { m: 5, s1: 2, s2: 3 },
+				locations: AssignmentParams { m: 9, s1: 8, s2: 7 },
+			},
+		);
+
+		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p1).unwrap(), 2);
+		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p2).unwrap(), 1);
+		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p3).unwrap(), 3);
+		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p4).unwrap(), 5);
+	});
+}
+
+#[test]
+fn get_meetup_location_works() {
+	new_test_ext().execute_with(|| {
+		let ceremony = (perform_bootstrapping_ceremony(None, 50), 100);
+
+		Assignments::insert(
+			ceremony,
+			Assignment {
+				bootstrappers_reputables: AssignmentParams { m: 5, s1: 2, s2: 3 },
+				endorsees: AssignmentParams { m: 3, s1: 2, s2: 1 },
+				newbies: AssignmentParams { m: 3, s1: 1, s2: 2 },
+				locations: AssignmentParams { m: 9, s1: 8, s2: 7 },
+			},
+		);
+
+		let locations: Vec<Option<Location>> = (0..9)
+			.map(|meetup_index| EncointerCeremonies::get_meetup_location(ceremony, meetup_index))
+			.collect();
+
+		assert!(locations.iter().all(|l| l.is_some()));
+		assert!(locations
+			.iter()
+			.map(|o| o.unwrap())
+			.combinations(2)
+			.all(|v| v.get(0) != v.get(1)));
+	});
+}
+
+#[test]
+fn get_meetup_participants_works() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		let participants: Vec<AccountId> =
+			add_population(12, 0).iter().map(|b| account_id(&b)).collect();
+
+		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[0].clone());
+		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[1].clone());
+		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[2].clone());
+
+		ReputableRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[3].clone());
+		ReputableRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[4].clone());
+		ReputableRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[5].clone());
+
+		EndorseeRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[6].clone());
+		EndorseeRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[7].clone());
+		EndorseeRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[8].clone());
+
+		NewbieRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[9].clone());
+		NewbieRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[10].clone());
+		NewbieRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[11].clone());
+		AssignmentCounts::insert(
+			(cid, cindex),
+			AssignmentCount { bootstrappers: 3, reputables: 3, endorsees: 3, newbies: 3 },
+		);
+
+		MeetupCount::insert((cid, cindex), 2);
+
+		Assignments::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: AssignmentParams { m: 5, s1: 2, s2: 3 },
+				endorsees: AssignmentParams { m: 3, s1: 2, s2: 1 },
+				newbies: AssignmentParams { m: 3, s1: 1, s2: 2 },
+				locations: AssignmentParams { m: 9, s1: 8, s2: 7 },
+			},
+		);
+
+		let mut m0_expected_participants = [
+			participants[1].clone(),
+			participants[2].clone(),
+			participants[3].clone(),
+			participants[7].clone(),
+			participants[8].clone(),
+			participants[9].clone(),
+			participants[10].clone(),
+		];
+		let mut m1_expected_participants = [
+			participants[0].clone(),
+			participants[4].clone(),
+			participants[5].clone(),
+			participants[6].clone(),
+			participants[11].clone(),
+		];
+		let mut m0_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
+		let mut m1_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 2);
+
+		m0_expected_participants.sort();
+		m1_expected_participants.sort();
+		m0_participants.sort();
+		m1_participants.sort();
+
+		assert_eq!(m0_participants, m0_expected_participants);
+		assert_eq!(m1_participants, m1_expected_participants);
+	});
+}
+
+#[rstest(
+	n_locations,
+	n_bootstrappers,
+	n_reputables,
+	n_endorsees,
+	n_newbies,
+	exp_m_bootstrappers_reputables,
+	exp_m_endorsees,
+	exp_m_newbies,
+	exp_n_assigned_bootstrappers,
+	exp_n_assigned_reputables,
+	exp_n_assigned_endorsees,
+	exp_n_assigned_newbies,
+	case(3, 7, 12, 6, 13, 19, 5, 5, 7, 12, 6, 5),
+	case(10, 1, 1, 20, 13, 2, 17, 2, 1, 1, 18, 0)
+)]
+fn generate_meetup_assignment_params_works(
+	n_locations: u64,
+	n_bootstrappers: u64,
+	n_reputables: u64,
+	n_endorsees: u64,
+	n_newbies: u64,
+	exp_m_bootstrappers_reputables: u64,
+	exp_m_endorsees: u64,
+	exp_m_newbies: u64,
+	exp_n_assigned_bootstrappers: u64,
+	exp_n_assigned_reputables: u64,
+	exp_n_assigned_endorsees: u64,
+	exp_n_assigned_newbies: u64,
+) {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, n_locations as u32);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		BootstrapperCount::insert((cid, cindex), n_bootstrappers);
+		ReputableCount::insert((cid, cindex), n_reputables);
+		EndorseeCount::insert((cid, cindex), n_endorsees);
+		NewbieCount::insert((cid, cindex), n_newbies);
+
+		let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new(H256::random());
+
+		EncointerCeremonies::generate_meetup_assignment_params((cid, cindex), &mut random_source)
+			.ok();
+		let assigned_counts = EncointerCeremonies::assignment_counts((cid, cindex));
+
+		assert_eq!(assigned_counts.bootstrappers, exp_n_assigned_bootstrappers);
+		assert_eq!(assigned_counts.reputables, exp_n_assigned_reputables);
+		assert_eq!(assigned_counts.endorsees, exp_n_assigned_endorsees);
+		assert_eq!(assigned_counts.newbies, exp_n_assigned_newbies);
+
+		let assignment = EncointerCeremonies::assignments((cid, cindex));
+
+		assert_eq!(assignment.bootstrappers_reputables.m, exp_m_bootstrappers_reputables);
+		assert!(assignment.bootstrappers_reputables.s1 > 0);
+		assert!(assignment.bootstrappers_reputables.s1 < exp_m_bootstrappers_reputables);
+		assert!(assignment.bootstrappers_reputables.s2 > 0);
+		assert!(assignment.bootstrappers_reputables.s2 < exp_m_bootstrappers_reputables);
+
+		assert_eq!(assignment.endorsees.m, exp_m_endorsees);
+		assert!(assignment.endorsees.s1 > 0);
+		assert!(assignment.endorsees.s1 < exp_m_endorsees);
+		assert!(assignment.endorsees.s2 > 0);
+		assert!(assignment.endorsees.s2 < exp_m_endorsees);
+
+		assert_eq!(assignment.newbies.m, exp_m_newbies);
+		assert!(assignment.newbies.s1 > 0);
+		assert!(assignment.newbies.s1 < exp_m_newbies);
+		assert!(assignment.newbies.s2 > 0);
+		assert!(assignment.newbies.s2 < exp_m_newbies);
+	});
+}
+
+#[test]
+fn generate_meetup_assignment_params_is_random() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 3);
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+		BootstrapperCount::insert((cid, cindex), 7);
+		ReputableCount::insert((cid, cindex), 12);
+		EndorseeCount::insert((cid, cindex), 6);
+		NewbieCount::insert((cid, cindex), 13);
+
+		let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new(H256::random());
+
+		EncointerCeremonies::generate_meetup_assignment_params((cid, cindex), &mut random_source)
+			.unwrap();
+
+		let a1 = EncointerCeremonies::assignments((cid, cindex));
+
+		// second time should yield a different result
+		EncointerCeremonies::generate_meetup_assignment_params((cid, cindex), &mut random_source)
+			.unwrap();
+
+		let a2 = EncointerCeremonies::assignments((cid, cindex));
+
+		assert_ne!(a1, a2)
+	});
 }
