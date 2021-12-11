@@ -566,7 +566,7 @@ impl<T: Config> Module<T> {
 		})
 	}
 
-	fn generate_all_meetup_assignment_params() -> DispatchResult {
+	fn generate_all_meetup_assignment_params() {
 		let cids = <encointer_communities::Module<T>>::community_identifiers();
 		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
@@ -584,7 +584,6 @@ impl<T: Config> Module<T> {
 				);
 			}
 		}
-		Ok(())
 	}
 
 	fn validate_equal_mapping(
@@ -960,7 +959,7 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::ASSIGNING => {
-				Self::generate_all_meetup_assignment_params().ok();
+				Self::generate_all_meetup_assignment_params();
 			},
 			CeremonyPhaseType::ATTESTING => {},
 			CeremonyPhaseType::REGISTERING => {
