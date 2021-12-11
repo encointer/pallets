@@ -1221,42 +1221,6 @@ fn grow_population_works() {
 }
 
 #[test]
-fn is_prime_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(EncointerCeremonies::is_prime(0), false);
-		assert_eq!(EncointerCeremonies::is_prime(1), false);
-		assert_eq!(EncointerCeremonies::is_prime(2), true);
-		assert_eq!(EncointerCeremonies::is_prime(3), true);
-		assert_eq!(EncointerCeremonies::is_prime(113), true);
-		assert_eq!(EncointerCeremonies::is_prime(114), false);
-		assert_eq!(EncointerCeremonies::is_prime(115), false);
-	});
-}
-
-#[test]
-fn find_coprime_below_works() {
-	new_test_ext().execute_with(|| {
-		for i in 2..100 {
-			let coprime = EncointerCeremonies::find_coprime_below(i);
-			assert_eq!(EncointerCeremonies::get_greatest_common_denominator(coprime, i), 1)
-		}
-	});
-}
-
-#[test]
-fn find_prime_below_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(EncointerCeremonies::find_prime_below(0), 2);
-		assert_eq!(EncointerCeremonies::find_prime_below(1), 2);
-		assert_eq!(EncointerCeremonies::find_prime_below(1), 2);
-		assert_eq!(EncointerCeremonies::find_prime_below(5), 5);
-		assert_eq!(EncointerCeremonies::find_prime_below(10), 7);
-		assert_eq!(EncointerCeremonies::find_prime_below(118), 113);
-		assert_eq!(EncointerCeremonies::find_prime_below(113), 113);
-	});
-}
-
-#[test]
 fn mod_inv_works() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(EncointerCeremonies::mod_inv(2, 7), 4);

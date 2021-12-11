@@ -25,6 +25,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::math::{checked_ceil_division, find_prime_below, find_random_coprime_below};
 use codec::{Decode, Encode};
 use encointer_primitives::{
 	balances::BalanceType,
@@ -34,7 +35,7 @@ use encointer_primitives::{
 	},
 	communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
-	RandomNumberGenerator, RandomPermutation,
+	RandomNumberGenerator,
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
@@ -388,12 +389,6 @@ decl_error! {
 	}
 }
 
-fn checked_ceil_division(dividend: u64, divisor: u64) -> Option<u64> {
-	let dd = dividend.checked_add(divisor)? - 1;
-
-	dd.checked_div(divisor)
-}
-
 impl<T: Config> Module<T> {
 	fn register(
 		cid: CommunityIdentifier,
@@ -517,54 +512,17 @@ impl<T: Config> Module<T> {
 	) -> AssignmentParams {
 		let num_locations =
 			<encointer_communities::Module<T>>::get_locations(&community_ceremony.0).len() as u64;
-		AssignmentParams {
-			m: num_locations,
-			s1: Self::find_coprime_below(num_locations),
-			s2: Self::find_prime_below(num_locations),
-		}
-	}
-
-	fn find_coprime_below(upper_bound: u64) -> u64 {
-		if upper_bound <= 1 {
-			return 0
-		}
-
-		if upper_bound == 2 {
-			return 1
-		}
 
 		let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
 			// we don't need to pass a subject here, as this is only called once in a block.
 			T::RandomnessSource::random_seed().0,
 		);
 
-		(1..upper_bound)
-			.collect::<Vec<_>>()
-			.random_permutation(&mut random_source)
-			.expect("Upper bound is checked to be > 2; qed")
-			.into_iter()
-			.find(|i| Self::is_coprime(upper_bound, *i))
-			.unwrap_or(1)
-	}
-
-	fn is_coprime(a: u64, b: u64) -> bool {
-		Self::get_greatest_common_denominator(a, b) == 1
-	}
-
-	fn get_greatest_common_denominator(a: u64, b: u64) -> u64 {
-		if a == 0 || b == 0 {
-			return 0
+		AssignmentParams {
+			m: num_locations,
+			s1: find_random_coprime_below(num_locations, &mut random_source),
+			s2: find_prime_below(num_locations),
 		}
-
-		if a == b {
-			return a
-		};
-
-		if a > b {
-			return Self::get_greatest_common_denominator(a - b, b)
-		}
-
-		return Self::get_greatest_common_denominator(a, b - a)
 	}
 
 	fn create_assignment_count(
@@ -580,7 +538,7 @@ impl<T: Config> Module<T> {
 		let num_assigned_bootstrappers = Self::bootstrapper_count(community_ceremony);
 		let num_reputables = Self::reputable_count(community_ceremony);
 		let max_num_meetups =
-			min(num_locations, Self::find_prime_below(num_assigned_bootstrappers + num_reputables));
+			min(num_locations, find_prime_below(num_assigned_bootstrappers + num_reputables));
 
 		let mut available_slots = max_num_meetups * meetup_multiplier - num_assigned_bootstrappers;
 
@@ -615,42 +573,6 @@ impl<T: Config> Module<T> {
 			}
 		}
 		Ok(())
-	}
-
-	fn is_prime(n: u64) -> bool {
-		if n <= 3 {
-			return n > 1
-		}
-		if n % 2 == 0 || n % 3 == 0 {
-			return false
-		}
-		if n < 25 {
-			return true
-		}
-		let mut i: u64 = 5;
-		while i.pow(2) <= n {
-			if n % i == 0u64 || n % (i + 2u64) == 0u64 {
-				return false
-			}
-			i += 6u64;
-		}
-		return true
-	}
-
-	fn find_prime_below(mut n: u64) -> u64 {
-		if n <= 2 {
-			return 2u64
-		}
-		if n % 2 == 0 {
-			n -= 1;
-		}
-		while n > 0 {
-			if Self::is_prime(n) {
-				return n
-			}
-			n -= 2;
-		}
-		2u64
 	}
 
 	fn mod_inv(a: i64, module: i64) -> i64 {
@@ -703,7 +625,7 @@ impl<T: Config> Module<T> {
 		num_meetups: u64,
 	) -> AssignmentParams {
 		let max_skips = 200;
-		let m = Self::find_prime_below(num_participants);
+		let m = find_prime_below(num_participants);
 		let mut skip_count = 0;
 		let mut s1 = Self::get_random_nonzero_group_element(m);
 		let mut s2 = Self::get_random_nonzero_group_element(m);
@@ -1061,6 +983,8 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 		}
 	}
 }
+
+mod math;
 
 #[cfg(test)]
 mod mock;
