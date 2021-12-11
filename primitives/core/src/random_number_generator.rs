@@ -21,6 +21,7 @@
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::traits::{Hash, TrailingZeroInput};
+use sp_std::cmp::min;
 
 /// Pseudo-random number streamer. This retains the state of the random number stream. It's as
 /// secure as the combination of the seed with which it is constructed and the hash function it uses
@@ -83,7 +84,7 @@ impl<Hashing: Hash> RandomNumberGenerator<Hashing> {
 
 	/// Returns a number at least 1, at most `max`.
 	pub fn pick_non_zero_u32(&mut self, max: u32) -> u32 {
-		self.pick_u32(max) + 1
+		min(self.pick_u32(max) + 1, max)
 	}
 
 	/// Returns a number at least zero, at most `max`.
