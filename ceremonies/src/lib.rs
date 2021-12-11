@@ -909,7 +909,7 @@ impl<T: Config> Module<T> {
 		let assignment_params = Self::assignments(cc).locations;
 		let location_idx =
 			Self::assignment_fn(meetup_idx, assignment_params, locations.len() as u64).ok()?;
-		if (location_idx >= 0) && (location_idx < locations.len() as u64) {
+		if location_idx < locations.len() as u64 {
 			Some(locations[(location_idx) as usize])
 		} else {
 			None
