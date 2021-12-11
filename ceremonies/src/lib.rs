@@ -25,7 +25,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::math::{checked_ceil_division, find_prime_below, find_random_coprime_below};
+use crate::math::{checked_ceil_division, find_prime_below, find_random_coprime_below, mod_inv};
 use codec::{Decode, Encode};
 use encointer_primitives::{
 	balances::BalanceType,
@@ -575,21 +575,6 @@ impl<T: Config> Module<T> {
 		Ok(())
 	}
 
-	fn mod_inv(a: i64, module: i64) -> i64 {
-		let mut mn = (module, a);
-		let mut xy = (0, 1);
-
-		while mn.1 != 0 {
-			xy = (xy.1, xy.0 - (mn.0 / mn.1) * xy.1);
-			mn = (mn.1, mn.0 % mn.1);
-		}
-
-		while xy.0 < 0 {
-			xy.0 += module;
-		}
-		xy.0
-	}
-
 	fn validate_equal_mapping(
 		num_participants: u64,
 		assignment_params: AssignmentParams,
@@ -662,7 +647,7 @@ impl<T: Config> Module<T> {
 		for i in 0..max_index {
 			let t1 = (n as i64 * i as i64 + meetup_index as i64 - assignment_params.s2 as i64)
 				.rem_euclid(assignment_params.m as i64);
-			let t2 = Self::mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
+			let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
 			let t3 = (t1 * t2).rem_euclid(assignment_params.m as i64);
 			if t3 >= num_participants as i64 {
 				continue

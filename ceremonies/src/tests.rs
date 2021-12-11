@@ -1221,15 +1221,6 @@ fn grow_population_works() {
 }
 
 #[test]
-fn mod_inv_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(EncointerCeremonies::mod_inv(2, 7), 4);
-		assert_eq!(EncointerCeremonies::mod_inv(69, 113), 95);
-		assert_eq!(EncointerCeremonies::mod_inv(111, 113), 56);
-	});
-}
-
-#[test]
 fn validate_equal_mapping_works() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(

@@ -102,6 +102,21 @@ pub fn find_random_coprime_below<H: Hash>(
 		.unwrap_or(1)
 }
 
+pub fn mod_inv(a: i64, module: i64) -> i64 {
+	let mut mn = (module, a);
+	let mut xy = (0, 1);
+
+	while mn.1 != 0 {
+		xy = (xy.1, xy.0 - (mn.0 / mn.1) * xy.1);
+		mn = (mn.1, mn.0 % mn.1);
+	}
+
+	while xy.0 < 0 {
+		xy.0 += module;
+	}
+	xy.0
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -138,5 +153,12 @@ mod tests {
 		assert_eq!(find_prime_below(10), 7);
 		assert_eq!(find_prime_below(118), 113);
 		assert_eq!(find_prime_below(113), 113);
+	}
+
+	#[test]
+	fn mod_inv_works() {
+		assert_eq!(mod_inv(2, 7), 4);
+		assert_eq!(mod_inv(69, 113), 95);
+		assert_eq!(mod_inv(111, 113), 56);
 	}
 }
