@@ -25,9 +25,18 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use log::{debug, info, trace, warn};
-
 use codec::{Decode, Encode};
+use encointer_primitives::{
+	balances::BalanceType,
+	ceremonies::{
+		consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
+		*,
+	},
+	communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
+	scheduler::{CeremonyIndexType, CeremonyPhaseType},
+	RandomNumberGenerator, RandomPermutation,
+};
+use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
 	dispatch::DispatchResult,
@@ -37,26 +46,13 @@ use frame_support::{
 	traits::{Get, Randomness},
 };
 use frame_system::ensure_signed;
-use itertools::Itertools;
-use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
+use log::{debug, info, trace, warn};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{CheckedSub, IdentifyAccount, Member, Verify},
 	SaturatedConversion,
 };
 use sp_std::{prelude::*, vec};
-
-use encointer_primitives::{
-	balances::BalanceType,
-	ceremonies::{
-		consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
-		*,
-	},
-	communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
-	scheduler::{CeremonyIndexType, CeremonyPhaseType},
-	RandomNumberGenerator,
-};
-use encointer_scheduler::OnCeremonyPhaseChange;
-use scale_info::TypeInfo;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -524,11 +520,26 @@ impl<T: Config> Module<T> {
 	}
 
 	fn find_coprime_below(upper_bound: u64) -> u64 {
-		let mut range: Vec<u64> = (1..upper_bound).collect();
-		range.shuffle(&mut StdRng::seed_from_u64(Self::get_random_nonzero_group_element(
-			u32::MAX.into(),
-		)));
-		return *range.iter().find_or_first(|i| Self::is_coprime(upper_bound, **i)).unwrap_or(&0)
+		if upper_bound <= 1 {
+			return 0
+		}
+
+		if upper_bound == 2 {
+			return 1
+		}
+
+		let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
+			// we don't need to pass a subject here, as this is only called once in a block.
+			T::RandomnessSource::random_seed().0,
+		);
+
+		(1..upper_bound)
+			.collect::<Vec<_>>()
+			.random_permutation(&mut random_source)
+			.expect("Upper bound is checked to be > 2; qed")
+			.into_iter()
+			.find(|i| Self::is_coprime(upper_bound, *i))
+			.unwrap_or(1)
 	}
 
 	fn is_coprime(a: u64, b: u64) -> bool {

@@ -7,8 +7,6 @@ edition = "2018"
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
-itertools = "0.10.0"
-rand = "0.8.4"
 scale-info = { version = "1.0", default-features = false }
 
 # local deps
