@@ -378,7 +378,7 @@ decl_error! {
 		NoLocationsAvailable,
 		/// Trying to issue rewards in a phase that is not REGISTERING
 		WrongPhaseForClaimingRewards,
-		/// Trying to issue rewards for a meetup for which ubi was already issued
+		/// Trying to issue rewards for a meetup for which UBI was already issued
 		RewardsAlreadyIssued,
 		/// Trying to claim UBI for a meetup where votes are not dependable
 		VotesNotDependable,

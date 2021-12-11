@@ -220,14 +220,12 @@ fn perform_bootstrapping_ceremony(
 	}
 
 	for location in create_locations(n_locations) {
-		match EncointerCommunities::add_location(
+		EncointerCommunities::add_location(
 			Origin::signed(bootstrappers[0].public().into()),
 			cid,
 			location,
-		) {
-			Ok(_v) => (),
-			Err(e) => panic!("{:?}", e),
-		}
+		)
+		.unwrap();
 	}
 	bootstrappers
 		.iter()
@@ -259,10 +257,10 @@ fn fully_attest_meetup(
 	mindex: MeetupIndexType,
 ) {
 	let cindex = EncointerScheduler::current_ceremony_index();
-	let meetup = EncointerCeremonies::get_meetup_participants((cid, cindex), mindex);
-	for p in meetup.iter() {
-		let mut others = Vec::with_capacity(meetup.len() - 1);
-		for o in meetup.iter() {
+	let meetup_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), mindex);
+	for p in meetup_participants.iter() {
+		let mut others = Vec::with_capacity(meetup_participants.len() - 1);
+		for o in meetup_participants.iter() {
 			if o == p {
 				continue
 			}
@@ -283,7 +281,7 @@ fn fully_attest_meetup(
 			mindex,
 			loc,
 			time,
-			meetup.len() as u32,
+			meetup_participants.len() as u32,
 		);
 	}
 }
@@ -291,7 +289,7 @@ fn fully_attest_meetup(
 fn assert_error(actual: DispatchResult, expected: Error<TestRuntime>) {
 	assert_eq!(
 		match actual.clone().err().unwrap() {
-			sp_runtime::DispatchError::Module { index, error, message } => message,
+			sp_runtime::DispatchError::Module { index: _, error: _, message } => message,
 			_ => panic!(),
 		}
 		.unwrap(),
