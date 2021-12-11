@@ -1548,3 +1548,31 @@ fn generate_meetup_assignment_params_works(
 		assert!(assignment.newbies.s2 < exp_m_newbies);
 	});
 }
+
+#[test]
+fn generate_meetup_assignment_params_is_random() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 3);
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+		BootstrapperCount::insert((cid, cindex), 7);
+		ReputableCount::insert((cid, cindex), 12);
+		EndorseeCount::insert((cid, cindex), 6);
+		NewbieCount::insert((cid, cindex), 13);
+
+		let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new(H256::random());
+
+		EncointerCeremonies::generate_meetup_assignment_params((cid, cindex), &mut random_source)
+			.unwrap();
+
+		let a1 = EncointerCeremonies::assignments((cid, cindex));
+
+		// second time should yield a different result
+		EncointerCeremonies::generate_meetup_assignment_params((cid, cindex), &mut random_source)
+			.unwrap();
+
+		let a2 = EncointerCeremonies::assignments((cid, cindex));
+
+		assert_ne!(a1, a2)
+	});
+}
