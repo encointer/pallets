@@ -474,7 +474,10 @@ impl<T: Config> Module<T> {
 		debug!(target: LOG, "purged registry for ceremony {}", cindex);
 	}
 
-	fn generate_meetup_assignment_params(community_ceremony: CommunityCeremony) -> DispatchResult {
+	fn generate_meetup_assignment_params(
+		community_ceremony: CommunityCeremony,
+		random_source: &mut RandomNumberGenerator<T::Hashing>,
+	) -> DispatchResult {
 		let meetup_multiplier = 10u64;
 		let assignment_count =
 			Self::create_assignment_count(community_ceremony, meetup_multiplier)?;
@@ -489,16 +492,22 @@ impl<T: Config> Module<T> {
 				bootstrappers_reputables: Self::generate_assignment_function_params(
 					assignment_count.bootstrappers + assignment_count.reputables,
 					num_meetups,
+					random_source,
 				),
 				endorsees: Self::generate_assignment_function_params(
 					assignment_count.endorsees,
 					num_meetups,
+					random_source,
 				),
 				newbies: Self::generate_assignment_function_params(
 					assignment_count.newbies,
 					num_meetups,
+					random_source,
 				),
-				locations: Self::generate_location_assignment_params(community_ceremony),
+				locations: Self::generate_location_assignment_params(
+					community_ceremony,
+					random_source,
+				),
 			},
 		);
 
@@ -509,18 +518,14 @@ impl<T: Config> Module<T> {
 
 	fn generate_location_assignment_params(
 		community_ceremony: CommunityCeremony,
+		random_source: &mut RandomNumberGenerator<T::Hashing>,
 	) -> AssignmentParams {
 		let num_locations =
 			<encointer_communities::Module<T>>::get_locations(&community_ceremony.0).len() as u64;
 
-		let mut random_source = RandomNumberGenerator::<T::Hashing>::new(
-			// we don't need to pass a subject here, as this is only called once in a block.
-			T::RandomnessSource::random_seed().0,
-		);
-
 		AssignmentParams {
 			m: num_locations,
-			s1: find_random_coprime_below(num_locations, &mut random_source),
+			s1: find_random_coprime_below(num_locations, random_source),
 			s2: find_prime_below(num_locations),
 		}
 	}
@@ -564,8 +569,15 @@ impl<T: Config> Module<T> {
 	fn generate_all_meetup_assignment_params() -> DispatchResult {
 		let cids = <encointer_communities::Module<T>>::community_identifiers();
 		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+
+		// we don't need to pass a subject here, as this is only called once in a block.
+		let mut random_source =
+			RandomNumberGenerator::<T::Hashing>::new(T::RandomnessSource::random_seed().0);
+
 		for cid in cids.iter() {
-			if let Err(e) = Self::generate_meetup_assignment_params((*cid, cindex)) {
+			if let Err(e) =
+				Self::generate_meetup_assignment_params((*cid, cindex), &mut random_source)
+			{
 				error!(
 					target: LOG,
 					"Could not generate meetup assignment params for cid: {:?}. {:?}", cid, e
@@ -597,30 +609,23 @@ impl<T: Config> Module<T> {
 		true
 	}
 
-	fn get_random_nonzero_group_element(m: u64) -> u64 {
-		let mut random_source =
-			RandomNumberGenerator::<T::Hashing>::new(T::RandomnessSource::random_seed().0);
-
-		// random number in [1, m-1]
-		(random_source.pick_usize((m - 2) as usize) + 1) as u64
-	}
-
 	fn generate_assignment_function_params(
 		num_participants: u64,
 		num_meetups: u64,
+		random_source: &mut RandomNumberGenerator<T::Hashing>,
 	) -> AssignmentParams {
 		let max_skips = 200;
-		let m = find_prime_below(num_participants);
+		let m = find_prime_below(num_participants) as u32;
 		let mut skip_count = 0;
-		let mut s1 = Self::get_random_nonzero_group_element(m);
-		let mut s2 = Self::get_random_nonzero_group_element(m);
+		let mut s1 = random_source.pick_non_zero_u32(m - 1);
+		let mut s2 = random_source.pick_non_zero_u32(m - 1);
 
 		while skip_count <= max_skips {
-			s1 = Self::get_random_nonzero_group_element(m);
-			s2 = Self::get_random_nonzero_group_element(m);
+			s1 = random_source.pick_non_zero_u32(m - 1);
+			s2 = random_source.pick_non_zero_u32(m - 1);
 			if Self::validate_equal_mapping(
 				num_participants,
-				AssignmentParams { m, s1, s2 },
+				AssignmentParams { m: m as u64, s1: s1 as u64, s2: s2 as u64 },
 				num_meetups,
 			) {
 				break
@@ -628,7 +633,7 @@ impl<T: Config> Module<T> {
 				skip_count += 1;
 			}
 		}
-		return AssignmentParams { m, s1, s2 }
+		return AssignmentParams { m: m as u64, s1: s1 as u64, s2: s2 as u64 }
 	}
 
 	fn assignment_fn_inverse(

@@ -31,9 +31,9 @@ use frame_support::{
 };
 use itertools::Itertools;
 use rstest::*;
-use sp_core::{sr25519, Pair, U256};
+use sp_core::{sr25519, Pair, H256, U256};
+use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
-
 use test_utils::{
 	helpers::{account_id, bootstrappers, register_test_community},
 	*,
@@ -1518,7 +1518,10 @@ fn generate_meetup_assignment_params_works(
 		EndorseeCount::insert((cid, cindex), n_endorsees);
 		NewbieCount::insert((cid, cindex), n_newbies);
 
-		EncointerCeremonies::generate_meetup_assignment_params((cid, cindex)).ok();
+		let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new(H256::random());
+
+		EncointerCeremonies::generate_meetup_assignment_params((cid, cindex), &mut random_source)
+			.ok();
 		let assigned_counts = EncointerCeremonies::assignment_counts((cid, cindex));
 
 		assert_eq!(assigned_counts.bootstrappers, exp_n_assigned_bootstrappers);
