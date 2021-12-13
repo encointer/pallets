@@ -18,14 +18,13 @@
 
 use super::*;
 use approx::{assert_abs_diff_eq, assert_relative_eq};
-use fixed::{traits::LossyInto, transcendental::exp};
-use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
-use mock::{new_test_ext, EncointerBalances, Event, System, TestRuntime};
-
 use encointer_primitives::{
 	balances::{consts::DEFAULT_DEMURRAGE, Demurrage},
 	communities::CommunityIdentifier,
+	fixed::{traits::LossyInto, transcendental::exp},
 };
+use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
+use mock::{new_test_ext, EncointerBalances, Event, System, TestRuntime};
 use test_utils::{helpers::register_test_community, AccountKeyring};
 
 #[test]

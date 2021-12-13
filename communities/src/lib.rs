@@ -24,18 +24,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
-use fixed::transcendental::{asin, cos, powi, sin, sqrt};
-use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, ensure,
-	storage::{StorageMap, StorageValue},
-};
-use frame_system::{ensure_root, ensure_signed};
-use log::{info, warn};
-use sp_runtime::{DispatchResult, SaturatedConversion};
-use sp_std::{prelude::*, result::Result};
-
-use geohash::GeoHash;
-
 use encointer_primitives::{
 	balances::{BalanceType, Demurrage},
 	common::PalletString,
@@ -44,8 +32,18 @@ use encointer_primitives::{
 		CommunityMetadata as CommunityMetadataType, Degree, Location, LossyFrom,
 		NominalIncome as NominalIncomeType,
 	},
+	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
+use frame_support::{
+	decl_error, decl_event, decl_module, decl_storage, ensure,
+	storage::{StorageMap, StorageValue},
+};
+use frame_system::{ensure_root, ensure_signed};
+use geohash::GeoHash;
+use log::{info, warn};
+use sp_runtime::{DispatchResult, SaturatedConversion};
+use sp_std::{prelude::*, result::Result};
 
 pub trait Config: frame_system::Config + encointer_scheduler::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;

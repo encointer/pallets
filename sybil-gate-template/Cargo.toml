@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
-fixed = { package = "substrate-fixed", tag = "v0.5.7", default-features = false, git = "https://github.com/encointer/substrate-fixed" }
 scale-info = { version = "1.0", default-features = false }
 
 # local deps
@@ -34,7 +33,6 @@ test-utils = { path = "../test-utils" }
 default = ["std"]
 std = [
     "codec/std",
-    "fixed/std",
     "frame-system/std",
     "frame-support/std",
     "log/std",
