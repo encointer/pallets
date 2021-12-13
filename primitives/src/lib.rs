@@ -29,3 +29,5 @@ pub mod scheduler;
 pub mod sybil;
 
 pub use ep_core::*;
+
+pub use fixed;

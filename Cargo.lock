@@ -3129,7 +3129,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "substrate-fixed",
  "test-utils",
 ]
 
@@ -3219,7 +3218,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "substrate-fixed",
  "test-utils",
 ]
 
@@ -3309,7 +3307,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "substrate-fixed",
  "test-utils",
  "xcm",
  "xcm-executor",

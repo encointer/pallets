@@ -5,7 +5,6 @@ use encointer_primitives::{
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::{Origin, RawOrigin};
-
 use log::{info, warn};
 
 const NUM_LOCATIONS: u32 = 500_000;

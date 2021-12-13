@@ -19,8 +19,8 @@
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	communities::CommunityIdentifier,
+	fixed::transcendental::exp,
 };
-use fixed::transcendental::exp;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure, StorageMap,
 };

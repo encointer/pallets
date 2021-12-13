@@ -25,12 +25,12 @@
 use codec::{Decode, Encode};
 use encointer_primitives::{
 	ceremonies::ProofOfAttendance,
+	fixed::types::I16F16,
 	sybil::{
 		sibling_junction, CallMetadata, IssuePersonhoodUniquenessRatingCall,
 		PersonhoodUniquenessRating, SybilResponse,
 	},
 };
-use fixed::types::I16F16;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
 	traits::{Currency, PalletInfo},
