@@ -28,7 +28,7 @@ pub mod serialize_array {
 
 /// Serialization shim for fixed point numbers that is consistent with `polkadot-js`'s implementation.
 ///
-/// This is needed in particular for fixed point types that map to a i-/u128 as serde has problems
+/// This is needed in particular for fixed point types that map to a i-/u128, as serde has problems
 /// with it: https://github.com/paritytech/substrate/issues/4641
 pub mod serialize_fixed {
 	use fixed::traits::Fixed;
@@ -45,8 +45,6 @@ pub mod serialize_fixed {
 	pub use deserialize_fixed as deserialize;
 	pub use serialize_fixed as serialize;
 
-	// i-/u128 and hence all the 128bit substrate-fixed types do not serialize well into JSON for
-	// custom RPCs, so we serialize it as a String.
 	pub fn serialize_fixed<S, F: Fixed>(f: &F, s: S) -> Result<S::Ok, S::Error>
 	where
 		S: serde::Serializer,
