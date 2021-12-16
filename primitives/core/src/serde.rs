@@ -36,6 +36,12 @@ pub mod serialize_fixed {
 
 	use impl_serde::serde::Deserialize;
 
+	#[cfg(not(feature = "std"))]
+	extern crate alloc;
+
+	#[cfg(not(feature = "std"))]
+	use alloc::ToString;
+
 	pub use deserialize_fixed as deserialize;
 	pub use serialize_fixed as serialize;
 
