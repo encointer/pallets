@@ -24,9 +24,7 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
-use encointer_communities_rpc_runtime_api::{
-	CommunitiesApi as CommunitiesRuntimeApi, LocationSerialized,
-};
+use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use encointer_primitives::communities::{
 	consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier, Location,
 };
@@ -45,7 +43,7 @@ pub trait CommunitiesApi<BlockHash> {
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
-	) -> Result<Vec<LocationSerialized>>;
+	) -> Result<Vec<Location>>;
 }
 
 pub struct Communities<Client, Block, S> {
@@ -152,7 +150,7 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<LocationSerialized>> {
+	) -> Result<Vec<Location>> {
 		if !self.offchain_indexing {
 			return Err(offchain_indexing_disabled_error("communities_getAll"))
 		}
@@ -165,15 +163,7 @@ where
 		match self.get_storage::<Vec<Location>>(cache_key) {
 			Some(loc) => {
 				log::info!("Using cached location list with len {}", loc.len());
-				let loc_ser = loc
-					.iter()
-					.map(|l| {
-						let mut ls = LocationSerialized::default();
-						ls.copy_from_slice(&l.encode()[0..32]);
-						ls
-					})
-					.collect();
-				Ok(loc_ser)
+				Ok(loc)
 			},
 			None => Err(storage_not_found_error(cache_key)),
 		}

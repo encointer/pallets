@@ -157,7 +157,9 @@ fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Location {
+	// #[cfg_attr(feature = "serde_derive", serde(serialize_with = "string_serialize"))]
 	pub lat: Degree,
+	// #[cfg_attr(feature = "serde_derive", serde(serialize_with = "string_serialize"))]
 	pub lon: Degree,
 }
 

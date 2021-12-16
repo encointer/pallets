@@ -21,17 +21,16 @@
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
-use encointer_primitives::{common::PalletString, communities::CommunityIdentifier};
-
-// we only need this because serde can't serialize i128
-// https://github.com/paritytech/substrate/issues/4641
-pub type LocationSerialized = [u8; 32];
+use encointer_primitives::{
+	common::PalletString,
+	communities::{CommunityIdentifier, Location},
+};
 
 sp_api::decl_runtime_apis! {
 
 	pub trait CommunitiesApi {
 		fn get_cids() -> Vec<CommunityIdentifier>;
 		fn get_name(cid: &CommunityIdentifier) -> Option<PalletString>;
-		fn get_locations(cid: &CommunityIdentifier) -> Vec<LocationSerialized>;
+		fn get_locations(cid: &CommunityIdentifier) -> Vec<Location>;
 	}
 }

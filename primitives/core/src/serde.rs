@@ -25,6 +25,16 @@ pub mod serialize_array {
 		Ok(arr)
 	}
 }
+//
+// // i-/u128 and hence all the 128bit substrate-fixed types do not serialize well into JSON for
+// // custom RPCs, so we serialize it as a String.
+// pub fn string_serialize<S, Number: Into<u128> + Copy>(x: &Number, s: S) -> Result<S::Ok, S::Error>
+// where
+// 	S: serde::Serializer,
+// {
+// 	let n: u128 = (*x).into();
+// 	s.serialize_str(&n.to_string())
+// }
 
 #[cfg(test)]
 mod tests {
