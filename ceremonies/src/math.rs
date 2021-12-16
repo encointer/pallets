@@ -20,6 +20,13 @@ use encointer_primitives::{RandomNumberGenerator, RandomPermutation};
 use frame_support::sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 
+pub fn checked_modulo(dividend: u64, divisor: u64) -> Option<u64> {
+	match divisor {
+		0 => Option::None,
+		_ => Some(dividend % divisor),
+	}
+}
+
 pub fn checked_ceil_division(dividend: u64, divisor: u64) -> Option<u64> {
 	let dd = dividend.checked_add(divisor)? - 1;
 
