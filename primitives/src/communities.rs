@@ -28,7 +28,7 @@ use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "serde_derive")]
-use ep_core::serde::{serialize_array, string_serialize};
+use ep_core::serde::{serialize_array, serialize_fixed};
 
 use crate::{
 	balances::Demurrage,
@@ -157,9 +157,9 @@ fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Location {
-	// #[cfg_attr(feature = "serde_derive", serde(serialize_with = "string_serialize"))]
+	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_fixed"))]
 	pub lat: Degree,
-	// #[cfg_attr(feature = "serde_derive", serde(serialize_with = "string_serialize"))]
+	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_fixed"))]
 	pub lon: Degree,
 }
 
