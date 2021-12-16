@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
-use fixed::types::I64F64;
+use ep_core::fixed::types::I64F64;
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 

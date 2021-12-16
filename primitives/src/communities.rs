@@ -18,7 +18,7 @@ use bs58;
 use codec::{Decode, Encode};
 use concat_arrays::concat_arrays;
 use crc::{Crc, CRC_32_CKSUM};
-use fixed::types::I64F64;
+use ep_core::fixed::types::I64F64;
 use geohash::GeoHash;
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
@@ -28,7 +28,7 @@ use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "serde_derive")]
-use ep_core::serde::serialize_array;
+use ep_core::serde::{serialize_array, string_serialize};
 
 use crate::{
 	balances::Demurrage,
@@ -38,7 +38,7 @@ use crate::{
 };
 
 use crate::error::CommunityIdentifierError;
-pub use fixed::traits::{LossyFrom, LossyInto};
+pub use ep_core::fixed::traits::{LossyFrom, LossyInto};
 
 pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
@@ -285,7 +285,7 @@ pub struct Theme {
 
 pub mod consts {
 	use super::{Degree, Location};
-	use fixed::types::{I32F0, U0F64};
+	use ep_core::fixed::types::{I32F0, U0F64};
 
 	pub const MAX_SPEED_MPS: i32 = 83; // [m/s] max speed over ground of adversary
 	pub const MIN_SOLAR_TRIP_TIME_S: i32 = 1; // [s] minimum adversary trip time between two locations measured in local (solar) time.

@@ -993,7 +993,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
- "substrate-fixed",
  "test-utils",
  "xcm",
 ]
@@ -1028,6 +1027,7 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
+ "substrate-fixed",
 ]
 
 [[package]]
