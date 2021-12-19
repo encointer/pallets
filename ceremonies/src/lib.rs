@@ -689,21 +689,12 @@ impl<T: Config> Module<T> {
 		assignment_params: AssignmentParams,
 		n: u64,
 	) -> Result<MeetupIndexType, Error<T>> {
-		let index = checked_modulo(
-			checked_modulo(
-				participant_index
-					.checked_mul(assignment_params.s1)
-					.ok_or(Error::<T>::CheckedMath)?
-					.checked_add(assignment_params.s2)
-					.ok_or(Error::<T>::CheckedMath)?,
-				assignment_params.m,
-			)
-			.ok_or(Error::<T>::CheckedMath)?,
-			n,
-		)
-		.ok_or(Error::<T>::CheckedMath)?;
-
-		Ok(index)
+		participant_index
+			.checked_mul(assignment_params.s1)
+			.and_then(|x| x.checked_add(assignment_params.s2))
+			.and_then(|div| checked_modulo(div, assignment_params.m))
+			.and_then(|div| checked_modulo(div, n))
+			.ok_or(Error::<T>::CheckedMath)
 	}
 
 	fn get_meetup_index(
