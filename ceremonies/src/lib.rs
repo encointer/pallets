@@ -601,10 +601,14 @@ impl<T: Config> Module<T> {
 
 		let mut meetup_index_count: Vec<u64> = vec![0; n as usize];
 		let meetup_index_count_max =
-			checked_ceil_division(num_participants - assignment_params.m, n).unwrap(); //TODO remove this unwrap()
+			checked_ceil_division(num_participants - assignment_params.m, n).unwrap_or(0);
 		for i in assignment_params.m..num_participants {
-			let meetup_index = Self::assignment_fn(i, assignment_params, n).unwrap();
-			meetup_index_count[meetup_index as usize] += 1; // <= num_participants
+			let meetup_index_option = Self::assignment_fn(i, assignment_params, n);
+			if meetup_index_option.is_err() {
+				return false
+			}
+			let meetup_index = meetup_index_option.unwrap();
+			meetup_index_count[meetup_index.clone() as usize] += 1; // <= num_participants
 			if meetup_index_count[meetup_index as usize] > meetup_index_count_max {
 				return false
 			}
