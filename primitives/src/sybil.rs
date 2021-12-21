@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::{Decode, Encode};
-use fixed::traits::Fixed;
+use ep_core::fixed::traits::Fixed;
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash};
