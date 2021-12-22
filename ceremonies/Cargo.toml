@@ -26,7 +26,7 @@ sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 approx = "0.5.0"
 itertools = "0.10.0"
 rstest = "0.6.4"
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = { path = "../test-utils" }
 

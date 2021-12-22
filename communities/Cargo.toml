@@ -24,7 +24,7 @@ sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/subst
 
 [dev-dependencies]
 approx = "0.5.0"
-sp-core = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = {path ="../test-utils" }
 
 [features]
