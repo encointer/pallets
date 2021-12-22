@@ -858,7 +858,7 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 			CeremonyPhaseType::REGISTERING => {
 				let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
-				if cindex > 2 {
+				if cindex > T::ReputationLifetime::get() + 1 {
 					Self::purge_registry(cindex - 2);
 				}
 			},
