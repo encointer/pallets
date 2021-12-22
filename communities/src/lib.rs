@@ -38,6 +38,7 @@ use encointer_primitives::{
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
 	storage::{StorageMap, StorageValue},
+	traits::Get,
 };
 use frame_system::{ensure_root, ensure_signed};
 use geohash::GeoHash;
@@ -47,6 +48,7 @@ use sp_std::{prelude::*, result::Result};
 
 pub trait Config: frame_system::Config + encointer_scheduler::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+	type MinSolarTripTimeS: Get<i32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
 }
 
 // Logger target
@@ -365,14 +367,14 @@ impl<T: Config> Module<T> {
 
 		//check if northern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.n)
 		}
 
 		//check if southern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.s)
 		}
@@ -395,42 +397,42 @@ impl<T: Config> Module<T> {
 
 		//check if north eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.ne)
 		}
 
 		//check if eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.e)
 		}
 
 		//check if south eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.se)
 		}
 
 		//check if north western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.nw)
 		}
 
 		//check if western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.w)
 		}
 
 		//check if south western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.sw)
 		}
@@ -465,7 +467,7 @@ impl<T: Config> Module<T> {
 		let nearby_locations = Self::get_nearby_locations(location)?;
 		for nearby_location in nearby_locations {
 			ensure!(
-				Self::solar_trip_time(location, &nearby_location) >= MIN_SOLAR_TRIP_TIME_S,
+				Self::solar_trip_time(location, &nearby_location) >= T::MinSolarTripTimeS::get(),
 				<Error<T>>::MinimumDistanceViolationToOtherLocation
 			);
 		}

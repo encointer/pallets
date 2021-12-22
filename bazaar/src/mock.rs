@@ -21,6 +21,10 @@ use test_utils::*;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
+frame_support::parameter_types! {
+	pub const MinSolarTripTimeS: i32 = 1;
+}
+
 frame_support::construct_runtime!(
 	pub enum TestRuntime where
 		Block = Block,

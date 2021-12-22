@@ -288,7 +288,6 @@ pub mod consts {
 	use ep_core::fixed::types::{I32F0, U0F64};
 
 	pub const MAX_SPEED_MPS: i32 = 83; // [m/s] max speed over ground of adversary
-	pub const MIN_SOLAR_TRIP_TIME_S: i32 = 1; // [s] minimum adversary trip time between two locations measured in local (solar) time.
 
 	// sun travels at a speed of 24h * 3600s / 360° = 240s/°
 	// 1 degree of longitude in km at latitude x = cos(x) * 111.3194

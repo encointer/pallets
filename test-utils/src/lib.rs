@@ -173,11 +173,16 @@ macro_rules! impl_encointer_balances {
 	};
 }
 
+parameter_types! {
+	pub const MinSolarTripTimeS: i32 = 1;
+}
+
 #[macro_export]
 macro_rules! impl_encointer_communities {
 	($t:ident) => {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
+			type MinSolarTripTimeS = MinSolarTripTimeS;
 		}
 	};
 }

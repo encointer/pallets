@@ -51,6 +51,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
 	pub const AmountNewbieTickets: u8 = 50;
+	pub const MinSolarTripTimeS: i32 = 1;
 }
 
 impl dut::Config for TestRuntime {
