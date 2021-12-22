@@ -25,7 +25,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 use encointer_primitives::{
-	balances::{consts::DEFAULT_DEMURRAGE, BalanceType, Demurrage},
+	balances::{BalanceType, Demurrage},
 	ceremonies::{ClaimOfAttendance, ProofOfAttendance},
 	scheduler::CeremonyPhaseType,
 };
@@ -52,6 +52,7 @@ parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
 	pub const AmountNewbieTickets: u8 = 50;
 	pub const MinSolarTripTimeS: i32 = 1;
+	pub const DefaultDemurrage: i128 	 = 0x0000000000000000000001E3F0A8A973_i128;
 }
 
 impl dut::Config for TestRuntime {
@@ -74,7 +75,7 @@ impl_encointer_balances!(TestRuntime);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 	encointer_balances::GenesisConfig {
-		demurrage_per_block_default: Demurrage::from_bits(DEFAULT_DEMURRAGE),
+		demurrage_per_block_default: Demurrage::from_bits(DefaultDemurrage::get()),
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

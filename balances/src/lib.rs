@@ -22,7 +22,8 @@ use encointer_primitives::{
 	fixed::transcendental::exp,
 };
 use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure, StorageMap,
+	decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
+	traits::Get, StorageMap,
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::debug;
@@ -43,6 +44,7 @@ const LOG: &str = "encointer";
 
 pub trait Config: frame_system::Config + encointer_communities::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+	type DefaultDemurrage: Get<i128>;
 }
 
 decl_storage! {

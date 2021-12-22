@@ -18,12 +18,16 @@
 
 use crate as dut;
 
-use encointer_primitives::balances::{consts::DEFAULT_DEMURRAGE, Demurrage};
+use encointer_primitives::balances::Demurrage;
 
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
+
+frame_support::parameter_types! {
+	pub const DefaultDemurrage: i128 =  0x0000000000000000000001E3F0A8A973_i128;
+}
 
 frame_support::construct_runtime!(
 	pub enum TestRuntime where
@@ -41,6 +45,7 @@ frame_support::construct_runtime!(
 
 impl dut::Config for TestRuntime {
 	type Event = Event;
+	type DefaultDemurrage = DefaultDemurrage;
 }
 
 // boilerplate
@@ -52,8 +57,10 @@ impl_encointer_scheduler!(TestRuntime);
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-	dut::GenesisConfig { demurrage_per_block_default: Demurrage::from_bits(DEFAULT_DEMURRAGE) }
-		.assimilate_storage(&mut t)
-		.unwrap();
+	dut::GenesisConfig {
+		demurrage_per_block_default: Demurrage::from_bits(DefaultDemurrage::get()),
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 	t.into()
 }

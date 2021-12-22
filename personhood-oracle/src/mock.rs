@@ -18,7 +18,7 @@
 
 pub use crate as dut;
 use encointer_primitives::{
-	balances::{consts::DEFAULT_DEMURRAGE, BalanceType, Demurrage},
+	balances::{BalanceType, Demurrage},
 	scheduler::CeremonyPhaseType,
 };
 use frame_support::parameter_types;
@@ -46,6 +46,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
 	pub const AmountNewbieTickets: u8 = 50;
+	pub const DefaultDemurrage: i128 = 0x0000000000000000000001E3F0A8A973_i128;
 }
 
 impl dut::Config for TestRuntime {
@@ -65,7 +66,7 @@ impl_encointer_ceremonies!(TestRuntime);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 	encointer_balances::GenesisConfig {
-		demurrage_per_block_default: Demurrage::from_bits(DEFAULT_DEMURRAGE),
+		demurrage_per_block_default: Demurrage::from_bits(DefaultDemurrage::get()),
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

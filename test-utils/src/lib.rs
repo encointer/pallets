@@ -164,11 +164,16 @@ macro_rules! impl_balances {
 	};
 }
 
+parameter_types! {
+		pub const DefaultDemurrage: i128 = 0x0000000000000000000001E3F0A8A973_i128;
+}
+
 #[macro_export]
 macro_rules! impl_encointer_balances {
 	($t:ident) => {
 		impl encointer_balances::Config for $t {
 			type Event = Event;
+			type DefaultDemurrage = DefaultDemurrage;
 		}
 	};
 }
