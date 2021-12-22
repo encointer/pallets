@@ -28,9 +28,7 @@ use xcm::{
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
-use crate::{
-	scheduler::CeremonyIndexType, sybil::consts::ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT,
-};
+use crate::scheduler::CeremonyIndexType;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
@@ -67,11 +65,6 @@ impl IssuePersonhoodUniquenessRatingCall {
 
 	pub fn request_hash(&self) -> H256 {
 		self.request.hash()
-	}
-
-	/// Returns the (currently hardcoded) weight of the `issue_personhood_uniqueness_rating` call
-	pub fn weight(&self) -> u64 {
-		ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT
 	}
 }
 
@@ -170,8 +163,4 @@ impl PersonhoodUniquenessRating {
 
 pub fn sibling_junction(id: u32) -> MultiLocation {
 	MultiLocation { parents: 1, interior: X1(Parachain(id)) }
-}
-
-pub mod consts {
-	pub const ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT: u64 = 5_000_000;
 }
