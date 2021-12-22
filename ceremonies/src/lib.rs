@@ -33,7 +33,7 @@ use encointer_ceremonies_assignment::{
 };
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::{consts::AMOUNT_NEWBIE_TICKETS, *},
+	ceremonies::*,
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -68,6 +68,7 @@ pub trait Config:
 	type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
 	type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
 	type ReputationLifetime: Get<u32>;
+	type AmountNewbieTickets: Get<u8>;
 }
 
 // This module's storage items.
@@ -303,7 +304,7 @@ decl_module! {
 			ensure!(<encointer_communities::Module<T>>::bootstrappers(&cid).contains(&sender),
 			Error::<T>::AuthorizationRequired);
 
-			ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < AMOUNT_NEWBIE_TICKETS,
+			ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < T::AmountNewbieTickets::get(),
 			Error::<T>::NoMoreNewbieTickets);
 
 			let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();

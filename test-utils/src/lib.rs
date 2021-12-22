@@ -194,6 +194,7 @@ macro_rules! test_runtime {
 
 parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
+	pub const AmountNewbieTickets: u8 = 50;
 }
 
 #[macro_export]
@@ -205,6 +206,7 @@ macro_rules! impl_encointer_ceremonies {
 			type Signature = Signature;
 			type RandomnessSource = frame_support_test::TestRandomness<$t>;
 			type ReputationLifetime = ReputationLifetime;
+			type AmountNewbieTickets = AmountNewbieTickets;
 		}
 	};
 }

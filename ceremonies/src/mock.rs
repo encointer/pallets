@@ -50,6 +50,7 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
+	pub const AmountNewbieTickets: u8 = 50;
 }
 
 impl dut::Config for TestRuntime {
@@ -58,6 +59,7 @@ impl dut::Config for TestRuntime {
 	type Signature = Signature;
 	type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
 	type ReputationLifetime = ReputationLifetime;
+	type AmountNewbieTickets = AmountNewbieTickets;
 }
 
 // boilerplate

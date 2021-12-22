@@ -195,10 +195,6 @@ impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountI
 	}
 }
 
-pub mod consts {
-	pub const AMOUNT_NEWBIE_TICKETS: u8 = 50;
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;
