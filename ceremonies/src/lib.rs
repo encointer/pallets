@@ -33,10 +33,7 @@ use encointer_ceremonies_assignment::{
 };
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::{
-		consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
-		*,
-	},
+	ceremonies::{consts::AMOUNT_NEWBIE_TICKETS, *},
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -70,6 +67,7 @@ pub trait Config:
 	type Public: IdentifyAccount<AccountId = Self::AccountId>;
 	type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
 	type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+	type ReputationLifetime: Get<u32>;
 }
 
 // This module's storage items.
@@ -159,7 +157,7 @@ decl_module! {
 				// we accept proofs from other communities as well. no need to ensure cid
 				ensure!(sender == p.prover_public, Error::<T>::WrongProofSubject);
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
-				ensure!(p.ceremony_index >= cindex-REPUTATION_LIFETIME, Error::<T>::ProofOutdated);
+				ensure!(p.ceremony_index >= cindex-T::ReputationLifetime::get(), Error::<T>::ProofOutdated);
 				ensure!(Self::participant_reputation(&(p.community_identifier, p.ceremony_index),
 					&p.attendee_public) == Reputation::VerifiedUnlinked,
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed);

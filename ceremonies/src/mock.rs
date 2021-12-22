@@ -17,6 +17,7 @@
 //! Mock runtime for the encointer_ceremonies module
 
 pub use crate as dut;
+use frame_support::parameter_types;
 
 use test_utils::*;
 
@@ -47,11 +48,16 @@ frame_support::construct_runtime!(
 	}
 );
 
+parameter_types! {
+	pub const ReputationLifetime: u32 = 1;
+}
+
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
 	type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
+	type ReputationLifetime = ReputationLifetime;
 }
 
 // boilerplate

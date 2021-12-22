@@ -21,6 +21,7 @@ use encointer_primitives::{
 	balances::{consts::DEFAULT_DEMURRAGE, BalanceType, Demurrage},
 	scheduler::CeremonyPhaseType,
 };
+use frame_support::parameter_types;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -41,6 +42,10 @@ frame_support::construct_runtime!(
 		EncointerPersonhoodOracle: dut::{Pallet, Call, Event},
 	}
 );
+
+parameter_types! {
+	pub const ReputationLifetime: u32 = 1;
+}
 
 impl dut::Config for TestRuntime {
 	type Event = Event;

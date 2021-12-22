@@ -196,7 +196,6 @@ impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountI
 }
 
 pub mod consts {
-	pub const REPUTATION_LIFETIME: u32 = 1;
 	pub const AMOUNT_NEWBIE_TICKETS: u8 = 50;
 }
 
