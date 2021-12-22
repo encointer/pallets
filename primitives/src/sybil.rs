@@ -173,6 +173,5 @@ pub fn sibling_junction(id: u32) -> MultiLocation {
 }
 
 pub mod consts {
-	pub const SYBIL_CALL_WEIGHT: u64 = 5_000_000;
 	pub const ISSUE_PERSONHOOD_UNIQUENESS_RATING_WEIGHT: u64 = 5_000_000;
 }

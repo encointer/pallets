@@ -21,7 +21,6 @@ use frame_support::assert_ok;
 
 use xcm_executor::traits::Convert;
 
-use encointer_primitives::sybil::consts::SYBIL_CALL_WEIGHT;
 use test_utils::{storage::*, *};
 
 pub type PersonhoodOracle = crate::Module<TestRuntime>;
@@ -44,7 +43,7 @@ fn issue_proof_of_personhood_is_ok() {
 		assert_ok!(PersonhoodOracle::issue_personhood_uniqueness_rating(
 			Origin::signed(account_id),
 			vec![proof_of_attendance()].encode(),
-			CallMetadata::new(1, 1, SYBIL_CALL_WEIGHT),
+			CallMetadata::new(1, 1, 5_000_000),
 		));
 	})
 }
