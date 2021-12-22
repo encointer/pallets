@@ -25,7 +25,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::math::{checked_ceil_division, find_prime_below, find_random_coprime_below, mod_inv};
+use crate::math::{
+	checked_ceil_division, checked_modulo, find_prime_below, find_random_coprime_below, mod_inv,
+};
 use codec::{Decode, Encode};
 use encointer_primitives::{
 	balances::BalanceType,
@@ -134,7 +136,7 @@ decl_module! {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == <encointer_scheduler::Module<T>>::ceremony_master(), Error::<T>::AuthorizationRequired);
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-			<ParticipantReputation<T>>::insert(&(cid, cindex-1), reputable, Reputation::VerifiedUnlinked);
+			<ParticipantReputation<T>>::insert(&(cid, cindex-1), reputable, Reputation::VerifiedUnlinked); //safe; cindex comes from within, will not overflow at +1/d
 			info!(target: LOG, "granting reputation to {:?}", sender);
 			Ok(())
 		}
@@ -187,7 +189,7 @@ decl_module! {
 				Error::<T>::AttestationPhaseRequired);
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 			ensure!(!claims.is_empty(), Error::<T>::NoValidClaims);
-			let cid = claims[0].community_identifier;
+			let cid = claims[0].community_identifier; //safe; claims not empty checked above
 			ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
 				Error::<T>::InexistentCommunity);
 
@@ -272,7 +274,7 @@ decl_module! {
 			}
 
 			let count = <AttestationCount>::get((cid, cindex));
-			let mut idx = count+1;
+			let mut idx = count.checked_add(1).ok_or(Error::<T>::CheckedMath)?;
 
 			if <AttestationIndex<T>>::contains_key((cid, cindex), &sender) {
 				// update previously registered set
@@ -305,15 +307,15 @@ decl_module! {
 
 			let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 			if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
-				cindex += 1;
+				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
 			}
 			ensure!(!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
 			Error::<T>::AlreadyEndorsed);
 
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender,|b| *b += 1);
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender,|b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 			debug!(target: LOG, "endorsed newbie: {:?}", newbie);
 			<Endorsees<T>>::insert((cid, cindex), newbie, ());
-			<EndorseesCount>::mutate((cid, cindex), |c| *c += 1);
+			<EndorseesCount>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 			Ok(())
 		}
 
@@ -545,17 +547,19 @@ impl<T: Config> Module<T> {
 		let max_num_meetups =
 			min(num_locations, find_prime_below(num_assigned_bootstrappers + num_reputables));
 
-		let mut available_slots = max_num_meetups * meetup_multiplier - num_assigned_bootstrappers;
+		let mut available_slots =
+			max_num_meetups.checked_mul(meetup_multiplier).ok_or(Error::<T>::CheckedMath)? -
+				num_assigned_bootstrappers; //safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers + num_reputables
 
 		let num_assigned_reputables = min(num_reputables, available_slots);
-		available_slots -= num_assigned_reputables;
+		available_slots -= num_assigned_reputables; //safe; given by minimum above
 
 		let num_assigned_endorsees = min(Self::endorsee_count(community_ceremony), available_slots);
-		available_slots -= num_assigned_endorsees;
+		available_slots -= num_assigned_endorsees; //safe; given by minimum above
 
 		let num_assigned_newbies = min(
 			min(Self::newbie_count(community_ceremony), available_slots),
-			(num_assigned_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3,
+			(num_assigned_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3, //safe; sum equals total
 		);
 
 		Ok(AssignmentCount {
@@ -597,10 +601,14 @@ impl<T: Config> Module<T> {
 
 		let mut meetup_index_count: Vec<u64> = vec![0; n as usize];
 		let meetup_index_count_max =
-			checked_ceil_division(num_participants - assignment_params.m, n).unwrap();
+			checked_ceil_division(num_participants - assignment_params.m, n).unwrap_or(0);
 		for i in assignment_params.m..num_participants {
-			let meetup_index = Self::assignment_fn(i, assignment_params, n).unwrap();
-			meetup_index_count[meetup_index as usize] += 1;
+			let meetup_index_option = Self::assignment_fn(i, assignment_params, n);
+			if meetup_index_option.is_err() {
+				return false
+			}
+			let meetup_index = meetup_index_option.unwrap();
+			meetup_index_count[meetup_index.clone() as usize] += 1; // safe; <= num_participants
 			if meetup_index_count[meetup_index as usize] > meetup_index_count_max {
 				return false
 			}
@@ -616,7 +624,7 @@ impl<T: Config> Module<T> {
 		let max_skips = 200;
 		let m = find_prime_below(num_participants) as u32;
 		let mut skip_count = 0;
-		let mut s1 = random_source.pick_non_zero_u32(m - 1);
+		let mut s1 = random_source.pick_non_zero_u32(m - 1); //safe; m > 1, since prime
 		let mut s2 = random_source.pick_non_zero_u32(m - 1);
 
 		while skip_count <= max_skips {
@@ -641,24 +649,33 @@ impl<T: Config> Module<T> {
 		n: u64,
 		num_participants: u64,
 	) -> Vec<ParticipantIndexType> {
+		if n <= 0 {
+			return vec![]
+		}
+
 		let mut result: Vec<ParticipantIndexType> = vec![];
-		let mut max_index = (assignment_params.m as i64 - meetup_index as i64) / n as i64;
+		let mut max_index = assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / n;
 		// ceil
 		if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(n as i64) != 0 {
-			max_index += 1;
+			max_index += 1; //safe; m prime below num_participants
 		}
 
 		for i in 0..max_index {
-			let t1 = (n as i64 * i as i64 + meetup_index as i64 - assignment_params.s2 as i64)
-				.rem_euclid(assignment_params.m as i64);
 			let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
-			let t3 = (t1 * t2).rem_euclid(assignment_params.m as i64);
-			if t3 >= num_participants as i64 {
+			let t3 = (n as i64)
+				.checked_mul(i as i64)
+				.and_then(|x| x.checked_add(meetup_index as i64))
+				.and_then(|x| x.checked_sub(assignment_params.s2 as i64))
+				.map(|x| x.rem_euclid(assignment_params.m as i64))
+				.and_then(|x| x.checked_mul(t2))
+				.map(|x| x.rem_euclid(assignment_params.m as i64));
+
+			if t3.is_none() || t3.unwrap() >= num_participants as i64 {
 				continue
 			}
-			result.push(t3 as u64);
-			if t3 < num_participants as i64 - assignment_params.m as i64 {
-				result.push(t3 as u64 + assignment_params.m)
+			result.push(t3.unwrap() as u64);
+			if t3.unwrap() < num_participants as i64 - assignment_params.m as i64 {
+				result.push(t3.unwrap() as u64 + assignment_params.m)
 			}
 		}
 		result
@@ -672,15 +689,12 @@ impl<T: Config> Module<T> {
 		assignment_params: AssignmentParams,
 		n: u64,
 	) -> Result<MeetupIndexType, Error<T>> {
-		let index = (participant_index
+		participant_index
 			.checked_mul(assignment_params.s1)
-			.ok_or(Error::<T>::CheckedMath)?
-			.checked_add(assignment_params.s2)
-			.ok_or(Error::<T>::CheckedMath)? %
-			assignment_params.m) %
-			n;
-
-		Ok(index)
+			.and_then(|x| x.checked_add(assignment_params.s2))
+			.and_then(|div| checked_modulo(div, assignment_params.m))
+			.and_then(|div| checked_modulo(div, n))
+			.ok_or(Error::<T>::CheckedMath)
 	}
 
 	fn get_meetup_index(
@@ -697,7 +711,7 @@ impl<T: Config> Module<T> {
 				participant_index,
 				assignment.bootstrappers_reputables,
 				meetup_count,
-			)? + 1)
+			)? + 1) //safe; smaller than number of locations
 		}
 		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
@@ -705,19 +719,20 @@ impl<T: Config> Module<T> {
 				participant_index + Self::assignment_counts(community_ceremony).bootstrappers,
 				assignment.bootstrappers_reputables,
 				meetup_count,
-			)? + 1)
+			)? + 1) //safe; smaller than number of locations
 		}
 
 		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
 			return Ok(
-				Self::assignment_fn(participant_index, assignment.endorsees, meetup_count)? + 1
+				Self::assignment_fn(participant_index, assignment.endorsees, meetup_count)? + 1, //safe; smaller than number of locations
 			)
 		}
 
 		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
 			return Ok(Self::assignment_fn(participant_index, assignment.newbies, meetup_count)? + 1)
+			//safe; smaller than number of locations
 		}
 		Err(<Error<T>>::ParticipantIsNotRegistered.into())
 	}
@@ -729,7 +744,7 @@ impl<T: Config> Module<T> {
 		let mut result: Vec<T::AccountId> = vec![];
 		let meetup_count = Self::meetup_count(community_ceremony);
 
-		// meetup index conversion from 1 based to 0 based
+		//safe; meetup index conversion from 1 based to 0 based
 		meetup_index -= 1;
 		assert!(meetup_index < meetup_count);
 
@@ -745,11 +760,11 @@ impl<T: Config> Module<T> {
 		);
 		for p in bootstrappers_reputables {
 			if p < assigned.bootstrappers {
-				result.push(Self::bootstrapper_registry(community_ceremony, &(p + 1)));
+				result.push(Self::bootstrapper_registry(community_ceremony, &(p + 1))); //safe; small number per meetup
 			} else if p < assigned.bootstrappers + assigned.reputables {
 				result.push(Self::reputable_registry(
 					community_ceremony,
-					&(p - assigned.bootstrappers + 1),
+					&(p - assigned.bootstrappers + 1), //safe; small number per meetup
 				));
 			}
 		}
@@ -762,7 +777,7 @@ impl<T: Config> Module<T> {
 		);
 		for p in endorsees {
 			if p < assigned.endorsees {
-				result.push(Self::endorsee_registry(community_ceremony, &(p + 1)));
+				result.push(Self::endorsee_registry(community_ceremony, &(p + 1))); //safe; <= number of meetup participants
 			}
 		}
 
@@ -774,7 +789,7 @@ impl<T: Config> Module<T> {
 		);
 		for p in newbies {
 			if p < assigned.newbies {
-				result.push(Self::newbie_registry(community_ceremony, &(p + 1)));
+				result.push(Self::newbie_registry(community_ceremony, &(p + 1))); //safe; <= number of meetup participants
 			}
 		}
 
@@ -798,7 +813,7 @@ impl<T: Config> Module<T> {
 			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
 		}
 
-		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1;
+		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
 		let reward = Self::nominal_income(cid);
 		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)?;
 
@@ -845,7 +860,7 @@ impl<T: Config> Module<T> {
 					&Self::attestation_index((cid, cindex), &other_participant),
 				);
 				if attestees_from_other.contains(&participant) {
-					was_attested_count += 1;
+					was_attested_count += 1; // <= number of meetup participants
 				}
 			}
 
@@ -885,7 +900,7 @@ impl<T: Config> Module<T> {
 				_ => continue,
 			};
 			match n_vote_candidates.iter().position(|&(n, _c)| n == this_vote) {
-				Some(idx) => n_vote_candidates[idx].1 += 1,
+				Some(idx) => n_vote_candidates[idx].1 += 1, //safe; <= number of candidates
 				_ => n_vote_candidates.insert(0, (this_vote, 1)),
 			};
 		}
@@ -895,6 +910,7 @@ impl<T: Config> Module<T> {
 		// sort by descending vote count
 		n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
 		if n_vote_candidates[0].1 < 3 {
+			//safe; n_vote_candidate not empty checked above
 			return None
 		}
 		Some(n_vote_candidates[0])
