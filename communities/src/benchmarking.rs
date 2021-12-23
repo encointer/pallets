@@ -3,10 +3,10 @@ use encointer_primitives::{
 	balances::Demurrage,
 	communities::{CommunityMetadata, Location, NominalIncome},
 };
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::parameter_types;
-use frame_system::{Origin, RawOrigin};
-use log::{info, warn};
+use frame_system::RawOrigin;
+use log::warn;
 
 const NUM_LOCATIONS: u32 = 500_000;
 
