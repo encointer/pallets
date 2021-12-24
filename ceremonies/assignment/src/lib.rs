@@ -84,7 +84,7 @@ fn validate_equal_mapping(
 	true
 }
 
-fn assignment_fn_inverse(
+pub fn assignment_fn_inverse(
 	meetup_index: u64,
 	assignment_params: AssignmentParams,
 	n: u64,
@@ -103,23 +103,42 @@ fn assignment_fn_inverse(
 
 	for i in 0..max_index {
 		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
-		let t3 = (n as i64)
-			.checked_mul(i as i64)
-			.and_then(|x| x.checked_add(meetup_index as i64))
-			.and_then(|x| x.checked_sub(assignment_params.s2 as i64))
-			.map(|x| x.rem_euclid(assignment_params.m as i64))
-			.and_then(|x| x.checked_mul(t2))
-			.map(|x| x.rem_euclid(assignment_params.m as i64));
+		let maybe_t3 = t3(n, i, meetup_index, assignment_params, t2);
 
-		if t3.is_none() || t3.unwrap() >= num_participants as i64 {
+		if maybe_t3.is_none() {
 			continue
 		}
-		result.push(t3.unwrap() as u64);
-		if t3.unwrap() < num_participants as i64 - assignment_params.m as i64 {
-			result.push(t3.unwrap() as u64 + assignment_params.m)
+
+		let t3 = maybe_t3.unwrap();
+
+		if t3 >= num_participants {
+			continue
+		}
+
+		result.push(t3);
+		if t3 < num_participants - assignment_params.m {
+			result.push(t3 + assignment_params.m)
 		}
 	}
 	result
+}
+
+fn t3(
+	n: u64,
+	current_index: u64,
+	meetup_index: MeetupIndexType,
+	params: AssignmentParams,
+	t2: i64,
+) -> Option<u64> {
+	let t3 = (n as i64)
+		.checked_mul(current_index as i64)?
+		.checked_add(meetup_index as i64)?
+		.checked_sub(params.s2 as i64)?
+		.checked_rem_euclid(params.m as i64)?
+		.checked_mul(t2)?
+		.checked_rem_euclid(params.m as i64)?;
+
+	return Some(t3 as u64)
 }
 
 #[cfg(test)]

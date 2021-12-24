@@ -27,7 +27,7 @@
 
 use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
-	assignment_fn, generate_assignment_function_params,
+	assignment_fn, assignment_fn_inverse, generate_assignment_function_params,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below, mod_inv},
 };
 use encointer_primitives::{
@@ -592,44 +592,6 @@ impl<T: Config> Module<T> {
 		}
 	}
 
-	fn assignment_fn_inverse(
-		meetup_index: u64,
-		assignment_params: AssignmentParams,
-		n: u64,
-		num_participants: u64,
-	) -> Vec<ParticipantIndexType> {
-		if n <= 0 {
-			return vec![]
-		}
-
-		let mut result: Vec<ParticipantIndexType> = vec![];
-		let mut max_index = assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / n;
-		// ceil
-		if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(n as i64) != 0 {
-			max_index += 1; //safe; m prime below num_participants
-		}
-
-		for i in 0..max_index {
-			let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
-			let t3 = (n as i64)
-				.checked_mul(i as i64)
-				.and_then(|x| x.checked_add(meetup_index as i64))
-				.and_then(|x| x.checked_sub(assignment_params.s2 as i64))
-				.map(|x| x.rem_euclid(assignment_params.m as i64))
-				.and_then(|x| x.checked_mul(t2))
-				.map(|x| x.rem_euclid(assignment_params.m as i64));
-
-			if t3.is_none() || t3.unwrap() >= num_participants as i64 {
-				continue
-			}
-			result.push(t3.unwrap() as u64);
-			if t3.unwrap() < num_participants as i64 - assignment_params.m as i64 {
-				result.push(t3.unwrap() as u64 + assignment_params.m)
-			}
-		}
-		result
-	}
-
 	fn get_meetup_index(
 		community_ceremony: CommunityCeremony,
 		participant: &T::AccountId,
@@ -690,7 +652,7 @@ impl<T: Config> Module<T> {
 
 		let assigned = Self::assignment_counts(community_ceremony);
 
-		let bootstrappers_reputables = Self::assignment_fn_inverse(
+		let bootstrappers_reputables = assignment_fn_inverse(
 			meetup_index,
 			params.bootstrappers_reputables,
 			meetup_count,
@@ -707,24 +669,16 @@ impl<T: Config> Module<T> {
 			}
 		}
 
-		let endorsees = Self::assignment_fn_inverse(
-			meetup_index,
-			params.endorsees,
-			meetup_count,
-			assigned.endorsees,
-		);
+		let endorsees =
+			assignment_fn_inverse(meetup_index, params.endorsees, meetup_count, assigned.endorsees);
 		for p in endorsees {
 			if p < assigned.endorsees {
 				result.push(Self::endorsee_registry(community_ceremony, &(p + 1))); //safe; <= number of meetup participants
 			}
 		}
 
-		let newbies = Self::assignment_fn_inverse(
-			meetup_index,
-			params.newbies,
-			meetup_count,
-			assigned.newbies,
-		);
+		let newbies =
+			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies);
 		for p in newbies {
 			if p < assigned.newbies {
 				result.push(Self::newbie_registry(community_ceremony, &(p + 1))); //safe; <= number of meetup participants

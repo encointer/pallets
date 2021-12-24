@@ -1262,8 +1262,7 @@ fn check_assignment(num_participants: u64, assignment_params: AssignmentParams, 
 
 	// inverse function yields the same result
 	for i in 0..n {
-		let participants =
-			EncointerCeremonies::assignment_fn_inverse(i, assignment_params, n, num_participants);
+		let participants = assignment_fn_inverse(i, assignment_params, n, num_participants);
 		for p in participants {
 			assigned_participants[p as usize] = true;
 			assert_eq!(locations[p as usize], i)
