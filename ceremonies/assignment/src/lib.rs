@@ -12,8 +12,6 @@ use sp_runtime::traits::Hash;
 pub mod math;
 
 /// Assigns a participant to a meetup.
-///
-/// Returns an error if the checked math operations fail.
 pub fn assignment_fn(
 	participant_index: ParticipantIndexType,
 	assignment_params: AssignmentParams,
@@ -28,7 +26,6 @@ pub fn assignment_fn(
 
 /// Generates randomized `[AssignmentParams]` for `num_participants` to be distributed across
 /// `num_meetups`.
-///
 pub fn generate_assignment_function_params<Hashing: Hash>(
 	num_participants: u64,
 	num_meetups: u64,
@@ -84,37 +81,41 @@ fn validate_equal_mapping(
 	true
 }
 
+/// Performs the inverse function of `assignment_fn` for all participants in a meetup.
+///
+/// Returns all participants with `assignment_params` belonging to the meetup with `meetup_index`
+/// given the `meetup_count` and `participant_count`.
 pub fn assignment_fn_inverse(
 	meetup_index: u64,
 	assignment_params: AssignmentParams,
-	n: u64,
-	num_participants: u64,
+	meetup_count: u64,
+	participant_count: u64,
 ) -> Vec<ParticipantIndexType> {
-	if n <= 0 {
+	if meetup_count <= 0 {
 		return vec![]
 	}
 
-	let mut max_index = assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / n;
+	let mut max_index = assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / meetup_count;
 	let mut result: Vec<ParticipantIndexType> = Vec::with_capacity(max_index as usize);
 	// ceil
-	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(n as i64) != 0 {
+	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(meetup_count as i64) != 0 {
 		max_index += 1; //safe; m prime below num_participants
 	}
 
 	for i in 0..max_index {
 		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
 
-		let t3 = match t3(n, i, meetup_index, assignment_params, t2) {
+		let t3 = match t3(meetup_count, i, meetup_index, assignment_params, t2) {
 			Some(t3) => t3,
 			None => continue,
 		};
 
-		if t3 >= num_participants {
+		if t3 >= participant_count {
 			continue
 		}
 
 		result.push(t3);
-		if t3 < num_participants - assignment_params.m {
+		if t3 < participant_count - assignment_params.m {
 			result.push(t3 + assignment_params.m)
 		}
 	}
