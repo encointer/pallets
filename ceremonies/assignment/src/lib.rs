@@ -1,6 +1,6 @@
 //! Everything regarding meetup assignments
 
-use crate::math::{checked_ceil_division, checked_modulo, find_prime_below};
+use crate::math::{checked_ceil_division, checked_modulo, find_prime_below, mod_inv};
 use encointer_primitives::{
 	ceremonies::{AssignmentParams, MeetupIndexType, ParticipantIndexType},
 	RandomNumberGenerator,
@@ -80,6 +80,44 @@ fn validate_equal_mapping(
 		}
 	}
 	true
+}
+
+fn assignment_fn_inverse(
+	meetup_index: u64,
+	assignment_params: AssignmentParams,
+	n: u64,
+	num_participants: u64,
+) -> Vec<ParticipantIndexType> {
+	if n <= 0 {
+		return vec![]
+	}
+
+	let mut result: Vec<ParticipantIndexType> = vec![];
+	let mut max_index = assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / n;
+	// ceil
+	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(n as i64) != 0 {
+		max_index += 1; //safe; m prime below num_participants
+	}
+
+	for i in 0..max_index {
+		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
+		let t3 = (n as i64)
+			.checked_mul(i as i64)
+			.and_then(|x| x.checked_add(meetup_index as i64))
+			.and_then(|x| x.checked_sub(assignment_params.s2 as i64))
+			.map(|x| x.rem_euclid(assignment_params.m as i64))
+			.and_then(|x| x.checked_mul(t2))
+			.map(|x| x.rem_euclid(assignment_params.m as i64));
+
+		if t3.is_none() || t3.unwrap() >= num_participants as i64 {
+			continue
+		}
+		result.push(t3.unwrap() as u64);
+		if t3.unwrap() < num_participants as i64 - assignment_params.m as i64 {
+			result.push(t3.unwrap() as u64 + assignment_params.m)
+		}
+	}
+	result
 }
 
 #[cfg(test)]
