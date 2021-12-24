@@ -140,6 +140,14 @@ fn t3(
 	return Some(t3 as u64)
 }
 
+pub fn meetup_index(
+	participant_index: ParticipantIndexType,
+	params: AssignmentParams,
+	meetup_count: MeetupIndexType,
+) -> Option<MeetupIndexType> {
+	Some(assignment_fn(participant_index, params, meetup_count)? + 1)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

@@ -29,6 +29,7 @@ use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
 	assignment_fn, assignment_fn_inverse, generate_assignment_function_params,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
+	meetup_index,
 };
 use encointer_primitives::{
 	balances::BalanceType,
@@ -602,36 +603,31 @@ impl<T: Config> Module<T> {
 
 		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::bootstrapper_index(community_ceremony, &participant) - 1;
-			return Some(
-				assignment_fn(
-					participant_index,
-					assignment.bootstrappers_reputables,
-					meetup_count,
-				)? + 1,
-			) //safe; smaller than number of locations
+
+			return meetup_index(
+				participant_index,
+				assignment.bootstrappers_reputables,
+				meetup_count,
+			)
 		}
 		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
-			return Some(
-				assignment_fn(
-					participant_index + Self::assignment_counts(community_ceremony).bootstrappers,
-					assignment.bootstrappers_reputables,
-					meetup_count,
-				)? + 1,
-			) //safe; smaller than number of locations
+
+			return meetup_index(
+				participant_index + Self::assignment_counts(community_ceremony).bootstrappers,
+				assignment.bootstrappers_reputables,
+				meetup_count,
+			)
 		}
 
 		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
-			return Some(
-				assignment_fn(participant_index, assignment.endorsees, meetup_count)? + 1, //safe; smaller than number of locations
-			)
+			return meetup_index(participant_index, assignment.endorsees, meetup_count)
 		}
 
 		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
-			return Some(assignment_fn(participant_index, assignment.newbies, meetup_count)? + 1)
-			//safe; smaller than number of locations
+			return meetup_index(participant_index, assignment.newbies, meetup_count)
 		}
 
 		None
