@@ -258,8 +258,11 @@ impl Default for Assignment {
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct AssignmentParams {
+	/// Random prime below number of meetup participants
 	pub m: u64,
+	/// First random group element (0, m)
 	pub s1: u64,
+	/// Second random group element (0, m)
 	pub s2: u64,
 }
 impl Default for AssignmentParams {
