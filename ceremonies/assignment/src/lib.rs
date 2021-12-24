@@ -16,13 +16,13 @@ pub mod math;
 pub fn assignment_fn(
 	participant_index: ParticipantIndexType,
 	assignment_params: AssignmentParams,
-	n: u64,
+	meetup_count: u64,
 ) -> Option<MeetupIndexType> {
 	participant_index
 		.checked_mul(assignment_params.s1)?
 		.checked_add(assignment_params.s2)
 		.and_then(|div| checked_modulo(div, assignment_params.m))
-		.and_then(|div| checked_modulo(div, n))
+		.and_then(|div| checked_modulo(div, meetup_count))
 }
 
 /// Generates randomized `[AssignmentParams]` for `num_participants` to be distributed across
@@ -58,18 +58,18 @@ pub fn generate_assignment_function_params<Hashing: Hash>(
 fn validate_equal_mapping(
 	num_participants: u64,
 	assignment_params: AssignmentParams,
-	n: u64,
+	meetup_count: u64,
 ) -> bool {
 	if num_participants < 2 {
 		return true
 	}
 
-	let mut meetup_index_count: Vec<u64> = vec![0; n as usize];
+	let mut meetup_index_count: Vec<u64> = vec![0; meetup_count as usize];
 	let meetup_index_count_max =
-		checked_ceil_division(num_participants - assignment_params.m, n).unwrap_or(0);
+		checked_ceil_division(num_participants - assignment_params.m, meetup_count).unwrap_or(0);
 
 	for i in assignment_params.m..num_participants {
-		let meetup_index = match assignment_fn(i, assignment_params, n) {
+		let meetup_index = match assignment_fn(i, assignment_params, meetup_count) {
 			Some(i) => i as usize,
 			None => return false,
 		};
