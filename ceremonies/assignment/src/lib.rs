@@ -1,5 +1,7 @@
 //! Everything regarding meetup assignments
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use crate::math::{checked_ceil_division, checked_modulo, find_prime_below, mod_inv};
 use encointer_primitives::{
 	ceremonies::{AssignmentParams, MeetupIndexType, ParticipantIndexType},
