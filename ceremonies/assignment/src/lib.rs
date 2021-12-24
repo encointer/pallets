@@ -147,52 +147,46 @@ mod tests {
 
 	#[test]
 	fn assignment_fn_works() {
-		new_test_ext().execute_with(|| {
-			assert_eq!(assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5).unwrap(), 1)
-		});
+		assert_eq!(assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5).unwrap(), 1)
 	}
 
 	#[test]
 	fn validate_equal_mapping_works() {
-		new_test_ext().execute_with(|| {
-			assert_eq!(
-				validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2326, s2: 1099 }, 427),
-				false
-			);
-			assert_eq!(
-				validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2325, s2: 1099 }, 427),
-				true
-			);
-		});
+		assert_eq!(
+			validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2326, s2: 1099 }, 427),
+			false
+		);
+		assert_eq!(
+			validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2325, s2: 1099 }, 427),
+			true
+		);
 	}
 
 	#[test]
 	fn assignment_fn_inverse_works() {
-		new_test_ext().execute_with(|| {
-			let mut s1 = 78u64;
-			let mut s2 = 23u64;
-			let mut n = 12u64;
-			let mut num_participants = 118u64;
-			let mut m = 113u64;
+		let mut s1 = 78u64;
+		let mut s2 = 23u64;
+		let mut n = 12u64;
+		let mut num_participants = 118u64;
+		let mut m = 113u64;
 
-			let mut assignment_params = AssignmentParams { m, s1, s2 };
-			check_assignment(num_participants, assignment_params, n);
+		let mut assignment_params = AssignmentParams { m, s1, s2 };
+		check_assignment(num_participants, assignment_params, n);
 
-			s1 = 1u64;
-			s2 = 1u64;
-			n = 2u64;
-			num_participants = 20u64;
-			m = 19u64;
-			assignment_params = AssignmentParams { m, s1, s2 };
-			check_assignment(num_participants, assignment_params, n);
-			s1 = 1u64;
-			s2 = 1u64;
-			n = 1u64;
-			num_participants = 10u64;
-			m = 7u64;
-			assignment_params = AssignmentParams { m, s1, s2 };
-			check_assignment(num_participants, assignment_params, n);
-		});
+		s1 = 1u64;
+		s2 = 1u64;
+		n = 2u64;
+		num_participants = 20u64;
+		m = 19u64;
+		assignment_params = AssignmentParams { m, s1, s2 };
+		check_assignment(num_participants, assignment_params, n);
+		s1 = 1u64;
+		s2 = 1u64;
+		n = 1u64;
+		num_participants = 10u64;
+		m = 7u64;
+		assignment_params = AssignmentParams { m, s1, s2 };
+		check_assignment(num_participants, assignment_params, n);
 	}
 
 	fn check_assignment(num_participants: u64, assignment_params: AssignmentParams, n: u64) {

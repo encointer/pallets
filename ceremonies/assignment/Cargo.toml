@@ -12,6 +12,8 @@ encointer-primitives = { path = "../../primitives", default-features = false }
 sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
+[dev-dependencies]
+sp-core = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [features]
 default = ["std"]

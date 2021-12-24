@@ -980,6 +980,7 @@ name = "encointer-ceremonies-assignment"
 version = "0.1.0"
 dependencies = [
  "encointer-primitives",
+ "sp-core",
  "sp-runtime",
  "sp-std",
 ]
