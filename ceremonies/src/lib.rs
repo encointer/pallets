@@ -27,7 +27,7 @@
 
 use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
-	assignment_fn, assignment_fn_inverse, generate_assignment_function_params,
+	assignment_fn_inverse, generate_assignment_function_params,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
 	meetup_index, meetup_location,
 };
