@@ -54,6 +54,7 @@ pub fn generate_assignment_function_params<Hashing: Hash>(
 	return AssignmentParams { m: m as u64, s1: s1 as u64, s2: s2 as u64 }
 }
 
+// Todo add documentation to this function.
 fn validate_equal_mapping(
 	num_participants: u64,
 	assignment_params: AssignmentParams,
