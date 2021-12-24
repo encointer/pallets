@@ -1251,58 +1251,6 @@ fn get_assignment_params_works() {
 	});
 }
 
-fn check_assignment(num_participants: u64, assignment_params: AssignmentParams, n: u64) {
-	let mut locations: Vec<u64> = vec![0; num_participants as usize];
-
-	for i in 0..num_participants {
-		locations[i as usize] = assignment_fn(i, assignment_params, n).unwrap();
-	}
-
-	let mut assigned_participants: Vec<bool> = vec![false; num_participants as usize];
-
-	// inverse function yields the same result
-	for i in 0..n {
-		let participants = assignment_fn_inverse(i, assignment_params, n, num_participants);
-		for p in participants {
-			assigned_participants[p as usize] = true;
-			assert_eq!(locations[p as usize], i)
-		}
-	}
-
-	// all participants were assigned
-	for val in assigned_participants {
-		assert!(val);
-	}
-}
-#[test]
-fn assignment_fn_inverse_works() {
-	new_test_ext().execute_with(|| {
-		let mut s1 = 78u64;
-		let mut s2 = 23u64;
-		let mut n = 12u64;
-		let mut num_participants = 118u64;
-		let mut m = 113u64;
-
-		let mut assignment_params = AssignmentParams { m, s1, s2 };
-		check_assignment(num_participants, assignment_params, n);
-
-		s1 = 1u64;
-		s2 = 1u64;
-		n = 2u64;
-		num_participants = 20u64;
-		m = 19u64;
-		assignment_params = AssignmentParams { m, s1, s2 };
-		check_assignment(num_participants, assignment_params, n);
-		s1 = 1u64;
-		s2 = 1u64;
-		n = 1u64;
-		num_participants = 10u64;
-		m = 7u64;
-		assignment_params = AssignmentParams { m, s1, s2 };
-		check_assignment(num_participants, assignment_params, n);
-	});
-}
-
 #[test]
 fn get_meetup_index_works() {
 	new_test_ext().execute_with(|| {
