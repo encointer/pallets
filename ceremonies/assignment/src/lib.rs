@@ -5,6 +5,7 @@
 use crate::math::{checked_ceil_division, checked_modulo, find_prime_below, mod_inv};
 use encointer_primitives::{
 	ceremonies::{AssignmentParams, MeetupIndexType, ParticipantIndexType},
+	communities::Location,
 	RandomNumberGenerator,
 };
 use sp_runtime::traits::Hash;
@@ -146,6 +147,21 @@ pub fn meetup_index(
 	meetup_count: MeetupIndexType,
 ) -> Option<MeetupIndexType> {
 	Some(assignment_fn(participant_index, params, meetup_count)? + 1)
+}
+
+pub fn meetup_location(
+	meetup_index: MeetupIndexType,
+	locations: Vec<Location>,
+	location_assignment_params: AssignmentParams,
+) -> Option<Location> {
+	let location_idx =
+		assignment_fn(meetup_index, location_assignment_params, locations.len() as u64)?;
+
+	if location_idx < locations.len() as u64 {
+		Some(locations[(location_idx) as usize])
+	} else {
+		None
+	}
 }
 
 #[cfg(test)]

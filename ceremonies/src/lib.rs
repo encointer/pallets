@@ -29,7 +29,7 @@ use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
 	assignment_fn, assignment_fn_inverse, generate_assignment_function_params,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
-	meetup_index,
+	meetup_index, meetup_location,
 };
 use encointer_primitives::{
 	balances::BalanceType,
@@ -811,12 +811,8 @@ impl<T: Config> Module<T> {
 	) -> Option<Location> {
 		let locations = <encointer_communities::Module<T>>::get_locations(&cc.0);
 		let assignment_params = Self::assignments(cc).locations;
-		let location_idx = assignment_fn(meetup_idx, assignment_params, locations.len() as u64)?;
-		if location_idx < locations.len() as u64 {
-			Some(locations[(location_idx) as usize])
-		} else {
-			None
-		}
+
+		meetup_location(meetup_idx, locations, assignment_params)
 	}
 
 	// this function only works during ATTESTING, so we're keeping it for private use
