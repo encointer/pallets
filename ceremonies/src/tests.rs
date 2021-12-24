@@ -1219,28 +1219,6 @@ fn grow_population_works() {
 }
 
 #[test]
-fn validate_equal_mapping_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(
-			EncointerCeremonies::validate_equal_mapping(
-				2761,
-				AssignmentParams { m: 2753, s1: 2326, s2: 1099 },
-				427
-			),
-			false
-		);
-		assert_eq!(
-			EncointerCeremonies::validate_equal_mapping(
-				2761,
-				AssignmentParams { m: 2753, s1: 2325, s2: 1099 },
-				427
-			),
-			true
-		);
-	});
-}
-
-#[test]
 fn get_assignment_params_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
@@ -1273,23 +1251,11 @@ fn get_assignment_params_works() {
 	});
 }
 
-#[test]
-fn assignment_fn_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(
-			EncointerCeremonies::assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5)
-				.unwrap(),
-			1
-		)
-	});
-}
-
 fn check_assignment(num_participants: u64, assignment_params: AssignmentParams, n: u64) {
 	let mut locations: Vec<u64> = vec![0; num_participants as usize];
 
 	for i in 0..num_participants {
-		locations[i as usize] =
-			EncointerCeremonies::assignment_fn(i, assignment_params, n).unwrap();
+		locations[i as usize] = assignment_fn(i, assignment_params, n).unwrap();
 	}
 
 	let mut assigned_participants: Vec<bool> = vec![false; num_participants as usize];

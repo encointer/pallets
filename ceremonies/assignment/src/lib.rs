@@ -80,3 +80,29 @@ fn validate_equal_mapping(
 	}
 	true
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn assignment_fn_works() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5).unwrap(), 1)
+		});
+	}
+
+	#[test]
+	fn validate_equal_mapping_works() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(
+				validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2326, s2: 1099 }, 427),
+				false
+			);
+			assert_eq!(
+				validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2325, s2: 1099 }, 427),
+				true
+			);
+		});
+	}
+}
