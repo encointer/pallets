@@ -237,7 +237,7 @@ impl AssignmentCount {
 	}
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct Assignment {
 	pub bootstrappers_reputables: AssignmentParams,
 	pub endorsees: AssignmentParams,
@@ -245,28 +245,14 @@ pub struct Assignment {
 	pub locations: AssignmentParams,
 }
 
-impl Default for Assignment {
-	fn default() -> Self {
-		Assignment {
-			bootstrappers_reputables: AssignmentParams::default(),
-			endorsees: AssignmentParams::default(),
-			newbies: AssignmentParams::default(),
-			locations: AssignmentParams::default(),
-		}
-	}
-}
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+// Todo: abstract AssignmentParams trait and use two different structs: AssignmentParams, LocationAssignmentParams
+#[derive(Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct AssignmentParams {
-	/// Random prime below number of meetup participants
+	/// Random prime below number of meetup participants. For locations this is the amount of locations.
 	pub m: u64,
-	/// First random group element (0, m)
+	/// First random group element in the interval (0, m). For locations this is a random coprime < m.
 	pub s1: u64,
-	/// Second random group element (0, m)
+	/// Second random group element in the interval (0, m). For locations the closest prime to m,
+	/// with s2 < m.
 	pub s2: u64,
-}
-impl Default for AssignmentParams {
-	fn default() -> Self {
-		AssignmentParams { m: 0, s1: 0, s2: 0 }
-	}
 }
