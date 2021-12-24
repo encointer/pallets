@@ -17,7 +17,7 @@
 //! Math functions used in the ceremonies pallet.
 
 use encointer_primitives::{RandomNumberGenerator, RandomPermutation};
-use frame_support::sp_runtime::traits::Hash;
+use sp_runtime::traits::Hash;
 use sp_std::vec::Vec;
 
 pub fn checked_modulo(dividend: u64, divisor: u64) -> Option<u64> {
