@@ -94,8 +94,8 @@ pub fn assignment_fn_inverse(
 		return vec![]
 	}
 
-	let mut result: Vec<ParticipantIndexType> = vec![];
 	let mut max_index = assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / n;
+	let mut result: Vec<ParticipantIndexType> = Vec::with_capacity(max_index as usize);
 	// ceil
 	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(n as i64) != 0 {
 		max_index += 1; //safe; m prime below num_participants
@@ -103,13 +103,11 @@ pub fn assignment_fn_inverse(
 
 	for i in 0..max_index {
 		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
-		let maybe_t3 = t3(n, i, meetup_index, assignment_params, t2);
 
-		if maybe_t3.is_none() {
-			continue
-		}
-
-		let t3 = maybe_t3.unwrap();
+		let t3 = match t3(n, i, meetup_index, assignment_params, t2) {
+			Some(t3) => t3,
+			None => continue,
+		};
 
 		if t3 >= num_participants {
 			continue
