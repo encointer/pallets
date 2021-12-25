@@ -38,7 +38,7 @@ frame_support::construct_runtime!(
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
 		EncointerPersonhoodOracle: dut::{Pallet, Call, Event},
 	}
 );
@@ -46,7 +46,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
 	pub const AmountNewbieTickets: u8 = 50;
-	pub const DefaultDemurrage: i128 = 0x0000000000000000000001E3F0A8A973_i128;
+	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 }
 
 impl dut::Config for TestRuntime {
@@ -65,11 +65,6 @@ impl_encointer_ceremonies!(TestRuntime);
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-	encointer_balances::GenesisConfig {
-		demurrage_per_block_default: Demurrage::from_bits(DefaultDemurrage::get()),
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
 	encointer_communities::GenesisConfig::<TestRuntime> {
 		community_master: AccountId::from(AccountKeyring::Alice),
 	}

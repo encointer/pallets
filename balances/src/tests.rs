@@ -19,7 +19,6 @@
 use super::*;
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use encointer_primitives::{
-	balances::Demurrage,
 	communities::CommunityIdentifier,
 	fixed::{traits::LossyInto, transcendental::exp},
 };
@@ -107,8 +106,7 @@ fn demurrage_should_work() {
 		System::set_block_number(1);
 		assert_eq!(
 			EncointerBalances::balance(cid, &alice),
-			exp::<BalanceType, BalanceType>(-Demurrage::from_bits(DefaultDemurrage::get()))
-				.unwrap()
+			exp::<BalanceType, BalanceType>(-DefaultDemurrage::get()).unwrap()
 		);
 		//one year later
 		System::set_block_number(86400 / 5 * 356);
