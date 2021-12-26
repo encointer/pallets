@@ -642,7 +642,13 @@ impl<T: Config> Module<T> {
 
 		//safe; meetup index conversion from 1 based to 0 based
 		meetup_index -= 1;
-		assert!(meetup_index < meetup_count);
+		if meetup_index > meetup_count {
+			error!(
+				target: LOG,
+				"Invalid meetup index > meetup count: {}, {}", meetup_index, meetup_count
+			);
+			return vec![]
+		}
 
 		let params = Self::assignments(community_ceremony);
 
