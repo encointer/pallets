@@ -16,13 +16,13 @@ pub mod math;
 pub fn assignment_fn(
 	participant_index: ParticipantIndexType,
 	assignment_params: AssignmentParams,
-	meetup_count: u64,
+	assignment_count: u64,
 ) -> Option<MeetupIndexType> {
 	participant_index
 		.checked_mul(assignment_params.s1)?
 		.checked_add(assignment_params.s2)
 		.and_then(|div| checked_modulo(div, assignment_params.m))
-		.and_then(|div| checked_modulo(div, meetup_count))
+		.and_then(|div| checked_modulo(div, assignment_count))
 }
 
 /// Generates randomized `[AssignmentParams]` for `num_participants` to be distributed across
@@ -89,24 +89,25 @@ fn validate_equal_mapping(
 pub fn assignment_fn_inverse(
 	meetup_index: u64,
 	assignment_params: AssignmentParams,
-	meetup_count: u64,
+	assignment_count: u64,
 	participant_count: u64,
 ) -> Vec<ParticipantIndexType> {
-	if meetup_count <= 0 {
+	if assignment_count <= 0 {
 		return vec![]
 	}
 
-	let mut max_index = assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / meetup_count;
+	let mut max_index =
+		assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / assignment_count;
 	let mut result: Vec<ParticipantIndexType> = Vec::with_capacity(max_index as usize);
 	// ceil
-	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(meetup_count as i64) != 0 {
+	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(assignment_count as i64) != 0 {
 		max_index += 1; //safe; m prime below num_participants
 	}
 
 	for i in 0..max_index {
 		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
 
-		let t3 = match t3(meetup_count, i, meetup_index, assignment_params, t2) {
+		let t3 = match t3(assignment_count, i, meetup_index, assignment_params, t2) {
 			Some(t3) => t3,
 			None => continue,
 		};
