@@ -9,6 +9,7 @@ use encointer_primitives::{
 	RandomNumberGenerator,
 };
 use sp_runtime::traits::Hash;
+use sp_std::{prelude::Vec, vec};
 
 pub mod math;
 
