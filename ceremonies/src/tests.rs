@@ -1077,10 +1077,11 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 				(lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
 		};
 
+		let location = EncointerCeremonies::get_meetup_location((cid, cindex), 1).unwrap();
+
 		let tol = 60_000; // [ms]
 		assert!(
-			tol > (EncointerCeremonies::get_meetup_time((cid, cindex), 1).unwrap() as i64 -
-				mtime as i64)
+			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 - mtime as i64)
 				.abs() as u64
 		);
 	});

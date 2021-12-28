@@ -193,7 +193,7 @@ decl_module! {
 				Error::<T>::InexistentCommunity);
 
 			let meetup_index = Self::get_meetup_index((cid, cindex), &sender)
-			.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
 			let mut meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index);
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			meetup_participants.retain(|x| x != &sender);
@@ -201,12 +201,15 @@ decl_module! {
 			ensure!(claims.len() <= num_registered, Error::<T>::TooManyClaims);
 			let mut verified_attestees = vec!();
 
-			let mlocation = if let Some(l) = Self::get_meetup_location((cid, cindex), meetup_index)
-				{ l } else { return Err(<Error<T>>::MeetupLocationNotFound.into()) };
-			let mtime = if let Some(t) = Self::get_meetup_time((cid, cindex), meetup_index)
-				{ t } else { return Err(<Error<T>>::MeetupTimeCalculationError.into()) };
+			let mlocation = Self::get_meetup_location((cid, cindex), meetup_index)
+				.ok_or(<Error<T>>::MeetupLocationNotFound)?;
+
+			let mtime = Self::get_meetup_time(mlocation)
+				.ok_or(<Error<T>>::MeetupTimeCalculationError)?;
+
 			debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
 				meetup_index, mlocation, mtime, cid);
+
 			for claim in claims.iter() {
 				let claimant = &claim.claimant_public;
 				if claimant == &sender {
@@ -819,21 +822,17 @@ impl<T: Config> Module<T> {
 	}
 
 	// this function only works during ATTESTING, so we're keeping it for private use
-	fn get_meetup_time(cc: CommunityCeremony, meetup_idx: MeetupIndexType) -> Option<T::Moment> {
+	fn get_meetup_time(location: Location) -> Option<T::Moment> {
 		if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
 			return None
 		}
-		if meetup_idx == 0 {
-			return None
-		}
+
 		let duration =
 			<encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
 		let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
 		let start = next - duration;
 
-		let mlocation = Self::get_meetup_location(cc, meetup_idx)?;
-
-		Some(meetup_time(mlocation, start, T::MomentsPerDay::get()))
+		Some(meetup_time(location, start, T::MomentsPerDay::get()))
 	}
 
 	/// Returns the community-specific nominal income if it is set. Otherwise returns the
