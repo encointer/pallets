@@ -35,7 +35,7 @@ use sp_core::{sr25519, Pair, H256, U256};
 use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
 use test_utils::{
-	helpers::{account_id, bootstrappers, register_test_community},
+	helpers::{account_id, bootstrappers, register_test_community, zoran_non_bootstrapper},
 	*,
 };
 
@@ -374,6 +374,32 @@ fn registering_participant_twice_fails() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		assert_ok!(register(alice.clone(), cid, None));
 		assert!(register(alice.clone(), cid, None).is_err());
+	});
+}
+
+#[test]
+fn registering_non_bootstrapper_at_bootstrapping_ceremony_fails() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+
+		let non_bootstrapper = account_id(&zoran_non_bootstrapper());
+		assert_error(
+			register(non_bootstrapper.clone(), cid, None),
+			Error::<TestRuntime>::OnlyBootstrapperAllowed,
+		);
+
+		EncointerCeremonies::endorse_newcomer(
+			Origin::signed(AccountKeyring::Alice.to_account_id()),
+			cid,
+			non_bootstrapper.clone(),
+		)
+		.unwrap();
+
+		// should also fail if endorsed
+		assert_error(
+			register(non_bootstrapper, cid, None),
+			Error::<TestRuntime>::OnlyBootstrapperAllowed,
+		);
 	});
 }
 

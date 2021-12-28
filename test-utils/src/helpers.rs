@@ -40,6 +40,10 @@ pub fn bootstrappers() -> Vec<sr25519::Pair> {
 	.collect()
 }
 
+pub fn zoran_non_bootstrapper() -> sr25519::Pair {
+	sr25519::Pair::from_entropy(&[9u8; 32], None).0
+}
+
 /// register a simple test community with a specified location and defined bootstrappers
 pub fn register_test_community<Runtime>(
 	custom_bootstrappers: Option<Vec<sr25519::Pair>>,

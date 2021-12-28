@@ -343,6 +343,8 @@ decl_error! {
 	pub enum Error for Module<T: Config> {
 		/// the participant is already registered
 		ParticipantAlreadyRegistered,
+		/// only bootstrappers allowed in first ceremony
+		OnlyBootstrapperAllowed,
 		/// verification of signature of attendee failed
 		BadProofOfAttendanceSignature,
 		/// verification of signature of attendee failed
@@ -408,7 +410,15 @@ impl<T: Config> Module<T> {
 			<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 			<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
 			<BootstrapperCount>::insert((cid, cindex), participant_index);
-		} else if is_reputable {
+
+			return Ok(())
+		}
+
+		if cindex == 1 {
+			return Err(Error::<T>::OnlyBootstrapperAllowed)
+		}
+
+		if is_reputable {
 			let participant_index = <ReputableCount>::get((cid, cindex))
 				.checked_add(1)
 				.ok_or(Error::<T>::RegistryOverflow)?;
