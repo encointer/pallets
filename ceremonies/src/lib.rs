@@ -29,7 +29,7 @@ use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
 	assignment_fn_inverse, generate_assignment_function_params,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
-	meetup_index, meetup_location,
+	meetup_index, meetup_location, meetup_time,
 };
 use encointer_primitives::{
 	balances::BalanceType,
@@ -37,7 +37,7 @@ use encointer_primitives::{
 		consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
 		*,
 	},
-	communities::{CommunityIdentifier, Degree, Location, LossyFrom, NominalIncome},
+	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
 };
@@ -53,10 +53,7 @@ use frame_support::{
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::{CheckedSub, IdentifyAccount, Member, Verify},
-	SaturatedConversion,
-};
+use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 use sp_std::{prelude::*, vec};
 
 // Logger target
@@ -832,19 +829,11 @@ impl<T: Config> Module<T> {
 		let duration =
 			<encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
 		let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
-		let mlocation = Self::get_meetup_location(cc, meetup_idx)?;
-		let day = T::MomentsPerDay::get();
-		let perdegree = day / T::Moment::from(360u32);
 		let start = next - duration;
-		// rounding to the lower integer degree. Max error: 240s = 4min
-		let abs_lon: u32 = i64::lossy_from(mlocation.lon.abs()).saturated_into();
-		let abs_lon_time = T::Moment::from(abs_lon) * perdegree;
 
-		if mlocation.lon < Degree::from_num(0) {
-			Some(start + day / T::Moment::from(2u32) + abs_lon_time)
-		} else {
-			Some(start + day / T::Moment::from(2u32) - abs_lon_time)
-		}
+		let mlocation = Self::get_meetup_location(cc, meetup_idx)?;
+
+		Some(meetup_time(mlocation, start, T::MomentsPerDay::get()))
 	}
 
 	/// Returns the community-specific nominal income if it is set. Otherwise returns the

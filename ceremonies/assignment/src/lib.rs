@@ -5,10 +5,13 @@
 use crate::math::{checked_ceil_division, checked_modulo, find_prime_below, mod_inv};
 use encointer_primitives::{
 	ceremonies::{AssignmentParams, MeetupIndexType, ParticipantIndexType},
-	communities::Location,
+	communities::{Degree, Location, LossyFrom},
 	RandomNumberGenerator,
 };
-use sp_runtime::traits::Hash;
+use sp_runtime::{
+	traits::{AtLeast32Bit, Hash},
+	SaturatedConversion,
+};
 use sp_std::{prelude::Vec, vec};
 
 pub mod math;
@@ -163,6 +166,24 @@ pub fn meetup_location(
 		Some(locations[(location_idx) as usize])
 	} else {
 		None
+	}
+}
+
+pub fn meetup_time<Moment: Copy + AtLeast32Bit>(
+	location: Location,
+	attesting_start: Moment,
+	one_day: Moment,
+) -> Moment {
+	let per_degree = one_day / Moment::from(360u32);
+
+	// rounding to the lower integer degree. Max error: 240s = 4min
+	let lon_abs: u32 = i64::lossy_from(location.lon.abs()).saturated_into();
+	let lon_time_abs = Moment::from(lon_abs) * per_degree;
+
+	if location.lon < Degree::from_num(0) {
+		attesting_start + one_day / Moment::from(2u32) + lon_time_abs
+	} else {
+		attesting_start + one_day / Moment::from(2u32) - lon_time_abs
 	}
 }
 
