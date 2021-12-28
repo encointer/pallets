@@ -1077,10 +1077,11 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 				(lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
 		};
 
+		let location = EncointerCeremonies::get_meetup_location((cid, cindex), 1).unwrap();
+
 		let tol = 60_000; // [ms]
 		assert!(
-			tol > (EncointerCeremonies::get_meetup_time((cid, cindex), 1).unwrap() as i64 -
-				mtime as i64)
+			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 - mtime as i64)
 				.abs() as u64
 		);
 	});
@@ -1219,28 +1220,6 @@ fn grow_population_works() {
 }
 
 #[test]
-fn validate_equal_mapping_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(
-			EncointerCeremonies::validate_equal_mapping(
-				2761,
-				AssignmentParams { m: 2753, s1: 2326, s2: 1099 },
-				427
-			),
-			false
-		);
-		assert_eq!(
-			EncointerCeremonies::validate_equal_mapping(
-				2761,
-				AssignmentParams { m: 2753, s1: 2325, s2: 1099 },
-				427
-			),
-			true
-		);
-	});
-}
-
-#[test]
 fn get_assignment_params_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
@@ -1270,71 +1249,6 @@ fn get_assignment_params_works() {
 		assert!(assignment.newbies.m > 0);
 		assert!(assignment.newbies.s1 > 0);
 		assert!(assignment.newbies.s2 > 0);
-	});
-}
-
-#[test]
-fn assignment_fn_works() {
-	new_test_ext().execute_with(|| {
-		assert_eq!(
-			EncointerCeremonies::assignment_fn(6, AssignmentParams { m: 4, s1: 5, s2: 3 }, 5)
-				.unwrap(),
-			1
-		)
-	});
-}
-
-fn check_assignment(num_participants: u64, assignment_params: AssignmentParams, n: u64) {
-	let mut locations: Vec<u64> = vec![0; num_participants as usize];
-
-	for i in 0..num_participants {
-		locations[i as usize] =
-			EncointerCeremonies::assignment_fn(i, assignment_params, n).unwrap();
-	}
-
-	let mut assigned_participants: Vec<bool> = vec![false; num_participants as usize];
-
-	// inverse function yields the same result
-	for i in 0..n {
-		let participants =
-			EncointerCeremonies::assignment_fn_inverse(i, assignment_params, n, num_participants);
-		for p in participants {
-			assigned_participants[p as usize] = true;
-			assert_eq!(locations[p as usize], i)
-		}
-	}
-
-	// all participants were assigned
-	for val in assigned_participants {
-		assert!(val);
-	}
-}
-#[test]
-fn assignment_fn_inverse_works() {
-	new_test_ext().execute_with(|| {
-		let mut s1 = 78u64;
-		let mut s2 = 23u64;
-		let mut n = 12u64;
-		let mut num_participants = 118u64;
-		let mut m = 113u64;
-
-		let mut assignment_params = AssignmentParams { m, s1, s2 };
-		check_assignment(num_participants, assignment_params, n);
-
-		s1 = 1u64;
-		s2 = 1u64;
-		n = 2u64;
-		num_participants = 20u64;
-		m = 19u64;
-		assignment_params = AssignmentParams { m, s1, s2 };
-		check_assignment(num_participants, assignment_params, n);
-		s1 = 1u64;
-		s2 = 1u64;
-		n = 1u64;
-		num_participants = 10u64;
-		m = 7u64;
-		assignment_params = AssignmentParams { m, s1, s2 };
-		check_assignment(num_participants, assignment_params, n);
 	});
 }
 

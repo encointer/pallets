@@ -12,6 +12,7 @@ scale-info = { version = "1.0", default-features = false }
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
+encointer-ceremonies-assignment = { path = "assignment", default-features = false }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
@@ -41,6 +42,7 @@ std = [
 	"sp-std/std",
 	"pallet-timestamp/std",
 	"encointer-balances/std",
+	"encointer-ceremonies-assignment/std",
 	"encointer-communities/std",
 	"encointer-primitives/std",
 	"encointer-scheduler/std",
