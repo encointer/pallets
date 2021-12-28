@@ -302,7 +302,7 @@ fn assert_error(actual: DispatchResult, expected: Error<TestRuntime>) {
 #[test]
 fn registering_participant_works() {
 	new_test_ext().execute_with(|| {
-		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let cindex = EncointerScheduler::current_ceremony_index();
