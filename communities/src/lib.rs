@@ -289,17 +289,11 @@ decl_error! {
 impl<T: Config> Module<T> {
 	fn solar_trip_time(from: &Location, to: &Location) -> i32 {
 		// FIXME: replace by fixpoint implementation within runtime.
-		let d = Module::<T>::haversine_distance(&from, &to) as i32;
+		let d = Module::<T>::haversine_distance(&from, &to) as i32; //orthodromic distance bewteen points [m]
+
 		// FIXME: this will not panic, but make sure!
-		let dt = from
-			.lon
-			.checked_sub(to.lon)
-			.unwrap()
-			.checked_div(Degree::from_num(1))
-			.unwrap()
-			.checked_mul(Degree::from_num(240))
-			.unwrap(); // 24h * 3600s / 360° = 240s/°
-		let tflight = d.checked_div(MAX_SPEED_MPS).unwrap();
+		let dt = (from.lon - to.lon) * 240; //time, the sun-high needs to travel between locations [s]
+		let tflight = d / MAX_SPEED_MPS; // time required to travel between locations at MAX_SPEED_MPS [s]
 		let dt: i32 = i64::lossy_from(dt.abs()).saturated_into();
 		tflight - dt
 	}
