@@ -22,7 +22,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::parameter_types! {
-	pub const MinSolarTripTimeS: i32 = 1;
+	pub const MinSolarTripTimeS: u32 = 1;
 }
 
 frame_support::construct_runtime!(

@@ -179,7 +179,8 @@ macro_rules! impl_encointer_balances {
 }
 
 parameter_types! {
-	pub const MinSolarTripTimeS: i32 = 1;
+	pub const MinSolarTripTimeS: u32 = 1;
+	pub const MaxSpeedMps: u32 = 83;
 }
 
 #[macro_export]
@@ -188,6 +189,7 @@ macro_rules! impl_encointer_communities {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
 			type MinSolarTripTimeS = MinSolarTripTimeS;
+			type MaxSpeedMps = MaxSpeedMps;
 		}
 	};
 }

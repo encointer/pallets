@@ -26,7 +26,8 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::parameter_types! {
-	pub const MinSolarTripTimeS: i32 = 1;
+	pub const MinSolarTripTimeS: u32 = 1;
+	pub const MaxSpeedMps: u32 = 83;
 }
 
 frame_support::construct_runtime!(
@@ -45,6 +46,7 @@ frame_support::construct_runtime!(
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type MinSolarTripTimeS = MinSolarTripTimeS;
+	type MaxSpeedMps = MaxSpeedMps;
 }
 
 // boilerplate

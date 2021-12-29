@@ -48,7 +48,8 @@ use sp_std::{prelude::*, result::Result};
 
 pub trait Config: frame_system::Config + encointer_scheduler::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
-	type MinSolarTripTimeS: Get<i32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
+	type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
+	type MaxSpeedMps: Get<u32>; // [m/s] max speed over ground of adversary
 }
 
 // Logger target
@@ -287,15 +288,15 @@ decl_error! {
 }
 
 impl<T: Config> Module<T> {
-	fn solar_trip_time(from: &Location, to: &Location) -> i32 {
+	fn solar_trip_time(from: &Location, to: &Location) -> u32 {
 		// FIXME: replace by fixpoint implementation within runtime.
-		let d = Module::<T>::haversine_distance(&from, &to) as i32; //orthodromic distance bewteen points [m]
+		let d = Module::<T>::haversine_distance(&from, &to); //orthodromic distance bewteen points [m]
 
 		// FIXME: this will not panic, but make sure!
 		let dt = (from.lon - to.lon) * 240; //time, the sun-high needs to travel between locations [s]
-		let tflight = d / MAX_SPEED_MPS; // time required to travel between locations at MAX_SPEED_MPS [s]
-		let dt: i32 = i64::lossy_from(dt.abs()).saturated_into();
-		tflight - dt
+		let tflight = d / T::MaxSpeedMps::get(); // time required to travel between locations at MaxSpeedMps [s]
+		let dt: u32 = i64::lossy_from(dt.abs()).saturated_into();
+		tflight.checked_sub(dt).unwrap_or(0)
 	}
 
 	fn ensure_cid_exists(cid: &CommunityIdentifier) -> DispatchResult {

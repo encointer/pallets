@@ -51,7 +51,8 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
 	pub const AmountNewbieTickets: u8 = 50;
-	pub const MinSolarTripTimeS: i32 = 1;
+	pub const MinSolarTripTimeS: u32 = 1;
+	pub const MaxSpeedMps: u32 = 83;
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 }
 
