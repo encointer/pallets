@@ -1,11 +1,12 @@
 use crate::{Module as PalletModule, *};
 use encointer_primitives::{
-	balances::{consts::DEFAULT_DEMURRAGE, Demurrage},
+	balances::Demurrage,
 	communities::{CommunityMetadata, Location, NominalIncome},
 };
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_system::{Origin, RawOrigin};
-use log::{info, warn};
+use frame_benchmarking::{account, benchmarks, whitelisted_caller};
+use frame_support::parameter_types;
+use frame_system::RawOrigin;
+use log::warn;
 
 const NUM_LOCATIONS: u32 = 500_000;
 
@@ -22,6 +23,10 @@ fn get_location(i: u32) -> Location {
 	Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) }
 }
 
+parameter_types! {
+	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+}
+
 benchmarks! {
 	new_community {
 	let i in 2 .. NUM_LOCATIONS;
@@ -32,7 +37,7 @@ benchmarks! {
 	let mut community_metadata = CommunityMetadata::default();
 	community_metadata.name = "20charsaaaaaaaaaaaaa".into();
 	community_metadata.url = Some("19charsaaaaaaaaa.ch".into());
-	let demurrage = Some(Demurrage::from_num(DEFAULT_DEMURRAGE));
+	let demurrage = Some(Demurrage::from_num(DefaultDemurrage::get()));
 	let nominal_income = Some(NominalIncome::from_num(1));
 
 	// setup test community

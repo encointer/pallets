@@ -17,6 +17,7 @@
 //! Mock runtime for the encointer_ceremonies module
 
 pub use crate as dut;
+use frame_support::parameter_types;
 
 use test_utils::*;
 
@@ -24,7 +25,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 use encointer_primitives::{
-	balances::{consts::DEFAULT_DEMURRAGE, BalanceType, Demurrage},
+	balances::{BalanceType, Demurrage},
 	ceremonies::{ClaimOfAttendance, ProofOfAttendance},
 	scheduler::CeremonyPhaseType,
 };
@@ -43,15 +44,25 @@ frame_support::construct_runtime!(
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCeremonies: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
 	}
 );
+
+parameter_types! {
+	pub const ReputationLifetime: u32 = 1;
+	pub const AmountNewbieTickets: u8 = 50;
+	pub const MinSolarTripTimeS: u32 = 1;
+	pub const MaxSpeedMps: u32 = 83;
+	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+}
 
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
 	type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
+	type ReputationLifetime = ReputationLifetime;
+	type AmountNewbieTickets = AmountNewbieTickets;
 }
 
 // boilerplate
@@ -64,11 +75,6 @@ impl_encointer_balances!(TestRuntime);
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-	encointer_balances::GenesisConfig {
-		demurrage_per_block_default: Demurrage::from_bits(DEFAULT_DEMURRAGE),
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
 	encointer_communities::GenesisConfig::<TestRuntime> {
 		community_master: AccountId::from(AccountKeyring::Alice),
 	}

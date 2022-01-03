@@ -37,6 +37,10 @@ frame_support::construct_runtime!(
 	}
 );
 
+frame_support::parameter_types! {
+	pub const IssuePersonhoodUniquenessRatingWeight: u64 = 5_000_000;
+}
+
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type Call = EmptyCall;
@@ -44,6 +48,7 @@ impl dut::Config for TestRuntime {
 	type Currency = Balances;
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
+	type IssuePersonhoodUniquenessRatingWeight = IssuePersonhoodUniquenessRatingWeight;
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Decode, Encode, TypeInfo)]

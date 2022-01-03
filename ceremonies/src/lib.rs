@@ -33,10 +33,7 @@ use encointer_ceremonies_assignment::{
 };
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::{
-		consts::{AMOUNT_NEWBIE_TICKETS, REPUTATION_LIFETIME},
-		*,
-	},
+	ceremonies::*,
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -70,6 +67,8 @@ pub trait Config:
 	type Public: IdentifyAccount<AccountId = Self::AccountId>;
 	type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
 	type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+	type ReputationLifetime: Get<u32>;
+	type AmountNewbieTickets: Get<u8>;
 }
 
 // This module's storage items.
@@ -159,7 +158,7 @@ decl_module! {
 				// we accept proofs from other communities as well. no need to ensure cid
 				ensure!(sender == p.prover_public, Error::<T>::WrongProofSubject);
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
-				ensure!(p.ceremony_index >= cindex-REPUTATION_LIFETIME, Error::<T>::ProofOutdated);
+				ensure!(p.ceremony_index >= cindex-T::ReputationLifetime::get(), Error::<T>::ProofOutdated);
 				ensure!(Self::participant_reputation(&(p.community_identifier, p.ceremony_index),
 					&p.attendee_public) == Reputation::VerifiedUnlinked,
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed);
@@ -305,7 +304,7 @@ decl_module! {
 			ensure!(<encointer_communities::Module<T>>::bootstrappers(&cid).contains(&sender),
 			Error::<T>::AuthorizationRequired);
 
-			ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < AMOUNT_NEWBIE_TICKETS,
+			ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < T::AmountNewbieTickets::get(),
 			Error::<T>::NoMoreNewbieTickets);
 
 			let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
@@ -859,7 +858,7 @@ impl<T: Config> OnCeremonyPhaseChange for Module<T> {
 			CeremonyPhaseType::REGISTERING => {
 				let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
-				if cindex > 2 {
+				if cindex > T::ReputationLifetime::get() + 1 {
 					Self::purge_registry(cindex - 2);
 				}
 			},

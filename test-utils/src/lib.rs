@@ -18,7 +18,7 @@
 //extern crate test_client;
 //extern crate node_primitives;
 
-use encointer_primitives::balances::BalanceType;
+use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{parameter_types, traits::Get};
 use polkadot_parachain::primitives::Sibling;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
@@ -164,13 +164,23 @@ macro_rules! impl_balances {
 	};
 }
 
+parameter_types! {
+	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+}
+
 #[macro_export]
 macro_rules! impl_encointer_balances {
 	($t:ident) => {
 		impl encointer_balances::Config for $t {
 			type Event = Event;
+			type DefaultDemurrage = DefaultDemurrage;
 		}
 	};
+}
+
+parameter_types! {
+	pub const MinSolarTripTimeS: u32 = 1;
+	pub const MaxSpeedMps: u32 = 83;
 }
 
 #[macro_export]
@@ -178,6 +188,8 @@ macro_rules! impl_encointer_communities {
 	($t:ident) => {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
+			type MinSolarTripTimeS = MinSolarTripTimeS;
+			type MaxSpeedMps = MaxSpeedMps;
 		}
 	};
 }
@@ -192,6 +204,11 @@ macro_rules! test_runtime {
 	};
 }
 
+parameter_types! {
+	pub const ReputationLifetime: u32 = 1;
+	pub const AmountNewbieTickets: u8 = 50;
+}
+
 #[macro_export]
 macro_rules! impl_encointer_ceremonies {
 	($t:ident) => {
@@ -200,6 +217,8 @@ macro_rules! impl_encointer_ceremonies {
 			type Public = <Signature as Verify>::Signer;
 			type Signature = Signature;
 			type RandomnessSource = frame_support_test::TestRandomness<$t>;
+			type ReputationLifetime = ReputationLifetime;
+			type AmountNewbieTickets = AmountNewbieTickets;
 		}
 	};
 }

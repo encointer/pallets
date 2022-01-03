@@ -21,6 +21,10 @@ use test_utils::*;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
+frame_support::parameter_types! {
+	pub const MinSolarTripTimeS: u32 = 1;
+}
+
 frame_support::construct_runtime!(
 	pub enum TestRuntime where
 		Block = Block,
@@ -31,7 +35,7 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>, Config},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
 		EncointerBazaar: dut::{Pallet, Call, Storage, Event<T>},
 	}
 );

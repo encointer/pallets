@@ -38,6 +38,7 @@ use encointer_primitives::{
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
 	storage::{StorageMap, StorageValue},
+	traits::Get,
 };
 use frame_system::{ensure_root, ensure_signed};
 use geohash::GeoHash;
@@ -47,6 +48,8 @@ use sp_std::{prelude::*, result::Result};
 
 pub trait Config: frame_system::Config + encointer_scheduler::Config {
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+	type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
+	type MaxSpeedMps: Get<u32>; // [m/s] max speed over ground of adversary
 }
 
 // Logger target
@@ -285,21 +288,15 @@ decl_error! {
 }
 
 impl<T: Config> Module<T> {
-	fn solar_trip_time(from: &Location, to: &Location) -> i32 {
+	fn solar_trip_time(from: &Location, to: &Location) -> u32 {
 		// FIXME: replace by fixpoint implementation within runtime.
-		let d = Module::<T>::haversine_distance(&from, &to) as i32;
+		let d = Module::<T>::haversine_distance(&from, &to); //orthodromic distance bewteen points [m]
+
 		// FIXME: this will not panic, but make sure!
-		let dt = from
-			.lon
-			.checked_sub(to.lon)
-			.unwrap()
-			.checked_div(Degree::from_num(1))
-			.unwrap()
-			.checked_mul(Degree::from_num(240))
-			.unwrap(); // 24h * 3600s / 360° = 240s/°
-		let tflight = d.checked_div(MAX_SPEED_MPS).unwrap();
-		let dt: i32 = i64::lossy_from(dt.abs()).saturated_into();
-		tflight - dt
+		let dt = (from.lon - to.lon) * 240; //time, the sun-high needs to travel between locations [s]
+		let tflight = d / T::MaxSpeedMps::get(); // time required to travel between locations at MaxSpeedMps [s]
+		let dt: u32 = i64::lossy_from(dt.abs()).saturated_into();
+		tflight.checked_sub(dt).unwrap_or(0)
 	}
 
 	fn ensure_cid_exists(cid: &CommunityIdentifier) -> DispatchResult {
@@ -365,14 +362,14 @@ impl<T: Config> Module<T> {
 
 		//check if northern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.n)
 		}
 
 		//check if southern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.s)
 		}
@@ -395,42 +392,42 @@ impl<T: Config> Module<T> {
 
 		//check if north eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.ne)
 		}
 
 		//check if eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.e)
 		}
 
 		//check if south eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.se)
 		}
 
 		//check if north western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.nw)
 		}
 
 		//check if western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.w)
 		}
 
 		//check if south western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location) <
-			MIN_SOLAR_TRIP_TIME_S
+			T::MinSolarTripTimeS::get()
 		{
 			relevant_neighbor_buckets.push(neighbors.sw)
 		}
@@ -465,7 +462,7 @@ impl<T: Config> Module<T> {
 		let nearby_locations = Self::get_nearby_locations(location)?;
 		for nearby_location in nearby_locations {
 			ensure!(
-				Self::solar_trip_time(location, &nearby_location) >= MIN_SOLAR_TRIP_TIME_S,
+				Self::solar_trip_time(location, &nearby_location) >= T::MinSolarTripTimeS::get(),
 				<Error<T>>::MinimumDistanceViolationToOtherLocation
 			);
 		}

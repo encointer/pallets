@@ -19,13 +19,14 @@
 use super::*;
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use encointer_primitives::{
-	balances::{consts::DEFAULT_DEMURRAGE, Demurrage},
 	communities::CommunityIdentifier,
 	fixed::{traits::LossyInto, transcendental::exp},
 };
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{new_test_ext, EncointerBalances, Event, System, TestRuntime};
 use test_utils::{helpers::register_test_community, AccountKeyring};
+
+use crate::mock::DefaultDemurrage;
 
 #[test]
 fn issue_should_work() {
@@ -105,7 +106,7 @@ fn demurrage_should_work() {
 		System::set_block_number(1);
 		assert_eq!(
 			EncointerBalances::balance(cid, &alice),
-			exp::<BalanceType, BalanceType>(-Demurrage::from_bits(DEFAULT_DEMURRAGE)).unwrap()
+			exp::<BalanceType, BalanceType>(-DefaultDemurrage::get()).unwrap()
 		);
 		//one year later
 		System::set_block_number(86400 / 5 * 356);

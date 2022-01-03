@@ -33,7 +33,7 @@ use encointer_primitives::{
 };
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
-	traits::{Currency, PalletInfo},
+	traits::{Currency, Get, PalletInfo},
 	weights::GetDispatchInfo,
 	Parameter,
 };
@@ -60,6 +60,8 @@ pub trait Config: frame_system::Config {
 
 	/// The outer call dispatch type.
 	type Call: Parameter + GetDispatchInfo;
+
+	type IssuePersonhoodUniquenessRatingWeight: Get<u64>;
 }
 
 decl_storage! {
@@ -141,7 +143,7 @@ decl_module! {
 
 			let request_hash = call.request_hash();
 
-			let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: call.weight(), call: call.encode().into() };
+			let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: T::IssuePersonhoodUniquenessRatingWeight::get(), call: call.encode().into() };
 			debug!(target: LOG, "[EncointerSybilGate]: Sending PersonhoodUniquenessRatingRequest to chain: {:?}", parachain_id);
 			match T::XcmSender::send_xcm(sibling_junction(parachain_id), message) {
 				Ok(()) => {

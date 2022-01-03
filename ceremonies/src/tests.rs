@@ -20,6 +20,7 @@ use mock::{
 	Origin, System, TestClaim, TestProofOfAttendance, TestRuntime, Timestamp,
 };
 
+use crate::mock::AmountNewbieTickets;
 use approx::assert_abs_diff_eq;
 use encointer_primitives::{
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
@@ -935,8 +936,8 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
 
-		let endorsees = add_population((AMOUNT_NEWBIE_TICKETS + 1) as usize, 6);
-		for i in 0..AMOUNT_NEWBIE_TICKETS {
+		let endorsees = add_population((AmountNewbieTickets::get() + 1) as usize, 6);
+		for i in 0..AmountNewbieTickets::get() {
 			assert_ok!(EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
@@ -948,7 +949,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 			EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
-				account_id(&endorsees[AMOUNT_NEWBIE_TICKETS as usize]),
+				account_id(&endorsees[AmountNewbieTickets::get() as usize]),
 			),
 			Error::<TestRuntime>::NoMoreNewbieTickets,
 		);
