@@ -76,6 +76,9 @@ decl_storage! {
 
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
+		const MinSolarTripTimeS: u32 = T::MinSolarTripTimeS::get();
+		const MaxSpeedMps: u32 = T::MaxSpeedMps::get();
+
 		fn deposit_event() = default;
 		type Error = Error<T>;
 		#[weight = 10_000]

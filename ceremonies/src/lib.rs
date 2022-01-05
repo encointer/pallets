@@ -126,6 +126,9 @@ decl_storage! {
 
 decl_module! {
 	pub struct Module<T: Config> for enum Call where origin: T::Origin {
+		const ReputationLifetime: u32 = T::ReputationLifetime::get();
+		const AmountNewbieTickets: u8 = T::AmountNewbieTickets::get();
+
 		fn deposit_event() = default;
 		type Error = Error<T>;
 
