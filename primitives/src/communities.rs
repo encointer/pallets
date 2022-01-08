@@ -176,10 +176,10 @@ pub struct CommunityMetadata {
 	pub name: PalletString,
 	/// utf8 encoded abbreviation of the name
 	pub symbol: PalletString,
-	/// ipfs link to multi-resolution resource for the community icon
+	/// ipfs cid for multi-resolution resource for the community icon
 	pub icons: IpfsCid,
-	/// optional color scheme or other customizable styles to shape app appearance
-	pub theme: Option<Theme>,
+	/// ipfs cid for style resources
+	pub theme: Option<IpfsCid>,
 	/// optional link to a community site
 	pub url: Option<PalletString>,
 }
@@ -202,7 +202,7 @@ impl CommunityMetadata {
 		name: PalletString,
 		symbol: PalletString,
 		icons: IpfsCid,
-		theme: Option<Theme>,
+		theme: Option<IpfsCid>,
 		url: Option<PalletString>,
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
 		let meta = CommunityMetadata { name, symbol, icons, theme, url };
@@ -271,16 +271,6 @@ pub enum CommunityMetadataError {
 	InvalidAmountCharactersInSymbol(u8),
 	/// Too many characters in url. Allowed: 20. Used: \[amount\]
 	TooManyCharactersInUrl(u8),
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-pub struct Theme {
-	// Todo: extend
-	/// primary theme color from which the accent colors are derived by the material app design guide line
-	///
-	/// e.g. black = 0xFF000000
-	primary_swatch: u32,
 }
 
 pub mod consts {
