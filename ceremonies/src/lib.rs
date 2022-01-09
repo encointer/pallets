@@ -600,36 +600,43 @@ impl<T: Config> Module<T> {
 		participant: &T::AccountId,
 	) -> Option<MeetupIndexType> {
 		let meetup_count = Self::meetup_count(community_ceremony);
+		let assignment_count = Self::assignment_counts(community_ceremony);
 
 		let assignment = Self::assignments(community_ceremony);
 
 		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::bootstrapper_index(community_ceremony, &participant) - 1;
-
-			return meetup_index(
-				participant_index,
-				assignment.bootstrappers_reputables,
-				meetup_count,
-			)
+			if participant_index < assignment_count.bootstrappers {
+				return meetup_index(
+					participant_index,
+					assignment.bootstrappers_reputables,
+					meetup_count,
+				)
+			}
 		}
 		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
-
-			return meetup_index(
-				participant_index + Self::assignment_counts(community_ceremony).bootstrappers,
-				assignment.bootstrappers_reputables,
-				meetup_count,
-			)
+			if participant_index < assignment_count.reputables {
+				return meetup_index(
+					participant_index + assignment_count.bootstrappers,
+					assignment.bootstrappers_reputables,
+					meetup_count,
+				)
+			}
 		}
 
 		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
-			return meetup_index(participant_index, assignment.endorsees, meetup_count)
+			if participant_index < assignment_count.endorsees {
+				return meetup_index(participant_index, assignment.endorsees, meetup_count)
+			}
 		}
 
 		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
 			let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
-			return meetup_index(participant_index, assignment.newbies, meetup_count)
+			if participant_index < assignment_count.newbies {
+				return meetup_index(participant_index, assignment.newbies, meetup_count)
+			}
 		}
 
 		None
