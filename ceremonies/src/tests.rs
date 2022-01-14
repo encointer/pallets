@@ -1109,13 +1109,20 @@ fn ceremony_index_and_purging_registry_works() {
 		// still not purged
 		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
 
-		// only after the next cycle everything should be purged
+		// only after 2 cycles everything should be purged
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		// still not purged
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
 		// now again registering
 		let new_cindex = EncointerScheduler::current_ceremony_index();
-		assert_eq!(new_cindex, cindex + 2);
+		assert_eq!(new_cindex, cindex + 3);
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
 		assert_eq!(
 			EncointerCeremonies::bootstrapper_registry((cid, cindex), &1),
