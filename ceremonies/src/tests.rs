@@ -1094,35 +1094,28 @@ fn ceremony_index_and_purging_registry_works() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let cindex = EncointerScheduler::current_ceremony_index();
+		let reputation_lifetime = <TestRuntime as Config>::ReputationLifetime::get();
 
 		assert_ok!(register(alice.clone(), cid, None));
 		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
-		run_to_next_phase();
 
-		// now assigning
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
-		run_to_next_phase();
-		// now attesting
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
-		run_to_next_phase();
+		for _ in 0..reputation_lifetime {
+			run_to_next_phase();
+			run_to_next_phase();
+			run_to_next_phase();
 
-		// still not purged
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+			// still not purged
+			assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+		}
 
-		// only after 2 cycles everything should be purged
-		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
-
-		// still not purged
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+		// only after n=ReputationLifetimes cycles everything should be purged
 
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
 		// now again registering
 		let new_cindex = EncointerScheduler::current_ceremony_index();
-		assert_eq!(new_cindex, cindex + 3);
+		assert_eq!(new_cindex, cindex + reputation_lifetime + 1);
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
 		assert_eq!(
 			EncointerCeremonies::bootstrapper_registry((cid, cindex), &1),

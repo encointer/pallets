@@ -161,7 +161,7 @@ decl_module! {
 				// we accept proofs from other communities as well. no need to ensure cid
 				ensure!(sender == p.prover_public, Error::<T>::WrongProofSubject);
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
-				ensure!(p.ceremony_index >= cindex-T::ReputationLifetime::get(), Error::<T>::ProofOutdated);
+				ensure!(p.ceremony_index >= cindex.checked_sub(T::ReputationLifetime::get()).unwrap_or(0), Error::<T>::ProofOutdated);
 				ensure!(Self::participant_reputation(&(p.community_identifier, p.ceremony_index),
 					&p.attendee_public) == Reputation::VerifiedUnlinked,
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed);

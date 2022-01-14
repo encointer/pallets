@@ -49,7 +49,7 @@ frame_support::construct_runtime!(
 );
 
 parameter_types! {
-	pub const ReputationLifetime: u32 = 2;
+	pub const ReputationLifetime: u32 = 6;
 	pub const AmountNewbieTickets: u8 = 50;
 	pub const MinSolarTripTimeS: u32 = 1;
 	pub const MaxSpeedMps: u32 = 83;
