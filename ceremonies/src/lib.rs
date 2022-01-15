@@ -397,6 +397,10 @@ decl_error! {
 }
 
 impl<T: Config> Module<T> {
+	fn get_reputations() -> Vec<(CommunityCeremony, T::AccountId, Reputation)> {
+		return ParticipantReputation::<T>::iter().collect()
+	}
+
 	fn register(
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,

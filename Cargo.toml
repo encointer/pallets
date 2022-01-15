@@ -5,6 +5,8 @@ members = [
     'bazaar/rpc',
     'bazaar/rpc/runtime-api',
     'ceremonies',
+    'ceremonies/rpc',
+    'ceremonies/rpc/runtime-api',
     'ceremonies/assignment',
     'communities',
     'communities/rpc',
