@@ -115,6 +115,17 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn get_all_balances(
+		account: &T::AccountId,
+	) -> Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> {
+		let mut balances: Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> = vec![];
+		for community in <encointer_communities::Pallet<T>>::community_identifiers().into_iter() {
+			if Balance::<T>::contains_key(community, account.clone()) {
+				balances.push((community, Balance::<T>::get(community, account.clone())));
+			}
+		}
+		return balances
+	}
 	pub fn balance(community_id: CommunityIdentifier, who: &T::AccountId) -> BalanceType {
 		Self::balance_entry_updated(community_id, who).principal
 	}

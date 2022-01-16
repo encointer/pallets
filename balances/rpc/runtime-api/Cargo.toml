@@ -1,0 +1,23 @@
+[package]
+name = "pallet-encointer-balances-rpc-runtime-api"
+version = "0.1.0"
+authors = ["encointer.org <alain@encointer.org>"]
+edition = "2018"
+
+[dependencies]
+# local deps
+encointer-primitives = { path = "../../../primitives", default-features = false }
+
+# substrate deps
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-std = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+
+[features]
+default = ["std"]
+std = [
+    "frame-support/std",
+    "sp-std/std",
+    "sp-api/std",
+    "encointer-primitives/std",
+]
