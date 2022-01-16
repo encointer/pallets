@@ -1058,7 +1058,7 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 			EncointerScheduler::next_phase_timestamp(),
 			(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)) + ONE_DAY
 		);
-
+		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 
 		assert_eq!(cindex, 1);
@@ -1223,6 +1223,19 @@ fn grow_population_works() {
 }
 
 #[test]
+fn dont_create_assignment_with_less_than_three() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		assert_ok!(register(account_id(&AccountKeyring::Charlie.pair()), cid, None));
+		assert_ok!(register(account_id(&AccountKeyring::Dave.pair()), cid, None));
+		run_to_next_phase();
+		assert_eq!(EncointerCeremonies::assignments((cid, cindex)), Assignment::default());
+	});
+}
+
+#[test]
 fn get_assignment_params_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
@@ -1239,6 +1252,7 @@ fn get_assignment_params_works() {
 		assert_eq!(assignment.newbies.s1, 0);
 		assert_eq!(assignment.newbies.s2, 0);
 
+		register_charlie_dave_eve(cid);
 		run_to_next_phase();
 
 		let assignment = EncointerCeremonies::assignments((cid, cindex));
