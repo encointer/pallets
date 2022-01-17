@@ -1256,6 +1256,48 @@ fn get_assignment_params_works() {
 }
 
 #[test]
+fn get_inactive_communities_works() {
+	new_test_ext().execute_with(|| {
+		let cid0 = CommunityIdentifier::default();
+		let cid1 = CommunityIdentifier::new(
+			Location::new(Degree::from_num(1f64), Degree::from_num(1f64)),
+			Vec::<i64>::new(),
+		)
+		.unwrap();
+
+		let mut cindex = 5;
+
+		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, ());
+		IssuedRewards::<TestRuntime>::insert((cid1, cindex), 0, ());
+
+		let timeout = 1;
+		assert_eq!(
+			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			vec![]
+		);
+
+		cindex += 1;
+		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, ());
+		assert_eq!(
+			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			vec![]
+		);
+
+		cindex += 1;
+		assert_eq!(
+			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			vec![cid1]
+		);
+
+		cindex += 1;
+		assert_eq!(
+			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			vec![cid0, cid1]
+		);
+	});
+}
+
+#[test]
 fn get_meetup_index_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
