@@ -82,6 +82,8 @@ pub mod pallet {
 		type ReputationLifetime: Get<u32>;
 		#[pallet::constant]
 		type AmountNewbieTickets: Get<u8>;
+		#[pallet::constant]
+		type InactivityTimeout: Get<u32>;
 	}
 
 	#[pallet::call]

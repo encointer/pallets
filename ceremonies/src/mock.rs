@@ -54,6 +54,7 @@ parameter_types! {
 	pub const MinSolarTripTimeS: u32 = 1;
 	pub const MaxSpeedMps: u32 = 83;
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+	pub const InactivityTimeout: u32 = 12;
 }
 
 impl dut::Config for TestRuntime {
@@ -63,6 +64,7 @@ impl dut::Config for TestRuntime {
 	type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
 	type ReputationLifetime = ReputationLifetime;
 	type AmountNewbieTickets = AmountNewbieTickets;
+	type InactivityTimeout = InactivityTimeout;
 }
 
 // boilerplate

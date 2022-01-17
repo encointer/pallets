@@ -207,6 +207,7 @@ macro_rules! test_runtime {
 parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
 	pub const AmountNewbieTickets: u8 = 50;
+	pub const InactivityTimeout: u32 = 12;
 }
 
 #[macro_export]
@@ -219,6 +220,7 @@ macro_rules! impl_encointer_ceremonies {
 			type RandomnessSource = frame_support_test::TestRandomness<$t>;
 			type ReputationLifetime = ReputationLifetime;
 			type AmountNewbieTickets = AmountNewbieTickets;
+			type InactivityTimeout = InactivityTimeout;
 		}
 	};
 }
