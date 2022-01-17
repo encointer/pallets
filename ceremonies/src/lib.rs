@@ -49,7 +49,7 @@ use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
-use sp_std::{prelude::*, vec};
+use sp_std::{cmp::max, prelude::*, vec};
 
 // Logger target
 const LOG: &str = "encointer";
@@ -773,37 +773,41 @@ impl<T: Config> Pallet<T> {
 			<NewbieIndex<T>>::contains_key((cid, cindex), &sender)
 	}
 
+	fn purge_community_ceremony(cc: CommunityCeremony) {
+		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
+		<BootstrapperIndex<T>>::remove_prefix(cc, None);
+		<BootstrapperCount<T>>::insert(cc, 0);
+
+		<ReputableRegistry<T>>::remove_prefix(cc, None);
+		<ReputableIndex<T>>::remove_prefix(cc, None);
+		<ReputableCount<T>>::insert(cc, 0);
+
+		<EndorseeRegistry<T>>::remove_prefix(cc, None);
+		<EndorseeIndex<T>>::remove_prefix(cc, None);
+		<EndorseeCount<T>>::insert(cc, 0);
+
+		<NewbieRegistry<T>>::remove_prefix(cc, None);
+		<NewbieIndex<T>>::remove_prefix(cc, None);
+		<NewbieCount<T>>::insert(cc, 0);
+
+		<AssignmentCounts<T>>::insert(cc, AssignmentCount::default());
+
+		Assignments::<T>::remove(cc);
+
+		<Endorsees<T>>::remove_prefix(cc, None);
+		<MeetupCount<T>>::insert(cc, 0);
+		<AttestationRegistry<T>>::remove_prefix(cc, None);
+		<AttestationIndex<T>>::remove_prefix(cc, None);
+		<AttestationCount<T>>::insert(cc, 0);
+		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
+
+		<IssuedRewards<T>>::remove_prefix(cc, None);
+	}
+
 	fn purge_registry(cindex: CeremonyIndexType) {
 		let cids = <encointer_communities::Pallet<T>>::community_identifiers();
 		for cid in cids.iter() {
-			<BootstrapperRegistry<T>>::remove_prefix((cid, cindex), None);
-			<BootstrapperIndex<T>>::remove_prefix((cid, cindex), None);
-			<BootstrapperCount<T>>::insert((cid, cindex), 0);
-
-			<ReputableRegistry<T>>::remove_prefix((cid, cindex), None);
-			<ReputableIndex<T>>::remove_prefix((cid, cindex), None);
-			<ReputableCount<T>>::insert((cid, cindex), 0);
-
-			<EndorseeRegistry<T>>::remove_prefix((cid, cindex), None);
-			<EndorseeIndex<T>>::remove_prefix((cid, cindex), None);
-			<EndorseeCount<T>>::insert((cid, cindex), 0);
-
-			<NewbieRegistry<T>>::remove_prefix((cid, cindex), None);
-			<NewbieIndex<T>>::remove_prefix((cid, cindex), None);
-			<NewbieCount<T>>::insert((cid, cindex), 0);
-
-			<AssignmentCounts<T>>::insert((cid, cindex), AssignmentCount::default());
-
-			Assignments::<T>::remove((cid, cindex));
-
-			<Endorsees<T>>::remove_prefix((cid, cindex), None);
-			<MeetupCount<T>>::insert((cid, cindex), 0);
-			<AttestationRegistry<T>>::remove_prefix((cid, cindex), None);
-			<AttestationIndex<T>>::remove_prefix((cid, cindex), None);
-			<AttestationCount<T>>::insert((cid, cindex), 0);
-			<MeetupParticipantCountVote<T>>::remove_prefix((cid, cindex), None);
-
-			<IssuedRewards<T>>::remove_prefix((cid, cindex), None);
+			Self::purge_community_ceremony((*cid, cindex));
 		}
 		debug!(target: LOG, "purged registry for ceremony {}", cindex);
 	}
@@ -923,7 +927,16 @@ impl<T: Config> Pallet<T> {
 		return inactives
 	}
 
-	fn purge_community(cid: CommunityIdentifier) {}
+	fn purge_community(cid: CommunityIdentifier) {
+		let current = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+		let reputation_lifetime = T::ReputationLifetime::get();
+		for cindex in max(current - reputation_lifetime, 0)..current {
+			if cindex > reputation_lifetime {
+				Self::purge_registry(cindex - reputation_lifetime - 1);
+			}
+		}
+		<encointer_communities::Pallet<T>>::remove_community(cid);
+	}
 
 	fn generate_all_meetup_assignment_params() {
 		let cids = <encointer_communities::Pallet<T>>::community_identifiers();

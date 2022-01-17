@@ -183,30 +183,7 @@ pub mod pallet {
 			Self::ensure_bootstrapper(sender, cid)?;
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
-			//remove location from locations(cid,geohash)
-			let mut locations = Self::locations(&cid, &geo_hash);
-			let mut locations_len = 0;
-			match locations.binary_search(&location) {
-				Ok(index) => {
-					locations.remove(index);
-					locations_len = locations.len();
-					<Locations<T>>::insert(&cid, &geo_hash, locations);
-				},
-				Err(_) => (),
-			}
-			// if the list from above is now empty (community has no more locations in this bucket)
-			// remove cid from cids_by_geohash(geohash)
-			if locations_len == 0 {
-				let mut cids = Self::cids_by_geohash(&geo_hash);
-				match cids.binary_search(&cid) {
-					Ok(index) => {
-						cids.remove(index);
-						<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
-					},
-					Err(_) => (),
-				}
-			}
-			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+			Self::remove_location_intern(cid, location, geo_hash);
 			Ok(().into())
 		}
 
@@ -381,6 +358,52 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	fn remove_location_intern(cid: CommunityIdentifier, location: Location, geo_hash: GeoHash) {
+		//remove location from locations(cid,geohash)
+		let mut locations = Self::locations(&cid, &geo_hash);
+		let mut locations_len = 0;
+		match locations.binary_search(&location) {
+			Ok(index) => {
+				locations.remove(index);
+				locations_len = locations.len();
+				<Locations<T>>::insert(&cid, &geo_hash, locations);
+			},
+			Err(_) => (),
+		}
+		// if the list from above is now empty (community has no more locations in this bucket)
+		// remove cid from cids_by_geohash(geohash)
+		if locations_len == 0 {
+			let mut cids = Self::cids_by_geohash(&geo_hash);
+			match cids.binary_search(&cid) {
+				Ok(index) => {
+					cids.remove(index);
+					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
+				},
+				Err(_) => (),
+			}
+		}
+		sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+	}
+
+	pub fn remove_community(cid: CommunityIdentifier) {
+		for (geo_hash, locations) in <Locations<T>>::iter_prefix(&cid) {
+			for location in locations {
+				Self::remove_location_intern(cid, location, geo_hash.clone());
+			}
+		}
+
+		<Locations<T>>::remove_prefix(cid, None);
+
+		Bootstrappers::<T>::remove(cid);
+
+		<CommunityIdentifiers<T>>::mutate(|v| v.retain(|&x| x != cid));
+
+		<CommunityMetadata<T>>::remove(cid);
+		<DemurragePerBlock<T>>::remove(cid);
+
+		<NominalIncome<T>>::remove(cid);
+	}
+
 	fn solar_trip_time(from: &Location, to: &Location) -> u32 {
 		// FIXME: replace by fixpoint implementation within runtime.
 		let d = Pallet::<T>::haversine_distance(&from, &to); //orthodromic distance bewteen points [m]
