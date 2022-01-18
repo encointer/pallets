@@ -1289,9 +1289,9 @@ fn get_meetup_index_works() {
 		);
 
 		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p1).unwrap(), 2);
-		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p2).unwrap(), 1);
-		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p3).unwrap(), 3);
-		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p4).unwrap(), 5);
+		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p2), None);
+		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p3), None);
+		assert_eq!(EncointerCeremonies::get_meetup_index((cid, cindex), &p4), None);
 	});
 }
 
