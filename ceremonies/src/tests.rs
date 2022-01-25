@@ -140,7 +140,7 @@ fn register(
 	account: AccountId,
 	cid: CommunityIdentifier,
 	proof: Option<TestProofOfAttendance>,
-) -> DispatchResult {
+) -> DispatchResultWithPostInfo {
 	EncointerCeremonies::register_participant(Origin::signed(account), cid, proof)
 }
 
@@ -228,9 +228,9 @@ fn perform_bootstrapping_ceremony(
 		)
 		.unwrap();
 	}
-	bootstrappers
-		.iter()
-		.for_each(|b| register(b.public().into(), cid, None).unwrap());
+	bootstrappers.iter().for_each(|b| {
+		let _ = register(b.public().into(), cid, None).unwrap();
+	});
 
 	let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -287,9 +287,9 @@ fn fully_attest_meetup(
 	}
 }
 
-fn assert_error(actual: DispatchResult, expected: Error<TestRuntime>) {
+fn assert_error(actual: DispatchResultWithPostInfo, expected: Error<TestRuntime>) {
 	assert_eq!(
-		match actual.clone().err().unwrap() {
+		match actual.clone().unwrap_err().error {
 			sp_runtime::DispatchError::Module { index: _, error: _, message } => message,
 			_ => panic!(),
 		}
@@ -703,7 +703,7 @@ fn issue_reward_works() {
 		register_charlie_dave_eve(cid);
 
 		let loc = Location::default();
-		Assignments::insert(
+		Assignments::<TestRuntime>::insert(
 			(cid, cindex),
 			Assignment {
 				bootstrappers_reputables: Default::default(),
@@ -1134,7 +1134,9 @@ fn grow_population_works() {
 		// generate many keys and register all of them
 		// they will use the same keys per participant throughout to following ceremonies
 		participants.extend(add_population(14, participants.len()));
-		participants.iter().for_each(|p| register(account_id(&p), cid, None).unwrap());
+		participants.iter().for_each(|p| {
+			let _ = register(account_id(&p), cid, None).unwrap();
+		});
 
 		let cindex = EncointerScheduler::current_ceremony_index();
 		run_to_next_phase();
@@ -1265,10 +1267,10 @@ fn get_meetup_index_works() {
 		let p3 = account_id(&participants[2]);
 		let p4 = account_id(&participants[3]);
 
-		MeetupCount::insert((cid, cindex), 10);
+		MeetupCount::<TestRuntime>::insert((cid, cindex), 10);
 
 		BootstrapperIndex::<TestRuntime>::insert((cid, cindex), p1.clone(), 1);
-		AssignmentCounts::insert(
+		AssignmentCounts::<TestRuntime>::insert(
 			(cid, cindex),
 			AssignmentCount { bootstrappers: 1, reputables: 0, endorsees: 0, newbies: 0 },
 		);
@@ -1278,7 +1280,7 @@ fn get_meetup_index_works() {
 		EndorseeIndex::<TestRuntime>::insert((cid, cindex), p3.clone(), 3);
 		NewbieIndex::<TestRuntime>::insert((cid, cindex), p4.clone(), 4);
 
-		Assignments::insert(
+		Assignments::<TestRuntime>::insert(
 			(cid, cindex),
 			Assignment {
 				bootstrappers_reputables: AssignmentParams { m: 2, s1: 1, s2: 1 },
@@ -1300,7 +1302,7 @@ fn get_meetup_location_works() {
 	new_test_ext().execute_with(|| {
 		let ceremony = (perform_bootstrapping_ceremony(None, 50), 100);
 
-		Assignments::insert(
+		Assignments::<TestRuntime>::insert(
 			ceremony,
 			Assignment {
 				bootstrappers_reputables: AssignmentParams { m: 5, s1: 2, s2: 3 },
@@ -1347,14 +1349,14 @@ fn get_meetup_participants_works() {
 		NewbieRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[9].clone());
 		NewbieRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[10].clone());
 		NewbieRegistry::<TestRuntime>::insert((cid, cindex), 3, participants[11].clone());
-		AssignmentCounts::insert(
+		AssignmentCounts::<TestRuntime>::insert(
 			(cid, cindex),
 			AssignmentCount { bootstrappers: 3, reputables: 3, endorsees: 3, newbies: 3 },
 		);
 
-		MeetupCount::insert((cid, cindex), 2);
+		MeetupCount::<TestRuntime>::insert((cid, cindex), 2);
 
-		Assignments::insert(
+		Assignments::<TestRuntime>::insert(
 			(cid, cindex),
 			Assignment {
 				bootstrappers_reputables: AssignmentParams { m: 5, s1: 2, s2: 3 },
@@ -1426,10 +1428,10 @@ fn generate_meetup_assignment_params_works(
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, n_locations as u32);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		BootstrapperCount::insert((cid, cindex), n_bootstrappers);
-		ReputableCount::insert((cid, cindex), n_reputables);
-		EndorseeCount::insert((cid, cindex), n_endorsees);
-		NewbieCount::insert((cid, cindex), n_newbies);
+		BootstrapperCount::<TestRuntime>::insert((cid, cindex), n_bootstrappers);
+		ReputableCount::<TestRuntime>::insert((cid, cindex), n_reputables);
+		EndorseeCount::<TestRuntime>::insert((cid, cindex), n_endorsees);
+		NewbieCount::<TestRuntime>::insert((cid, cindex), n_newbies);
 
 		let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new(H256::random());
 
@@ -1470,10 +1472,10 @@ fn generate_meetup_assignment_params_is_random() {
 		let cid = perform_bootstrapping_ceremony(None, 3);
 
 		let cindex = EncointerScheduler::current_ceremony_index();
-		BootstrapperCount::insert((cid, cindex), 7);
-		ReputableCount::insert((cid, cindex), 12);
-		EndorseeCount::insert((cid, cindex), 6);
-		NewbieCount::insert((cid, cindex), 13);
+		BootstrapperCount::<TestRuntime>::insert((cid, cindex), 7);
+		ReputableCount::<TestRuntime>::insert((cid, cindex), 12);
+		EndorseeCount::<TestRuntime>::insert((cid, cindex), 6);
+		NewbieCount::<TestRuntime>::insert((cid, cindex), 13);
 
 		let mut random_source = RandomNumberGenerator::<BlakeTwo256>::new(H256::random());
 
