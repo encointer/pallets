@@ -92,7 +92,7 @@ fn create_business_with_invalid_cid_is_err() {
 				CommunityIdentifier::default(),
 				url(),
 			),
-			Error::<TestRuntime>::InexistentCommunity,
+			Error::<TestRuntime>::NonexistentCommunity,
 		);
 
 		assert_eq!(
@@ -155,7 +155,7 @@ fn update_inexistent_business_is_err() {
 
 		assert_error(
 			EncointerBazaar::update_business(Origin::signed(bob()), cid, url1()),
-			Error::<TestRuntime>::InexistentBusiness,
+			Error::<TestRuntime>::NonexistentBusiness,
 		);
 		assert_error(
 			EncointerBazaar::update_business(
@@ -163,7 +163,7 @@ fn update_inexistent_business_is_err() {
 				CommunityIdentifier::default(),
 				url1(),
 			),
-			Error::<TestRuntime>::InexistentBusiness,
+			Error::<TestRuntime>::NonexistentBusiness,
 		);
 
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 3));
@@ -203,11 +203,11 @@ fn delete_inexistent_business_is_err() {
 
 		assert_error(
 			EncointerBazaar::delete_business(Origin::signed(alice()), cid),
-			Error::<TestRuntime>::InexistentBusiness,
+			Error::<TestRuntime>::NonexistentBusiness,
 		);
 		assert_error(
 			EncointerBazaar::delete_business(Origin::signed(bob()), CommunityIdentifier::default()),
-			Error::<TestRuntime>::InexistentBusiness,
+			Error::<TestRuntime>::NonexistentBusiness,
 		);
 
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
@@ -269,7 +269,7 @@ fn create_offering_for_inexistent_business_is_err() {
 
 		assert_error(
 			EncointerBazaar::create_offering(Origin::signed(bob()), cid, url1()),
-			Error::<TestRuntime>::InexistentBusiness,
+			Error::<TestRuntime>::NonexistentBusiness,
 		);
 
 		assert_eq!(System::events().len(), 1);
@@ -318,11 +318,11 @@ fn update_inexistent_offering_is_err() {
 
 		assert_error(
 			EncointerBazaar::update_offering(Origin::signed(bob()), cid, 1, url1()),
-			Error::<TestRuntime>::InexistentOffering,
+			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_error(
 			EncointerBazaar::update_offering(Origin::signed(alice()), cid, 0, url1()),
-			Error::<TestRuntime>::InexistentOffering,
+			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_error(
 			EncointerBazaar::update_offering(
@@ -331,7 +331,7 @@ fn update_inexistent_offering_is_err() {
 				1,
 				url1(),
 			),
-			Error::<TestRuntime>::InexistentOffering,
+			Error::<TestRuntime>::NonexistentOffering,
 		);
 
 		assert_eq!(System::events().len(), 1);
@@ -380,11 +380,11 @@ fn delete_inexistent_offering_is_err() {
 
 		assert_error(
 			EncointerBazaar::delete_offering(Origin::signed(bob()), cid, 1),
-			Error::<TestRuntime>::InexistentOffering,
+			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_error(
 			EncointerBazaar::delete_offering(Origin::signed(alice()), cid, 0),
-			Error::<TestRuntime>::InexistentOffering,
+			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_error(
 			EncointerBazaar::delete_offering(
@@ -392,7 +392,7 @@ fn delete_inexistent_offering_is_err() {
 				CommunityIdentifier::default(),
 				1,
 			),
-			Error::<TestRuntime>::InexistentOffering,
+			Error::<TestRuntime>::NonexistentOffering,
 		);
 
 		assert_eq!(System::events().len(), 1);
