@@ -17,7 +17,7 @@
 //! Mock runtime for the encointer_ceremonies module
 
 pub use crate as dut;
-use frame_support::parameter_types;
+use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
 
 use test_utils::*;
 

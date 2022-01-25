@@ -46,7 +46,7 @@ pub fn register_test_community(
 	let prime = &bs[0];
 
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };
-	dut::Module::<TestRuntime>::new_community(
+	dut::Pallet::<TestRuntime>::new_community(
 		Origin::signed(prime.clone()),
 		location.clone(),
 		bs.clone(),
@@ -68,24 +68,24 @@ fn solar_trip_time_works() {
 	// one degree equator
 	let a = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
 	let b = Location { lat: T::from_num(0i32), lon: T::from_num(1i32) }; // one degree lat is 111km at the equator
-	assert_eq!(dut::Module::<TestRuntime>::solar_trip_time(&a, &b), 1099);
-	assert_eq!(dut::Module::<TestRuntime>::solar_trip_time(&b, &a), 1099);
+	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 1099);
+	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&b, &a), 1099);
 	// Reykjavik one degree lon: expect to yield much shorter times than at the equator
 	let a = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(-21.895410_f64) }; // this is reykjavik
 	let b = Location { lat: T::from_num(64.135_480), lon: T::from_num(-20.895410) };
-	assert_eq!(dut::Module::<TestRuntime>::solar_trip_time(&a, &b), 344);
+	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 344);
 
 	// Reykjavik 111km: expect to yield much shorter times than at the equator because
 	// next time zone is much closer in meter overland.
 	// -> require locations to be further apart (in east-west) at this latitude
 	let a = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(0_f64) }; // this is at reykjavik lat
 	let b = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(2.290000_f64) }; // 2.29° is 111km
-	assert_eq!(dut::Module::<TestRuntime>::solar_trip_time(&a, &b), 789);
+	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 789);
 	// maximal
 	let a = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
 	let b = Location { lat: T::from_num(0i32), lon: T::from_num(180i32) };
-	assert_eq!(dut::Module::<TestRuntime>::solar_trip_time(&a, &b), 110318);
-	assert_eq!(dut::Module::<TestRuntime>::solar_trip_time(&b, &a), 110318);
+	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 110318);
+	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&b, &a), 110318);
 }
 
 #[test]
@@ -220,13 +220,16 @@ fn two_communities_in_same_bucket_works() {
 fn updating_nominal_income_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
-		assert!(NominalIncome::try_get(cid).is_err());
+		assert!(NominalIncome::<TestRuntime>::try_get(cid).is_err());
 		assert_ok!(EncointerCommunities::update_nominal_income(
 			Origin::root(),
 			cid,
 			BalanceType::from_num(1.1),
 		));
-		assert_eq!(NominalIncome::try_get(&cid).unwrap(), BalanceType::from_num(1.1));
+		assert_eq!(
+			NominalIncome::<TestRuntime>::try_get(&cid).unwrap(),
+			BalanceType::from_num(1.1)
+		);
 	});
 }
 
@@ -234,13 +237,16 @@ fn updating_nominal_income_works() {
 fn updating_demurrage_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
-		assert!(DemurragePerBlock::try_get(cid).is_err());
+		assert!(DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
 		assert_ok!(EncointerCommunities::update_demurrage(
 			Origin::root(),
 			cid,
 			Demurrage::from_num(0.0001),
 		));
-		assert_eq!(DemurragePerBlock::try_get(&cid).unwrap(), BalanceType::from_num(0.0001));
+		assert_eq!(
+			DemurragePerBlock::<TestRuntime>::try_get(&cid).unwrap(),
+			BalanceType::from_num(0.0001)
+		);
 	});
 }
 
