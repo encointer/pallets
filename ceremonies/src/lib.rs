@@ -781,7 +781,7 @@ impl<T: Config> Module<T> {
 			}
 
 			trace!(target: LOG, "participant merits reward: {:?}", participant);
-			if <encointer_balances::Module<T>>::issue(*cid, &participant, reward).is_ok() {
+			if <encointer_balances::Pallet<T>>::issue(*cid, &participant, reward).is_ok() {
 				<ParticipantReputation<T>>::insert(
 					(cid, cindex),
 					&participant,
