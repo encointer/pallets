@@ -40,11 +40,9 @@ use encointer_primitives::{
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage,
-	dispatch::DispatchResult,
+	dispatch::{DispatchResult, DispatchResultWithPostInfo},
 	ensure,
 	sp_std::cmp::min,
-	storage::{StorageDoubleMap, StorageMap},
 	traits::{Get, Randomness},
 };
 use frame_system::ensure_signed;
@@ -56,229 +54,257 @@ use sp_std::{prelude::*, vec};
 // Logger target
 const LOG: &str = "encointer";
 
-pub trait Config:
-	frame_system::Config
-	+ pallet_timestamp::Config
-	+ encointer_communities::Config
-	+ encointer_balances::Config
-	+ encointer_scheduler::Config
-{
-	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
-	type Public: IdentifyAccount<AccountId = Self::AccountId>;
-	type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
-	type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
-	type ReputationLifetime: Get<u32>;
-	type AmountNewbieTickets: Get<u8>;
-}
+pub use pallet::*;
 
-// This module's storage items.
-decl_storage! {
-	trait Store for Module<T: Config> as EncointerCeremonies {
-		BurnedBootstrapperNewbieTickets get(fn bootstrapper_newbie_tickets): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => u8;
+#[frame_support::pallet]
+pub mod pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
-		// everyone who registered for a ceremony
-		// caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-		BootstrapperRegistry get(fn bootstrapper_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
-		BootstrapperIndex get(fn bootstrapper_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
-		BootstrapperCount get(fn bootstrapper_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
+	#[pallet::pallet]
+	#[pallet::generate_store(pub (super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
 
-		ReputableRegistry get(fn reputable_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
-		ReputableIndex get(fn reputable_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
-		ReputableCount get(fn reputable_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
-
-		EndorseeRegistry get(fn endorsee_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
-		EndorseeIndex get(fn endorsee_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
-		EndorseeCount get(fn endorsee_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
-
-		NewbieRegistry get(fn newbie_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) ParticipantIndexType => T::AccountId;
-		NewbieIndex get(fn newbie_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ParticipantIndexType;
-		NewbieCount get(fn newbie_count): map hasher(blake2_128_concat) CommunityCeremony => ParticipantIndexType;
-
-		AssignmentCounts get(fn assignment_counts): map hasher(blake2_128_concat) CommunityCeremony => AssignmentCount;
-
-		Assignments get(fn assignments): map hasher(blake2_128_concat) CommunityCeremony => Assignment;
-
-		ParticipantReputation get(fn participant_reputation): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => Reputation;
-		// newbies granted a ticket from a bootstrapper for the next ceremony. See https://substrate.dev/recipes/map-set.html for the rationale behind the double_map approach.
-		Endorsees get(fn endorsees): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => ();
-		EndorseesCount get(fn endorsees_count): map hasher(blake2_128_concat) CommunityCeremony => u64;
-
-
-		MeetupCount get(fn meetup_count): map hasher(blake2_128_concat) CommunityCeremony => MeetupIndexType;
-
-		// collect fellow meetup participants accounts who attested key account
-		// caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-		AttestationRegistry get(fn attestation_registry): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) AttestationIndexType => Vec<T::AccountId>;
-		AttestationIndex get(fn attestation_index): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => AttestationIndexType;
-		AttestationCount get(fn attestation_count): map hasher(blake2_128_concat) CommunityCeremony => AttestationIndexType;
-		// how many peers does each participants observe at their meetup
-		MeetupParticipantCountVote get(fn meetup_participant_count_vote): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) T::AccountId => u32;
-		/// the default UBI for a ceremony attendee if no community specific value is set.
-		CeremonyReward get(fn ceremony_reward) config(): BalanceType;
-		// [m] distance from assigned meetup location
-		LocationTolerance get(fn location_tolerance) config(): u32;
-		// [ms] time tolerance for meetup moment
-		TimeTolerance get(fn time_tolerance) config(): T::Moment;
-
-		IssuedRewards get(fn issued_rewards): double_map hasher(blake2_128_concat) CommunityCeremony, hasher(blake2_128_concat) MeetupIndexType => ();
+	#[pallet::config]
+	pub trait Config:
+		frame_system::Config
+		+ pallet_timestamp::Config
+		+ encointer_communities::Config
+		+ encointer_balances::Config
+		+ encointer_scheduler::Config
+	{
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type Public: IdentifyAccount<AccountId = Self::AccountId>;
+		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
+		type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+		#[pallet::constant]
+		type ReputationLifetime: Get<u32>;
+		#[pallet::constant]
+		type AmountNewbieTickets: Get<u8>;
 	}
-}
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		const ReputationLifetime: u32 = T::ReputationLifetime::get();
-		const AmountNewbieTickets: u8 = T::AmountNewbieTickets::get();
-
-		fn deposit_event() = default;
-		type Error = Error<T>;
-
-		#[weight = 10_000]
-		pub fn grant_reputation(origin, cid: CommunityIdentifier, reputable: T::AccountId) -> DispatchResult {
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		#[pallet::weight(10_000)]
+		pub fn grant_reputation(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			reputable: T::AccountId,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(sender == <encointer_scheduler::Module<T>>::ceremony_master(), Error::<T>::AuthorizationRequired);
+			ensure!(
+				sender == <encointer_scheduler::Module<T>>::ceremony_master(),
+				Error::<T>::AuthorizationRequired
+			);
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-			<ParticipantReputation<T>>::insert(&(cid, cindex-1), reputable, Reputation::VerifiedUnlinked); //safe; cindex comes from within, will not overflow at +1/d
+			<ParticipantReputation<T>>::insert(
+				&(cid, cindex - 1),
+				reputable,
+				Reputation::VerifiedUnlinked,
+			); //safe; cindex comes from within, will not overflow at +1/d
 			info!(target: LOG, "granting reputation to {:?}", sender);
-			Ok(())
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		pub fn register_participant(origin, cid: CommunityIdentifier, proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>) -> DispatchResult {
+		#[pallet::weight(10_000)]
+		pub fn register_participant(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
-				Error::<T>::RegisteringPhaseRequired);
+			ensure!(
+				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				Error::<T>::RegisteringPhaseRequired
+			);
 
-			ensure!(<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
-				Error::<T>::InexistentCommunity);
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
 
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
 			if Self::is_registered(cid, cindex, &sender) {
-				return Err(<Error<T>>::ParticipantAlreadyRegistered.into());
+				return Err(<Error<T>>::ParticipantAlreadyRegistered.into())
 			}
 
 			if let Some(p) = &proof {
 				// we accept proofs from other communities as well. no need to ensure cid
 				ensure!(sender == p.prover_public, Error::<T>::WrongProofSubject);
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
-				ensure!(p.ceremony_index >= cindex.checked_sub(T::ReputationLifetime::get()).unwrap_or(0), Error::<T>::ProofOutdated);
-				ensure!(Self::participant_reputation(&(p.community_identifier, p.ceremony_index),
-					&p.attendee_public) == Reputation::VerifiedUnlinked,
-					Error::<T>::AttendanceUnverifiedOrAlreadyUsed);
+				ensure!(
+					p.ceremony_index >=
+						cindex.checked_sub(T::ReputationLifetime::get()).unwrap_or(0),
+					Error::<T>::ProofOutdated
+				);
+				ensure!(
+					Self::participant_reputation(
+						&(p.community_identifier, p.ceremony_index),
+						&p.attendee_public
+					) == Reputation::VerifiedUnlinked,
+					Error::<T>::AttendanceUnverifiedOrAlreadyUsed
+				);
 				if Self::verify_attendee_signature(p.clone()).is_err() {
-					return Err(<Error<T>>::BadProofOfAttendanceSignature.into());
+					return Err(<Error<T>>::BadProofOfAttendanceSignature.into())
 				};
 
 				// this reputation must now be burned so it can not be used again
-				<ParticipantReputation<T>>::insert(&(p.community_identifier, p.ceremony_index),
-					&p.attendee_public, Reputation::VerifiedLinked);
+				<ParticipantReputation<T>>::insert(
+					&(p.community_identifier, p.ceremony_index),
+					&p.attendee_public,
+					Reputation::VerifiedLinked,
+				);
 				// register participant as reputable
-				<ParticipantReputation<T>>::insert((cid, cindex),
-					&sender, Reputation::UnverifiedReputable);
+				<ParticipantReputation<T>>::insert(
+					(cid, cindex),
+					&sender,
+					Reputation::UnverifiedReputable,
+				);
 			};
 
 			Self::register(cid, cindex, &sender, proof.is_some())?;
 
 			debug!(target: LOG, "registered participant: {:?}", sender);
-			Ok(())
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		pub fn attest_claims(origin, claims: Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>>) -> DispatchResult {
+		#[pallet::weight(10_000)]
+		pub fn attest_claims(
+			origin: OriginFor<T>,
+			claims: Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>>,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
-				Error::<T>::AttestationPhaseRequired);
+			ensure!(
+				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
+				Error::<T>::AttestationPhaseRequired
+			);
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 			ensure!(!claims.is_empty(), Error::<T>::NoValidClaims);
 			let cid = claims[0].community_identifier; //safe; claims not empty checked above
-			ensure!(<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
-				Error::<T>::InexistentCommunity);
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
 
 			let meetup_index = Self::get_meetup_index((cid, cindex), &sender)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
-			let mut meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index);
+			let mut meetup_participants =
+				Self::get_meetup_participants((cid, cindex), meetup_index);
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			meetup_participants.retain(|x| x != &sender);
 			let num_registered = meetup_participants.len();
 			ensure!(claims.len() <= num_registered, Error::<T>::TooManyClaims);
-			let mut verified_attestees = vec!();
+			let mut verified_attestees = vec![];
 
 			let mlocation = Self::get_meetup_location((cid, cindex), meetup_index)
 				.ok_or(<Error<T>>::MeetupLocationNotFound)?;
 
-			let mtime = Self::get_meetup_time(mlocation)
-				.ok_or(<Error<T>>::MeetupTimeCalculationError)?;
+			let mtime =
+				Self::get_meetup_time(mlocation).ok_or(<Error<T>>::MeetupTimeCalculationError)?;
 
-			debug!(target: LOG, "meetup {} at location {:?} should happen at {:?} for cid {:?}",
-				meetup_index, mlocation, mtime, cid);
+			debug!(
+				target: LOG,
+				"meetup {} at location {:?} should happen at {:?} for cid {:?}",
+				meetup_index,
+				mlocation,
+				mtime,
+				cid
+			);
 
 			for claim in claims.iter() {
 				let claimant = &claim.claimant_public;
 				if claimant == &sender {
-					warn!(target: LOG,
-						"ignoring claim that is from sender: {:?}",
-						claimant);
-					continue };
+					warn!(target: LOG, "ignoring claim that is from sender: {:?}", claimant);
+					continue
+				};
 				if !meetup_participants.contains(claimant) {
-					warn!(target: LOG,
-						"ignoring claim that isn't a meetup participant: {:?}",
-						claimant);
-					continue };
+					warn!(
+						target: LOG,
+						"ignoring claim that isn't a meetup participant: {:?}", claimant
+					);
+					continue
+				};
 				if claim.ceremony_index != cindex {
-					warn!(target: LOG,
-						"ignoring claim with wrong ceremony index: {}",
-						claim.ceremony_index);
-					continue };
+					warn!(
+						target: LOG,
+						"ignoring claim with wrong ceremony index: {}", claim.ceremony_index
+					);
+					continue
+				};
 				if claim.community_identifier != cid {
-					warn!(target: LOG,
+					warn!(
+						target: LOG,
 						"ignoring claim with wrong community identifier: {:?}",
-						claim.community_identifier);
-					continue };
+						claim.community_identifier
+					);
+					continue
+				};
 				if claim.meetup_index != meetup_index {
-					warn!(target: LOG,
-						"ignoring claim with wrong meetup index: {}",
-						claim.meetup_index);
-					continue };
-				if !<encointer_communities::Pallet<T>>::is_valid_location(
-					&claim.location) {
-						warn!(target: LOG,
-							"ignoring claim with illegal geolocation: {:?}",
-							claim.location);
-						continue };
+					warn!(
+						target: LOG,
+						"ignoring claim with wrong meetup index: {}", claim.meetup_index
+					);
+					continue
+				};
+				if !<encointer_communities::Pallet<T>>::is_valid_location(&claim.location) {
+					warn!(
+						target: LOG,
+						"ignoring claim with illegal geolocation: {:?}", claim.location
+					);
+					continue
+				};
 				if <encointer_communities::Pallet<T>>::haversine_distance(
-					&mlocation, &claim.location) > Self::location_tolerance() {
-						warn!(target: LOG,
-							"ignoring claim beyond location tolerance: {:?}",
-							claim.location);
-						continue };
+					&mlocation,
+					&claim.location,
+				) > Self::location_tolerance()
+				{
+					warn!(
+						target: LOG,
+						"ignoring claim beyond location tolerance: {:?}", claim.location
+					);
+					continue
+				};
 				if let Some(dt) = mtime.checked_sub(&claim.timestamp) {
 					if dt > Self::time_tolerance() {
-						warn!(target: LOG,
+						warn!(
+							target: LOG,
 							"ignoring claim beyond time tolerance (too early): {:?}",
-							claim.timestamp);
-						continue };
+							claim.timestamp
+						);
+						continue
+					};
 				} else if let Some(dt) = claim.timestamp.checked_sub(&mtime) {
 					if dt > Self::time_tolerance() {
-						warn!(target: LOG,
+						warn!(
+							target: LOG,
 							"ignoring claim beyond time tolerance (too late): {:?}",
-							claim.timestamp);
-						continue };
+							claim.timestamp
+						);
+						continue
+					};
 				}
 				if !claim.verify_signature() {
 					warn!(target: LOG, "ignoring claim with bad signature for {:?}", claimant);
-					continue };
+					continue
+				};
 				// claim is legit. insert it!
 				verified_attestees.insert(0, claimant.clone());
 
 				// is it a problem if this number isn't equal for all claims? Guess not.
 				// is it a problem that this gets inserted multiple times? Guess not.
-				<MeetupParticipantCountVote<T>>::insert((cid, cindex), &claimant, &claim.number_of_participants_confirmed);
+				<MeetupParticipantCountVote<T>>::insert(
+					(cid, cindex),
+					&claimant,
+					&claim.number_of_participants_confirmed,
+				);
 			}
 			if verified_attestees.is_empty() {
-				return Err(<Error<T>>::NoValidClaims.into());
+				return Err(<Error<T>>::NoValidClaims.into())
 			}
 
-			let count = <AttestationCount>::get((cid, cindex));
+			let count = <AttestationCount<T>>::get((cid, cindex));
 			let mut idx = count.checked_add(1).ok_or(Error::<T>::CheckedMath)?;
 
 			if <AttestationIndex<T>>::contains_key((cid, cindex), &sender) {
@@ -286,63 +312,76 @@ decl_module! {
 				idx = <AttestationIndex<T>>::get((cid, cindex), &sender);
 			} else {
 				// add new set of attestees
-				let new_count = count.checked_add(1).
-					ok_or("[EncointerCeremonies]: Overflow adding set of attestees to registry")?;
-				<AttestationCount>::insert((cid, cindex), new_count);
+				let new_count = count
+					.checked_add(1)
+					.ok_or("[EncointerCeremonies]: Overflow adding set of attestees to registry")?;
+				<AttestationCount<T>>::insert((cid, cindex), new_count);
 			}
 			<AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestees);
 			<AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
-			debug!(target: LOG,
-				"successfully registered {} claims", verified_attestees.len());
-			Ok(())
+			debug!(target: LOG, "successfully registered {} claims", verified_attestees.len());
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		pub fn endorse_newcomer(origin, cid: CommunityIdentifier, newbie: T::AccountId) -> DispatchResult {
+		#[pallet::weight(10_000)]
+		pub fn endorse_newcomer(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			newbie: T::AccountId,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 
-			ensure!(<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
-				Error::<T>::InexistentCommunity);
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
 
-			ensure!(<encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender),
-			Error::<T>::AuthorizationRequired);
+			ensure!(
+				<encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender),
+				Error::<T>::AuthorizationRequired
+			);
 
-			ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < T::AmountNewbieTickets::get(),
-			Error::<T>::NoMoreNewbieTickets);
+			ensure!(
+				<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
+					T::AmountNewbieTickets::get(),
+				Error::<T>::NoMoreNewbieTickets
+			);
 
 			let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 			if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
 				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
 			}
-			ensure!(!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
-			Error::<T>::AlreadyEndorsed);
+			ensure!(
+				!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
+				Error::<T>::AlreadyEndorsed
+			);
 
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender,|b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender, |b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 			debug!(target: LOG, "endorsed newbie: {:?}", newbie);
 			<Endorsees<T>>::insert((cid, cindex), newbie, ());
-			<EndorseesCount>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
-			Ok(())
+			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		pub fn claim_rewards(origin, cid: CommunityIdentifier) -> DispatchResult {
+		#[pallet::weight(10_000)]
+		pub fn claim_rewards(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			Self::issue_rewards(&sender, &cid)
 		}
 	}
-}
 
-decl_event!(
-	pub enum Event<T>
-	where
-		AccountId = <T as frame_system::Config>::AccountId,
-	{
-		ParticipantRegistered(AccountId),
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		/// Participant registered for next ceremony [who]
+		ParticipantRegistered(T::AccountId),
 	}
-);
 
-decl_error! {
-	pub enum Error for Module<T: Config> {
+	#[pallet::error]
+	pub enum Error<T> {
 		/// the participant is already registered
 		ParticipantAlreadyRegistered,
 		/// verification of signature of attendee failed
@@ -394,9 +433,295 @@ decl_error! {
 		/// CheckedMath operation error
 		CheckedMath,
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn bootstrapper_newbie_tickets)]
+	pub(super) type BurnedBootstrapperNewbieTickets<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		Blake2_128Concat,
+		T::AccountId,
+		u8,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn bootstrapper_registry)]
+	pub(super) type BootstrapperRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		ParticipantIndexType,
+		T::AccountId,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn bootstrapper_index)]
+	pub(super) type BootstrapperIndex<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		ParticipantIndexType,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn bootstrapper_count)]
+	pub(super) type BootstrapperCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ParticipantIndexType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn reputable_registry)]
+	pub(super) type ReputableRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		ParticipantIndexType,
+		T::AccountId,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn reputable_index)]
+	pub(super) type ReputableIndex<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		ParticipantIndexType,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn reputable_count)]
+	pub(super) type ReputableCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ParticipantIndexType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn endorsee_registry)]
+	pub(super) type EndorseeRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		ParticipantIndexType,
+		T::AccountId,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn endorsee_index)]
+	pub(super) type EndorseeIndex<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		ParticipantIndexType,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn endorsee_count)]
+	pub(super) type EndorseeCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ParticipantIndexType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn newbie_registry)]
+	pub(super) type NewbieRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		ParticipantIndexType,
+		T::AccountId,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn newbie_index)]
+	pub(super) type NewbieIndex<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		ParticipantIndexType,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn newbie_count)]
+	pub(super) type NewbieCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ParticipantIndexType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn assignment_counts)]
+	pub(super) type AssignmentCounts<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, AssignmentCount, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn assignments)]
+	pub(super) type Assignments<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, Assignment, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn participant_reputation)]
+	pub(super) type ParticipantReputation<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		Reputation,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn endorsees)]
+	pub(super) type Endorsees<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		(),
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn endorsees_count)]
+	pub(super) type EndorseesCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, u64, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn meetup_count)]
+	pub(super) type MeetupCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, MeetupIndexType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn attestation_registry)]
+	pub(super) type AttestationRegistry<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		AttestationIndexType,
+		Vec<T::AccountId>,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn attestation_index)]
+	pub(super) type AttestationIndex<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		AttestationIndexType,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn attestation_count)]
+	pub(super) type AttestationCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, AttestationIndexType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn meetup_participant_count_vote)]
+	pub(super) type MeetupParticipantCountVote<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		u32,
+		ValueQuery,
+	>;
+
+	/// the default UBI for a ceremony attendee if no community specific value is set.
+	#[pallet::storage]
+	#[pallet::getter(fn ceremony_reward)]
+	pub(super) type CeremonyReward<T: Config> = StorageValue<_, BalanceType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn location_tolerance)]
+	pub(super) type LocationTolerance<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn time_tolerance)]
+	pub(super) type TimeTolerance<T: Config> = StorageValue<_, T::Moment, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn issued_rewards)]
+	pub(super) type IssuedRewards<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		MeetupIndexType,
+		(),
+		ValueQuery,
+	>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config>
+// TODO_MAYBE_WHERE_CLAUSE
+	{
+		#[doc = " the default UBI for a ceremony attendee if no community specific value is set."]
+		pub ceremony_reward: BalanceType,
+		pub location_tolerance: u32,
+		pub time_tolerance: T::Moment,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T>
+	// TODO_MAYBE_WHERE_CLAUSE
+	{
+		fn default() -> Self {
+			Self {
+				ceremony_reward: Default::default(),
+				location_tolerance: Default::default(),
+				time_tolerance: Default::default(),
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			{
+				let data = &self.ceremony_reward;
+				let v: &BalanceType = data;
+				<CeremonyReward<T> as frame_support::storage::StorageValue<BalanceType>>::put::<
+					&BalanceType,
+				>(v);
+			}
+			{
+				let data = &self.location_tolerance;
+				let v: &u32 = data;
+				<LocationTolerance<T> as frame_support::storage::StorageValue<u32>>::put::<&u32>(v);
+			}
+			{
+				let data = &self.time_tolerance;
+				let v: &T::Moment = data;
+				<TimeTolerance<T> as frame_support::storage::StorageValue<T::Moment>>::put::<
+					&T::Moment,
+				>(v);
+			}
+		}
+	}
 }
 
-impl<T: Config> Module<T> {
+impl<T: Config> Pallet<T> {
 	pub fn get_reputations() -> Vec<(CommunityCeremony, T::AccountId, Reputation)> {
 		return ParticipantReputation::<T>::iter().collect()
 	}
@@ -408,33 +733,33 @@ impl<T: Config> Module<T> {
 		is_reputable: bool,
 	) -> Result<(), Error<T>> {
 		if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(&sender) {
-			let participant_index = <BootstrapperCount>::get((cid, cindex))
+			let participant_index = <BootstrapperCount<T>>::get((cid, cindex))
 				.checked_add(1)
 				.ok_or(Error::<T>::RegistryOverflow)?;
 			<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 			<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<BootstrapperCount>::insert((cid, cindex), participant_index);
+			<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
 		} else if is_reputable {
-			let participant_index = <ReputableCount>::get((cid, cindex))
+			let participant_index = <ReputableCount<T>>::get((cid, cindex))
 				.checked_add(1)
 				.ok_or(Error::<T>::RegistryOverflow)?;
 			<ReputableRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 			<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<ReputableCount>::insert((cid, cindex), participant_index);
+			<ReputableCount<T>>::insert((cid, cindex), participant_index);
 		} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
-			let participant_index = <EndorseeCount>::get((cid, cindex))
+			let participant_index = <EndorseeCount<T>>::get((cid, cindex))
 				.checked_add(1)
 				.ok_or(Error::<T>::RegistryOverflow)?;
 			<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 			<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<EndorseeCount>::insert((cid, cindex), participant_index);
+			<EndorseeCount<T>>::insert((cid, cindex), participant_index);
 		} else {
-			let participant_index = <NewbieCount>::get((cid, cindex))
+			let participant_index = <NewbieCount<T>>::get((cid, cindex))
 				.checked_add(1)
 				.ok_or(Error::<T>::RegistryOverflow)?;
 			<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 			<NewbieIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<NewbieCount>::insert((cid, cindex), participant_index);
+			<NewbieCount<T>>::insert((cid, cindex), participant_index);
 		}
 		Ok(())
 	}
@@ -455,32 +780,32 @@ impl<T: Config> Module<T> {
 		for cid in cids.iter() {
 			<BootstrapperRegistry<T>>::remove_prefix((cid, cindex), None);
 			<BootstrapperIndex<T>>::remove_prefix((cid, cindex), None);
-			<BootstrapperCount>::insert((cid, cindex), 0);
+			<BootstrapperCount<T>>::insert((cid, cindex), 0);
 
 			<ReputableRegistry<T>>::remove_prefix((cid, cindex), None);
 			<ReputableIndex<T>>::remove_prefix((cid, cindex), None);
-			<ReputableCount>::insert((cid, cindex), 0);
+			<ReputableCount<T>>::insert((cid, cindex), 0);
 
 			<EndorseeRegistry<T>>::remove_prefix((cid, cindex), None);
 			<EndorseeIndex<T>>::remove_prefix((cid, cindex), None);
-			<EndorseeCount>::insert((cid, cindex), 0);
+			<EndorseeCount<T>>::insert((cid, cindex), 0);
 
 			<NewbieRegistry<T>>::remove_prefix((cid, cindex), None);
 			<NewbieIndex<T>>::remove_prefix((cid, cindex), None);
-			<NewbieCount>::insert((cid, cindex), 0);
+			<NewbieCount<T>>::insert((cid, cindex), 0);
 
-			<AssignmentCounts>::insert((cid, cindex), AssignmentCount::default());
+			<AssignmentCounts<T>>::insert((cid, cindex), AssignmentCount::default());
 
-			Assignments::remove((cid, cindex));
+			Assignments::<T>::remove((cid, cindex));
 
 			<Endorsees<T>>::remove_prefix((cid, cindex), None);
-			<MeetupCount>::insert((cid, cindex), 0);
+			<MeetupCount<T>>::insert((cid, cindex), 0);
 			<AttestationRegistry<T>>::remove_prefix((cid, cindex), None);
 			<AttestationIndex<T>>::remove_prefix((cid, cindex), None);
-			<AttestationCount>::insert((cid, cindex), 0);
+			<AttestationCount<T>>::insert((cid, cindex), 0);
 			<MeetupParticipantCountVote<T>>::remove_prefix((cid, cindex), None);
 
-			<IssuedRewards>::remove_prefix((cid, cindex), None);
+			<IssuedRewards<T>>::remove_prefix((cid, cindex), None);
 		}
 		debug!(target: LOG, "purged registry for ceremony {}", cindex);
 	}
@@ -497,7 +822,7 @@ impl<T: Config> Module<T> {
 			checked_ceil_division(assignment_count.get_number_of_participants(), meetup_multiplier)
 				.ok_or(Error::<T>::CheckedMath)?;
 
-		Assignments::insert(
+		<Assignments<T>>::insert(
 			community_ceremony,
 			Assignment {
 				bootstrappers_reputables: generate_assignment_function_params(
@@ -522,8 +847,8 @@ impl<T: Config> Module<T> {
 			},
 		);
 
-		<AssignmentCounts>::insert(community_ceremony, assignment_count);
-		<MeetupCount>::insert(community_ceremony, num_meetups);
+		<AssignmentCounts<T>>::insert(community_ceremony, assignment_count);
+		<MeetupCount<T>>::insert(community_ceremony, num_meetups);
 		Ok(())
 	}
 
@@ -715,7 +1040,10 @@ impl<T: Config> Module<T> {
 		}
 	}
 
-	fn issue_rewards(participant: &T::AccountId, cid: &CommunityIdentifier) -> DispatchResult {
+	fn issue_rewards(
+		participant: &T::AccountId,
+		cid: &CommunityIdentifier,
+	) -> DispatchResultWithPostInfo {
 		if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
 			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
 		}
@@ -725,7 +1053,7 @@ impl<T: Config> Module<T> {
 		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)
 			.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
 
-		if <IssuedRewards>::contains_key((cid, cindex), meetup_index) {
+		if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
 			return Err(<Error<T>>::RewardsAlreadyIssued.into())
 		}
 
@@ -789,9 +1117,9 @@ impl<T: Config> Module<T> {
 				);
 			}
 		}
-		<IssuedRewards>::insert((cid, cindex), meetup_index, ());
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
 		info!(target: LOG, "issuing rewards completed");
-		Ok(())
+		Ok(().into())
 	}
 
 	fn ballot_meetup_n_votes(
@@ -862,7 +1190,7 @@ impl<T: Config> Module<T> {
 	}
 }
 
-impl<T: Config> OnCeremonyPhaseChange for Module<T> {
+impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::ASSIGNING => {
