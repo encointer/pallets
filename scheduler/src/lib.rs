@@ -37,35 +37,13 @@ use log::info;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
 use sp_std::{ops::Rem, prelude::*};
 
+// Logger target
+const LOG: &str = "encointer";
+
 pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
 	type MomentsPerDay: Get<Self::Moment>;
-}
-
-// Logger target
-const LOG: &str = "encointer";
-
-/// An event handler for when the ceremony phase changes.
-pub trait OnCeremonyPhaseChange {
-	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType);
-}
-
-impl OnCeremonyPhaseChange for () {
-	fn on_ceremony_phase_change(_: CeremonyPhaseType) {}
-}
-
-// This module's storage items.
-decl_storage! {
-	trait Store for Module<T: Config> as EncointerScheduler {
-		// caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-		CurrentCeremonyIndex get(fn current_ceremony_index) config(): CeremonyIndexType;
-		LastCeremonyBlock get(fn last_ceremony_block): T::BlockNumber;
-		CurrentPhase get(fn current_phase) config(): CeremonyPhaseType = CeremonyPhaseType::REGISTERING;
-		CeremonyMaster get(fn ceremony_master) config(): T::AccountId;
-		NextPhaseTimestamp get(fn next_phase_timestamp): T::Moment = T::Moment::zero();
-		PhaseDurations get(fn phase_durations) config(): map hasher(blake2_128_concat) CeremonyPhaseType => T::Moment;
-	}
 }
 
 decl_module! {
@@ -105,6 +83,19 @@ decl_error! {
 	pub enum Error for Module<T: Config> {
 		/// sender doesn't have the necessary authority to perform action
 		AuthorizationRequired,
+	}
+}
+
+// This module's storage items.
+decl_storage! {
+	trait Store for Module<T: Config> as EncointerScheduler {
+		// caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
+		CurrentCeremonyIndex get(fn current_ceremony_index) config(): CeremonyIndexType;
+		LastCeremonyBlock get(fn last_ceremony_block): T::BlockNumber;
+		CurrentPhase get(fn current_phase) config(): CeremonyPhaseType = CeremonyPhaseType::REGISTERING;
+		CeremonyMaster get(fn ceremony_master) config(): T::AccountId;
+		NextPhaseTimestamp get(fn next_phase_timestamp): T::Moment = T::Moment::zero();
+		PhaseDurations get(fn phase_durations) config(): map hasher(blake2_128_concat) CeremonyPhaseType => T::Moment;
 	}
 }
 
@@ -184,6 +175,15 @@ impl<T: Config> OnTimestampSet<T::Moment> for Module<T> {
 	fn on_timestamp_set(moment: T::Moment) {
 		Self::on_timestamp_set(moment)
 	}
+}
+
+/// An event handler for when the ceremony phase changes.
+pub trait OnCeremonyPhaseChange {
+	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType);
+}
+
+impl OnCeremonyPhaseChange for () {
+	fn on_ceremony_phase_change(_: CeremonyPhaseType) {}
 }
 
 #[cfg(test)]
