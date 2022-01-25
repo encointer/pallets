@@ -699,23 +699,9 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
 			{
-				let data = &self.ceremony_reward;
-				let v: &BalanceType = data;
-				<CeremonyReward<T> as frame_support::storage::StorageValue<BalanceType>>::put::<
-					&BalanceType,
-				>(v);
-			}
-			{
-				let data = &self.location_tolerance;
-				let v: &u32 = data;
-				<LocationTolerance<T> as frame_support::storage::StorageValue<u32>>::put::<&u32>(v);
-			}
-			{
-				let data = &self.time_tolerance;
-				let v: &T::Moment = data;
-				<TimeTolerance<T> as frame_support::storage::StorageValue<T::Moment>>::put::<
-					&T::Moment,
-				>(v);
+				<CeremonyReward<T>>::put(&self.ceremony_reward);
+				<LocationTolerance<T>>::put(&self.location_tolerance);
+				<TimeTolerance<T>>::put(&self.time_tolerance);
 			}
 		}
 	}
