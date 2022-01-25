@@ -22,7 +22,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use frame_support::{decl_error, decl_event, decl_module, dispatch::DispatchResult, ensure};
+use frame_support::{ensure, pallet_prelude::DispatchResult};
 use frame_system::ensure_signed;
 use log::{debug, warn};
 use polkadot_parachain::primitives::Sibling;
@@ -44,39 +44,37 @@ const LOG: &str = "encointer";
 use encointer_ceremonies::Config as Ceremonies;
 use sp_runtime::{sp_std::cmp::min, DispatchError};
 
-pub trait Config:
-	frame_system::Config
-	+ Ceremonies
-	+ encointer_scheduler::Config
-	+ encointer_balances::Config
-	+ encointer_communities::Config
-{
-	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
-	/// The XCM sender module.
-	type XcmSender: SendXcm;
-}
-
 type ProofOfAttendanceOf<T> =
 	ProofOfAttendance<<T as Ceremonies>::Signature, <T as frame_system::Config>::AccountId>;
 
-decl_event! {
-	pub enum Event
+pub use pallet::*;
+
+#[frame_support::pallet]
+pub mod pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
+
+	#[pallet::pallet]
+	#[pallet::generate_store(pub (super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
+
+	#[pallet::config]
+	pub trait Config:
+		frame_system::Config
+		+ Ceremonies
+		+ encointer_scheduler::Config
+		+ encointer_balances::Config
+		+ encointer_communities::Config
 	{
-		/// Received PersonhoodUniquenessRating request \[request_hash, parachain\]
-		PersonhoodUniquenessRatingRequestReceived(H256, u32),
-		/// Successfully sent PersonhoodUniquenessRating response \[request_hash, parachain\]
-		PersonhoodUniquenessRatingSentSuccess(H256, u32),
-		/// Failed to send PersonhoodUniquenessRating response \[request_hash, parachain\]
-		PersonhoodUniquenessRatingSentFailure(H256, u32, XcmError),
+		/// The overarching event type.
+		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		/// The XCM sender module.
+		type XcmSender: SendXcm;
 	}
-}
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		fn deposit_event() = default;
-		type Error = Error<T>;
-
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
 		/// Returns `PersonhoodUniquenessRating` based on the  `ProofOfAttendance`s that are
 		/// encodedly passed as an `OpaqueRequest` to this call.
 		///
@@ -85,12 +83,12 @@ decl_module! {
 		///
 		/// Todo: The total weight of this call should include the weight of `CallMetadata` that
 		/// is passed here.
-		#[weight = 5_000_000]
-		fn issue_personhood_uniqueness_rating(
-		origin,
-		rating_request: OpaqueRequest,
-		response: CallMetadata
-		) {
+		#[pallet::weight(5_000_000)]
+		pub fn issue_personhood_uniqueness_rating(
+			origin: OriginFor<T>,
+			rating_request: OpaqueRequest,
+			response: CallMetadata,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let para_id: u32 = Sibling::try_from_account(&sender)
 				.ok_or(<Error<T>>::UnableToDecodeRequest)?
@@ -98,25 +96,52 @@ decl_module! {
 			let request = <Vec<ProofOfAttendanceOf<T>>>::decode(&mut rating_request.as_slice())
 				.map_err(|_| <Error<T>>::OnlyParachainsAllowed)?;
 
-			debug!(target: LOG, "received proof of personhood-oracle from parachain: {:?}", para_id);
+			debug!(
+				target: LOG,
+				"received proof of personhood-oracle from parachain: {:?}", para_id
+			);
 			debug!(target: LOG, "received proof of personhood-oracle request: {:?}", request);
 
-			let confidence = Self::verify(request).unwrap_or_else(|_| PersonhoodUniquenessRating::default());
+			let confidence =
+				Self::verify(request).unwrap_or_else(|_| PersonhoodUniquenessRating::default());
 
 			let request_hash = rating_request.hash();
-			let call =  SybilResponseCall::new(&response, request_hash, confidence);
-			let message = Xcm::Transact { origin_type: OriginKind::SovereignAccount, require_weight_at_most: response.weight(), call: call.encode().into() };
+			let call = SybilResponseCall::new(&response, request_hash, confidence);
+			let message = Xcm::Transact {
+				origin_type: OriginKind::SovereignAccount,
+				require_weight_at_most: response.weight(),
+				call: call.encode().into(),
+			};
 
 			match T::XcmSender::send_xcm(sibling_junction(para_id), message) {
-				Ok(()) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentSuccess(request_hash, para_id)),
-				Err(e) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentFailure(request_hash, para_id, e)),
+				Ok(()) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentSuccess(
+					request_hash,
+					para_id,
+				)),
+				Err(e) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentFailure(
+					request_hash,
+					para_id,
+					e,
+				)),
 			}
+
+			Ok(().into())
 		}
 	}
-}
 
-decl_error! {
-	pub enum Error for Module<T: Config> {
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event {
+		/// Received PersonhoodUniquenessRating request [request_hash, parachain]
+		PersonhoodUniquenessRatingRequestReceived(H256, u32),
+		/// Successfully sent PersonhoodUniquenessRating response [request_hash, parachain]
+		PersonhoodUniquenessRatingSentSuccess(H256, u32),
+		/// Failed to send PersonhoodUniquenessRating response [request_hash, parachain]
+		PersonhoodUniquenessRatingSentFailure(H256, u32, XcmError),
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
 		/// Only other parachains can call this function
 		OnlyParachainsAllowed,
 		/// Unable to decode PersonhoodUniquenessRating request
@@ -128,7 +153,7 @@ decl_error! {
 	}
 }
 
-impl<T: Config> Module<T> {
+impl<T: Config> Pallet<T> {
 	/// Verifies ProofOfAttendances and returns a PersonhoodUniquenessRating upon success
 	pub fn verify(
 		request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
