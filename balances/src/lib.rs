@@ -228,9 +228,7 @@ impl<T: Config> Pallet<T> {
 	/// Returns the community-specific demurrage if it is set. Otherwise returns the
 	/// the demurrage defined in the genesis config
 	fn demurrage(cid: &CommunityIdentifier) -> BalanceType {
-		use frame_support::StorageMap;
-
-		encointer_communities::DemurragePerBlock::try_get(cid)
+		encointer_communities::DemurragePerBlock::<T>::try_get(cid)
 			.unwrap_or_else(|_| T::DefaultDemurrage::get())
 	}
 }

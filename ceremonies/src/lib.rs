@@ -148,7 +148,7 @@ decl_module! {
 			ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegisteringPhaseRequired);
 
-			ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+			ensure!(<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
 				Error::<T>::InexistentCommunity);
 
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
@@ -191,7 +191,7 @@ decl_module! {
 			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 			ensure!(!claims.is_empty(), Error::<T>::NoValidClaims);
 			let cid = claims[0].community_identifier; //safe; claims not empty checked above
-			ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+			ensure!(<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
 				Error::<T>::InexistentCommunity);
 
 			let meetup_index = Self::get_meetup_index((cid, cindex), &sender)
@@ -239,13 +239,13 @@ decl_module! {
 						"ignoring claim with wrong meetup index: {}",
 						claim.meetup_index);
 					continue };
-				if !<encointer_communities::Module<T>>::is_valid_location(
+				if !<encointer_communities::Pallet<T>>::is_valid_location(
 					&claim.location) {
 						warn!(target: LOG,
 							"ignoring claim with illegal geolocation: {:?}",
 							claim.location);
 						continue };
-				if <encointer_communities::Module<T>>::haversine_distance(
+				if <encointer_communities::Pallet<T>>::haversine_distance(
 					&mlocation, &claim.location) > Self::location_tolerance() {
 						warn!(target: LOG,
 							"ignoring claim beyond location tolerance: {:?}",
@@ -301,10 +301,10 @@ decl_module! {
 		pub fn endorse_newcomer(origin, cid: CommunityIdentifier, newbie: T::AccountId) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			ensure!(<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+			ensure!(<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
 				Error::<T>::InexistentCommunity);
 
-			ensure!(<encointer_communities::Module<T>>::bootstrappers(&cid).contains(&sender),
+			ensure!(<encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender),
 			Error::<T>::AuthorizationRequired);
 
 			ensure!(<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) < T::AmountNewbieTickets::get(),
@@ -407,7 +407,7 @@ impl<T: Config> Module<T> {
 		sender: &T::AccountId,
 		is_reputable: bool,
 	) -> Result<(), Error<T>> {
-		if <encointer_communities::Module<T>>::bootstrappers(cid).contains(&sender) {
+		if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(&sender) {
 			let participant_index = <BootstrapperCount>::get((cid, cindex))
 				.checked_add(1)
 				.ok_or(Error::<T>::RegistryOverflow)?;
@@ -451,7 +451,7 @@ impl<T: Config> Module<T> {
 	}
 
 	fn purge_registry(cindex: CeremonyIndexType) {
-		let cids = <encointer_communities::Module<T>>::community_identifiers();
+		let cids = <encointer_communities::Pallet<T>>::community_identifiers();
 		for cid in cids.iter() {
 			<BootstrapperRegistry<T>>::remove_prefix((cid, cindex), None);
 			<BootstrapperIndex<T>>::remove_prefix((cid, cindex), None);
@@ -532,7 +532,7 @@ impl<T: Config> Module<T> {
 		random_source: &mut RandomNumberGenerator<T::Hashing>,
 	) -> AssignmentParams {
 		let num_locations =
-			<encointer_communities::Module<T>>::get_locations(&community_ceremony.0).len() as u64;
+			<encointer_communities::Pallet<T>>::get_locations(&community_ceremony.0).len() as u64;
 
 		AssignmentParams {
 			m: num_locations,
@@ -546,7 +546,7 @@ impl<T: Config> Module<T> {
 		meetup_multiplier: u64,
 	) -> Result<AssignmentCount, Error<T>> {
 		let num_locations =
-			<encointer_communities::Module<T>>::get_locations(&community_ceremony.0).len() as u64;
+			<encointer_communities::Pallet<T>>::get_locations(&community_ceremony.0).len() as u64;
 		if num_locations == 0 {
 			return Err(<Error<T>>::NoLocationsAvailable.into())
 		}
@@ -580,7 +580,7 @@ impl<T: Config> Module<T> {
 	}
 
 	fn generate_all_meetup_assignment_params() {
-		let cids = <encointer_communities::Module<T>>::community_identifiers();
+		let cids = <encointer_communities::Pallet<T>>::community_identifiers();
 		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
 
 		// we don't need to pass a subject here, as this is only called once in a block.
@@ -828,7 +828,7 @@ impl<T: Config> Module<T> {
 		cc: CommunityCeremony,
 		meetup_idx: MeetupIndexType,
 	) -> Option<Location> {
-		let locations = <encointer_communities::Module<T>>::get_locations(&cc.0);
+		let locations = <encointer_communities::Pallet<T>>::get_locations(&cc.0);
 		let assignment_params = Self::assignments(cc).locations;
 
 		meetup_location(meetup_idx, locations, assignment_params)
@@ -851,7 +851,7 @@ impl<T: Config> Module<T> {
 	/// Returns the community-specific nominal income if it is set. Otherwise returns the
 	/// the ceremony reward defined in the genesis config.
 	fn nominal_income(cid: &CommunityIdentifier) -> NominalIncome {
-		encointer_communities::NominalIncome::try_get(cid)
+		encointer_communities::NominalIncome::<T>::try_get(cid)
 			.unwrap_or_else(|_| Self::ceremony_reward())
 	}
 

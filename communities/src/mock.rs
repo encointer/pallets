@@ -17,6 +17,7 @@
 //! Mock runtime for the encointer_communities module
 
 pub use crate as dut;
+use frame_support::pallet_prelude::GenesisBuild;
 
 use test_utils::*;
 

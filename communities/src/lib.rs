@@ -35,64 +35,53 @@ use encointer_primitives::{
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
-use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, ensure,
-	storage::{StorageMap, StorageValue},
-	traits::Get,
-};
+use frame_support::{ensure, traits::Get};
 use frame_system::{ensure_root, ensure_signed};
 use geohash::GeoHash;
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
 
-pub trait Config: frame_system::Config + encointer_scheduler::Config {
-	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
-	type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
-	type MaxSpeedMps: Get<u32>; // [m/s] max speed over ground of adversary
-}
-
 // Logger target
 const LOG: &str = "encointer";
 
-decl_storage! {
-	trait Store for Module<T: Config> as EncointerCommunities {
-		// map geohash -> cid
-		CommunityIdentifiersByGeohash get(fn cids_by_geohash): map hasher(identity) GeoHash => Vec<CommunityIdentifier>;
+pub use pallet::*;
 
-		// map cid -> geohash -> location
-		Locations get(fn locations): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(identity) GeoHash => Vec<Location>;
+#[frame_support::pallet]
+pub mod pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
-		Bootstrappers get(fn bootstrappers): map hasher(blake2_128_concat) CommunityIdentifier => Vec<T::AccountId>;
-		CommunityIdentifiers get(fn community_identifiers): Vec<CommunityIdentifier>;
-		CommunityMetadata get(fn community_metadata): map hasher(blake2_128_concat) CommunityIdentifier => CommunityMetadataType;
-		pub DemurragePerBlock get(fn demurrage_per_block): map hasher(blake2_128_concat) CommunityIdentifier => Demurrage;
-		/// Amount of UBI to be paid for every attended ceremony.
-		pub NominalIncome get(fn nominal_income): map hasher(blake2_128_concat) CommunityIdentifier => NominalIncomeType;
-		// TODO: replace this with on-chain governance
-		CommunityMaster get(fn community_master) config(): T::AccountId;
+	#[pallet::pallet]
+	#[pallet::generate_store(pub (super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config + encointer_scheduler::Config {
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		#[pallet::constant]
+		type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
+		#[pallet::constant]
+		type MaxSpeedMps: Get<u32>; // [m/s] max speed over ground of adversary
 	}
-}
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		const MinSolarTripTimeS: u32 = T::MinSolarTripTimeS::get();
-		const MaxSpeedMps: u32 = T::MaxSpeedMps::get();
-
-		fn deposit_event() = default;
-		type Error = Error<T>;
-		#[weight = 10_000]
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		#[pallet::weight(10_000)]
 		pub fn new_community(
-			origin,
+			origin: OriginFor<T>,
 			location: Location,
 			bootstrappers: Vec<T::AccountId>,
 			community_metadata: CommunityMetadataType,
 			demurrage: Option<Demurrage>,
-			nominal_income: Option<NominalIncomeType>
-		) {
+			nominal_income: Option<NominalIncomeType>,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			Self::validate_bootstrappers(&bootstrappers)?;
-			community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
+			community_metadata
+				.validate()
+				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
 			if let Some(d) = demurrage {
 				validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			}
@@ -100,13 +89,15 @@ decl_module! {
 				validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 			}
 
-			let cid = CommunityIdentifier::new(location, bootstrappers.clone()).map_err(|_| Error::<T>::InvalidLocation)?;
+			let cid = CommunityIdentifier::new(location, bootstrappers.clone())
+				.map_err(|_| Error::<T>::InvalidLocation)?;
 			let cids = Self::community_identifiers();
 			ensure!(!cids.contains(&cid), Error::<T>::CommunityAlreadyRegistered);
 
 			Self::validate_location(&location)?;
 			// All checks done, now mutate state
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
+				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			let mut locations: Vec<Location> = Vec::new();
 
 			// insert cid into cids_by_geohash map
@@ -115,46 +106,54 @@ decl_module! {
 				Ok(_) => (),
 				Err(index) => {
 					cids_in_bucket.insert(index, cid.clone());
-					<CommunityIdentifiersByGeohash>::insert(&geo_hash, cids_in_bucket);
-				}
+					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids_in_bucket);
+				},
 			}
 
 			// insert location into cid -> geohash -> location map
 			locations.push(location);
-			<Locations>::insert(&cid, geo_hash, locations);
+			<Locations<T>>::insert(&cid, geo_hash, locations);
 
-			<CommunityIdentifiers>::mutate(|v| v.push(cid));
+			<CommunityIdentifiers<T>>::mutate(|v| v.push(cid));
 
 			<Bootstrappers<T>>::insert(&cid, &bootstrappers);
-			<CommunityMetadata>::insert(&cid, &community_metadata);
+			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
 
-			demurrage.map(|d| <DemurragePerBlock>::insert(&cid, d));
-			nominal_income.map(|i| <NominalIncome>::insert(&cid, i));
+			demurrage.map(|d| <DemurragePerBlock<T>>::insert(&cid, d));
+			nominal_income.map(|i| <NominalIncome<T>>::insert(&cid, i));
 
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
-			Self::deposit_event(RawEvent::CommunityRegistered(sender, cid));
+			Self::deposit_event(Event::CommunityRegistered(sender, cid));
 			info!(target: LOG, "registered community with cid: {:?}", cid);
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		pub fn add_location(origin, cid: CommunityIdentifier, location: Location) {
+		#[pallet::weight(10_000)]
+		pub fn add_location(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			location: Location,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
-				Error::<T>::RegistrationPhaseRequired);
+			ensure!(
+				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				Error::<T>::RegistrationPhaseRequired
+			);
 			Self::ensure_cid_exists(&cid)?;
 			Self::ensure_bootstrapper(sender, cid)?;
 			Self::validate_location(&location)?;
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
+				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			// insert location into locations
 			let mut locations = Self::locations(&cid, &geo_hash);
 			match locations.binary_search(&location) {
 				Ok(_) => (),
 				Err(index) => {
 					locations.insert(index, location);
-					<Locations>::insert(&cid, &geo_hash, locations);
-				}
+					<Locations<T>>::insert(&cid, &geo_hash, locations);
+				},
 			}
 			// check if cid is in cids_by_geohash, if not, add it
 			let mut cids = Self::cids_by_geohash(&geo_hash);
@@ -162,20 +161,28 @@ decl_module! {
 				Ok(_) => (),
 				Err(index) => {
 					cids.insert(index, cid.clone());
-					<CommunityIdentifiersByGeohash>::insert(&geo_hash, cids);
-				}
+					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
+				},
 			}
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		pub fn remove_location(origin, cid: CommunityIdentifier, location: Location) {
+		#[pallet::weight(10_000)]
+		pub fn remove_location(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			location: Location,
+		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
-				Error::<T>::RegistrationPhaseRequired);
+			ensure!(
+				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				Error::<T>::RegistrationPhaseRequired
+			);
 			Self::ensure_cid_exists(&cid)?;
 			Self::ensure_bootstrapper(sender, cid)?;
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
+				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			//remove location from locations(cid,geohash)
 			let mut locations = Self::locations(&cid, &geo_hash);
 			let mut locations_len = 0;
@@ -183,9 +190,9 @@ decl_module! {
 				Ok(index) => {
 					locations.remove(index);
 					locations_len = locations.len();
-					<Locations>::insert(&cid, &geo_hash, locations);
+					<Locations<T>>::insert(&cid, &geo_hash, locations);
 				},
-				Err(_) => ()
+				Err(_) => (),
 			}
 			// if the list from above is now empty (community has no more locations in this bucket)
 			// remove cid from cids_by_geohash(geohash)
@@ -193,74 +200,89 @@ decl_module! {
 				let mut cids = Self::cids_by_geohash(&geo_hash);
 				match cids.binary_search(&cid) {
 					Ok(index) => {
-					cids.remove(index);
-					<CommunityIdentifiersByGeohash>::insert(&geo_hash, cids);
+						cids.remove(index);
+						<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
 					},
-					Err(_) => ()
+					Err(_) => (),
 				}
 			}
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		fn update_community_medadata(origin, cid: CommunityIdentifier, community_metadata: CommunityMetadataType) {
+		#[pallet::weight(10_000)]
+		pub fn update_community_metadata(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			community_metadata: CommunityMetadataType,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			Self::ensure_cid_exists(&cid)?;
-			community_metadata.validate().map_err(|_|  <Error<T>>::InvalidCommunityMetadata)?;
+			community_metadata
+				.validate()
+				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
 
-			<CommunityMetadata>::insert(&cid, &community_metadata);
+			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
 
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
-			Self::deposit_event(RawEvent::MetadataUpdated(cid));
+			Self::deposit_event(Event::MetadataUpdated(cid));
 			info!(target: LOG, "updated community metadata for cid: {:?}", cid);
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		fn update_demurrage(origin, cid: CommunityIdentifier, demurrage: BalanceType) {
+		#[pallet::weight(10_000)]
+		pub fn update_demurrage(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			demurrage: BalanceType,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			Self::ensure_cid_exists(&cid)?;
 			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			Self::ensure_cid_exists(&cid)?;
 
-			<DemurragePerBlock>::insert(&cid, &demurrage);
-			Self::deposit_event(RawEvent::DemurrageUpdated(cid, demurrage));
+			<DemurragePerBlock<T>>::insert(&cid, &demurrage);
+			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
+			Ok(().into())
 		}
 
-		#[weight = 10_000]
-		fn update_nominal_income(origin, cid: CommunityIdentifier, nominal_income: NominalIncomeType) {
+		#[pallet::weight(10_000)]
+		pub fn update_nominal_income(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			nominal_income: NominalIncomeType,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			Self::ensure_cid_exists(&cid)?;
-			validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
+			validate_nominal_income(&nominal_income)
+				.map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 			Self::ensure_cid_exists(&cid)?;
 
-			<NominalIncome>::insert(&cid, &nominal_income);
-			Self::deposit_event(RawEvent::NominalIncomeUpdated(cid, nominal_income));
+			<NominalIncome<T>>::insert(&cid, &nominal_income);
+			Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
 			info!(target: LOG, " updated nominal income for cid: {:?}", cid);
+			Ok(().into())
 		}
 	}
-}
 
-decl_event!(
-	pub enum Event<T>
-	where
-		AccountId = <T as frame_system::Config>::AccountId,
-	{
-		/// A new community was registered \[who, community_identifier\]
-		CommunityRegistered(AccountId, CommunityIdentifier),
-		/// CommunityMetadata was updated \[community_identifier\]
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		/// A new community was registered [who, community_identifier]
+		CommunityRegistered(T::AccountId, CommunityIdentifier),
+		/// CommunityMetadata was updated [community_identifier]
 		MetadataUpdated(CommunityIdentifier),
-		/// A community's nominal income was updated \[community_identifier, new_income\]
+		/// A community's nominal income was updated [community_identifier, new_income]
 		NominalIncomeUpdated(CommunityIdentifier, NominalIncomeType),
-		/// A community's demurrage was updated \[community_identifier, new_demurrage\]
+		/// A community's demurrage was updated [community_identifier, new_demurrage]
 		DemurrageUpdated(CommunityIdentifier, Demurrage),
 	}
-);
 
-decl_error! {
-	pub enum Error for Module<T: Config> {
+	#[pallet::error]
+	pub enum Error<T> {
 		/// Location is not a valid geolocation
 		InvalidLocation,
 		/// Invalid amount of bootstrappers supplied. Needs to be \[3, 12\]
@@ -288,12 +310,90 @@ decl_error! {
 		/// Locations can only be added in Registration Phase
 		RegistrationPhaseRequired,
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn cids_by_geohash)]
+	pub(super) type CommunityIdentifiersByGeohash<T: Config> =
+		StorageMap<_, Identity, GeoHash, Vec<CommunityIdentifier>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn locations)]
+	pub(super) type Locations<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		Identity,
+		GeoHash,
+		Vec<Location>,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn bootstrappers)]
+	pub(super) type Bootstrappers<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Vec<T::AccountId>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn community_identifiers)]
+	pub(super) type CommunityIdentifiers<T: Config> =
+		StorageValue<_, Vec<CommunityIdentifier>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn community_metadata)]
+	pub(super) type CommunityMetadata<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityIdentifier, CommunityMetadataType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn demurrage_per_block)]
+	pub type DemurragePerBlock<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Demurrage, ValueQuery>;
+
+	/// Amount of UBI to be paid for every attended ceremony.
+	#[pallet::storage]
+	#[pallet::getter(fn nominal_income)]
+	pub type NominalIncome<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityIdentifier, NominalIncomeType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn community_master)]
+	pub(super) type CommunityMaster<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config>
+// TODO_MAYBE_WHERE_CLAUSE
+	{
+		pub community_master: T::AccountId,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T>
+	// TODO_MAYBE_WHERE_CLAUSE
+	{
+		fn default() -> Self {
+			Self { community_master: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+	// TODO_MAYBE_WHERE_CLAUSE
+	{
+		fn build(&self) {
+			{
+				let data = &self.community_master;
+				let v: &T::AccountId = data;
+				<CommunityMaster<T> as frame_support::storage::StorageValue<T::AccountId>>::put::<
+					&T::AccountId,
+				>(v);
+			}
+		}
+	}
 }
 
-impl<T: Config> Module<T> {
+impl<T: Config> Pallet<T> {
 	fn solar_trip_time(from: &Location, to: &Location) -> u32 {
 		// FIXME: replace by fixpoint implementation within runtime.
-		let d = Module::<T>::haversine_distance(&from, &to); //orthodromic distance bewteen points [m]
+		let d = Pallet::<T>::haversine_distance(&from, &to); //orthodromic distance bewteen points [m]
 
 		// FIXME: this will not panic, but make sure!
 		let dt = (from.lon - to.lon) * 240; //time, the sun-high needs to travel between locations [s]
@@ -484,7 +584,7 @@ impl<T: Config> Module<T> {
 	}
 
 	pub fn get_locations(cid: &CommunityIdentifier) -> Vec<Location> {
-		<Locations>::iter_prefix_values(&cid)
+		<Locations<T>>::iter_prefix_values(&cid)
 			.reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect())
 			.unwrap()
 	}
