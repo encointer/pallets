@@ -674,7 +674,8 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>
-// TODO_MAYBE_WHERE_CLAUSE
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		#[doc = " the default UBI for a ceremony attendee if no community specific value is set."]
 		pub ceremony_reward: BalanceType,
@@ -684,7 +685,8 @@ pub mod pallet {
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T>
-	// TODO_MAYBE_WHERE_CLAUSE
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		fn default() -> Self {
 			Self {
@@ -696,7 +698,10 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+	{
 		fn build(&self) {
 			{
 				<CeremonyReward<T>>::put(&self.ceremony_reward);
