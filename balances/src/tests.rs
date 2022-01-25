@@ -23,10 +23,18 @@ use encointer_primitives::{
 	fixed::{traits::LossyInto, transcendental::exp},
 };
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
-use mock::{new_test_ext, EncointerBalances, Event, System, TestRuntime};
+use mock::{new_test_ext, EncointerBalances, System, TestRuntime};
 use test_utils::{helpers::register_test_community, AccountKeyring};
 
 use crate::mock::DefaultDemurrage;
+
+fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+	let events = frame_system::Pallet::<T>::events();
+	let system_event: <T as frame_system::Config>::Event = generic_event.into();
+	// compare to the last event record
+	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];
+	assert_eq!(event, &system_event);
+}
 
 #[test]
 fn issue_should_work() {
@@ -81,13 +89,10 @@ fn transfer_should_work() {
 		let balance: f64 = EncointerBalances::total_issuance(cid).lossy_into();
 		assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
 
-		let transferred_event = Event::EncointerBalances(RawEvent::Transferred(
-			cid,
-			alice.clone(),
-			bob.clone(),
-			BalanceType::from_num(9.999),
-		));
-		assert!(System::events().iter().any(|record| record.event == transferred_event));
+		let transferred_event =
+			Event::Transferred(cid, alice.clone(), bob.clone(), BalanceType::from_num(9.999));
+
+		assert_last_event::<TestRuntime>(transferred_event.into());
 
 		assert_noop!(
 			EncointerBalances::transfer(Some(alice).into(), bob, cid, BalanceType::from_num(60)),

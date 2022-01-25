@@ -21,10 +21,7 @@ use encointer_primitives::{
 	communities::CommunityIdentifier,
 	fixed::transcendental::exp,
 };
-use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage, dispatch::DispatchResult, ensure,
-	traits::Get, StorageMap,
-};
+use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 use frame_system::{self as frame_system, ensure_signed};
 use log::debug;
 use sp_runtime::traits::StaticLookup;
@@ -41,64 +38,83 @@ const LOG: &str = "encointer";
 /// This needs to be negated in the formula!
 // FIXME: how to define negative hex literal?
 //pub const DemurrageRate: BalanceType = BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+pub use pallet::*;
 
-pub trait Config: frame_system::Config + encointer_communities::Config {
-	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
-	type DefaultDemurrage: Get<Demurrage>;
-}
+#[frame_support::pallet]
+pub mod pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
-decl_storage! {
-	trait Store for Module<T: Config> as EncointerBalances {
-		pub TotalIssuance get(fn total_issuance_entry): map hasher(blake2_128_concat) CommunityIdentifier => BalanceEntry<T::BlockNumber>;
-		pub Balance get(fn balance_entry): double_map hasher(blake2_128_concat) CommunityIdentifier, hasher(blake2_128_concat) T::AccountId => BalanceEntry<T::BlockNumber>;
+	#[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config + encointer_communities::Config {
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		#[pallet::constant]
+		type DefaultDemurrage: Get<Demurrage>;
 	}
-}
 
-decl_event!(
-	pub enum Event<T> where
-		<T as frame_system::Config>::AccountId,
-	{
-		/// Token transfer success (community_id, from, to, amount)
-		Transferred(CommunityIdentifier, AccountId, AccountId, BalanceType),
-	}
-);
-
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		const DefaultDemurrage: Demurrage = T::DefaultDemurrage::get();
-
-		fn deposit_event() = default;
-		type Error = Error<T>;
-
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
 		/// Transfer some balance to another account.
-		#[weight = 10_000]
+		#[pallet::weight(10_000)]
 		pub fn transfer(
-			origin,
+			origin: OriginFor<T>,
 			dest: <T::Lookup as StaticLookup>::Source,
 			community_id: CommunityIdentifier,
 			amount: BalanceType,
-		) -> DispatchResult {
+		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 			let to = T::Lookup::lookup(dest)?;
 			Self::transfer_(community_id, &from, &to, amount)?;
 
-			Self::deposit_event(RawEvent::Transferred(community_id, from, to, amount));
-			Ok(())
+			Self::deposit_event(Event::Transferred(community_id, from, to, amount));
+			Ok(().into())
 		}
 	}
-}
 
-decl_error! {
-	/// Error for token module.
-	pub enum Error for Module<T: Config> {
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		/// Token transfer success `[community_id, from, to, amount]`
+		Transferred(CommunityIdentifier, T::AccountId, T::AccountId, BalanceType),
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
 		/// the balance is too low to perform this action
 		BalanceTooLow,
 		/// the total issuance would overflow
 		TotalIssuanceOverflow,
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn total_issuance_entry)]
+	pub type TotalIssuance<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		BalanceEntry<T::BlockNumber>,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn balance_entry)]
+	pub type Balance<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		Blake2_128Concat,
+		T::AccountId,
+		BalanceEntry<T::BlockNumber>,
+		ValueQuery,
+	>;
 }
 
-impl<T: Config> Module<T> {
+impl<T: Config> Pallet<T> {
 	pub fn balance(community_id: CommunityIdentifier, who: &T::AccountId) -> BalanceType {
 		Self::balance_entry_updated(community_id, who).principal
 	}
@@ -212,6 +228,8 @@ impl<T: Config> Module<T> {
 	/// Returns the community-specific demurrage if it is set. Otherwise returns the
 	/// the demurrage defined in the genesis config
 	fn demurrage(cid: &CommunityIdentifier) -> BalanceType {
+		use frame_support::StorageMap;
+
 		encointer_communities::DemurragePerBlock::try_get(cid)
 			.unwrap_or_else(|_| T::DefaultDemurrage::get())
 	}
