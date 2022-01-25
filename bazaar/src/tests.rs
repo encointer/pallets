@@ -21,7 +21,10 @@ use frame_support::dispatch::DispatchResultWithPostInfo;
 use mock::{new_test_ext, EncointerBazaar, Origin, System, TestRuntime};
 
 use encointer_primitives::communities::CommunityIdentifier;
-use test_utils::{helpers::register_test_community, *};
+use test_utils::{
+	helpers::{assert_last_event, register_test_community},
+	*,
+};
 
 fn create_cid() -> CommunityIdentifier {
 	return register_test_community::<TestRuntime>(None, 0.0, 0.0)
@@ -56,14 +59,6 @@ fn assert_error(actual: DispatchResultWithPostInfo, expected: Error<TestRuntime>
 		.unwrap(),
 		expected.as_str()
 	);
-}
-
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
-	let events = frame_system::Pallet::<T>::events();
-	let system_event: <T as frame_system::Config>::Event = generic_event.into();
-	// compare to the last event record
-	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];
-	assert_eq!(event, &system_event);
 }
 
 #[test]
