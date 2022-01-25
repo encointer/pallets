@@ -167,6 +167,8 @@ pub mod pallet {
 			Self::register(cid, cindex, &sender, proof.is_some())?;
 
 			debug!(target: LOG, "registered participant: {:?}", sender);
+
+			Self::deposit_event(Event::ParticipantRegistered(sender));
 			Ok(().into())
 		}
 
