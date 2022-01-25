@@ -22,7 +22,7 @@ use xcm_executor::traits::Convert;
 
 use test_utils::*;
 
-type SybilGate = crate::Module<TestRuntime>;
+type SybilGate = crate::Pallet<TestRuntime>;
 
 #[test]
 fn faucet_works() {
