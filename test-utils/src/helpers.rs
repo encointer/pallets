@@ -60,7 +60,7 @@ where
 	let prime = &bs[0];
 
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };
-	encointer_communities::Module::<Runtime>::new_community(
+	encointer_communities::Pallet::<Runtime>::new_community(
 		Runtime::Origin::signed(prime.clone()),
 		location.clone(),
 		bs.clone(),

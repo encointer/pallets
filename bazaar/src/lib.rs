@@ -62,7 +62,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			// Check that the supplied community is actually registered
 			ensure!(
-				<encointer_communities::Module<T>>::community_identifiers().contains(&cid),
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
 				Error::<T>::NonexistentCommunity
 			);
 

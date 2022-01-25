@@ -138,7 +138,7 @@ impl<T: Config> Module<T> {
 		let mut attested = Vec::new();
 
 		for proof in request.iter() {
-			if !<encointer_communities::Module<T>>::community_identifiers()
+			if !<encointer_communities::Pallet<T>>::community_identifiers()
 				.contains(&proof.community_identifier)
 			{
 				warn!(
