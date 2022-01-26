@@ -189,7 +189,7 @@ impl<T: Config> Pallet<T> {
 		p: &ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>,
 	) -> DispatchResult {
 		ensure!(
-			<encointer_ceremonies::Module<T>>::participant_reputation(
+			<encointer_ceremonies::Pallet<T>>::participant_reputation(
 				&(p.community_identifier, p.ceremony_index),
 				&p.attendee_public
 			) == Reputation::VerifiedUnlinked,
