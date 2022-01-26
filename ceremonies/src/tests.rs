@@ -307,6 +307,7 @@ fn registering_participant_works() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let cindex = EncointerScheduler::current_ceremony_index();
+		assert!(EncointerBalances::issue(cid, &alice, NominalIncome::from_num(1)).is_ok());
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
 		assert_ok!(register(alice.clone(), cid, None));
@@ -323,6 +324,7 @@ fn registering_participant_works() {
 		let newbies = add_population(2, 2);
 		let newbie_1 = account_id(&newbies[0]);
 		let newbie_2 = account_id(&newbies[01]);
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
 		assert_ok!(register(newbie_1.clone(), cid, None));
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 1);
 
@@ -891,6 +893,9 @@ fn register_with_reputation_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		// fake reputation registry for first ceremony
+		assert!(
+			EncointerBalances::issue(cid, &account_id(&zoran), NominalIncome::from_num(1)).is_ok()
+		);
 		EncointerCeremonies::fake_reputation(
 			(cid, cindex - 1),
 			&account_id(&zoran),
@@ -909,6 +914,7 @@ fn register_with_reputation_works() {
 
 		// see if Zoran can register with his fresh key
 		// for the next ceremony claiming his former attendance
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
 		let proof = prove_attendance(account_id(&zoran_new), cid, cindex - 1, &zoran);
 		assert_ok!(register(account_id(&zoran_new), cid, Some(proof)));
 		assert_eq!(
@@ -1126,6 +1132,30 @@ fn ceremony_index_and_purging_registry_works() {
 }
 
 #[test]
+fn after_inactive_cycle_forbid_non_bootstrapper_registration() {
+	new_test_ext().execute_with(|| {
+		let cid = CommunityIdentifier::default();
+		let mut cindex = 1;
+
+		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		let reputable = account_id(&AccountKeyring::Bob.pair());
+		let newbie = account_id(&AccountKeyring::Eve.pair());
+
+		assert!(EncointerCeremonies::register(cid, cindex, &bootstrapper, false).is_ok());
+		assert!(EncointerCeremonies::register(cid, cindex, &reputable, false).is_err());
+		assert!(EncointerCeremonies::register(cid, cindex, &newbie, false).is_err());
+
+		assert!(EncointerBalances::issue(cid, &reputable, NominalIncome::from_num(1)).is_ok());
+		cindex += 1;
+
+		assert!(EncointerCeremonies::register(cid, cindex, &bootstrapper, false).is_ok());
+		assert!(EncointerCeremonies::register(cid, cindex, &reputable, false).is_ok());
+		assert!(EncointerCeremonies::register(cid, cindex, &newbie, false).is_ok());
+	});
+}
+
+#[test]
 fn grow_population_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 3);
@@ -1134,7 +1164,15 @@ fn grow_population_works() {
 		// generate many keys and register all of them
 		// they will use the same keys per participant throughout to following ceremonies
 		participants.extend(add_population(14, participants.len()));
+		IssuedRewards::<TestRuntime>::insert(
+			(cid, EncointerScheduler::current_ceremony_index() - 1),
+			0,
+			(),
+		);
 		participants.iter().for_each(|p| {
+			assert!(
+				EncointerBalances::issue(cid, &account_id(&p), NominalIncome::from_num(1)).is_ok()
+			);
 			let _ = register(account_id(&p), cid, None).unwrap();
 		});
 

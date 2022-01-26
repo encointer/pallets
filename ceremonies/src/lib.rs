@@ -438,6 +438,8 @@ pub mod pallet {
 		RegistryOverflow,
 		/// CheckedMath operation error
 		CheckedMath,
+		/// Only Bootstrappers are allowed to be registered at this time
+		OnlyBootstrappers,
 	}
 
 	#[pallet::storage]
@@ -739,6 +741,8 @@ impl<T: Config> Pallet<T> {
 			<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 			<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
 			<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
+		} else if !(<encointer_balances::Pallet<T>>::total_issuance(cid) > 0) {
+			return Err(Error::<T>::OnlyBootstrappers)
 		} else if is_reputable {
 			let participant_index = <ReputableCount<T>>::get((cid, cindex))
 				.checked_add(1)

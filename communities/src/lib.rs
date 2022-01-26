@@ -408,6 +408,10 @@ impl<T: Config> Pallet<T> {
 		<NominalIncome<T>>::remove(cid);
 	}
 
+	pub fn insert_bootstrappers(cid: CommunityIdentifier, bootstrappers: Vec<T::AccountId>) {
+		<Bootstrappers<T>>::insert(&cid, &bootstrappers);
+	}
+
 	fn solar_trip_time(from: &Location, to: &Location) -> u32 {
 		// FIXME: replace by fixpoint implementation within runtime.
 		let d = Pallet::<T>::haversine_distance(&from, &to); //orthodromic distance bewteen points [m]
