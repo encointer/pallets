@@ -92,7 +92,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn ceremony_master)]
-	pub(super) type CeremonyMaster<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+	pub(super) type CeremonyMaster<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForNextPhaseTimestamp<T: Config>() -> T::Moment {
@@ -116,7 +116,7 @@ pub mod pallet {
 	{
 		pub current_ceremony_index: CeremonyIndexType,
 		pub current_phase: CeremonyPhaseType,
-		pub ceremony_master: T::AccountId,
+		pub ceremony_master: Option<T::AccountId>,
 		pub phase_durations: Vec<(CeremonyPhaseType, T::Moment)>,
 	}
 
@@ -129,7 +129,7 @@ pub mod pallet {
 			Self {
 				current_ceremony_index: Default::default(),
 				current_phase: CeremonyPhaseType::REGISTERING,
-				ceremony_master: Default::default(),
+				ceremony_master: None,
 				phase_durations: Default::default(),
 			}
 		}
@@ -143,7 +143,14 @@ pub mod pallet {
 		fn build(&self) {
 			<CurrentCeremonyIndex<T>>::put(&self.current_ceremony_index);
 			<CurrentPhase<T>>::put(&self.current_phase);
-			<CeremonyMaster<T>>::put(&self.ceremony_master);
+
+			if let Some(ref ceremony_master) = self.ceremony_master {
+				// First I thought, it might be sensible to put an expect here. However, one can always
+				// edit the genesis config afterwards, so we can't really prevent here anything.
+				//
+				// substrate does the same in the sudo pallet.
+				<CeremonyMaster<T>>::put(&ceremony_master);
+			}
 
 			self.phase_durations.iter().for_each(|(k, v)| {
 				<PhaseDurations<T>>::insert(k, v);
@@ -157,7 +164,10 @@ pub mod pallet {
 		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
 		pub fn next_phase(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(sender == <CeremonyMaster<T>>::get(), Error::<T>::AuthorizationRequired);
+
+			let master = <CeremonyMaster<T>>::get().ok_or(Error::<T>::AuthorizationRequired)?;
+			ensure!(sender == master, Error::<T>::AuthorizationRequired);
+
 			Self::progress_phase()?;
 			Ok(().into())
 		}
@@ -166,7 +176,10 @@ pub mod pallet {
 		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
 		pub fn push_by_one_day(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(sender == <CeremonyMaster<T>>::get(), Error::<T>::AuthorizationRequired);
+
+			let master = <CeremonyMaster<T>>::get().ok_or(Error::<T>::AuthorizationRequired)?;
+			ensure!(sender == master, Error::<T>::AuthorizationRequired);
+
 			let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
 			<NextPhaseTimestamp<T>>::put(tnext);
 			Ok(().into())
