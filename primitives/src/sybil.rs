@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use ep_core::fixed::traits::Fixed;
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H256};
@@ -92,7 +92,7 @@ impl CallMetadata {
 
 /// This allows to generically call the sybil-personhood-oracle, whose response calls the method with the
 /// index defined in the `SybilResponse`
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum SybilResponse {
 	Faucet = 1,
