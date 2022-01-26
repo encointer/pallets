@@ -110,7 +110,10 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, CeremonyPhaseType, T::Moment, ValueQuery>;
 
 	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
+	pub struct GenesisConfig<T: Config>
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+	{
 		pub current_ceremony_index: CeremonyIndexType,
 		pub current_phase: CeremonyPhaseType,
 		pub ceremony_master: T::AccountId,
@@ -118,7 +121,10 @@ pub mod pallet {
 	}
 
 	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
+	impl<T: Config> Default for GenesisConfig<T>
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+	{
 		fn default() -> Self {
 			Self {
 				current_ceremony_index: Default::default(),
@@ -130,37 +136,18 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+	{
 		fn build(&self) {
 			{
-				let data = &self.current_ceremony_index;
-				let v: &CeremonyIndexType = data;
-				<CurrentCeremonyIndex<T> as frame_support::storage::StorageValue<
-					CeremonyIndexType,
-				>>::put::<&CeremonyIndexType>(v);
-			}
-			{
-				let data = &self.current_phase;
-				let v: &CeremonyPhaseType = data;
-				<CurrentPhase<T> as frame_support::storage::StorageValue<CeremonyPhaseType>>::put::<
-					&CeremonyPhaseType,
-				>(v);
-			}
-			{
-				let data = &self.ceremony_master;
-				let v: &T::AccountId = data;
-				<CeremonyMaster<T> as frame_support::storage::StorageValue<T::AccountId>>::put::<
-					&T::AccountId,
-				>(v);
-			}
-			{
-				let data = &self.phase_durations;
-				let data: &frame_support::sp_std::vec::Vec<(CeremonyPhaseType, T::Moment)> = data;
-				data.iter().for_each(|(k, v)| {
-					<PhaseDurations<T> as frame_support::storage::StorageMap<
-						CeremonyPhaseType,
-						T::Moment,
-					>>::insert::<&CeremonyPhaseType, &T::Moment>(k, v);
+				<CurrentCeremonyIndex<T>>::put(&self.current_ceremony_index);
+				<CurrentPhase<T>>::put(&self.current_phase);
+				<CeremonyMaster<T>>::put(&self.ceremony_master);
+
+				self.phase_durations.iter().for_each(|(k, v)| {
+					<PhaseDurations<T>>::insert(k, v);
 				});
 			}
 		}
