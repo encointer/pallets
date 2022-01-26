@@ -705,11 +705,9 @@ pub mod pallet {
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		fn build(&self) {
-			{
-				<CeremonyReward<T>>::put(&self.ceremony_reward);
-				<LocationTolerance<T>>::put(&self.location_tolerance);
-				<TimeTolerance<T>>::put(&self.time_tolerance);
-			}
+			<CeremonyReward<T>>::put(&self.ceremony_reward);
+			<LocationTolerance<T>>::put(&self.location_tolerance);
+			<TimeTolerance<T>>::put(&self.time_tolerance);
 		}
 	}
 }

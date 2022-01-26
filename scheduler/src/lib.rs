@@ -141,15 +141,13 @@ pub mod pallet {
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		fn build(&self) {
-			{
-				<CurrentCeremonyIndex<T>>::put(&self.current_ceremony_index);
-				<CurrentPhase<T>>::put(&self.current_phase);
-				<CeremonyMaster<T>>::put(&self.ceremony_master);
+			<CurrentCeremonyIndex<T>>::put(&self.current_ceremony_index);
+			<CurrentPhase<T>>::put(&self.current_phase);
+			<CeremonyMaster<T>>::put(&self.ceremony_master);
 
-				self.phase_durations.iter().for_each(|(k, v)| {
-					<PhaseDurations<T>>::insert(k, v);
-				});
-			}
+			self.phase_durations.iter().for_each(|(k, v)| {
+				<PhaseDurations<T>>::insert(k, v);
+			});
 		}
 	}
 

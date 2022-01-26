@@ -366,26 +366,16 @@ pub mod pallet {
 	}
 
 	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T>
-	// TODO_MAYBE_WHERE_CLAUSE
-	{
+	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self { community_master: Default::default() }
 		}
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
-	// TODO_MAYBE_WHERE_CLAUSE
-	{
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			{
-				let data = &self.community_master;
-				let v: &T::AccountId = data;
-				<CommunityMaster<T> as frame_support::storage::StorageValue<T::AccountId>>::put::<
-					&T::AccountId,
-				>(v);
-			}
+			<CommunityMaster<T>>::put(&self.community_master);
 		}
 	}
 }
