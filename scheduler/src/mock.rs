@@ -17,10 +17,9 @@
 //! Mock runtime for the encointer_scheduler module
 
 pub use crate as dut;
-
-use test_utils::*;
-
 use encointer_primitives::scheduler::CeremonyPhaseType;
+use frame_support::pallet_prelude::GenesisBuild;
+use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
