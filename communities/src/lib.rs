@@ -138,7 +138,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
@@ -176,7 +176,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
