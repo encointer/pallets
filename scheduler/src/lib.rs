@@ -61,13 +61,13 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event {
-		/// Phase changed to. `[new phase]`
+		/// Phase changed to `[new phase]`
 		PhaseChangedTo(CeremonyPhaseType),
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// sender doesn't have the necessary authority to perform action
+		/// Sender doesn't have the necessary authority to perform action
 		AuthorizationRequired,
 	}
 
