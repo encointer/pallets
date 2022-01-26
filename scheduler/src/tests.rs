@@ -18,19 +18,17 @@ use crate::{
 	mock::{master, new_test_ext, Origin, System, TestRuntime, Timestamp},
 	CeremonyPhaseType,
 };
-
 use frame_support::{
 	assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
 use std::ops::Rem;
-
 use test_utils::*;
 
 const TEN_MIN: u64 = 600_000;
 const ONE_DAY: u64 = 86_400_000;
 
-type EncointerScheduler = crate::Module<TestRuntime>;
+type EncointerScheduler = crate::Pallet<TestRuntime>;
 
 /// Run until a particular block.
 pub fn run_to_block(n: u64) {

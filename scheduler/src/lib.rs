@@ -25,10 +25,8 @@
 
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage,
 	dispatch::DispatchResult,
 	ensure,
-	storage::StorageValue,
 	traits::{Get, OnTimestampSet},
 	weights::{DispatchClass, Pays},
 };
@@ -37,83 +35,151 @@ use log::info;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
 use sp_std::{ops::Rem, prelude::*};
 
-pub trait Config: frame_system::Config + pallet_timestamp::Config {
-	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
-	type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
-	type MomentsPerDay: Get<Self::Moment>;
-}
-
 // Logger target
 const LOG: &str = "encointer";
 
-/// An event handler for when the ceremony phase changes.
-pub trait OnCeremonyPhaseChange {
-	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType);
-}
+pub use pallet::*;
 
-impl OnCeremonyPhaseChange for () {
-	fn on_ceremony_phase_change(_: CeremonyPhaseType) {}
-}
+#[frame_support::pallet]
+pub mod pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
-// This module's storage items.
-decl_storage! {
-	trait Store for Module<T: Config> as EncointerScheduler {
-		// caution: index starts with 1, not 0! (because null and 0 is the same for state storage)
-		CurrentCeremonyIndex get(fn current_ceremony_index) config(): CeremonyIndexType;
-		LastCeremonyBlock get(fn last_ceremony_block): T::BlockNumber;
-		CurrentPhase get(fn current_phase) config(): CeremonyPhaseType = CeremonyPhaseType::REGISTERING;
-		CeremonyMaster get(fn ceremony_master) config(): T::AccountId;
-		NextPhaseTimestamp get(fn next_phase_timestamp): T::Moment = T::Moment::zero();
-		PhaseDurations get(fn phase_durations) config(): map hasher(blake2_128_concat) CeremonyPhaseType => T::Moment;
+	#[pallet::pallet]
+	#[pallet::generate_store(pub (super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
+		#[pallet::constant]
+		type MomentsPerDay: Get<Self::Moment>;
 	}
-}
 
-decl_module! {
-	pub struct Module<T: Config> for enum Call where origin: T::Origin {
-		const MomentsPerDay: T::Moment = T::MomentsPerDay::get();
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event {
+		/// Phase changed to `[new phase]`
+		PhaseChangedTo(CeremonyPhaseType),
+	}
 
-		fn deposit_event() = default;
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Sender doesn't have the necessary authority to perform action
+		AuthorizationRequired,
+	}
 
+	#[pallet::storage]
+	#[pallet::getter(fn current_ceremony_index)]
+	pub(super) type CurrentCeremonyIndex<T: Config> =
+		StorageValue<_, CeremonyIndexType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn last_ceremony_block)]
+	pub(super) type LastCeremonyBlock<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+
+	#[pallet::type_value]
+	pub(super) fn DefaultForCurrentPhase() -> CeremonyPhaseType {
+		CeremonyPhaseType::REGISTERING
+	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn current_phase)]
+	pub(super) type CurrentPhase<T: Config> =
+		StorageValue<_, CeremonyPhaseType, ValueQuery, DefaultForCurrentPhase>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn ceremony_master)]
+	pub(super) type CeremonyMaster<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+
+	#[pallet::type_value]
+	pub(super) fn DefaultForNextPhaseTimestamp<T: Config>() -> T::Moment {
+		T::Moment::zero()
+	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn next_phase_timestamp)]
+	pub(super) type NextPhaseTimestamp<T: Config> =
+		StorageValue<_, T::Moment, ValueQuery, DefaultForNextPhaseTimestamp<T>>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn phase_durations)]
+	pub(super) type PhaseDurations<T: Config> =
+		StorageMap<_, Blake2_128Concat, CeremonyPhaseType, T::Moment, ValueQuery>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config>
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+	{
+		pub current_ceremony_index: CeremonyIndexType,
+		pub current_phase: CeremonyPhaseType,
+		pub ceremony_master: T::AccountId,
+		pub phase_durations: Vec<(CeremonyPhaseType, T::Moment)>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T>
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+	{
+		fn default() -> Self {
+			Self {
+				current_ceremony_index: Default::default(),
+				current_phase: CeremonyPhaseType::REGISTERING,
+				ceremony_master: Default::default(),
+				phase_durations: Default::default(),
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+	where
+		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
+	{
+		fn build(&self) {
+			<CurrentCeremonyIndex<T>>::put(&self.current_ceremony_index);
+			<CurrentPhase<T>>::put(&self.current_phase);
+			<CeremonyMaster<T>>::put(&self.ceremony_master);
+
+			self.phase_durations.iter().for_each(|(k, v)| {
+				<PhaseDurations<T>>::insert(k, v);
+			});
+		}
+	}
+
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
 		/// Manually transition to next phase without affecting the ceremony rhythm
-		#[weight = (1000, DispatchClass::Operational, Pays::No)]
-		pub fn next_phase(origin) -> DispatchResult {
+		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		pub fn next_phase(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == <CeremonyMaster<T>>::get(), Error::<T>::AuthorizationRequired);
 			Self::progress_phase()?;
-			Ok(())
+			Ok(().into())
 		}
 
 		/// Push next phase change by one entire day
-		#[weight = (1000, DispatchClass::Operational, Pays::No)]
-		pub fn push_by_one_day(origin) -> DispatchResult {
+		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		pub fn push_by_one_day(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == <CeremonyMaster<T>>::get(), Error::<T>::AuthorizationRequired);
 			let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
 			<NextPhaseTimestamp<T>>::put(tnext);
-			Ok(())
+			Ok(().into())
 		}
 	}
 }
 
-decl_event!(
-	pub enum Event {
-		PhaseChangedTo(CeremonyPhaseType),
-	}
-);
-
-decl_error! {
-	pub enum Error for Module<T: Config> {
-		/// sender doesn't have the necessary authority to perform action
-		AuthorizationRequired,
-	}
-}
-
-impl<T: Config> Module<T> {
+impl<T: Config> Pallet<T> {
 	// implicitly assuming Moment to be unix epoch!
 
 	fn progress_phase() -> DispatchResult {
-		let current_phase = <CurrentPhase>::get();
-		let current_ceremony_index = <CurrentCeremonyIndex>::get();
+		let current_phase = <CurrentPhase<T>>::get();
+		let current_ceremony_index = <CurrentCeremonyIndex<T>>::get();
 
 		let last_phase_timestamp = Self::next_phase_timestamp();
 
@@ -122,7 +188,7 @@ impl<T: Config> Module<T> {
 			CeremonyPhaseType::ASSIGNING => CeremonyPhaseType::ATTESTING,
 			CeremonyPhaseType::ATTESTING => {
 				let next_ceremony_index = current_ceremony_index.saturating_add(1);
-				<CurrentCeremonyIndex>::put(next_ceremony_index);
+				<CurrentCeremonyIndex<T>>::put(next_ceremony_index);
 				CeremonyPhaseType::REGISTERING
 			},
 		};
@@ -132,7 +198,7 @@ impl<T: Config> Module<T> {
 			.expect("overflowing timestamp");
 		Self::resync_and_set_next_phase_timestamp(next)?;
 
-		<CurrentPhase>::put(next_phase);
+		<CurrentPhase<T>>::put(next_phase);
 		T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
 		Self::deposit_event(Event::PhaseChangedTo(next_phase));
 		info!(target: LOG, "phase changed to: {:?}", next_phase);
@@ -180,10 +246,19 @@ impl<T: Config> Module<T> {
 	}
 }
 
-impl<T: Config> OnTimestampSet<T::Moment> for Module<T> {
+impl<T: Config> OnTimestampSet<T::Moment> for Pallet<T> {
 	fn on_timestamp_set(moment: T::Moment) {
 		Self::on_timestamp_set(moment)
 	}
+}
+
+/// An event handler for when the ceremony phase changes.
+pub trait OnCeremonyPhaseChange {
+	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType);
+}
+
+impl OnCeremonyPhaseChange for () {
+	fn on_ceremony_phase_change(_: CeremonyPhaseType) {}
 }
 
 #[cfg(test)]

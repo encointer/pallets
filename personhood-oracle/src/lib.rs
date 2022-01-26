@@ -158,7 +158,7 @@ impl<T: Config> Pallet<T> {
 	pub fn verify(
 		request: Vec<ProofOfAttendance<<T as Ceremonies>::Signature, T::AccountId>>,
 	) -> Result<PersonhoodUniquenessRating, DispatchError> {
-		let mut c_index_min = <encointer_scheduler::Module<T>>::current_ceremony_index();
+		let mut c_index_min = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		let mut n_attested = 0;
 		let mut attested = Vec::new();
 
@@ -178,7 +178,7 @@ impl<T: Config> Pallet<T> {
 				attested.push(proof.hash())
 			}
 		}
-		let last_n_ceremonies = <encointer_scheduler::Module<T>>::current_ceremony_index()
+		let last_n_ceremonies = <encointer_scheduler::Pallet<T>>::current_ceremony_index()
 			.checked_sub(c_index_min)
 			.expect("Proofs can't be valid with bogus ceremony index; qed");
 

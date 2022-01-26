@@ -94,10 +94,10 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				sender == <encointer_scheduler::Module<T>>::ceremony_master(),
+				sender == <encointer_scheduler::Pallet<T>>::ceremony_master(),
 				Error::<T>::AuthorizationRequired
 			);
-			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			<ParticipantReputation<T>>::insert(
 				&(cid, cindex - 1),
 				reputable,
@@ -115,7 +115,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegisteringPhaseRequired
 			);
 
@@ -124,7 +124,7 @@ pub mod pallet {
 				Error::<T>::InexistentCommunity
 			);
 
-			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 
 			if Self::is_registered(cid, cindex, &sender) {
 				return Err(<Error<T>>::ParticipantAlreadyRegistered.into())
@@ -179,10 +179,10 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
 				Error::<T>::AttestationPhaseRequired
 			);
-			let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			ensure!(!claims.is_empty(), Error::<T>::NoValidClaims);
 			let cid = claims[0].community_identifier; //safe; claims not empty checked above
 			ensure!(
@@ -349,8 +349,8 @@ pub mod pallet {
 				Error::<T>::NoMoreNewbieTickets
 			);
 
-			let mut cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
-			if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
 				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
 			}
 			ensure!(
@@ -705,11 +705,9 @@ pub mod pallet {
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		fn build(&self) {
-			{
-				<CeremonyReward<T>>::put(&self.ceremony_reward);
-				<LocationTolerance<T>>::put(&self.location_tolerance);
-				<TimeTolerance<T>>::put(&self.time_tolerance);
-			}
+			<CeremonyReward<T>>::put(&self.ceremony_reward);
+			<LocationTolerance<T>>::put(&self.location_tolerance);
+			<TimeTolerance<T>>::put(&self.time_tolerance);
 		}
 	}
 }
@@ -899,7 +897,7 @@ impl<T: Config> Pallet<T> {
 
 	fn generate_all_meetup_assignment_params() {
 		let cids = <encointer_communities::Pallet<T>>::community_identifiers();
-		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 
 		// we don't need to pass a subject here, as this is only called once in a block.
 		let mut random_source =
@@ -1037,11 +1035,11 @@ impl<T: Config> Pallet<T> {
 		participant: &T::AccountId,
 		cid: &CommunityIdentifier,
 	) -> DispatchResultWithPostInfo {
-		if <encointer_scheduler::Module<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
 			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
 		}
 
-		let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
+		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
 		let reward = Self::nominal_income(cid);
 		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)
 			.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
@@ -1157,13 +1155,13 @@ impl<T: Config> Pallet<T> {
 
 	// this function only works during ATTESTING, so we're keeping it for private use
 	fn get_meetup_time(location: Location) -> Option<T::Moment> {
-		if !(<encointer_scheduler::Module<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
+		if !(<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
 			return None
 		}
 
 		let duration =
-			<encointer_scheduler::Module<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
-		let next = <encointer_scheduler::Module<T>>::next_phase_timestamp();
+			<encointer_scheduler::Pallet<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
+		let next = <encointer_scheduler::Pallet<T>>::next_phase_timestamp();
 		let start = next - duration;
 
 		Some(meetup_time(location, start, T::MomentsPerDay::get()))
@@ -1191,7 +1189,7 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			},
 			CeremonyPhaseType::ATTESTING => {},
 			CeremonyPhaseType::REGISTERING => {
-				let cindex = <encointer_scheduler::Module<T>>::current_ceremony_index();
+				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
 				if cindex > T::ReputationLifetime::get() {
 					Self::purge_registry(cindex - T::ReputationLifetime::get() - 1);
