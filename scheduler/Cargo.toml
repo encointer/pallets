@@ -17,7 +17,7 @@ frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/su
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
-sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-runtime = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
 [dev-dependencies]
 sp-io = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
