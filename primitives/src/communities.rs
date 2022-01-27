@@ -19,7 +19,7 @@ use codec::{Decode, Encode};
 use concat_arrays::concat_arrays;
 use crc::{Crc, CRC_32_CKSUM};
 use ep_core::fixed::types::I64F64;
-use geohash::GeoHash;
+use geohash::GeoHash as GeohashGeneric;
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
@@ -40,6 +40,9 @@ use crate::{
 use crate::error::CommunityIdentifierError;
 pub use ep_core::fixed::traits::{LossyFrom, LossyInto};
 
+use consts::GEO_HASH_BUCKET_RESOLUTION;
+
+pub type GeoHash = GeohashGeneric<GEO_HASH_BUCKET_RESOLUTION>;
 pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I64F64;
@@ -99,7 +102,7 @@ impl CommunityIdentifier {
 		location: Location,
 		bootstrappers: Vec<AccountId>,
 	) -> Result<CommunityIdentifier, CommunityIdentifierError> {
-		let geohash = GeoHash::try_from_params(location.lat, location.lon, 5);
+		let geohash = GeoHash::try_from_params(location.lat, location.lon);
 		match geohash {
 			Ok(v) => {
 				let mut geohash_cropped = [0u8; 5];
@@ -307,7 +310,7 @@ pub mod consts {
 	pub const METERS_PER_DEGREE_AT_EQUATOR: I32F0 = I32F0::from_bits(0x0001B2D7);
 
 	/// the number of base32 digits to use (as opposed to number of bits or bytes of information)
-	pub const BUCKET_RESOLUTION: usize = 5usize;
+	pub const GEO_HASH_BUCKET_RESOLUTION: usize = 5;
 
 	/// Dirty bit key for offfchain storage
 	pub const CACHE_DIRTY_KEY: &[u8] = b"dirty";
