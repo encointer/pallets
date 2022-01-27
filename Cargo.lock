@@ -1508,7 +1508,6 @@ dependencies = [
 [[package]]
 name = "geohash"
 version = "0.11.1-alpha.0"
-source = "git+https://github.com/encointer/geohash?branch=master#7cf5425b8bffcc8c39e77f4e53a5663e295ca581"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -5610,7 +5609,6 @@ dependencies = [
 [[package]]
 name = "substrate-fixed"
 version = "0.5.7"
-source = "git+https://github.com/encointer/substrate-fixed?tag=v0.5.7#2f353acee3c7cf7a386863a89fc6cb805048561f"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -6029,7 +6027,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.4",
  "static_assertions",
 ]
@@ -6037,8 +6035,8 @@ dependencies = [
 [[package]]
 name = "typenum"
 version = "1.14.0"
-source = "git+https://github.com/encointer/typenum#ec35bb80fcfb495de2e1f6966381c3f85e8a6509"
 dependencies = [
+ "parity-scale-codec",
  "scale-info",
 ]
 

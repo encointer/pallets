@@ -28,7 +28,7 @@ use test_utils::{
 type T = Degree;
 
 fn string_to_geohash(s: &str) -> GeoHash {
-	GeoHash(std::string::String::from(s).as_bytes().to_vec())
+	GeoHash::try_from(s).unwrap()
 }
 
 /// register a simple test community with a specified location and defined bootstrappers
@@ -145,8 +145,7 @@ fn new_community_works() {
 		));
 		let cid = CommunityIdentifier::new(location.clone(), bs.clone()).unwrap();
 		let cids = EncointerCommunities::community_identifiers();
-		let geo_hash =
-			GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 		assert!(cids.contains(&cid));
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
@@ -171,11 +170,9 @@ fn two_communities_in_same_bucket_works() {
 		};
 
 		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
-		let geo_hash =
-			GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 		let location2 = Location { lat: T::from_num(0), lon: T::from_num(-0.015) };
-		let geo_hash2 =
-			GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon).unwrap();
 		assert_eq!(geo_hash, geo_hash2);
 
 		assert_ok!(EncointerCommunities::new_community(
@@ -257,15 +254,13 @@ fn add_location_works() {
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
 
 		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
-		let geo_hash =
-			GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// add location in same bucket
 		let location2 = Location { lat: T::from_num(0), lon: T::from_num(-0.015) };
-		let geo_hash2 =
-			GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon).unwrap();
 		assert_eq!(geo_hash, geo_hash2);
 
 		EncointerCommunities::add_location(
@@ -283,8 +278,7 @@ fn add_location_works() {
 
 		// add location in different bucket
 		let location3 = Location { lat: T::from_num(0), lon: T::from_num(0.015) };
-		let geo_hash3 =
-			GeoHash::try_from_params(location3.lat, location3.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon).unwrap();
 
 		EncointerCommunities::add_location(
 			Origin::signed(some_bootstrapper.clone()),
@@ -357,15 +351,13 @@ fn remove_location_works() {
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
 
 		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
-		let geo_hash =
-			GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// add location in same bucket
 		let location2 = Location { lat: T::from_num(0), lon: T::from_num(-0.015) };
-		let geo_hash2 =
-			GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon).unwrap();
 		assert_eq!(geo_hash, geo_hash2);
 
 		EncointerCommunities::add_location(

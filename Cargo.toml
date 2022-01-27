@@ -19,8 +19,11 @@ members = [
     'test-utils'
 ]
 
-#[patch."https://github.com/encointer/substrate-fixed"]
-#substrate-fixed = { path = "../substrate-fixed"}
+[patch."https://github.com/encointer/substrate-fixed"]
+substrate-fixed = { path = "../substrate-fixed"}
 
-#[patch."https://github.com/encointer/geohash"]
-#geohash = { path = "../geohash"}
+[patch."https://github.com/encointer/typenum"]
+typenum = { path = "../typenum"}
+
+[patch."https://github.com/encointer/geohash"]
+geohash = { path = "../geohash"}
