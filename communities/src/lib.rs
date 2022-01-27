@@ -333,26 +333,30 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn community_master)]
-	pub(super) type CommunityMaster<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+	pub(super) type CommunityMaster<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
 	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config>
-// TODO_MAYBE_WHERE_CLAUSE
-	{
-		pub community_master: T::AccountId,
+	pub struct GenesisConfig<T: Config> {
+		pub community_master: Option<T::AccountId>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { community_master: Default::default() }
+			Self { community_master: None }
 		}
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			<CommunityMaster<T>>::put(&self.community_master);
+			if let Some(ref community_master) = self.community_master {
+				// First I thought, it might be sensible to put an expect here. However, one can always
+				// edit the genesis config afterwards, so we can't really prevent here anything.
+				//
+				// substrate does the same in the sudo pallet.
+				<CommunityMaster<T>>::put(community_master);
+			}
 		}
 	}
 }
