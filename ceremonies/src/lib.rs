@@ -95,10 +95,11 @@ pub mod pallet {
 			reputable: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			ensure!(
-				sender == <encointer_scheduler::Pallet<T>>::ceremony_master(),
-				Error::<T>::AuthorizationRequired
-			);
+
+			let master = <encointer_scheduler::Pallet<T>>::ceremony_master()
+				.ok_or(Error::<T>::AuthorizationRequired)?;
+			ensure!(sender == master, Error::<T>::AuthorizationRequired);
+
 			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			<ParticipantReputation<T>>::insert(
 				&(cid, cindex - 1),
@@ -459,7 +460,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		ParticipantIndexType,
 		T::AccountId,
-		ValueQuery,
+		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -488,7 +489,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		ParticipantIndexType,
 		T::AccountId,
-		ValueQuery,
+		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -517,7 +518,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		ParticipantIndexType,
 		T::AccountId,
-		ValueQuery,
+		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -546,7 +547,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		ParticipantIndexType,
 		T::AccountId,
-		ValueQuery,
+		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -619,7 +620,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		AttestationIndexType,
 		Vec<T::AccountId>,
-		ValueQuery,
+		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -1037,12 +1038,21 @@ impl<T: Config> Pallet<T> {
 		);
 		for p in bootstrappers_reputables {
 			if p < assigned.bootstrappers {
-				result.push(Self::bootstrapper_registry(community_ceremony, &(p + 1))); //safe; small number per meetup
+				if let Some(bs) = Self::bootstrapper_registry(community_ceremony, &(p + 1)) {
+					//safe; small number per meetup
+					result.push(bs);
+				} else {
+					error!(target: LOG, "Bootstrapper not found!!")
+				}
 			} else if p < assigned.bootstrappers + assigned.reputables {
-				result.push(Self::reputable_registry(
-					community_ceremony,
-					&(p - assigned.bootstrappers + 1), //safe; small number per meetup
-				));
+				if let Some(r) =
+					Self::reputable_registry(community_ceremony, &(p - assigned.bootstrappers + 1))
+				{
+					//safe; small number per meetup
+					result.push(r);
+				} else {
+					error!(target: LOG, "Reputable not found!!")
+				}
 			}
 		}
 
@@ -1050,7 +1060,12 @@ impl<T: Config> Pallet<T> {
 			assignment_fn_inverse(meetup_index, params.endorsees, meetup_count, assigned.endorsees);
 		for p in endorsees {
 			if p < assigned.endorsees {
-				result.push(Self::endorsee_registry(community_ceremony, &(p + 1))); //safe; <= number of meetup participants
+				if let Some(e) = Self::endorsee_registry(community_ceremony, &(p + 1)) {
+					//safe; small number per meetup
+					result.push(e);
+				} else {
+					error!(target: LOG, "Endorsee not found!!")
+				}
 			}
 		}
 
@@ -1058,7 +1073,12 @@ impl<T: Config> Pallet<T> {
 			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies);
 		for p in newbies {
 			if p < assigned.newbies {
-				result.push(Self::newbie_registry(community_ceremony, &(p + 1))); //safe; <= number of meetup participants
+				if let Some(n) = Self::newbie_registry(community_ceremony, &(p + 1)) {
+					//safe; small number per meetup
+					result.push(n);
+				} else {
+					error!(target: LOG, "Newbie not found!!")
+				}
 			}
 		}
 
@@ -1110,17 +1130,19 @@ impl<T: Config> Pallet<T> {
 				);
 				continue
 			}
-			let attestees = Self::attestation_registry(
+
+			if let Some(attestees) = Self::attestation_registry(
 				(cid, cindex),
 				&Self::attestation_index((*cid, cindex), &participant),
-			);
-			if attestees.len() < (n_honest_participants - 1) as usize {
-				debug!(
-					target: LOG,
-					"skipped participant because didn't testify for honest peers: {:?}",
-					participant
-				);
-				continue
+			) {
+				if attestees.len() < (n_honest_participants - 1) as usize {
+					debug!(
+						target: LOG,
+						"skipped participant because didn't testify for honest peers: {:?}",
+						participant
+					);
+					continue
+				}
 			}
 
 			let mut was_attested_count = 0u32;
@@ -1128,12 +1150,13 @@ impl<T: Config> Pallet<T> {
 				if other_participant == participant {
 					continue
 				}
-				let attestees_from_other = Self::attestation_registry(
+				if let Some(attestees_from_other) = Self::attestation_registry(
 					(cid, cindex),
 					&Self::attestation_index((cid, cindex), &other_participant),
-				);
-				if attestees_from_other.contains(&participant) {
-					was_attested_count += 1; // <= number of meetup participants
+				) {
+					if attestees_from_other.contains(&participant) {
+						was_attested_count += 1; // <= number of meetup participants
+					}
 				}
 			}
 
