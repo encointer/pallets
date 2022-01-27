@@ -1042,7 +1042,10 @@ impl<T: Config> Pallet<T> {
 				//safe; small number per meetup
 				match Self::bootstrapper_registry(community_ceremony, &(p + 1)) {
 					Some(bs) => result.push(bs),
-					None => error!(target: LOG, "Bootstrapper not found!!"),
+					None => error!(
+						target: LOG,
+						"[Ceremonies::get_meetup_participants] Bootstrapper not found!!"
+					),
 				}
 			} else if p < assigned.bootstrappers + assigned.reputables {
 				//safe; small number per meetup
@@ -1051,7 +1054,10 @@ impl<T: Config> Pallet<T> {
 					&(p - assigned.bootstrappers + 1),
 				) {
 					Some(r) => result.push(r),
-					None => error!(target: LOG, "Reputable not found!!"),
+					None => error!(
+						target: LOG,
+						"[Ceremonies::get_meetup_participants] Reputable not found!!"
+					),
 				};
 			}
 		}
@@ -1063,7 +1069,10 @@ impl<T: Config> Pallet<T> {
 				//safe; small number per meetup
 				match Self::endorsee_registry(community_ceremony, &(p + 1)) {
 					Some(e) => result.push(e),
-					None => error!(target: LOG, "Endorsee not found!!"),
+					None => error!(
+						target: LOG,
+						"[Ceremonies::get_meetup_participants] Endorsee not found!!"
+					),
 				};
 			}
 		}
@@ -1075,7 +1084,10 @@ impl<T: Config> Pallet<T> {
 				//safe; small number per meetup
 				match Self::newbie_registry(community_ceremony, &(p + 1)) {
 					Some(n) => result.push(n),
-					None => error!(target: LOG, "Newbie not found!!"),
+					None => error!(
+						target: LOG,
+						"[Ceremonies::get_meetup_participants] Newbie not found!!"
+					),
 				};
 			}
 		}
