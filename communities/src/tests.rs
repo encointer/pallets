@@ -299,20 +299,17 @@ fn remove_community_works() {
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
 
 		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
-		let geo_hash =
-			GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// add location in same bucket
 		let location2 = Location { lat: T::from_num(0), lon: T::from_num(-0.015) };
-		let geo_hash2 =
-			GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon).unwrap();
 		assert_eq!(geo_hash, geo_hash2);
 
 		let location3 = Location { lat: T::from_num(10), lon: T::from_num(-0.015) };
-		let geo_hash3 =
-			GeoHash::try_from_params(location3.lat, location3.lon, BUCKET_RESOLUTION).unwrap();
+		let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon).unwrap();
 
 		EncointerCommunities::add_location(
 			Origin::signed(some_bootstrapper.clone()),
