@@ -1132,19 +1132,21 @@ impl<T: Config> Pallet<T> {
 				continue
 			}
 
-			if let Some(attestees) = Self::attestation_registry(
+			match Self::attestation_registry(
 				(cid, cindex),
 				&Self::attestation_index((*cid, cindex), &participant),
 			) {
-				if attestees.len() < (n_honest_participants - 1) as usize {
-					debug!(
-						target: LOG,
-						"skipped participant because didn't testify for honest peers: {:?}",
-						participant
-					);
-					continue
-				}
-			}
+				Some(attestees) =>
+					if attestees.len() < (n_honest_participants - 1) as usize {
+						debug!(
+							target: LOG,
+							"skipped participant because didn't testify for honest peers: {:?}",
+							participant
+						);
+						continue
+					},
+				None => continue,
+			};
 
 			let mut was_attested_count = 0u32;
 			for other_participant in &meetup_participants {
