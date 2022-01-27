@@ -806,8 +806,8 @@ impl<T: Config> Pallet<T> {
 
 	fn purge_registry(cindex: CeremonyIndexType) {
 		let cids = <encointer_communities::Pallet<T>>::community_identifiers();
-		for cid in cids.iter() {
-			Self::purge_community_ceremony((*cid, cindex));
+		for cid in cids.into_iter() {
+			Self::purge_community_ceremony((cid, cindex));
 		}
 		debug!(target: LOG, "purged registry for ceremony {}", cindex);
 	}
