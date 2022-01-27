@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use ep_core::fixed::types::I64F64;
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
@@ -26,7 +26,7 @@ use serde::{Deserialize, Serialize};
 pub type BalanceType = I64F64;
 pub type Demurrage = I64F64;
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Copy, TypeInfo)]
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Copy, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BalanceEntry<BlockNumber> {
 	/// The balance of the account after last manual adjustment

@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use bs58;
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use concat_arrays::concat_arrays;
 use crc::{Crc, CRC_32_CKSUM};
 use ep_core::fixed::types::I64F64;
@@ -66,7 +66,9 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 	Ok(())
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, TypeInfo)]
+#[derive(
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct CommunityIdentifier {
 	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_array"))]
@@ -156,7 +158,18 @@ fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 
 // Location in lat/lon. Fixpoint value in degree with 8 decimal bits and 24 fractional bits
 #[derive(
-	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, PartialOrd, Ord, TypeInfo,
+	Encode,
+	Decode,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Location {
@@ -262,7 +275,7 @@ impl Default for CommunityMetadata {
 	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CommunityMetadataError {
 	/// Invalid ascii character at \[index\]
