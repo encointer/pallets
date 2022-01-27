@@ -1039,21 +1039,20 @@ impl<T: Config> Pallet<T> {
 		);
 		for p in bootstrappers_reputables {
 			if p < assigned.bootstrappers {
-				if let Some(bs) = Self::bootstrapper_registry(community_ceremony, &(p + 1)) {
-					//safe; small number per meetup
-					result.push(bs);
-				} else {
-					error!(target: LOG, "Bootstrapper not found!!")
+				//safe; small number per meetup
+				match Self::bootstrapper_registry(community_ceremony, &(p + 1)) {
+					Some(bs) => result.push(bs),
+					None => error!(target: LOG, "Bootstrapper not found!!"),
 				}
 			} else if p < assigned.bootstrappers + assigned.reputables {
-				if let Some(r) =
-					Self::reputable_registry(community_ceremony, &(p - assigned.bootstrappers + 1))
-				{
-					//safe; small number per meetup
-					result.push(r);
-				} else {
-					error!(target: LOG, "Reputable not found!!")
-				}
+				//safe; small number per meetup
+				match Self::reputable_registry(
+					community_ceremony,
+					&(p - assigned.bootstrappers + 1),
+				) {
+					Some(r) => result.push(r),
+					None => error!(target: LOG, "Reputable not found!!"),
+				};
 			}
 		}
 
@@ -1061,12 +1060,11 @@ impl<T: Config> Pallet<T> {
 			assignment_fn_inverse(meetup_index, params.endorsees, meetup_count, assigned.endorsees);
 		for p in endorsees {
 			if p < assigned.endorsees {
-				if let Some(e) = Self::endorsee_registry(community_ceremony, &(p + 1)) {
-					//safe; small number per meetup
-					result.push(e);
-				} else {
-					error!(target: LOG, "Endorsee not found!!")
-				}
+				//safe; small number per meetup
+				match Self::endorsee_registry(community_ceremony, &(p + 1)) {
+					Some(e) => result.push(e),
+					None => error!(target: LOG, "Endorsee not found!!"),
+				};
 			}
 		}
 
@@ -1074,12 +1072,11 @@ impl<T: Config> Pallet<T> {
 			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies);
 		for p in newbies {
 			if p < assigned.newbies {
-				if let Some(n) = Self::newbie_registry(community_ceremony, &(p + 1)) {
-					//safe; small number per meetup
-					result.push(n);
-				} else {
-					error!(target: LOG, "Newbie not found!!")
-				}
+				//safe; small number per meetup
+				match Self::newbie_registry(community_ceremony, &(p + 1)) {
+					Some(n) => result.push(n),
+					None => error!(target: LOG, "Newbie not found!!"),
+				};
 			}
 		}
 
