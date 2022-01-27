@@ -1507,7 +1507,8 @@ dependencies = [
 
 [[package]]
 name = "geohash"
-version = "0.11.1-alpha.0"
+version = "0.12.0"
+source = "git+https://github.com/encointer/geohash?tag=v0.12.0#eed7dcb86ff73ee2689f5f4e091feb86078c11dd"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -3312,7 +3313,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "geohash",
  "log",
  "pallet-encointer-scheduler",
  "parity-scale-codec",
