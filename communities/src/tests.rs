@@ -298,6 +298,59 @@ fn add_location_works() {
 }
 
 #[test]
+fn remove_community_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		let cid2 = register_test_community(None, 1.0, 1.0);
+		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
+
+		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
+		let geo_hash =
+			GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION).unwrap();
+		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
+		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
+
+		// add location in same bucket
+		let location2 = Location { lat: T::from_num(0), lon: T::from_num(-0.015) };
+		let geo_hash2 =
+			GeoHash::try_from_params(location2.lat, location2.lon, BUCKET_RESOLUTION).unwrap();
+		assert_eq!(geo_hash, geo_hash2);
+
+		let location3 = Location { lat: T::from_num(10), lon: T::from_num(-0.015) };
+		let geo_hash3 =
+			GeoHash::try_from_params(location3.lat, location3.lon, BUCKET_RESOLUTION).unwrap();
+
+		EncointerCommunities::add_location(
+			Origin::signed(some_bootstrapper.clone()),
+			cid,
+			location2,
+		)
+		.ok();
+
+		EncointerCommunities::add_location(
+			Origin::signed(some_bootstrapper.clone()),
+			cid2,
+			location3,
+		)
+		.ok();
+
+		let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
+		let mut expected_locations = vec![location, location2];
+		locations.sort();
+		expected_locations.sort();
+		assert_eq!(locations, expected_locations);
+		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
+
+		// remove first location
+		EncointerCommunities::remove_community(cid);
+
+		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
+		assert_eq!(EncointerCommunities::locations(&cid2, &geo_hash3), vec![location3]);
+		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash3), vec![cid2]);
+	});
+}
+
+#[test]
 fn remove_location_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
