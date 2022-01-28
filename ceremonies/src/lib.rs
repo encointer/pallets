@@ -808,6 +808,9 @@ impl<T: Config> Pallet<T> {
 		let meetup_multiplier = 10u64;
 		let assignment_count =
 			Self::create_assignment_count(community_ceremony, meetup_multiplier)?;
+		if assignment_count.get_number_of_participants() < 3 {
+			return Ok(())
+		}
 
 		let num_meetups =
 			checked_ceil_division(assignment_count.get_number_of_participants(), meetup_multiplier)
