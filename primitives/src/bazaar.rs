@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 
@@ -23,7 +23,7 @@ use crate::{common::PalletString, communities::CommunityIdentifier};
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BusinessIdentifier<AccountId> {
 	pub community_identifier: CommunityIdentifier,

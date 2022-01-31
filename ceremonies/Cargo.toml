@@ -20,7 +20,7 @@ encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../sched
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
-sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-runtime = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
 [dev-dependencies]

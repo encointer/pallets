@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash, IdentifyAccount, Verify};
@@ -38,7 +38,7 @@ use sp_std::vec::Vec;
 #[cfg(feature = "std")]
 use sp_core::Pair;
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum Reputation {
 	// no attestations for attendance claim
@@ -57,7 +57,9 @@ impl Default for Reputation {
 	}
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
+#[derive(
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
 	pub claimant_public: AccountId,
@@ -171,7 +173,9 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
 	}
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
+#[derive(
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct ProofOfAttendance<Signature, AccountId> {
 	pub prover_public: AccountId,
@@ -218,7 +222,9 @@ mod tests {
 	}
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, Default)]
+#[derive(
+	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 pub struct AssignmentCount {
 	pub bootstrappers: ParticipantIndexType,
 	pub reputables: ParticipantIndexType,
@@ -232,7 +238,9 @@ impl AssignmentCount {
 	}
 }
 
-#[derive(Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(
+	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 pub struct Assignment {
 	pub bootstrappers_reputables: AssignmentParams,
 	pub endorsees: AssignmentParams,
@@ -241,7 +249,9 @@ pub struct Assignment {
 }
 
 // Todo: abstract AssignmentParams trait and use two different structs: AssignmentParams, LocationAssignmentParams
-#[derive(Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(
+	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 pub struct AssignmentParams {
 	/// Random prime below number of meetup participants. For locations this is the amount of locations.
 	pub m: u64,

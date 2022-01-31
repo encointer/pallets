@@ -29,7 +29,7 @@ use encointer_primitives::{
 	common::PalletString,
 	communities::{
 		consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
-		CommunityMetadata as CommunityMetadataType, Degree, Location, LossyFrom,
+		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
 		NominalIncome as NominalIncomeType,
 	},
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
@@ -37,7 +37,6 @@ use encointer_primitives::{
 };
 use frame_support::{ensure, traits::Get};
 use frame_system::{ensure_root, ensure_signed};
-use geohash::GeoHash;
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
@@ -55,6 +54,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -96,7 +96,7 @@ pub mod pallet {
 
 			Self::validate_location(&location)?;
 			// All checks done, now mutate state
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
+			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			let mut locations: Vec<Location> = Vec::new();
 
@@ -144,7 +144,7 @@ pub mod pallet {
 			Self::ensure_cid_exists(&cid)?;
 			Self::ensure_bootstrapper(sender, cid)?;
 			Self::validate_location(&location)?;
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
+			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			// insert location into locations
 			let mut locations = Self::locations(&cid, &geo_hash);
@@ -181,7 +181,7 @@ pub mod pallet {
 			);
 			Self::ensure_cid_exists(&cid)?;
 			Self::ensure_bootstrapper(sender, cid)?;
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
+			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			Self::remove_location_intern(cid, location, geo_hash);
 			Ok(().into())
@@ -333,26 +333,30 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn community_master)]
-	pub(super) type CommunityMaster<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+	pub(super) type CommunityMaster<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
 	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config>
-// TODO_MAYBE_WHERE_CLAUSE
-	{
-		pub community_master: T::AccountId,
+	pub struct GenesisConfig<T: Config> {
+		pub community_master: Option<T::AccountId>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { community_master: Default::default() }
+			Self { community_master: None }
 		}
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			<CommunityMaster<T>>::put(&self.community_master);
+			if let Some(ref community_master) = self.community_master {
+				// First I thought, it might be sensible to put an expect here. However, one can always
+				// edit the genesis config afterwards, so we can't really prevent here anything.
+				//
+				// substrate does the same in the sudo pallet.
+				<CommunityMaster<T>>::put(community_master);
+			}
 		}
 	}
 }
@@ -552,7 +556,7 @@ impl<T: Config> Pallet<T> {
 	}
 	fn get_nearby_locations(location: &Location) -> Result<Vec<Location>, Error<T>> {
 		let mut result: Vec<Location> = Vec::new();
-		let geo_hash = GeoHash::try_from_params(location.lat, location.lon, BUCKET_RESOLUTION)
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 			.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 		let mut relevant_buckets = Self::get_relevant_neighbor_buckets(&geo_hash, location)?;
 		relevant_buckets.push(geo_hash);

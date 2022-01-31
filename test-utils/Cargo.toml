@@ -24,9 +24,9 @@ pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech
 sp-core = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-keyring =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-keyring =  { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime =  { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 # polkadot deps
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master" }

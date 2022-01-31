@@ -56,7 +56,7 @@ pub fn new_test_ext(phase_duration: u64) -> sp_io::TestExternalities {
 	dut::GenesisConfig::<TestRuntime> {
 		current_phase: CeremonyPhaseType::REGISTERING,
 		current_ceremony_index: 1,
-		ceremony_master: master(),
+		ceremony_master: Some(master()),
 		phase_durations: vec![
 			(CeremonyPhaseType::REGISTERING, phase_duration),
 			(CeremonyPhaseType::ASSIGNING, phase_duration),

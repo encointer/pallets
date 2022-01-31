@@ -78,14 +78,14 @@ impl_encointer_balances!(TestRuntime);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 	encointer_communities::GenesisConfig::<TestRuntime> {
-		community_master: AccountId::from(AccountKeyring::Alice),
+		community_master: Some(AccountKeyring::Alice.to_account_id()),
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
 	encointer_scheduler::GenesisConfig::<TestRuntime> {
 		current_phase: CeremonyPhaseType::REGISTERING,
 		current_ceremony_index: 1,
-		ceremony_master: AccountId::from(AccountKeyring::Alice),
+		ceremony_master: Some(AccountKeyring::Alice.to_account_id()),
 		phase_durations: vec![
 			(CeremonyPhaseType::REGISTERING, ONE_DAY),
 			(CeremonyPhaseType::ASSIGNING, ONE_DAY),

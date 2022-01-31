@@ -32,7 +32,6 @@ use encointer_primitives::{
 	},
 };
 use frame_support::{
-	ensure,
 	traits::{Currency, Get, PalletInfo},
 	weights::GetDispatchInfo,
 	Parameter,
@@ -170,11 +169,10 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
-			ensure!(
-				<PendingRequests<T>>::contains_key(&request_hash),
-				<Error<T>>::UnexpectedResponse
-			);
-			let account = <PendingRequests<T>>::take(&request_hash);
+
+			let account = <PendingRequests<T>>::take(&request_hash)
+				.ok_or_else(|| <Error<T>>::UnexpectedResponse)?;
+
 			debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
 
 			for proof in rating.proofs() {
@@ -235,7 +233,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn pending_requests)]
 	pub(super) type PendingRequests<T: Config> =
-		StorageMap<_, Identity, H256, T::AccountId, ValueQuery>;
+		StorageMap<_, Identity, H256, T::AccountId, OptionQuery>;
 
 	/// The proof of attendances that have already been used in a previous request
 	/// Membership checks are faster with maps than with vecs, see: https://substrate.dev/recipes/map-set.html.

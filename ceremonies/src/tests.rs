@@ -317,8 +317,8 @@ fn registering_participant_works() {
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 2);
 
 		assert_eq!(EncointerCeremonies::bootstrapper_index((cid, cindex), &bob), 2);
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &2), bob);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1).unwrap(), alice);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &2).unwrap(), bob);
 
 		let newbies = add_population(2, 2);
 		let newbie_1 = account_id(&newbies[0]);
@@ -329,10 +329,10 @@ fn registering_participant_works() {
 		assert_ok!(register(newbie_2.clone(), cid, None));
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 2);
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &newbie_1), 1);
-		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), &1), newbie_1);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), &1).unwrap(), newbie_1);
 
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &newbie_2), 2);
-		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), &2), newbie_2);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), &2).unwrap(), newbie_2);
 
 		let newbies = add_population(2, 4);
 		let endorsee_1 = account_id(&newbies[0]);
@@ -359,10 +359,10 @@ fn registering_participant_works() {
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 2);
 
 		assert_eq!(EncointerCeremonies::endorsee_index((cid, cindex), &endorsee_1), 1);
-		assert_eq!(EncointerCeremonies::endorsee_registry((cid, cindex), &1), endorsee_1);
+		assert_eq!(EncointerCeremonies::endorsee_registry((cid, cindex), &1).unwrap(), endorsee_1);
 
 		assert_eq!(EncointerCeremonies::endorsee_index((cid, cindex), &endorsee_2), 2);
-		assert_eq!(EncointerCeremonies::endorsee_registry((cid, cindex), &2), endorsee_2);
+		assert_eq!(EncointerCeremonies::endorsee_registry((cid, cindex), &2).unwrap(), endorsee_2);
 
 		// Registering Reputables is tested in grow_population_works.
 	});
@@ -412,7 +412,7 @@ fn attest_claims_works() {
 
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
 		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), &account_id(&bob)), 2);
-		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &2);
+		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &2).unwrap();
 		assert!(wit_vec.len() == 2);
 		assert!(wit_vec.contains(&account_id(&alice)));
 		assert!(wit_vec.contains(&account_id(&ferdie)));
@@ -446,7 +446,7 @@ fn attest_claims_for_non_participant_fails_silently() {
 			3,
 		);
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 1);
-		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
+		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1).unwrap();
 		assert!(wit_vec.contains(&account_id(&alice)) == false);
 		assert!(wit_vec.len() == 1);
 	});
@@ -500,7 +500,7 @@ fn attest_claims_with_non_participant_fails_silently() {
 			3,
 		);
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 1);
-		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
+		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1).unwrap();
 		assert!(wit_vec.contains(&account_id(&eve)) == false);
 		assert!(wit_vec.len() == 1);
 	});
@@ -537,7 +537,7 @@ fn attest_claims_with_wrong_meetup_index_fails() {
 			Origin::signed(account_id(&alice)),
 			alice_claims
 		));
-		let attestees = EncointerCeremonies::attestation_registry((cid, cindex), &1);
+		let attestees = EncointerCeremonies::attestation_registry((cid, cindex), &1).unwrap();
 		assert!(attestees.contains(&account_id(&ferdie)) == false);
 		assert!(attestees.len() == 1);
 	});
@@ -574,7 +574,7 @@ fn attest_claims_with_wrong_ceremony_index_fails() {
 			Origin::signed(account_id(&alice)),
 			alice_attestations
 		));
-		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
+		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1).unwrap();
 		assert!(wit_vec.contains(&account_id(&ferdie)) == false);
 		assert!(wit_vec.len() == 1);
 	});
@@ -604,7 +604,7 @@ fn attest_claims_with_wrong_timestamp_fails() {
 		)
 		.is_err());
 		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
-		assert!(wit_vec.len() == 0);
+		assert!(wit_vec.is_none());
 	});
 }
 
@@ -634,7 +634,7 @@ fn attest_claims_with_wrong_location_fails() {
 		)
 		.is_err());
 		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1);
-		assert!(wit_vec.len() == 0);
+		assert!(wit_vec.is_none());
 	});
 }
 
@@ -1097,7 +1097,7 @@ fn ceremony_index_and_purging_registry_works() {
 		let reputation_lifetime = <TestRuntime as Config>::ReputationLifetime::get();
 
 		assert_ok!(register(alice.clone(), cid, None));
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1).unwrap(), alice);
 
 		for _ in 0..reputation_lifetime {
 			run_to_next_phase();
@@ -1105,7 +1105,10 @@ fn ceremony_index_and_purging_registry_works() {
 			run_to_next_phase();
 
 			// still not purged
-			assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), alice);
+			assert_eq!(
+				EncointerCeremonies::bootstrapper_registry((cid, cindex), &1).unwrap(),
+				alice
+			);
 		}
 
 		// only after n=ReputationLifetimes cycles everything should be purged
@@ -1117,11 +1120,8 @@ fn ceremony_index_and_purging_registry_works() {
 		let new_cindex = EncointerScheduler::current_ceremony_index();
 		assert_eq!(new_cindex, cindex + reputation_lifetime + 1);
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
-		assert_eq!(
-			EncointerCeremonies::bootstrapper_registry((cid, cindex), &1),
-			AccountId::default()
-		);
-		assert_eq!(EncointerCeremonies::bootstrapper_index((cid, cindex), &alice), NONE);
+		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1), None);
+		assert_eq!(EncointerCeremonies::bootstrapper_index((cid, cindex), &alice), 0);
 	});
 }
 
