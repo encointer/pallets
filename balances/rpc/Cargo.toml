@@ -1,0 +1,23 @@
+[package]
+name = "pallet-encointer-balances-rpc"
+version = "0.1.0"
+authors = ["encointer.org <alain@encointer.org>"]
+edition = "2018"
+
+[dependencies]
+jsonrpc-core = "18.0.0"
+jsonrpc-core-client = "18.0.0"
+jsonrpc-derive = "18.0.0"
+log = "0.4.14"
+parking_lot = "0.11.1"
+
+# local deps
+encointer-primitives = { path = "../../primitives" }
+encointer-balances-rpc-runtime-api = { package = "pallet-encointer-balances-rpc-runtime-api", path = "runtime-api" }
+
+# substrate deps
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { version = "4.1.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
