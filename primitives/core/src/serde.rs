@@ -40,7 +40,9 @@ pub mod serialize_fixed {
 	extern crate alloc;
 
 	#[cfg(not(feature = "std"))]
-	use alloc::ToString;
+	use alloc::string::String;
+	#[cfg(not(feature = "std"))]
+	use alloc::string::ToString;
 
 	pub use deserialize_fixed as deserialize;
 	pub use serialize_fixed as serialize;
