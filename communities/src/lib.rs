@@ -60,6 +60,10 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + encointer_scheduler::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// Required origin for adding or updating a community (though can always be Root).
+		type CouncilOrigin: EnsureOrigin<Self::Origin>;
+
 		#[pallet::constant]
 		type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
 		#[pallet::constant]
@@ -68,6 +72,9 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Add a new community.
+		///
+		/// May only be called from `T::CouncilOrigin`.
 		#[pallet::weight(10_000)]
 		pub fn new_community(
 			origin: OriginFor<T>,
@@ -77,7 +84,7 @@ pub mod pallet {
 			demurrage: Option<Demurrage>,
 			nominal_income: Option<NominalIncomeType>,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
+			T::CouncilOrigin::ensure_origin(origin)?;
 			Self::validate_bootstrappers(&bootstrappers)?;
 			community_metadata
 				.validate()
@@ -125,7 +132,7 @@ pub mod pallet {
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
-			Self::deposit_event(Event::CommunityRegistered(sender, cid));
+			Self::deposit_event(Event::CommunityRegistered(cid));
 			info!(target: LOG, "registered community with cid: {:?}", cid);
 			Ok(().into())
 		}
@@ -187,13 +194,17 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Update the metadata of the community with `cid`.
+		///
+		/// May only be called from `T::CouncilOrigin`.
 		#[pallet::weight(10_000)]
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			community_metadata: CommunityMetadataType,
 		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
+			T::CouncilOrigin::ensure_origin(origin)?;
+
 			Self::ensure_cid_exists(&cid)?;
 			community_metadata
 				.validate()
@@ -248,8 +259,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A new community was registered [who, community_identifier]
-		CommunityRegistered(T::AccountId, CommunityIdentifier),
+		/// A new community was registered [community_identifier]
+		CommunityRegistered(CommunityIdentifier),
 		/// CommunityMetadata was updated [community_identifier]
 		MetadataUpdated(CommunityIdentifier),
 		/// A community's nominal income was updated [community_identifier, new_income]
