@@ -19,6 +19,7 @@ use approx::assert_abs_diff_eq;
 use frame_support::assert_ok;
 use mock::{dut, new_test_ext, EncointerCommunities, Origin, TestRuntime};
 use sp_core::sr25519;
+use sp_runtime::DispatchError;
 
 use test_utils::{
 	helpers::{account_id, bootstrappers},
@@ -152,6 +153,26 @@ fn new_community_works() {
 		assert_eq!(EncointerCommunities::bootstrappers(&cid), bs);
 		assert_eq!(EncointerCommunities::bootstrappers(&cid), bs);
 		assert_eq!(EncointerCommunities::community_metadata(&cid), community_meta);
+	});
+}
+
+#[test]
+fn new_community_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let bob = AccountId::from(AccountKeyring::Bob);
+		assert_eq!(
+			EncointerCommunities::new_community(
+				Origin::signed(bob),
+				Location::default(),
+				vec![],
+				CommunityMetadataType::default(),
+				None,
+				None,
+			)
+			.unwrap_err()
+			.error,
+			DispatchError::BadOrigin
+		);
 	});
 }
 
