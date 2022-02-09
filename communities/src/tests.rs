@@ -240,7 +240,7 @@ fn updating_nominal_income_works() {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert!(NominalIncome::<TestRuntime>::try_get(cid).is_err());
 		assert_ok!(EncointerCommunities::update_nominal_income(
-			Origin::root(),
+			Origin::signed(AccountKeyring::Alice.into()),
 			cid,
 			BalanceType::from_num(1.1),
 		));
@@ -257,7 +257,7 @@ fn updating_demurrage_works() {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert!(DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
 		assert_ok!(EncointerCommunities::update_demurrage(
-			Origin::root(),
+			Origin::signed(AccountKeyring::Alice.into()),
 			cid,
 			Demurrage::from_num(0.0001),
 		));

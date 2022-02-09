@@ -36,7 +36,7 @@ use encointer_primitives::{
 	scheduler::CeremonyPhaseType,
 };
 use frame_support::{ensure, traits::Get};
-use frame_system::{ensure_root, ensure_signed};
+use frame_system::ensure_signed;
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
@@ -226,7 +226,8 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			demurrage: BalanceType,
 		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
+			T::CouncilOrigin::ensure_origin(origin)?;
+
 			Self::ensure_cid_exists(&cid)?;
 			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			Self::ensure_cid_exists(&cid)?;
@@ -243,7 +244,8 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			nominal_income: NominalIncomeType,
 		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
+			T::CouncilOrigin::ensure_origin(origin)?;
+
 			Self::ensure_cid_exists(&cid)?;
 			validate_nominal_income(&nominal_income)
 				.map_err(|_| <Error<T>>::InvalidNominalIncome)?;
