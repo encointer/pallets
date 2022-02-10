@@ -68,7 +68,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	encointer_scheduler::GenesisConfig::<TestRuntime> {
 		current_phase: CeremonyPhaseType::REGISTERING,
 		current_ceremony_index: 1,
-		ceremony_master: Some(AccountKeyring::Alice.to_account_id()),
 		phase_durations: vec![
 			(CeremonyPhaseType::REGISTERING, ONE_DAY),
 			(CeremonyPhaseType::ASSIGNING, ONE_DAY),
