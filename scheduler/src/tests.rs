@@ -62,6 +62,21 @@ fn ceremony_phase_statemachine_works() {
 }
 
 #[test]
+fn next_phase_errs_on_bad_origin() {
+	new_test_ext(ONE_DAY).execute_with(|| {
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
+		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
+	});
+}
+
+#[test]
 fn timestamp_callback_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		//large offset since 1970 to when first block is generated

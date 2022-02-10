@@ -16,13 +16,13 @@
 
 use super::*;
 use approx::assert_abs_diff_eq;
-use frame_support::{assert_ok, pallet_prelude::DispatchResultWithPostInfo};
+use frame_support::assert_ok;
 use mock::{dut, new_test_ext, EncointerCommunities, Origin, TestRuntime};
 use sp_core::sr25519;
 use sp_runtime::DispatchError;
 
 use test_utils::{
-	helpers::{account_id, bootstrappers},
+	helpers::{account_id, assert_dispatch_err, bootstrappers},
 	*,
 };
 
@@ -30,10 +30,6 @@ type T = Degree;
 
 fn string_to_geohash(s: &str) -> GeoHash {
 	GeoHash::try_from(s).unwrap()
-}
-
-fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: DispatchError) {
-	assert_eq!(actual.unwrap_err().error, expected)
 }
 
 /// register a simple test community with a specified location and defined bootstrappers

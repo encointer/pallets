@@ -16,9 +16,10 @@
 
 use crate::AccountId;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use frame_support::traits::OriginTrait;
+use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
 use sp_core::{sr25519, Pair};
 use sp_keyring::AccountKeyring;
+use sp_runtime::DispatchError;
 
 /// shorthand to convert Pair to AccountId
 pub fn account_id(pair: &sr25519::Pair) -> AccountId {
@@ -80,4 +81,8 @@ pub fn assert_last_event<T: frame_system::Config>(
 	// compare to the last event record
 	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];
 	assert_eq!(event, &system_event);
+}
+
+pub fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: DispatchError) {
+	assert_eq!(actual.unwrap_err().error, expected)
 }
