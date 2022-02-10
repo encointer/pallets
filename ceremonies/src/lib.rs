@@ -90,28 +90,6 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10_000)]
-		pub fn grant_reputation(
-			origin: OriginFor<T>,
-			cid: CommunityIdentifier,
-			reputable: T::AccountId,
-		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
-
-			let master = <encointer_scheduler::Pallet<T>>::ceremony_master()
-				.ok_or(Error::<T>::AuthorizationRequired)?;
-			ensure!(sender == master, Error::<T>::AuthorizationRequired);
-
-			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
-			<ParticipantReputation<T>>::insert(
-				&(cid, cindex - 1),
-				reputable,
-				Reputation::VerifiedUnlinked,
-			); //safe; cindex comes from within, will not overflow at +1/d
-			info!(target: LOG, "granting reputation to {:?}", sender);
-			Ok(().into())
-		}
-
-		#[pallet::weight(10_000)]
 		pub fn register_participant(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
