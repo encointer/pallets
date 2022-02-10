@@ -62,7 +62,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Required origin for adding or updating a community (though can always be Root).
-		type CouncilOrigin: EnsureOrigin<Self::Origin>;
+		type CommunityMaster: EnsureOrigin<Self::Origin>;
 
 		#[pallet::constant]
 		type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
@@ -74,7 +74,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Add a new community.
 		///
-		/// May only be called from `T::CouncilOrigin`.
+		/// May only be called from `T::CommunityMaster`.
 		#[pallet::weight(10_000)]
 		pub fn new_community(
 			origin: OriginFor<T>,
@@ -84,7 +84,7 @@ pub mod pallet {
 			demurrage: Option<Demurrage>,
 			nominal_income: Option<NominalIncomeType>,
 		) -> DispatchResultWithPostInfo {
-			T::CouncilOrigin::ensure_origin(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
 			Self::validate_bootstrappers(&bootstrappers)?;
 			community_metadata
 				.validate()
@@ -196,14 +196,14 @@ pub mod pallet {
 
 		/// Update the metadata of the community with `cid`.
 		///
-		/// May only be called from `T::CouncilOrigin`.
+		/// May only be called from `T::CommunityMaster`.
 		#[pallet::weight(10_000)]
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			community_metadata: CommunityMetadataType,
 		) -> DispatchResultWithPostInfo {
-			T::CouncilOrigin::ensure_origin(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
 
 			Self::ensure_cid_exists(&cid)?;
 			community_metadata
@@ -226,7 +226,7 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			demurrage: BalanceType,
 		) -> DispatchResultWithPostInfo {
-			T::CouncilOrigin::ensure_origin(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
 
 			Self::ensure_cid_exists(&cid)?;
 			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
@@ -244,7 +244,7 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			nominal_income: NominalIncomeType,
 		) -> DispatchResultWithPostInfo {
-			T::CouncilOrigin::ensure_origin(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
 
 			Self::ensure_cid_exists(&cid)?;
 			validate_nominal_income(&nominal_income)

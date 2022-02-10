@@ -190,7 +190,7 @@ macro_rules! impl_encointer_communities {
 	($t:ident) => {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
-			type CouncilOrigin = EnsureAlice;
+			type CommunityMaster = EnsureAlice;
 			type MinSolarTripTimeS = MinSolarTripTimeS;
 			type MaxSpeedMps = MaxSpeedMps;
 		}

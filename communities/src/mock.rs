@@ -46,7 +46,7 @@ frame_support::construct_runtime!(
 
 impl dut::Config for TestRuntime {
 	type Event = Event;
-	type CouncilOrigin = EnsureAlice;
+	type CommunityMaster = EnsureAlice;
 	type MinSolarTripTimeS = MinSolarTripTimeS;
 	type MaxSpeedMps = MaxSpeedMps;
 }
