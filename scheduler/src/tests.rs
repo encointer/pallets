@@ -63,7 +63,7 @@ fn ceremony_phase_statemachine_works() {
 }
 
 #[test]
-fn next_phase_errs_on_bad_origin() {
+fn next_phase_errs_with_bad_origin() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_dispatch_err(
 			EncointerScheduler::next_phase(Origin::signed(AccountKeyring::Bob.into())),
@@ -73,7 +73,7 @@ fn next_phase_errs_on_bad_origin() {
 }
 
 #[test]
-fn push_by_one_day_errs_on_bad_origin() {
+fn push_by_one_day_errs_with_bad_origin() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_dispatch_err(
 			EncointerScheduler::push_by_one_day(Origin::signed(AccountKeyring::Bob.into())),
