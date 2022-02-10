@@ -26,11 +26,9 @@
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
 	dispatch::DispatchResult,
-	ensure,
 	traits::{Get, OnTimestampSet},
 	weights::{DispatchClass, Pays},
 };
-use frame_system::ensure_signed;
 use log::info;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
 use sp_std::{ops::Rem, prelude::*};
@@ -53,6 +51,10 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// Required origin to interfere with the scheduling (though can always be Root)
+		type CeremonyMasterOrigin: EnsureOrigin<Self::Origin>;
+
 		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
 		#[pallet::constant]
 		type MomentsPerDay: Get<Self::Moment>;
@@ -63,12 +65,6 @@ pub mod pallet {
 	pub enum Event {
 		/// Phase changed to `[new phase]`
 		PhaseChangedTo(CeremonyPhaseType),
-	}
-
-	#[pallet::error]
-	pub enum Error<T> {
-		/// Sender doesn't have the necessary authority to perform action
-		AuthorizationRequired,
 	}
 
 	#[pallet::storage]
@@ -89,10 +85,6 @@ pub mod pallet {
 	#[pallet::getter(fn current_phase)]
 	pub(super) type CurrentPhase<T: Config> =
 		StorageValue<_, CeremonyPhaseType, ValueQuery, DefaultForCurrentPhase>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn ceremony_master)]
-	pub(super) type CeremonyMaster<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForNextPhaseTimestamp<T: Config>() -> T::Moment {
@@ -116,7 +108,6 @@ pub mod pallet {
 	{
 		pub current_ceremony_index: CeremonyIndexType,
 		pub current_phase: CeremonyPhaseType,
-		pub ceremony_master: Option<T::AccountId>,
 		pub phase_durations: Vec<(CeremonyPhaseType, T::Moment)>,
 	}
 
@@ -129,7 +120,6 @@ pub mod pallet {
 			Self {
 				current_ceremony_index: Default::default(),
 				current_phase: CeremonyPhaseType::REGISTERING,
-				ceremony_master: None,
 				phase_durations: Default::default(),
 			}
 		}
@@ -144,14 +134,6 @@ pub mod pallet {
 			<CurrentCeremonyIndex<T>>::put(&self.current_ceremony_index);
 			<CurrentPhase<T>>::put(&self.current_phase);
 
-			if let Some(ref ceremony_master) = self.ceremony_master {
-				// First I thought, it might be sensible to put an expect here. However, one can always
-				// edit the genesis config afterwards, so we can't really prevent here anything.
-				//
-				// substrate does the same in the sudo pallet.
-				<CeremonyMaster<T>>::put(&ceremony_master);
-			}
-
 			self.phase_durations.iter().for_each(|(k, v)| {
 				<PhaseDurations<T>>::insert(k, v);
 			});
@@ -161,24 +143,22 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Manually transition to next phase without affecting the ceremony rhythm
+		///
+		/// May only be called from `T::CeremonyMasterOrigin`.
 		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
 		pub fn next_phase(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
-
-			let master = <CeremonyMaster<T>>::get().ok_or(Error::<T>::AuthorizationRequired)?;
-			ensure!(sender == master, Error::<T>::AuthorizationRequired);
+			T::CeremonyMasterOrigin::ensure_origin(origin)?;
 
 			Self::progress_phase()?;
 			Ok(().into())
 		}
 
 		/// Push next phase change by one entire day
+		///
+		/// May only be called from `T::CeremonyMasterOrigin`.
 		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
 		pub fn push_by_one_day(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
-
-			let master = <CeremonyMaster<T>>::get().ok_or(Error::<T>::AuthorizationRequired)?;
-			ensure!(sender == master, Error::<T>::AuthorizationRequired);
+			T::CeremonyMasterOrigin::ensure_origin(origin)?;
 
 			let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
 			<NextPhaseTimestamp<T>>::put(tnext);
