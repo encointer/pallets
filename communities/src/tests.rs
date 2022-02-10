@@ -237,6 +237,38 @@ fn two_communities_in_same_bucket_works() {
 }
 
 #[test]
+fn updating_community_metadata_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		let new_metadata = CommunityMetadataType { name: "New".into(), ..Default::default() };
+
+		assert_ok!(EncointerCommunities::update_community_metadata(
+			Origin::signed(AccountKeyring::Alice.into()),
+			cid,
+			new_metadata.clone(),
+		));
+		assert_eq!(CommunityMetadata::<TestRuntime>::try_get(&cid).unwrap(), new_metadata);
+	});
+}
+
+#[test]
+fn updating_community_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		let new_metadata = CommunityMetadataType { name: "New".into(), ..Default::default() };
+
+		assert_dispatch_err(
+			EncointerCommunities::update_community_metadata(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				new_metadata.clone(),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
 fn updating_nominal_income_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
