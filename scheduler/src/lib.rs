@@ -53,7 +53,7 @@ pub mod pallet {
 		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Required origin to interfere with the scheduling (though can always be Root)
-		type CeremonyMasterOrigin: EnsureOrigin<Self::Origin>;
+		type CeremonyMaster: EnsureOrigin<Self::Origin>;
 
 		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
 		#[pallet::constant]
@@ -144,10 +144,10 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Manually transition to next phase without affecting the ceremony rhythm
 		///
-		/// May only be called from `T::CeremonyMasterOrigin`.
+		/// May only be called from `T::CeremonyMaster`.
 		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
 		pub fn next_phase(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			T::CeremonyMasterOrigin::ensure_origin(origin)?;
+			T::CeremonyMaster::ensure_origin(origin)?;
 
 			Self::progress_phase()?;
 			Ok(().into())
@@ -155,10 +155,10 @@ pub mod pallet {
 
 		/// Push next phase change by one entire day
 		///
-		/// May only be called from `T::CeremonyMasterOrigin`.
+		/// May only be called from `T::CeremonyMaster`.
 		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
 		pub fn push_by_one_day(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-			T::CeremonyMasterOrigin::ensure_origin(origin)?;
+			T::CeremonyMaster::ensure_origin(origin)?;
 
 			let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
 			<NextPhaseTimestamp<T>>::put(tnext);
