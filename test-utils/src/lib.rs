@@ -237,6 +237,7 @@ macro_rules! impl_encointer_scheduler {
 	($t:ident, $ceremonies:ident) => {
 		impl encointer_scheduler::Config for $t {
 			type Event = Event;
+			type CeremonyMasterOrigin = EnsureAlice;
 			type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
 		}
