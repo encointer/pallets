@@ -53,10 +53,9 @@ fn url2() -> String {
 fn assert_error(actual: DispatchResultWithPostInfo, expected: Error<TestRuntime>) {
 	assert_eq!(
 		match actual.clone().unwrap_err().error {
-			sp_runtime::DispatchError::Module { index: _, error: _, message } => message,
+			sp_runtime::DispatchError::Module(module_error) => module_error.message.unwrap(),
 			_ => panic!(),
-		}
-		.unwrap(),
+		},
 		expected.as_str()
 	);
 }
