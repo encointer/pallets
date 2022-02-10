@@ -38,7 +38,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>},
 	}
 );

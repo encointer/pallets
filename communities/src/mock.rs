@@ -40,7 +40,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerCommunities: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerCommunities: dut::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -59,11 +59,6 @@ impl_encointer_scheduler!(TestRuntime);
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-	dut::GenesisConfig::<TestRuntime> {
-		community_master: Some(AccountKeyring::Alice.to_account_id()),
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
 
 	encointer_scheduler::GenesisConfig::<TestRuntime> {
 		current_phase: CeremonyPhaseType::REGISTERING,
