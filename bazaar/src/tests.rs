@@ -17,7 +17,7 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use frame_support::dispatch::DispatchResultWithPostInfo;
+use frame_support::assert_err;
 use mock::{new_test_ext, EncointerBazaar, Origin, System, TestRuntime};
 
 use encointer_primitives::communities::CommunityIdentifier;
@@ -50,16 +50,6 @@ fn url2() -> String {
 	return "https://polkadot.network".to_string()
 }
 
-fn assert_error(actual: DispatchResultWithPostInfo, expected: Error<TestRuntime>) {
-	assert_eq!(
-		match actual.clone().unwrap_err().error {
-			sp_runtime::DispatchError::Module(module_error) => module_error.message.unwrap(),
-			_ => panic!(),
-		},
-		expected.as_str()
-	);
-}
-
 #[test]
 fn create_new_business_is_ok() {
 	new_test_ext().execute_with(|| {
@@ -83,7 +73,7 @@ fn create_new_business_is_ok() {
 fn create_business_with_invalid_cid_is_err() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1);
-		assert_error(
+		assert_err!(
 			EncointerBazaar::create_business(
 				Origin::signed(alice()),
 				CommunityIdentifier::default(),
@@ -108,7 +98,7 @@ fn create_business_duplicate_is_err() {
 		let cid = create_cid();
 
 		assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
-		assert_error(
+		assert_err!(
 			EncointerBazaar::create_business(Origin::signed(alice()), cid, url1()),
 			Error::<TestRuntime>::ExistingBusiness,
 		);
@@ -142,11 +132,11 @@ fn update_inexistent_business_is_err() {
 		let cid = create_cid();
 		BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 3));
 
-		assert_error(
+		assert_err!(
 			EncointerBazaar::update_business(Origin::signed(bob()), cid, url1()),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
-		assert_error(
+		assert_err!(
 			EncointerBazaar::update_business(
 				Origin::signed(alice()),
 				CommunityIdentifier::default(),
@@ -186,11 +176,11 @@ fn delete_inexistent_business_is_err() {
 		let cid = create_cid();
 		BusinessRegistry::<TestRuntime>::insert(cid, bob(), BusinessData::new(url1(), 2));
 
-		assert_error(
+		assert_err!(
 			EncointerBazaar::delete_business(Origin::signed(alice()), cid),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
-		assert_error(
+		assert_err!(
 			EncointerBazaar::delete_business(Origin::signed(bob()), CommunityIdentifier::default()),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
@@ -252,7 +242,7 @@ fn create_offering_for_inexistent_business_is_err() {
 		let cid = create_cid();
 		BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 1));
 
-		assert_error(
+		assert_err!(
 			EncointerBazaar::create_offering(Origin::signed(bob()), cid, url1()),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
@@ -298,15 +288,15 @@ fn update_inexistent_offering_is_err() {
 			OfferingData::new(url()),
 		);
 
-		assert_error(
+		assert_err!(
 			EncointerBazaar::update_offering(Origin::signed(bob()), cid, 1, url1()),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
-		assert_error(
+		assert_err!(
 			EncointerBazaar::update_offering(Origin::signed(alice()), cid, 0, url1()),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
-		assert_error(
+		assert_err!(
 			EncointerBazaar::update_offering(
 				Origin::signed(alice()),
 				CommunityIdentifier::default(),
@@ -356,15 +346,15 @@ fn delete_inexistent_offering_is_err() {
 			OfferingData::new(url()),
 		);
 
-		assert_error(
+		assert_err!(
 			EncointerBazaar::delete_offering(Origin::signed(bob()), cid, 1),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
-		assert_error(
+		assert_err!(
 			EncointerBazaar::delete_offering(Origin::signed(alice()), cid, 0),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
-		assert_error(
+		assert_err!(
 			EncointerBazaar::delete_offering(
 				Origin::signed(alice()),
 				CommunityIdentifier::default(),
