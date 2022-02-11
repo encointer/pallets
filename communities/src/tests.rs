@@ -373,6 +373,21 @@ fn add_location_works() {
 }
 
 #[test]
+fn add_new_location_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::add_location(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				Location::default(),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
 fn remove_community_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
@@ -472,6 +487,21 @@ fn remove_location_works() {
 		assert_eq!(
 			EncointerCommunities::cids_by_geohash(&geo_hash),
 			Vec::<CommunityIdentifier>::new()
+		);
+	});
+}
+
+#[test]
+fn remove_location_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::remove_location(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				Location::default(),
+			),
+			DispatchError::BadOrigin,
 		);
 	});
 }

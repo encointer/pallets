@@ -36,7 +36,6 @@ use encointer_primitives::{
 	scheduler::CeremonyPhaseType,
 };
 use frame_support::{ensure, traits::Get};
-use frame_system::ensure_signed;
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
@@ -137,19 +136,24 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Add a new meetup `location` to the community with `cid`.
+		///
+		/// May only be called from `T::CommunityMaster`.
+		///
+		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
 		#[pallet::weight(10_000)]
 		pub fn add_location(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			location: Location,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
+
 			ensure!(
 				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
-			Self::ensure_bootstrapper(sender, cid)?;
 			Self::validate_location(&location)?;
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
@@ -175,19 +179,25 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Remove an existing meetup `location` from the community with `cid`.
+		///
+		/// May only be called from `T::CommunityMaster`.
+		///
+		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
 		#[pallet::weight(10_000)]
 		pub fn remove_location(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			location: Location,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
+
 			ensure!(
 				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
-			Self::ensure_bootstrapper(sender, cid)?;
+
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			Self::remove_location_intern(cid, location, geo_hash);
@@ -411,14 +421,6 @@ impl<T: Config> Pallet<T> {
 		match Self::community_identifiers().contains(&cid) {
 			true => Ok(()),
 			false => Err(<Error<T>>::CommunityInexistent)?,
-		}
-	}
-
-	fn ensure_bootstrapper(sender: T::AccountId, cid: CommunityIdentifier) -> DispatchResult {
-		if !Self::bootstrappers(cid).contains(&sender) {
-			Err(<Error<T>>::BadOrigin.into())
-		} else {
-			Ok(())
 		}
 	}
 
