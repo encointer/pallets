@@ -287,6 +287,21 @@ fn fully_attest_meetup(
 	}
 }
 
+fn reputation_count(
+	cid: CommunityIdentifier,
+	cindex: CeremonyIndexType,
+	accounts: &Vec<sr25519::Pair>
+) -> u32 {
+	let mut count: u32 = 0;
+	for p in accounts.iter() {
+		if EncointerCeremonies::participant_reputation((cid,cindex),&account_id(p)) == Reputation::VerifiedUnlinked {
+			count += 1;
+		}
+	}
+	count
+}
+
+
 // unit tests ////////////////////////////////////////
 
 #[test]
@@ -1151,12 +1166,16 @@ fn grow_population_works() {
 		});
 
 		let cindex = EncointerScheduler::current_ceremony_index();
-		run_to_next_phase();
-		// ASSIGNING
+
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::endorsee_count((cid, cindex)), 0);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 0);
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 14);
+		run_to_next_phase();
+		// ASSIGNING
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
+		let assigned_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
+		assert_eq!(assigned_participants.len(), 8);
 
 		run_to_next_phase();
 		// WITNESSING
@@ -1165,23 +1184,27 @@ fn grow_population_works() {
 
 		run_to_next_phase();
 		// REGISTERING
+		let cindex = EncointerScheduler::current_ceremony_index();
+
 		for pair in participants.iter() {
 			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
 		}
+		assert_eq!(reputation_count(cid, cindex-1, &participants), 8);
 
-		let cindex = EncointerScheduler::current_ceremony_index();
 		// register everybody again. also those who didn't have the chance last time
 		for pair in participants.iter() {
 			let proof = get_proof(cid, cindex - 1, pair);
 			register(account_id(&pair), cid, proof).unwrap();
 		}
-		run_to_next_phase();
-		// ASSIGNING
-
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 2);
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 12);
+
+		run_to_next_phase();
+		// ASSIGNING
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
+		let assigned_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
+		assert_eq!(assigned_participants.len(), 10);
 
 		run_to_next_phase();
 
@@ -1189,22 +1212,24 @@ fn grow_population_works() {
 
 		run_to_next_phase();
 		// REGISTERING
+		let cindex = EncointerScheduler::current_ceremony_index();
+
 		for pair in participants.iter() {
 			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
 		}
+		assert_eq!(reputation_count(cid, cindex-1, &participants), 10);
 
-		let cindex = EncointerScheduler::current_ceremony_index();
 		// register everybody again. also those who didn't have the chance last time
 		for pair in participants.iter() {
 			let proof = get_proof(cid, cindex - 1, pair);
 			register(account_id(&pair), cid, proof).unwrap();
 		}
-		run_to_next_phase();
-		// ASSIGNING
-
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 4);
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 10);
+
+		run_to_next_phase();
+		// ASSIGNING
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
 
 		run_to_next_phase();
@@ -1214,11 +1239,13 @@ fn grow_population_works() {
 
 		run_to_next_phase();
 		// REGISTERING
+		let cindex = EncointerScheduler::current_ceremony_index();
 		for pair in participants.iter() {
 			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
 		}
 
-		let cindex = EncointerScheduler::current_ceremony_index();
+		assert_eq!(reputation_count(cid, cindex-1, &participants), 13);
+
 		let mut proof_count = 0;
 		for pair in participants.iter() {
 			let proof = get_proof(cid, cindex - 1, &pair);
