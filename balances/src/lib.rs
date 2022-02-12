@@ -25,7 +25,7 @@ use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 use frame_system::{self as frame_system, ensure_signed};
 use log::debug;
 use sp_runtime::traits::StaticLookup;
-use sp_std::convert::TryInto;
+use sp_std::{convert::TryInto, prelude::Vec, vec};
 
 // Logger target
 const LOG: &str = "encointer";
