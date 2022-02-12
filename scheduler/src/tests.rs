@@ -22,8 +22,9 @@ use frame_support::{
 	assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
+use sp_runtime::DispatchError;
 use std::ops::Rem;
-use test_utils::*;
+use test_utils::{helpers::assert_dispatch_err, *};
 
 const TEN_MIN: u64 = 600_000;
 const ONE_DAY: u64 = 86_400_000;
@@ -58,6 +59,26 @@ fn ceremony_phase_statemachine_works() {
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
+	});
+}
+
+#[test]
+fn next_phase_errs_with_bad_origin() {
+	new_test_ext(ONE_DAY).execute_with(|| {
+		assert_dispatch_err(
+			EncointerScheduler::next_phase(Origin::signed(AccountKeyring::Bob.into())),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn push_by_one_day_errs_with_bad_origin() {
+	new_test_ext(ONE_DAY).execute_with(|| {
+		assert_dispatch_err(
+			EncointerScheduler::push_by_one_day(Origin::signed(AccountKeyring::Bob.into())),
+			DispatchError::BadOrigin,
+		);
 	});
 }
 

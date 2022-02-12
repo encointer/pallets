@@ -864,21 +864,6 @@ fn bootstrapping_works() {
 }
 
 #[test]
-fn grant_reputation_works() {
-	new_test_ext().execute_with(|| {
-		let cid = perform_bootstrapping_ceremony(None, 1);
-		let master = AccountId::from(AccountKeyring::Alice);
-		// a non-bootstrapper
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-		assert_ok!(EncointerCeremonies::grant_reputation(
-			Origin::signed(master.clone()),
-			cid,
-			account_id(&zoran)
-		));
-	});
-}
-
-#[test]
 fn register_with_reputation_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);

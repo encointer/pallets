@@ -36,7 +36,6 @@ use encointer_primitives::{
 	scheduler::CeremonyPhaseType,
 };
 use frame_support::{ensure, traits::Get};
-use frame_system::{ensure_root, ensure_signed};
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
@@ -60,6 +59,10 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + encointer_scheduler::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// Required origin for adding or updating a community (though can always be Root).
+		type CommunityMaster: EnsureOrigin<Self::Origin>;
+
 		#[pallet::constant]
 		type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
 		#[pallet::constant]
@@ -68,6 +71,9 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Add a new community.
+		///
+		/// May only be called from `T::CommunityMaster`.
 		#[pallet::weight(10_000)]
 		pub fn new_community(
 			origin: OriginFor<T>,
@@ -77,7 +83,7 @@ pub mod pallet {
 			demurrage: Option<Demurrage>,
 			nominal_income: Option<NominalIncomeType>,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
 			Self::validate_bootstrappers(&bootstrappers)?;
 			community_metadata
 				.validate()
@@ -125,24 +131,29 @@ pub mod pallet {
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
-			Self::deposit_event(Event::CommunityRegistered(sender, cid));
+			Self::deposit_event(Event::CommunityRegistered(cid));
 			info!(target: LOG, "registered community with cid: {:?}", cid);
 			Ok(().into())
 		}
 
+		/// Add a new meetup `location` to the community with `cid`.
+		///
+		/// May only be called from `T::CommunityMaster`.
+		///
+		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
 		#[pallet::weight(10_000)]
 		pub fn add_location(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			location: Location,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
+
 			ensure!(
 				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
-			Self::ensure_bootstrapper(sender, cid)?;
 			Self::validate_location(&location)?;
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
@@ -168,32 +179,42 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// Remove an existing meetup `location` from the community with `cid`.
+		///
+		/// May only be called from `T::CommunityMaster`.
+		///
+		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
 		#[pallet::weight(10_000)]
 		pub fn remove_location(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			location: Location,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
+
 			ensure!(
 				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
-			Self::ensure_bootstrapper(sender, cid)?;
+
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			Self::remove_location_intern(cid, location, geo_hash);
 			Ok(().into())
 		}
 
+		/// Update the metadata of the community with `cid`.
+		///
+		/// May only be called from `T::CommunityMaster`.
 		#[pallet::weight(10_000)]
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			community_metadata: CommunityMetadataType,
 		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
+
 			Self::ensure_cid_exists(&cid)?;
 			community_metadata
 				.validate()
@@ -215,7 +236,8 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			demurrage: BalanceType,
 		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
+
 			Self::ensure_cid_exists(&cid)?;
 			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			Self::ensure_cid_exists(&cid)?;
@@ -232,7 +254,8 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			nominal_income: NominalIncomeType,
 		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
+			T::CommunityMaster::ensure_origin(origin)?;
+
 			Self::ensure_cid_exists(&cid)?;
 			validate_nominal_income(&nominal_income)
 				.map_err(|_| <Error<T>>::InvalidNominalIncome)?;
@@ -248,8 +271,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A new community was registered [who, community_identifier]
-		CommunityRegistered(T::AccountId, CommunityIdentifier),
+		/// A new community was registered [community_identifier]
+		CommunityRegistered(CommunityIdentifier),
 		/// CommunityMetadata was updated [community_identifier]
 		MetadataUpdated(CommunityIdentifier),
 		/// A community's nominal income was updated [community_identifier, new_income]
@@ -330,35 +353,6 @@ pub mod pallet {
 	#[pallet::getter(fn nominal_income)]
 	pub type NominalIncome<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, NominalIncomeType, ValueQuery>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn community_master)]
-	pub(super) type CommunityMaster<T: Config> = StorageValue<_, T::AccountId, OptionQuery>;
-
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		pub community_master: Option<T::AccountId>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self { community_master: None }
-		}
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) {
-			if let Some(ref community_master) = self.community_master {
-				// First I thought, it might be sensible to put an expect here. However, one can always
-				// edit the genesis config afterwards, so we can't really prevent here anything.
-				//
-				// substrate does the same in the sudo pallet.
-				<CommunityMaster<T>>::put(community_master);
-			}
-		}
-	}
 }
 
 impl<T: Config> Pallet<T> {
@@ -427,14 +421,6 @@ impl<T: Config> Pallet<T> {
 		match Self::community_identifiers().contains(&cid) {
 			true => Ok(()),
 			false => Err(<Error<T>>::CommunityInexistent)?,
-		}
-	}
-
-	fn ensure_bootstrapper(sender: T::AccountId, cid: CommunityIdentifier) -> DispatchResult {
-		if !Self::bootstrappers(cid).contains(&sender) {
-			Err(<Error<T>>::BadOrigin.into())
-		} else {
-			Ok(())
 		}
 	}
 

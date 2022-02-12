@@ -19,9 +19,10 @@ use approx::assert_abs_diff_eq;
 use frame_support::assert_ok;
 use mock::{dut, new_test_ext, EncointerCommunities, Origin, TestRuntime};
 use sp_core::sr25519;
+use sp_runtime::DispatchError;
 
 use test_utils::{
-	helpers::{account_id, bootstrappers},
+	helpers::{account_id, assert_dispatch_err, bootstrappers},
 	*,
 };
 
@@ -156,6 +157,24 @@ fn new_community_works() {
 }
 
 #[test]
+fn new_community_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let bob = AccountId::from(AccountKeyring::Bob);
+		assert_dispatch_err(
+			EncointerCommunities::new_community(
+				Origin::signed(bob),
+				Location::default(),
+				vec![],
+				CommunityMetadataType::default(),
+				None,
+				None,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
 fn two_communities_in_same_bucket_works() {
 	new_test_ext().execute_with(|| {
 		let alice = AccountId::from(AccountKeyring::Alice);
@@ -214,12 +233,44 @@ fn two_communities_in_same_bucket_works() {
 }
 
 #[test]
+fn updating_community_metadata_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		let new_metadata = CommunityMetadataType { name: "New".into(), ..Default::default() };
+
+		assert_ok!(EncointerCommunities::update_community_metadata(
+			Origin::signed(AccountKeyring::Alice.into()),
+			cid,
+			new_metadata.clone(),
+		));
+		assert_eq!(CommunityMetadata::<TestRuntime>::try_get(&cid).unwrap(), new_metadata);
+	});
+}
+
+#[test]
+fn updating_community_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		let new_metadata = CommunityMetadataType { name: "New".into(), ..Default::default() };
+
+		assert_dispatch_err(
+			EncointerCommunities::update_community_metadata(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				new_metadata.clone(),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
 fn updating_nominal_income_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert!(NominalIncome::<TestRuntime>::try_get(cid).is_err());
 		assert_ok!(EncointerCommunities::update_nominal_income(
-			Origin::root(),
+			Origin::signed(AccountKeyring::Alice.into()),
 			cid,
 			BalanceType::from_num(1.1),
 		));
@@ -231,18 +282,48 @@ fn updating_nominal_income_works() {
 }
 
 #[test]
+fn updating_nominal_income_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::update_nominal_income(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				BalanceType::from_num(1.1),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
 fn updating_demurrage_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert!(DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
 		assert_ok!(EncointerCommunities::update_demurrage(
-			Origin::root(),
+			Origin::signed(AccountKeyring::Alice.into()),
 			cid,
 			Demurrage::from_num(0.0001),
 		));
 		assert_eq!(
 			DemurragePerBlock::<TestRuntime>::try_get(&cid).unwrap(),
 			BalanceType::from_num(0.0001)
+		);
+	});
+}
+
+#[test]
+fn updating_demurrage_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::update_demurrage(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				Demurrage::from_num(0.0001),
+			),
+			DispatchError::BadOrigin,
 		);
 	});
 }
@@ -288,6 +369,21 @@ fn add_location_works() {
 		.ok();
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash3), vec![location3]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash3), vec![cid]);
+	});
+}
+
+#[test]
+fn add_new_location_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::add_location(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				Location::default(),
+			),
+			DispatchError::BadOrigin,
+		);
 	});
 }
 
@@ -391,6 +487,21 @@ fn remove_location_works() {
 		assert_eq!(
 			EncointerCommunities::cids_by_geohash(&geo_hash),
 			Vec::<CommunityIdentifier>::new()
+		);
+	});
+}
+
+#[test]
+fn remove_location_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::remove_location(
+				Origin::signed(AccountKeyring::Bob.into()),
+				cid,
+				Location::default(),
+			),
+			DispatchError::BadOrigin,
 		);
 	});
 }
