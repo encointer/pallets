@@ -27,7 +27,7 @@ use encointer_primitives::{
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::{
-	assert_ok,
+	assert_err, assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
 use itertools::Itertools;
@@ -285,17 +285,6 @@ fn fully_attest_meetup(
 			meetup_participants.len() as u32,
 		);
 	}
-}
-
-fn assert_error(actual: DispatchResultWithPostInfo, expected: Error<TestRuntime>) {
-	assert_eq!(
-		match actual.clone().unwrap_err().error {
-			sp_runtime::DispatchError::Module { index: _, error: _, message } => message,
-			_ => panic!(),
-		}
-		.unwrap(),
-		expected.as_str()
-	);
 }
 
 // unit tests ////////////////////////////////////////
@@ -936,7 +925,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 			));
 		}
 
-		assert_error(
+		assert_err!(
 			EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
@@ -982,7 +971,7 @@ fn endorsing_newbie_twice_fails() {
 			account_id(&zoran)
 		));
 		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex), &account_id(&zoran)));
-		assert_error(
+		assert_err!(
 			EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
