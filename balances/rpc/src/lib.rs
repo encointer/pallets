@@ -26,7 +26,7 @@ use sp_runtime::{
 use std::sync::Arc;
 
 use encointer_balances_rpc_runtime_api::BalancesApi as BalancesRuntimeApi;
-use encointer_primitives::{balances::BalanceEntry, communities::CommunityIdentifier};
+use encointer_primitives::communities::CommunityIdentifier;
 
 #[rpc]
 pub trait BalancesApi<BlockHash, AccountId, BlockNumber>
@@ -39,7 +39,7 @@ where
 		&self,
 		account: AccountId,
 		at: Option<BlockHash>,
-	) -> Result<Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>>;
+	) -> Result<Vec<(CommunityIdentifier, Vec<u8>)>>;
 }
 
 pub struct Balances<Client, Block, AccountId> {
@@ -70,12 +70,19 @@ where
 		&self,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<Block>>)>> {
+	) -> Result<Vec<(CommunityIdentifier, Vec<u8>)>> {
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		return Ok(api.get_all_balances(&at, &account).map_err(runtime_error_into_rpc_err)?)
+		return Ok(api
+			.get_all_balances(&at, &account)
+			.map_err(runtime_error_into_rpc_err)?
+			.iter()
+			// serde can't cope with i128 and panics. So we need to hand-encode the value here
+			// see https://github.com/paritytech/substrate/issues/4641
+			.map(|b| (b.0, b.1.encode()))
+			.collect())
 	}
 }
 
