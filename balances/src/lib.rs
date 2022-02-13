@@ -53,6 +53,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + encointer_communities::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		/// the default demurrage rate applied to community balances
 		#[pallet::constant]
 		type DefaultDemurrage: Get<Demurrage>;
 	}

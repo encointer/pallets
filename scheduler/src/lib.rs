@@ -55,6 +55,7 @@ pub mod pallet {
 		/// Required origin to interfere with the scheduling (though can always be Root)
 		type CeremonyMaster: EnsureOrigin<Self::Origin>;
 
+		/// Who to inform about ceremony phase change
 		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
 		#[pallet::constant]
 		type MomentsPerDay: Get<Self::Moment>;

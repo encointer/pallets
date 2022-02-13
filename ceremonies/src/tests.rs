@@ -20,7 +20,7 @@ use mock::{
 	Origin, System, TestClaim, TestProofOfAttendance, TestRuntime, Timestamp,
 };
 
-use crate::mock::AmountNewbieTickets;
+use crate::mock::EndorsementTicketsPerBootstrapper;
 use approx::assert_abs_diff_eq;
 use encointer_primitives::{
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
@@ -761,7 +761,7 @@ fn issue_reward_works() {
 
 		run_to_next_phase();
 		// REGISTERING
-		EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).ok();
+		EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&alice), &cid).ok();
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
 		assert_abs_diff_eq!(
@@ -803,11 +803,31 @@ fn issue_reward_works() {
 		);
 
 		// Claiming twice does not work for any of the meetup participants
-		assert!(EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).is_err());
-		assert!(EncointerCeremonies::issue_rewards(&account_id(&bob), &cid).is_err());
-		assert!(EncointerCeremonies::issue_rewards(&account_id(&charlie), &cid).is_err());
-		assert!(EncointerCeremonies::issue_rewards(&account_id(&dave), &cid).is_err());
-		assert!(EncointerCeremonies::issue_rewards(&account_id(&ferdie), &cid).is_err());
+		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
+			&account_id(&alice),
+			&cid
+		)
+		.is_err());
+		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
+			&account_id(&bob),
+			&cid
+		)
+		.is_err());
+		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
+			&account_id(&charlie),
+			&cid
+		)
+		.is_err());
+		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
+			&account_id(&dave),
+			&cid
+		)
+		.is_err());
+		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
+			&account_id(&ferdie),
+			&cid
+		)
+		.is_err());
 	});
 }
 
@@ -822,7 +842,7 @@ fn bootstrapping_works() {
 		let eve = AccountKeyring::Eve.pair();
 		let ferdie = AccountKeyring::Ferdie.pair();
 
-		EncointerCeremonies::issue_rewards(&account_id(&alice), &cid).ok();
+		EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&alice), &cid).ok();
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		assert_eq!(
@@ -916,8 +936,8 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
 
-		let endorsees = add_population((AmountNewbieTickets::get() + 1) as usize, 6);
-		for i in 0..AmountNewbieTickets::get() {
+		let endorsees = add_population((EndorsementTicketsPerBootstrapper::get() + 1) as usize, 6);
+		for i in 0..EndorsementTicketsPerBootstrapper::get() {
 			assert_ok!(EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
@@ -929,7 +949,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 			EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
-				account_id(&endorsees[AmountNewbieTickets::get() as usize]),
+				account_id(&endorsees[EndorsementTicketsPerBootstrapper::get() as usize]),
 			),
 			Error::<TestRuntime>::NoMoreNewbieTickets,
 		);
@@ -1166,7 +1186,8 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// REGISTERING
 		for pair in participants.iter() {
-			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
+				.ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1190,7 +1211,8 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// REGISTERING
 		for pair in participants.iter() {
-			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
+				.ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1215,7 +1237,8 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// REGISTERING
 		for pair in participants.iter() {
-			EncointerCeremonies::issue_rewards(&account_id(&pair), &cid).ok();
+			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
+				.ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();

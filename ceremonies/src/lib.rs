@@ -79,10 +79,13 @@ pub mod pallet {
 		type Public: IdentifyAccount<AccountId = Self::AccountId>;
 		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
 		type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+		// The number of ceremony cycles that a participant's reputation valid for
 		#[pallet::constant]
 		type ReputationLifetime: Get<u32>;
+		// The number newbies a bootstrapper can endorse to accelerate community growth
 		#[pallet::constant]
-		type AmountNewbieTickets: Get<u8>;
+		type EndorsementTicketsPerBootstrapper: Get<u8>;
+		// The number of ceremony cycles a community can skip ceremonies before it gets purged
 		#[pallet::constant]
 		type InactivityTimeout: Get<u32>;
 	}
@@ -327,7 +330,7 @@ pub mod pallet {
 
 			ensure!(
 				<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-					T::AmountNewbieTickets::get(),
+					T::EndorsementTicketsPerBootstrapper::get(),
 				Error::<T>::NoMoreNewbieTickets
 			);
 
@@ -353,7 +356,7 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			Self::issue_rewards(&sender, &cid)
+			Self::validate_one_meetup_and_issue_rewards(&sender, &cid)
 		}
 	}
 
@@ -800,32 +803,43 @@ impl<T: Config> Pallet<T> {
 		community_ceremony: CommunityCeremony,
 		random_source: &mut RandomNumberGenerator<T::Hashing>,
 	) -> DispatchResult {
+		info!(
+			target: LOG,
+			"generating meetup assignment params for cid: {:?}", community_ceremony.0
+		);
 		let meetup_multiplier = 10u64;
-		let assignment_count =
-			Self::create_assignment_count(community_ceremony, meetup_multiplier)?;
-		if assignment_count.get_number_of_participants() < 3 {
+		let assignment_allowance =
+			Self::compute_assignment_allowance(community_ceremony, meetup_multiplier)?;
+		let num_meetups = checked_ceil_division(
+			assignment_allowance.get_number_of_participants(),
+			meetup_multiplier,
+		)
+		.ok_or(Error::<T>::CheckedMath)?;
+		if assignment_allowance.get_number_of_participants() < 3 {
+			info!(
+				target: LOG,
+				"less than 3 participants available for a meetup. will not assign any meetups for cid {:?}",
+				community_ceremony.0
+			);
 			return Ok(())
 		}
-
-		let num_meetups =
-			checked_ceil_division(assignment_count.get_number_of_participants(), meetup_multiplier)
-				.ok_or(Error::<T>::CheckedMath)?;
+		info!(target: LOG, "assigning {:} meetups for cid {:?}", num_meetups, community_ceremony.0);
 
 		<Assignments<T>>::insert(
 			community_ceremony,
 			Assignment {
 				bootstrappers_reputables: generate_assignment_function_params(
-					assignment_count.bootstrappers + assignment_count.reputables,
+					assignment_allowance.bootstrappers + assignment_allowance.reputables,
 					num_meetups,
 					random_source,
 				),
 				endorsees: generate_assignment_function_params(
-					assignment_count.endorsees,
+					assignment_allowance.endorsees,
 					num_meetups,
 					random_source,
 				),
 				newbies: generate_assignment_function_params(
-					assignment_count.newbies,
+					assignment_allowance.newbies,
 					num_meetups,
 					random_source,
 				),
@@ -836,7 +850,7 @@ impl<T: Config> Pallet<T> {
 			},
 		);
 
-		<AssignmentCounts<T>>::insert(community_ceremony, assignment_count);
+		<AssignmentCounts<T>>::insert(community_ceremony, assignment_allowance);
 		<MeetupCount<T>>::insert(community_ceremony, num_meetups);
 		Ok(())
 	}
@@ -855,38 +869,61 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn create_assignment_count(
+	fn compute_assignment_allowance(
 		community_ceremony: CommunityCeremony,
 		meetup_multiplier: u64,
 	) -> Result<AssignmentCount, Error<T>> {
 		let num_locations =
 			<encointer_communities::Pallet<T>>::get_locations(&community_ceremony.0).len() as u64;
+		debug!(
+			target: LOG,
+			"Number of locations for cid {:?} is {:?}", community_ceremony.0, num_locations
+		);
 		if num_locations == 0 {
 			return Err(<Error<T>>::NoLocationsAvailable.into())
 		}
 
-		let num_assigned_bootstrappers = Self::bootstrapper_count(community_ceremony);
-		let num_reputables = Self::reputable_count(community_ceremony);
-		let max_num_meetups =
-			min(num_locations, find_prime_below(num_assigned_bootstrappers + num_reputables));
-
-		let mut available_slots =
-			max_num_meetups.checked_mul(meetup_multiplier).ok_or(Error::<T>::CheckedMath)? -
-				num_assigned_bootstrappers; //safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers + num_reputables
-
-		let num_assigned_reputables = min(num_reputables, available_slots);
-		available_slots -= num_assigned_reputables; //safe; given by minimum above
-
-		let num_assigned_endorsees = min(Self::endorsee_count(community_ceremony), available_slots);
-		available_slots -= num_assigned_endorsees; //safe; given by minimum above
-
-		let num_assigned_newbies = min(
-			min(Self::newbie_count(community_ceremony), available_slots),
-			(num_assigned_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3, //safe; sum equals total
+		let num_registered_bootstrappers = Self::bootstrapper_count(community_ceremony);
+		let num_registered_reputables = Self::reputable_count(community_ceremony);
+		let num_registered_endorsees = Self::endorsee_count(community_ceremony);
+		let num_registered_newbies = Self::newbie_count(community_ceremony);
+		debug!(
+			target: LOG,
+			"Number of registered bootstrappers {:?}, endorsees {:?}, reputables {:?}, newbies {:?}",
+			num_registered_bootstrappers, num_registered_endorsees, num_registered_reputables,
+			num_registered_newbies
 		);
 
+		let max_num_meetups = min(
+			num_locations,
+			find_prime_below(num_registered_bootstrappers + num_registered_reputables),
+		);
+
+		//safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers + num_reputables
+		let mut seats_left =
+			max_num_meetups.checked_mul(meetup_multiplier).ok_or(Error::<T>::CheckedMath)? -
+				num_registered_bootstrappers;
+
+		let num_assigned_reputables = min(num_registered_reputables, seats_left);
+		seats_left -= num_assigned_reputables; //safe; given by minimum above
+
+		let num_assigned_endorsees = min(num_registered_endorsees, seats_left);
+		seats_left -= num_assigned_endorsees; //safe; given by minimum above
+
+		let num_assigned_newbies = min(
+			min(num_registered_newbies, seats_left),
+			(num_registered_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3, //safe; sum equals total
+		);
+		info!(
+			target: LOG,
+			"Number of assigned bootstrappers {:?}, endorsees {:?}, reputables {:?}, newbies {:?}",
+			num_registered_bootstrappers,
+			num_assigned_endorsees,
+			num_assigned_reputables,
+			num_assigned_newbies
+		);
 		Ok(AssignmentCount {
-			bootstrappers: num_assigned_bootstrappers,
+			bootstrappers: num_registered_bootstrappers,
 			reputables: num_assigned_reputables,
 			endorsees: num_assigned_endorsees,
 			newbies: num_assigned_newbies,
@@ -1089,7 +1126,7 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn issue_rewards(
+	fn validate_one_meetup_and_issue_rewards(
 		participant: &T::AccountId,
 		cid: &CommunityIdentifier,
 	) -> DispatchResultWithPostInfo {
@@ -1105,13 +1142,20 @@ impl<T: Config> Pallet<T> {
 		if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
 			return Err(<Error<T>>::RewardsAlreadyIssued.into())
 		}
-
+		info!(
+			target: LOG,
+			"validating meetup {:?} for cid {:?} triggered by {:?}", meetup_index, cid, participant
+		);
 		// first, evaluate votes on how many participants showed up
-		let (n_confirmed, n_honest_participants) =
-			match Self::ballot_meetup_n_votes(cid, cindex, meetup_index) {
-				Some(nn) => nn,
-				_ => return Err(<Error<T>>::VotesNotDependable.into()),
-			};
+		let (n_confirmed, vote_count) = match Self::ballot_meetup_n_votes(cid, cindex, meetup_index)
+		{
+			Some(nn) => nn,
+			_ => return Err(<Error<T>>::VotesNotDependable.into()),
+		};
+		debug!(
+			target: LOG,
+			"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
+		);
 		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index);
 		for participant in &meetup_participants {
 			if Self::meetup_participant_count_vote((cid, cindex), &participant) != n_confirmed {
@@ -1128,7 +1172,7 @@ impl<T: Config> Pallet<T> {
 				&Self::attestation_index((*cid, cindex), &participant),
 			) {
 				Some(attestees) =>
-					if attestees.len() < (n_honest_participants - 1) as usize {
+					if attestees.len() < (vote_count - 1) as usize {
 						debug!(
 							target: LOG,
 							"skipped participant because didn't testify for honest peers: {:?}",
@@ -1154,7 +1198,7 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 
-			if was_attested_count < (n_honest_participants - 1) {
+			if was_attested_count < (vote_count - 1) {
 				debug!(
 					"skipped participant because of too few attestations ({}): {:?}",
 					was_attested_count, participant
@@ -1176,6 +1220,9 @@ impl<T: Config> Pallet<T> {
 		Ok(().into())
 	}
 
+	/// count all votes for a meetup
+	/// returns an option for (N, n) where N is the confirmed number of participants and
+	/// n is the number of votes confirming N
 	fn ballot_meetup_n_votes(
 		cid: &CommunityIdentifier,
 		cindex: CeremonyIndexType,
@@ -1195,12 +1242,19 @@ impl<T: Config> Pallet<T> {
 			};
 		}
 		if n_vote_candidates.is_empty() {
+			debug!(target: LOG, "ballot empty for meetup {:?}, cid: {:?}", meetup_idx, cid);
 			return None
 		}
 		// sort by descending vote count
 		n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
 		if n_vote_candidates[0].1 < 3 {
 			//safe; n_vote_candidate not empty checked above
+			debug!(
+				target: LOG,
+				"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
+				meetup_idx,
+				cid
+			);
 			return None
 		}
 		Some(n_vote_candidates[0])
