@@ -34,7 +34,7 @@ where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	BlockNumber: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "encointerBalances_getAllBalances()")]
+	#[rpc(name = "encointerBalances_getAllBalances")]
 	fn get_all_balances(
 		&self,
 		account: AccountId,
