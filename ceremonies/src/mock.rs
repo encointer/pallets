@@ -63,7 +63,7 @@ impl dut::Config for TestRuntime {
 	type Signature = Signature;
 	type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
 	type ReputationLifetime = ReputationLifetime;
-	type AmountNewbieTickets = AmountNewbieTickets;
+	type EndorsementTicketsPerBootstrapper = AmountNewbieTickets;
 	type InactivityTimeout = InactivityTimeout;
 }
 

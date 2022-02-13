@@ -79,10 +79,13 @@ pub mod pallet {
 		type Public: IdentifyAccount<AccountId = Self::AccountId>;
 		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
 		type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+		// The number of ceremony cycles that a participant's reputation valid for
 		#[pallet::constant]
 		type ReputationLifetime: Get<u32>;
+		// The number newbies a bootstrapper can endorse to accelerate community growth
 		#[pallet::constant]
-		type AmountNewbieTickets: Get<u8>;
+		type EndorsementTicketsPerBootstrapper: Get<u8>;
+		// The number of ceremony cycles a community can skip ceremonies before it gets purged
 		#[pallet::constant]
 		type InactivityTimeout: Get<u32>;
 	}
@@ -327,7 +330,7 @@ pub mod pallet {
 
 			ensure!(
 				<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-					T::AmountNewbieTickets::get(),
+					T::EndorsementTicketsPerBootstrapper::get(),
 				Error::<T>::NoMoreNewbieTickets
 			);
 

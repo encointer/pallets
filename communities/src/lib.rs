@@ -63,10 +63,12 @@ pub mod pallet {
 		/// Required origin for adding or updating a community (though can always be Root).
 		type CommunityMaster: EnsureOrigin<Self::Origin>;
 
+		/// [s] minimum adversary trip time between two locations measured in local (solar) time.
 		#[pallet::constant]
-		type MinSolarTripTimeS: Get<u32>; // [s] minimum adversary trip time between two locations measured in local (solar) time.
+		type MinSolarTripTimeS: Get<u32>;
+		/// [m/s] max speed over ground of adversary
 		#[pallet::constant]
-		type MaxSpeedMps: Get<u32>; // [m/s] max speed over ground of adversary
+		type MaxSpeedMps: Get<u32>;
 	}
 
 	#[pallet::call]
