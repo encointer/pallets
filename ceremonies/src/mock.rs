@@ -50,7 +50,7 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const ReputationLifetime: u32 = 6;
-	pub const AmountNewbieTickets: u8 = 50;
+	pub const EndorsementTicketsPerBootstrapper: u8 = 50;
 	pub const MinSolarTripTimeS: u32 = 1;
 	pub const MaxSpeedMps: u32 = 83;
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
@@ -63,7 +63,7 @@ impl dut::Config for TestRuntime {
 	type Signature = Signature;
 	type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
 	type ReputationLifetime = ReputationLifetime;
-	type EndorsementTicketsPerBootstrapper = AmountNewbieTickets;
+	type EndorsementTicketsPerBootstrapper = EndorsementTicketsPerBootstrapper;
 	type InactivityTimeout = InactivityTimeout;
 }
 
