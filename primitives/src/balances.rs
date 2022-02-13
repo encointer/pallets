@@ -26,7 +26,9 @@ use serde::{Deserialize, Serialize};
 pub type BalanceType = I64F64;
 pub type Demurrage = I64F64;
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BalanceEntry<BlockNumber> {
 	/// The balance of the account after last manual adjustment
