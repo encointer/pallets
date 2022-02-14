@@ -22,6 +22,9 @@ use sp_core::RuntimeDebug;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "serde_derive")]
+use ep_core::serde::serialize_fixed;
+
 // We're working with fixpoint here.
 pub type BalanceType = I64F64;
 pub type Demurrage = I64F64;
@@ -32,6 +35,7 @@ pub type Demurrage = I64F64;
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct BalanceEntry<BlockNumber> {
 	/// The balance of the account after last manual adjustment
+	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_fixed"))]
 	pub principal: BalanceType,
 	/// The time (block height) at which the balance was last adjusted
 	pub last_update: BlockNumber,
