@@ -24,3 +24,19 @@ a registry for classifieds from community members, linking to IPFS
 
 ## personhood-oracle
 a digital personhood verification oracle with XCM support. See pallet sybil-gate-example for how to use this from another parachain
+
+## Dev Hints
+* There is a know issue with serializing u-/i128 in the json-rpc crate, see (https://github.com/paritytech/substrate/issues/4641). 
+This affects us predominantly when serializing fixed point numbers in the custom RPCs. There is a custom serialization
+shim as a workaround for that issue in [ep-core](./primitives/core), which can be used as custom serde attribute like:
+
+```rust
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+pub struct BalanceEntry<BlockNumber> {
+	/// The balance of the account after last manual adjustment
+	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_fixed"))]
+	pub principal: BalanceType,
+	/// The time (block height) at which the balance was last adjusted
+	pub last_update: BlockNumber,
+}
+```
