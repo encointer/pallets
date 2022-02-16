@@ -153,6 +153,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// calculate actual value with demurrage
+	/// the formula applied is
+	///   balance_now = balance_last_written
+	///     * exp(-1* demurrage_rate_per_block * number_of_blocks_since_last_written)
 	fn apply_demurrage(
 		entry: BalanceEntry<T::BlockNumber>,
 		demurrage: BalanceType,

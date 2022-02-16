@@ -49,8 +49,8 @@ pub type Degree = I64F64;
 pub type NominalIncome = I64F64;
 
 /// Ensure that the demurrage is in a sane range.
-///
-/// Todo: Other sanity checks, e.g., 0 < e^(demurrage_per_block*sum(phase_durations)) < 1?
+/// Must be positive for demuragge to decrease balances
+/// zero is legit as it effectively disables demurrage
 pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), ()> {
 	if demurrage < &Demurrage::from_num(0) {
 		return Err(())
