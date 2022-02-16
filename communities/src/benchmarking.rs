@@ -1,4 +1,4 @@
-use crate::{Module as PalletModule, *};
+use crate::*;
 use encointer_primitives::{
 	balances::Demurrage,
 	communities::{CommunityMetadata, Location, NominalIncome},
@@ -41,13 +41,13 @@ benchmarks! {
 	let nominal_income = Some(NominalIncome::from_num(1));
 
 	// setup test community
-	PalletModule::<T>::new_community(RawOrigin::Signed(caller.clone()).into(), get_location(0), bootstrappers.clone(), community_metadata.clone(), demurrage.clone(), nominal_income.clone());
+	Pallet::<T>::new_community(RawOrigin::Signed(caller.clone()).into(), get_location(0), bootstrappers.clone(), community_metadata.clone(), demurrage.clone(), nominal_income.clone());
 	let cid = CommunityIdentifier::new(get_location(0).clone(), bootstrappers.clone()).unwrap();
 	for j in 1..i-1 {
-		assert!(PalletModule::<T>::add_location(RawOrigin::Root.into(), cid, get_location(j)).is_ok());
+		assert!(Pallet::<T>::add_location(RawOrigin::Root.into(), cid, get_location(j)).is_ok());
 	}
 	warn!("setup complete.");
 	}: _(RawOrigin::Signed(caller), get_location(i-1), bootstrappers, community_metadata, demurrage, nominal_income)
 }
 
-//impl_benchmark_test_suite!(PalletModule, crate::tests::new_test_ext(), crate::tests::Test);
+//impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::tests::Test);
