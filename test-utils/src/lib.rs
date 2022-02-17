@@ -19,8 +19,11 @@
 //extern crate node_primitives;
 
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{ord_parameter_types, parameter_types, traits::Get};
-use frame_system::EnsureSignedBy;
+use frame_support::{
+	ord_parameter_types, parameter_types,
+	traits::{EnsureOneOf, Get},
+};
+use frame_system::{EnsureRoot, EnsureSignedBy};
 use polkadot_parachain::primitives::Sibling;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
@@ -263,4 +266,4 @@ ord_parameter_types! {
 }
 
 /// Test origin for the pallet's `EnsureOrigin` associated type.
-pub type EnsureAlice = EnsureSignedBy<Alice, AccountId32>;
+pub type EnsureAlice = EnsureOneOf<EnsureSignedBy<Alice, AccountId32>, EnsureRoot<AccountId32>>;
