@@ -26,7 +26,14 @@ use serde::{Deserialize, Serialize};
 use ep_core::serde::serialize_fixed;
 
 // We're working with fixpoint here.
+
+/// Encointer balances are fixpoint values
 pub type BalanceType = I64F64;
+
+/// Demurrage is the rate of evanescence of balances per block
+/// it must be positive
+/// 0.0 : no demurrage at all
+/// 1.3188e-07 : halving time of 1 year if blocktime is 6s
 pub type Demurrage = I64F64;
 
 #[derive(
