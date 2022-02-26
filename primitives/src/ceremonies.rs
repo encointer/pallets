@@ -70,7 +70,6 @@ pub enum ParticipantType {
 	Newbie,
 }
 
-
 #[derive(
 	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]

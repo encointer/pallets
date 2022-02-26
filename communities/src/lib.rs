@@ -178,6 +178,9 @@ pub mod pallet {
 				},
 			}
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+
+			info!(target: LOG, "added location {:?} to community with cid: {:?}", location, cid);
+			Self::deposit_event(Event::LocationAdded(cid, location));
 			Ok(().into())
 		}
 
@@ -203,6 +206,8 @@ pub mod pallet {
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			Self::remove_location_intern(cid, location, geo_hash);
+			info!(target: LOG, "removed location {:?} to community with cid: {:?}", location, cid);
+			Self::deposit_event(Event::LocationRemoved(cid, location));
 			Ok(().into())
 		}
 
@@ -227,8 +232,9 @@ pub mod pallet {
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
-			Self::deposit_event(Event::MetadataUpdated(cid));
 			info!(target: LOG, "updated community metadata for cid: {:?}", cid);
+			Self::deposit_event(Event::MetadataUpdated(cid));
+
 			Ok(().into())
 		}
 
@@ -245,8 +251,10 @@ pub mod pallet {
 			Self::ensure_cid_exists(&cid)?;
 
 			<DemurragePerBlock<T>>::insert(&cid, &demurrage);
-			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
+
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
+			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
+
 			Ok(().into())
 		}
 
@@ -264,8 +272,10 @@ pub mod pallet {
 			Self::ensure_cid_exists(&cid)?;
 
 			<NominalIncome<T>>::insert(&cid, &nominal_income);
-			Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
+
 			info!(target: LOG, " updated nominal income for cid: {:?}", cid);
+			Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
+
 			Ok(().into())
 		}
 	}
@@ -281,6 +291,10 @@ pub mod pallet {
 		NominalIncomeUpdated(CommunityIdentifier, NominalIncomeType),
 		/// A community's demurrage was updated [community_identifier, new_demurrage]
 		DemurrageUpdated(CommunityIdentifier, Demurrage),
+		/// A location has been added
+		LocationAdded(CommunityIdentifier, Location),
+		/// A location has been removed
+		LocationRemoved(CommunityIdentifier, Location),
 	}
 
 	#[pallet::error]
