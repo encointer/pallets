@@ -695,8 +695,9 @@ fn ballot_meetup_n_votes_works() {
 }
 
 #[test]
-fn issue_reward_works() {
+fn claim_rewards_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.pair();
 		let bob = AccountKeyring::Bob.pair();
@@ -776,7 +777,9 @@ fn issue_reward_works() {
 
 		run_to_next_phase();
 		// REGISTERING
-		EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&alice), &cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 2).into()));
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
 		assert_abs_diff_eq!(

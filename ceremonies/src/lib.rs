@@ -372,7 +372,11 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			Self::validate_one_meetup_and_issue_rewards(&sender, &cid)
+			let (meetup_index, reward_count) =
+				Self::validate_one_meetup_and_issue_rewards(&sender, &cid)?;
+
+			Self::deposit_event(Event::RewardsIssued(cid, meetup_index, reward_count));
+			Ok(().into())
 		}
 	}
 
@@ -385,8 +389,8 @@ pub mod pallet {
 		EndorsedParticipant(CommunityIdentifier, T::AccountId, T::AccountId),
 		/// A participant has registered N attestations for fellow meetup participants
 		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
-		/// rewards have been claimed successfully for a meetup at the previous ceremony
-		RewardsClaimed(CommunityIdentifier, MeetupIndexType),
+		/// rewards have been claimed and issued successfully for N participants for their meetup at the previous ceremony
+		RewardsIssued(CommunityIdentifier, MeetupIndexType, u8),
 	}
 
 	#[pallet::error]
@@ -1156,7 +1160,7 @@ impl<T: Config> Pallet<T> {
 	fn validate_one_meetup_and_issue_rewards(
 		participant: &T::AccountId,
 		cid: &CommunityIdentifier,
-	) -> DispatchResultWithPostInfo {
+	) -> Result<(MeetupIndexType, u8), Error<T>> {
 		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
 			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
 		}
@@ -1184,6 +1188,7 @@ impl<T: Config> Pallet<T> {
 			"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
 		);
 		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index);
+		let mut reward_count = 0;
 		for participant in &meetup_participants {
 			if Self::meetup_participant_count_vote((cid, cindex), &participant) != n_confirmed {
 				debug!(
@@ -1241,10 +1246,11 @@ impl<T: Config> Pallet<T> {
 					Reputation::VerifiedUnlinked,
 				);
 			}
+			reward_count += 1;
 		}
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
 		info!(target: LOG, "issuing rewards completed");
-		Ok(().into())
+		Ok((meetup_index, reward_count))
 	}
 
 	/// count all votes for a meetup
