@@ -193,7 +193,13 @@ pub mod pallet {
 
 			debug!(
 				target: LOG,
-				"meetup {} at location {:?} should happen at {:?} for cid {:?}",
+				"{:?} attempts to register {:?} attested claims",
+				sender,
+				claims.len()
+			);
+			debug!(
+				target: LOG,
+				"meetup {} at location {:?} planned to happen at {:?} for cid {:?}",
 				meetup_index,
 				mlocation,
 				mtime,
@@ -203,7 +209,7 @@ pub mod pallet {
 			for claim in claims.iter() {
 				let claimant = &claim.claimant_public;
 				if claimant == &sender {
-					warn!(target: LOG, "ignoring claim that is from sender: {:?}", claimant);
+					warn!(target: LOG, "ignoring claim for self: {:?}", claimant);
 					continue
 				};
 				if !meetup_participants.contains(claimant) {
@@ -306,7 +312,14 @@ pub mod pallet {
 			}
 			<AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestees);
 			<AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
-			debug!(target: LOG, "successfully registered {} claims", verified_attestees.len());
+			let verified_count = verified_attestees.len() as u32;
+			debug!(target: LOG, "successfully registered {} claims", verified_count);
+			Self::deposit_event(Event::AttestationsRegistered(
+				cid,
+				meetup_index,
+				verified_count,
+				sender,
+			));
 			Ok(().into())
 		}
 
@@ -367,8 +380,8 @@ pub mod pallet {
 		ParticipantRegistered(CommunityIdentifier, ParticipantType, T::AccountId),
 		/// A bootstrapper has endorsed a participant who can now register as endorsee for this ceremony
 		EndorsedParticipant(CommunityIdentifier, T::AccountId),
-		/// A participant has registered attestations for fellow meetup participants
-		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, T::AccountId),
+		/// A participant has registered N attestations for fellow meetup participants
+		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
 		/// rewards have been claimed successfully for a meetup at the previous ceremony
 		RewardsClaimed(CommunityIdentifier, MeetupIndexType),
 	}

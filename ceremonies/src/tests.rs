@@ -393,6 +393,7 @@ fn registering_participant_in_wrong_phase_fails() {
 #[test]
 fn attest_claims_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.pair();
 		let bob = AccountKeyring::Bob.pair();
@@ -409,6 +410,10 @@ fn attest_claims_works() {
 		let loc = Location::default();
 		let time = correct_meetup_time(&cid, 1);
 		attest_all(account_id(&alice), &vec![&bob, &ferdie], cid, 1, 1, loc, time, 3);
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::AttestationsRegistered(cid, 1, 2, alice.public().into()).into())
+		);
 		attest_all(account_id(&bob), &vec![&alice, &ferdie], cid, 1, 1, loc, time, 3);
 
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
