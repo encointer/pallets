@@ -36,7 +36,7 @@ use sp_core::{sr25519, Pair, H256, U256};
 use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
 use test_utils::{
-	helpers::{account_id, bootstrappers, register_test_community, last_event},
+	helpers::{account_id, bootstrappers, last_event, register_test_community},
 	*,
 };
 
@@ -301,8 +301,10 @@ fn registering_participant_works() {
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
 		assert_ok!(register(alice.clone(), cid, None));
 
-		assert_eq!(last_event::<TestRuntime>(),
-				   Some(Event::ParticipantRegistered(alice.clone()).into()));
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::ParticipantRegistered(alice.clone()).into())
+		);
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 1);
 		assert_ok!(register(bob.clone(), cid, None));

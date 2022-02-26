@@ -84,8 +84,13 @@ fn transfer_should_work() {
 		let balance: f64 = EncointerBalances::total_issuance(cid).lossy_into();
 		assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
 
-		assert_eq!(last_event::<TestRuntime>(),
-				   Some(Event::Transferred(cid, alice.clone(), bob.clone(), BalanceType::from_num(9.999)).into()));
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(
+				Event::Transferred(cid, alice.clone(), bob.clone(), BalanceType::from_num(9.999))
+					.into()
+			)
+		);
 
 		assert_noop!(
 			EncointerBalances::transfer(Some(alice).into(), bob, cid, BalanceType::from_num(60)),
