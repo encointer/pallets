@@ -292,6 +292,7 @@ fn fully_attest_meetup(
 #[test]
 fn registering_participant_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
@@ -299,6 +300,7 @@ fn registering_participant_works() {
 		assert!(EncointerBalances::issue(cid, &alice, NominalIncome::from_num(1)).is_ok());
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
+
 		assert_ok!(register(alice.clone(), cid, None));
 
 		assert_eq!(
