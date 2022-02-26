@@ -305,7 +305,10 @@ fn registering_participant_works() {
 
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::ParticipantRegistered(alice.clone()).into())
+			Some(
+				Event::ParticipantRegistered(cid, ParticipantType::Bootstrapper, alice.clone())
+					.into()
+			)
 		);
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 1);

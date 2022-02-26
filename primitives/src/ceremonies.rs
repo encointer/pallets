@@ -57,6 +57,20 @@ impl Default for Reputation {
 	}
 }
 
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+pub enum ParticipantType {
+	// participant is a bootstrapper for this community
+	Bootstrapper,
+	// participant has recently been attested as a person
+	Reputable,
+	// participant has been endorsed by a bootstrapper
+	Endorsee,
+	// participant has no reputation yet
+	Newbie,
+}
+
+
 #[derive(
 	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]

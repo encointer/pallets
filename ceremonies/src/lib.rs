@@ -149,11 +149,11 @@ pub mod pallet {
 				);
 			};
 
-			Self::register(cid, cindex, &sender, proof.is_some())?;
+			let participant_type = Self::register(cid, cindex, &sender, proof.is_some())?;
 
-			debug!(target: LOG, "registered participant: {:?}", sender);
+			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
+			Self::deposit_event(Event::ParticipantRegistered(cid, participant_type, sender));
 
-			Self::deposit_event(Event::ParticipantRegistered(sender));
 			Ok(().into())
 		}
 
@@ -363,8 +363,14 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Participant registered for next ceremony [who]
-		ParticipantRegistered(T::AccountId),
+		/// Participant registered for next ceremony [community, participant type, who]
+		ParticipantRegistered(CommunityIdentifier, ParticipantType, T::AccountId),
+		/// A bootstrapper has endorsed a participant who can now register as endorsee for this ceremony
+		EndorsedParticipant(CommunityIdentifier, T::AccountId),
+		/// A participant has registered attestations for fellow meetup participants
+		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, T::AccountId),
+		/// rewards have been claimed successfully for a meetup at the previous ceremony
+		RewardsClaimed(CommunityIdentifier, MeetupIndexType),
 	}
 
 	#[pallet::error]
@@ -714,39 +720,44 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		sender: &T::AccountId,
 		is_reputable: bool,
-	) -> Result<(), Error<T>> {
-		if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(&sender) {
-			let participant_index = <BootstrapperCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
-		} else if !(<encointer_balances::Pallet<T>>::total_issuance(cid) > 0) {
-			return Err(Error::<T>::OnlyBootstrappers)
-		} else if is_reputable {
-			let participant_index = <ReputableCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<ReputableRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<ReputableCount<T>>::insert((cid, cindex), participant_index);
-		} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
-			let participant_index = <EndorseeCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<EndorseeCount<T>>::insert((cid, cindex), participant_index);
-		} else {
-			let participant_index = <NewbieCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<NewbieIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<NewbieCount<T>>::insert((cid, cindex), participant_index);
-		}
-		Ok(())
+	) -> Result<ParticipantType, Error<T>> {
+		let participant_type =
+			if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(&sender) {
+				let participant_index = <BootstrapperCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Bootstrapper
+			} else if !(<encointer_balances::Pallet<T>>::total_issuance(cid) > 0) {
+				return Err(Error::<T>::OnlyBootstrappers)
+			} else if is_reputable {
+				let participant_index = <ReputableCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<ReputableRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<ReputableCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Reputable
+			} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
+				let participant_index = <EndorseeCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<EndorseeCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Endorsee
+			} else {
+				let participant_index = <NewbieCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<NewbieIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<NewbieCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Newbie
+			};
+		Ok(participant_type)
 	}
 
 	fn is_registered(
