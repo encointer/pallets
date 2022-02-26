@@ -356,10 +356,13 @@ pub mod pallet {
 				Error::<T>::AlreadyEndorsed
 			);
 
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender, |b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
-			debug!(target: LOG, "endorsed newbie: {:?}", newbie);
-			<Endorsees<T>>::insert((cid, cindex), newbie, ());
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
 			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+
+			debug!(target: LOG, "bootstrapper {:?} endorsed newbie: {:?}", sender, newbie);
+			Self::deposit_event(Event::EndorsedParticipant(cid, sender, newbie));
+
 			Ok(().into())
 		}
 
@@ -378,8 +381,8 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Participant registered for next ceremony [community, participant type, who]
 		ParticipantRegistered(CommunityIdentifier, ParticipantType, T::AccountId),
-		/// A bootstrapper has endorsed a participant who can now register as endorsee for this ceremony
-		EndorsedParticipant(CommunityIdentifier, T::AccountId),
+		/// A bootstrapper (first accountid) has endorsed a participant (second accountid) who can now register as endorsee for this ceremony
+		EndorsedParticipant(CommunityIdentifier, T::AccountId, T::AccountId),
 		/// A participant has registered N attestations for fellow meetup participants
 		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
 		/// rewards have been claimed successfully for a meetup at the previous ceremony

@@ -948,6 +948,7 @@ fn register_with_reputation_works() {
 #[test]
 fn endorsing_newbie_works_until_no_more_tickets() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
 
@@ -958,6 +959,17 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 				cid,
 				account_id(&endorsees[i as usize])
 			));
+			assert_eq!(
+				last_event::<TestRuntime>(),
+				Some(
+					Event::EndorsedParticipant(
+						cid,
+						alice.clone(),
+						account_id(&endorsees[i as usize])
+					)
+					.into()
+				)
+			);
 		}
 
 		assert_err!(
