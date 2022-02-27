@@ -66,6 +66,7 @@ pub mod pallet {
 	pub enum Event {
 		/// Phase changed to `[new phase]`
 		PhaseChangedTo(CeremonyPhaseType),
+		CeremonySchedulePushedByOneDay,
 	}
 
 	#[pallet::storage]
@@ -151,6 +152,7 @@ pub mod pallet {
 			T::CeremonyMaster::ensure_origin(origin)?;
 
 			Self::progress_phase()?;
+
 			Ok(().into())
 		}
 
@@ -163,6 +165,7 @@ pub mod pallet {
 
 			let tnext = Self::next_phase_timestamp().saturating_add(T::MomentsPerDay::get());
 			<NextPhaseTimestamp<T>>::put(tnext);
+			Self::deposit_event(Event::CeremonySchedulePushedByOneDay);
 			Ok(().into())
 		}
 	}
@@ -183,6 +186,7 @@ impl<T: Config> Pallet<T> {
 			CeremonyPhaseType::ATTESTING => {
 				let next_ceremony_index = current_ceremony_index.saturating_add(1);
 				<CurrentCeremonyIndex<T>>::put(next_ceremony_index);
+				info!(target: LOG, "new ceremony phase with index {}", next_ceremony_index);
 				CeremonyPhaseType::REGISTERING
 			},
 		};

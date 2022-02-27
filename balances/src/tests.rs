@@ -25,7 +25,7 @@ use encointer_primitives::{
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{new_test_ext, EncointerBalances, System, TestRuntime};
 use test_utils::{
-	helpers::{assert_last_event, register_test_community},
+	helpers::{last_event, register_test_community},
 	AccountKeyring,
 };
 
@@ -84,10 +84,13 @@ fn transfer_should_work() {
 		let balance: f64 = EncointerBalances::total_issuance(cid).lossy_into();
 		assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
 
-		let transferred_event =
-			Event::Transferred(cid, alice.clone(), bob.clone(), BalanceType::from_num(9.999));
-
-		assert_last_event::<TestRuntime>(transferred_event.into());
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(
+				Event::Transferred(cid, alice.clone(), bob.clone(), BalanceType::from_num(9.999))
+					.into()
+			)
+		);
 
 		assert_noop!(
 			EncointerBalances::transfer(Some(alice).into(), bob, cid, BalanceType::from_num(60)),

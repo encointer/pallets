@@ -149,11 +149,11 @@ pub mod pallet {
 				);
 			};
 
-			Self::register(cid, cindex, &sender, proof.is_some())?;
+			let participant_type = Self::register(cid, cindex, &sender, proof.is_some())?;
 
-			debug!(target: LOG, "registered participant: {:?}", sender);
+			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
+			Self::deposit_event(Event::ParticipantRegistered(cid, participant_type, sender));
 
-			Self::deposit_event(Event::ParticipantRegistered(sender));
 			Ok(().into())
 		}
 
@@ -193,7 +193,13 @@ pub mod pallet {
 
 			debug!(
 				target: LOG,
-				"meetup {} at location {:?} should happen at {:?} for cid {:?}",
+				"{:?} attempts to register {:?} attested claims",
+				sender,
+				claims.len()
+			);
+			debug!(
+				target: LOG,
+				"meetup {} at location {:?} planned to happen at {:?} for cid {:?}",
 				meetup_index,
 				mlocation,
 				mtime,
@@ -203,7 +209,7 @@ pub mod pallet {
 			for claim in claims.iter() {
 				let claimant = &claim.claimant_public;
 				if claimant == &sender {
-					warn!(target: LOG, "ignoring claim that is from sender: {:?}", claimant);
+					warn!(target: LOG, "ignoring claim for self: {:?}", claimant);
 					continue
 				};
 				if !meetup_participants.contains(claimant) {
@@ -306,7 +312,14 @@ pub mod pallet {
 			}
 			<AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestees);
 			<AttestationIndex<T>>::insert((cid, cindex), &sender, &idx);
-			debug!(target: LOG, "successfully registered {} claims", verified_attestees.len());
+			let verified_count = verified_attestees.len() as u32;
+			debug!(target: LOG, "successfully registered {} claims", verified_count);
+			Self::deposit_event(Event::AttestationsRegistered(
+				cid,
+				meetup_index,
+				verified_count,
+				sender,
+			));
 			Ok(().into())
 		}
 
@@ -343,10 +356,13 @@ pub mod pallet {
 				Error::<T>::AlreadyEndorsed
 			);
 
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender, |b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
-			debug!(target: LOG, "endorsed newbie: {:?}", newbie);
-			<Endorsees<T>>::insert((cid, cindex), newbie, ());
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
 			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+
+			debug!(target: LOG, "bootstrapper {:?} endorsed newbie: {:?}", sender, newbie);
+			Self::deposit_event(Event::EndorsedParticipant(cid, sender, newbie));
+
 			Ok(().into())
 		}
 
@@ -356,15 +372,25 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			Self::validate_one_meetup_and_issue_rewards(&sender, &cid)
+			let (meetup_index, reward_count) =
+				Self::validate_one_meetup_and_issue_rewards(&sender, &cid)?;
+
+			Self::deposit_event(Event::RewardsIssued(cid, meetup_index, reward_count));
+			Ok(().into())
 		}
 	}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Participant registered for next ceremony [who]
-		ParticipantRegistered(T::AccountId),
+		/// Participant registered for next ceremony [community, participant type, who]
+		ParticipantRegistered(CommunityIdentifier, ParticipantType, T::AccountId),
+		/// A bootstrapper (first accountid) has endorsed a participant (second accountid) who can now register as endorsee for this ceremony
+		EndorsedParticipant(CommunityIdentifier, T::AccountId, T::AccountId),
+		/// A participant has registered N attestations for fellow meetup participants
+		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
+		/// rewards have been claimed and issued successfully for N participants for their meetup at the previous ceremony
+		RewardsIssued(CommunityIdentifier, MeetupIndexType, u8),
 	}
 
 	#[pallet::error]
@@ -714,39 +740,44 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		sender: &T::AccountId,
 		is_reputable: bool,
-	) -> Result<(), Error<T>> {
-		if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(&sender) {
-			let participant_index = <BootstrapperCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
-		} else if !(<encointer_balances::Pallet<T>>::total_issuance(cid) > 0) {
-			return Err(Error::<T>::OnlyBootstrappers)
-		} else if is_reputable {
-			let participant_index = <ReputableCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<ReputableRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<ReputableCount<T>>::insert((cid, cindex), participant_index);
-		} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
-			let participant_index = <EndorseeCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<EndorseeCount<T>>::insert((cid, cindex), participant_index);
-		} else {
-			let participant_index = <NewbieCount<T>>::get((cid, cindex))
-				.checked_add(1)
-				.ok_or(Error::<T>::RegistryOverflow)?;
-			<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-			<NewbieIndex<T>>::insert((cid, cindex), &sender, &participant_index);
-			<NewbieCount<T>>::insert((cid, cindex), participant_index);
-		}
-		Ok(())
+	) -> Result<ParticipantType, Error<T>> {
+		let participant_type =
+			if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(&sender) {
+				let participant_index = <BootstrapperCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Bootstrapper
+			} else if !(<encointer_balances::Pallet<T>>::total_issuance(cid) > 0) {
+				return Err(Error::<T>::OnlyBootstrappers)
+			} else if is_reputable {
+				let participant_index = <ReputableCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<ReputableRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<ReputableCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Reputable
+			} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
+				let participant_index = <EndorseeCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<EndorseeCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Endorsee
+			} else {
+				let participant_index = <NewbieCount<T>>::get((cid, cindex))
+					.checked_add(1)
+					.ok_or(Error::<T>::RegistryOverflow)?;
+				<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
+				<NewbieIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<NewbieCount<T>>::insert((cid, cindex), participant_index);
+				ParticipantType::Newbie
+			};
+		Ok(participant_type)
 	}
 
 	fn is_registered(
@@ -1129,7 +1160,7 @@ impl<T: Config> Pallet<T> {
 	fn validate_one_meetup_and_issue_rewards(
 		participant: &T::AccountId,
 		cid: &CommunityIdentifier,
-	) -> DispatchResultWithPostInfo {
+	) -> Result<(MeetupIndexType, u8), Error<T>> {
 		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
 			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
 		}
@@ -1157,6 +1188,7 @@ impl<T: Config> Pallet<T> {
 			"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
 		);
 		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index);
+		let mut reward_count = 0;
 		for participant in &meetup_participants {
 			if Self::meetup_participant_count_vote((cid, cindex), &participant) != n_confirmed {
 				debug!(
@@ -1214,10 +1246,11 @@ impl<T: Config> Pallet<T> {
 					Reputation::VerifiedUnlinked,
 				);
 			}
+			reward_count += 1;
 		}
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
 		info!(target: LOG, "issuing rewards completed");
-		Ok(().into())
+		Ok((meetup_index, reward_count))
 	}
 
 	/// count all votes for a meetup

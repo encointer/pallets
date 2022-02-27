@@ -16,7 +16,7 @@
 
 use crate::{
 	mock::{master, new_test_ext, Origin, System, TestRuntime, Timestamp},
-	CeremonyPhaseType,
+	CeremonyPhaseType, Event,
 };
 use frame_support::{
 	assert_ok,
@@ -24,7 +24,10 @@ use frame_support::{
 };
 use sp_runtime::DispatchError;
 use std::ops::Rem;
-use test_utils::{helpers::assert_dispatch_err, *};
+use test_utils::{
+	helpers::{assert_dispatch_err, last_event},
+	*,
+};
 
 const TEN_MIN: u64 = 600_000;
 const ONE_DAY: u64 = 86_400_000;
@@ -50,9 +53,14 @@ pub fn set_timestamp(t: u64) {
 #[test]
 fn ceremony_phase_statemachine_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::PhaseChangedTo(CeremonyPhaseType::ASSIGNING).into())
+		);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
@@ -119,6 +127,7 @@ fn timestamp_callback_works() {
 #[test]
 fn push_one_day_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let genesis_time: u64 = 0 * TEN_MIN + 1;
 
 		System::set_block_number(0);
@@ -135,6 +144,8 @@ fn push_one_day_works() {
 		set_timestamp(genesis_time + TEN_MIN);
 
 		assert_ok!(EncointerScheduler::push_by_one_day(Origin::signed(master())));
+
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::CeremonySchedulePushedByOneDay.into()));
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 2 * ONE_DAY

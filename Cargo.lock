@@ -1015,7 +1015,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bs58",
  "concat-arrays",
@@ -3164,7 +3164,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -3210,7 +3210,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -3254,7 +3254,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -3307,7 +3307,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -3380,7 +3380,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5680,7 +5680,7 @@ dependencies = [
 
 [[package]]
 name = "test-utils"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",

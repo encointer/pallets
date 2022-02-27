@@ -17,12 +17,12 @@
 use super::*;
 use approx::assert_abs_diff_eq;
 use frame_support::assert_ok;
-use mock::{dut, new_test_ext, EncointerCommunities, Origin, TestRuntime};
+use mock::{dut, new_test_ext, EncointerCommunities, Origin, System, TestRuntime};
 use sp_core::sr25519;
 use sp_runtime::DispatchError;
 
 use test_utils::{
-	helpers::{account_id, assert_dispatch_err, bootstrappers},
+	helpers::{account_id, assert_dispatch_err, bootstrappers, last_event},
 	*,
 };
 
@@ -125,6 +125,7 @@ fn haversine_distance_works() {
 #[test]
 fn new_community_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
@@ -144,7 +145,10 @@ fn new_community_works() {
 			None,
 			None
 		));
+
 		let cid = CommunityIdentifier::new(location.clone(), bs.clone()).unwrap();
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::CommunityRegistered(cid).into()));
+
 		let cids = EncointerCommunities::community_identifiers();
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 		assert!(cids.contains(&cid));
@@ -235,6 +239,7 @@ fn two_communities_in_same_bucket_works() {
 #[test]
 fn updating_community_metadata_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
 		let new_metadata = CommunityMetadataType { name: "New".into(), ..Default::default() };
 
@@ -243,6 +248,7 @@ fn updating_community_metadata_works() {
 			cid,
 			new_metadata.clone(),
 		));
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::MetadataUpdated(cid).into()));
 		assert_eq!(CommunityMetadata::<TestRuntime>::try_get(&cid).unwrap(), new_metadata);
 	});
 }
@@ -267,17 +273,20 @@ fn updating_community_errs_with_invalid_origin() {
 #[test]
 fn updating_nominal_income_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert!(NominalIncome::<TestRuntime>::try_get(cid).is_err());
+		let income = BalanceType::from_num(1.1);
 		assert_ok!(EncointerCommunities::update_nominal_income(
 			Origin::signed(AccountKeyring::Alice.into()),
 			cid,
-			BalanceType::from_num(1.1),
+			income,
 		));
 		assert_eq!(
-			NominalIncome::<TestRuntime>::try_get(&cid).unwrap(),
-			BalanceType::from_num(1.1)
+			last_event::<TestRuntime>(),
+			Some(Event::NominalIncomeUpdated(cid, income).into())
 		);
+		assert_eq!(NominalIncome::<TestRuntime>::try_get(&cid).unwrap(), income);
 	});
 }
 
@@ -299,17 +308,20 @@ fn updating_nominal_income_errs_with_invalid_origin() {
 #[test]
 fn updating_demurrage_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert!(DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
+		let demurrage = Demurrage::from_num(0.0001);
 		assert_ok!(EncointerCommunities::update_demurrage(
 			Origin::signed(AccountKeyring::Alice.into()),
 			cid,
-			Demurrage::from_num(0.0001),
+			demurrage,
 		));
 		assert_eq!(
-			DemurragePerBlock::<TestRuntime>::try_get(&cid).unwrap(),
-			BalanceType::from_num(0.0001)
+			last_event::<TestRuntime>(),
+			Some(Event::DemurrageUpdated(cid, demurrage).into())
 		);
+		assert_eq!(DemurragePerBlock::<TestRuntime>::try_get(&cid).unwrap(), demurrage);
 	});
 }
 
@@ -331,6 +343,7 @@ fn updating_demurrage_errs_with_invalid_origin() {
 #[test]
 fn add_location_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
 
@@ -344,12 +357,13 @@ fn add_location_works() {
 		let geo_hash2 = GeoHash::try_from_params(location2.lat, location2.lon).unwrap();
 		assert_eq!(geo_hash, geo_hash2);
 
-		EncointerCommunities::add_location(
+		assert_ok!(EncointerCommunities::add_location(
 			Origin::signed(some_bootstrapper.clone()),
 			cid,
 			location2,
-		)
-		.ok();
+		));
+
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::LocationAdded(cid, location2).into()));
 		let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
 		let mut expected_locations = vec![location, location2];
 		locations.sort();
@@ -440,6 +454,7 @@ fn remove_community_works() {
 #[test]
 fn remove_location_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
 
@@ -467,12 +482,12 @@ fn remove_location_works() {
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// remove first location
-		EncointerCommunities::remove_location(
+		assert_ok!(EncointerCommunities::remove_location(
 			Origin::signed(some_bootstrapper.clone()),
 			cid,
 			location,
-		)
-		.ok();
+		));
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::LocationRemoved(cid, location).into()));
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location2]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 

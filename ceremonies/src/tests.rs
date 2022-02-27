@@ -36,7 +36,7 @@ use sp_core::{sr25519, Pair, H256, U256};
 use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
 use test_utils::{
-	helpers::{account_id, bootstrappers, register_test_community},
+	helpers::{account_id, bootstrappers, last_event, register_test_community},
 	*,
 };
 
@@ -292,6 +292,7 @@ fn fully_attest_meetup(
 #[test]
 fn registering_participant_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
@@ -299,7 +300,16 @@ fn registering_participant_works() {
 		assert!(EncointerBalances::issue(cid, &alice, NominalIncome::from_num(1)).is_ok());
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
+
 		assert_ok!(register(alice.clone(), cid, None));
+
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(
+				Event::ParticipantRegistered(cid, ParticipantType::Bootstrapper, alice.clone())
+					.into()
+			)
+		);
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 1);
 		assert_ok!(register(bob.clone(), cid, None));
@@ -383,6 +393,7 @@ fn registering_participant_in_wrong_phase_fails() {
 #[test]
 fn attest_claims_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.pair();
 		let bob = AccountKeyring::Bob.pair();
@@ -399,6 +410,10 @@ fn attest_claims_works() {
 		let loc = Location::default();
 		let time = correct_meetup_time(&cid, 1);
 		attest_all(account_id(&alice), &vec![&bob, &ferdie], cid, 1, 1, loc, time, 3);
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::AttestationsRegistered(cid, 1, 2, alice.public().into()).into())
+		);
 		attest_all(account_id(&bob), &vec![&alice, &ferdie], cid, 1, 1, loc, time, 3);
 
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
@@ -680,8 +695,9 @@ fn ballot_meetup_n_votes_works() {
 }
 
 #[test]
-fn issue_reward_works() {
+fn claim_rewards_works() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.pair();
 		let bob = AccountKeyring::Bob.pair();
@@ -761,7 +777,9 @@ fn issue_reward_works() {
 
 		run_to_next_phase();
 		// REGISTERING
-		EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&alice), &cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 2).into()));
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
 		assert_abs_diff_eq!(
@@ -933,6 +951,7 @@ fn register_with_reputation_works() {
 #[test]
 fn endorsing_newbie_works_until_no_more_tickets() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
 
@@ -943,6 +962,17 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 				cid,
 				account_id(&endorsees[i as usize])
 			));
+			assert_eq!(
+				last_event::<TestRuntime>(),
+				Some(
+					Event::EndorsedParticipant(
+						cid,
+						alice.clone(),
+						account_id(&endorsees[i as usize])
+					)
+					.into()
+				)
+			);
 		}
 
 		assert_err!(
