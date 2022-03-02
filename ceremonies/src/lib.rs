@@ -88,6 +88,15 @@ pub mod pallet {
 		// The number of ceremony cycles a community can skip ceremonies before it gets purged
 		#[pallet::constant]
 		type InactivityTimeout: Get<u32>;
+		// Target number of participants per meetup
+		#[pallet::constant]
+		type MeetupSizeTarget: Get<u64>;
+		// Minimum meetup size
+		#[pallet::constant]
+		type MeetupMinSize: Get<u64>;
+		// Divisor used to determine the ratio of newbies allowed in relation to other participants
+		#[pallet::constant]
+		type MeetupNewbieLimitDivider: Get<u64>;
 	}
 
 	#[pallet::call]
@@ -838,7 +847,7 @@ impl<T: Config> Pallet<T> {
 			target: LOG,
 			"generating meetup assignment params for cid: {:?}", community_ceremony.0
 		);
-		let meetup_multiplier = 10u64;
+		let meetup_multiplier = T::MeetupSizeTarget::get();
 		let assignment_allowance =
 			Self::compute_assignment_allowance(community_ceremony, meetup_multiplier)?;
 		let num_meetups = checked_ceil_division(
@@ -846,7 +855,7 @@ impl<T: Config> Pallet<T> {
 			meetup_multiplier,
 		)
 		.ok_or(Error::<T>::CheckedMath)?;
-		if assignment_allowance.get_number_of_participants() < 3 {
+		if assignment_allowance.get_number_of_participants() < T::MeetupMinSize::get() {
 			info!(
 				target: LOG,
 				"less than 3 participants available for a meetup. will not assign any meetups for cid {:?}",
@@ -943,7 +952,8 @@ impl<T: Config> Pallet<T> {
 
 		let num_assigned_newbies = min(
 			min(num_registered_newbies, seats_left),
-			(num_registered_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3, //safe; sum equals total
+			(num_registered_bootstrappers + num_assigned_reputables + num_assigned_endorsees) /
+				T::MeetupNewbieLimitDivider::get(), //safe; sum equals total
 		);
 		info!(
 			target: LOG,
