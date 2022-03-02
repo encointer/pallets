@@ -168,6 +168,27 @@ pub mod pallet {
 			Self::deposit_event(Event::CeremonySchedulePushedByOneDay);
 			Ok(().into())
 		}
+
+		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		pub fn set_phase_duration(
+			origin: OriginFor<T>,
+			ceremony_phase: CeremonyPhaseType,
+			duration: T::Moment,
+		) -> DispatchResultWithPostInfo {
+			T::CeremonyMaster::ensure_origin(origin)?;
+			<PhaseDurations<T>>::insert(ceremony_phase, duration);
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		pub fn set_next_phase_timestamp(
+			origin: OriginFor<T>,
+			timestamp: T::Moment,
+		) -> DispatchResultWithPostInfo {
+			T::CeremonyMaster::ensure_origin(origin)?;
+			<NextPhaseTimestamp<T>>::put(timestamp);
+			Ok(().into())
+		}
 	}
 }
 

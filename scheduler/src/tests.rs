@@ -360,3 +360,107 @@ fn resync_after_next_phase_works_during_attesting() {
 		);
 	});
 }
+
+#[test]
+fn set_phase_duration_errs_with_bad_origin() {
+	new_test_ext(ONE_DAY).execute_with(|| {
+		assert_dispatch_err(
+			EncointerScheduler::set_phase_duration(
+				Origin::signed(AccountKeyring::Bob.into()),
+				CeremonyPhaseType::REGISTERING,
+				Moment::from(10u32),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_phase_duration_works() {
+	new_test_ext(ONE_DAY).execute_with(|| {
+		assert_ok!(EncointerScheduler::set_phase_duration(
+			Origin::signed(master()),
+			CeremonyPhaseType::REGISTERING,
+			Moment::from(10u32)
+		));
+
+		assert_ok!(EncointerScheduler::set_phase_duration(
+			Origin::signed(master()),
+			CeremonyPhaseType::ASSIGNING,
+			Moment::from(11u32)
+		));
+
+		assert_ok!(EncointerScheduler::set_phase_duration(
+			Origin::signed(master()),
+			CeremonyPhaseType::ATTESTING,
+			Moment::from(12u32)
+		));
+
+		assert_eq!(
+			EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING),
+			Moment::from(10u32)
+		);
+
+		assert_eq!(
+			EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING),
+			Moment::from(11u32)
+		);
+
+		assert_eq!(
+			EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING),
+			Moment::from(12u32)
+		);
+
+		assert_ok!(EncointerScheduler::set_phase_duration(
+			Origin::signed(master()),
+			CeremonyPhaseType::REGISTERING,
+			Moment::from(13u32)
+		));
+
+		assert_eq!(
+			EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING),
+			Moment::from(13u32)
+		);
+
+		assert_eq!(
+			EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING),
+			Moment::from(11u32)
+		);
+
+		assert_eq!(
+			EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING),
+			Moment::from(12u32)
+		);
+	});
+}
+
+#[test]
+fn set_next_phase_timestamp_errs_with_bad_origin() {
+	new_test_ext(ONE_DAY).execute_with(|| {
+		assert_dispatch_err(
+			EncointerScheduler::set_next_phase_timestamp(
+				Origin::signed(AccountKeyring::Bob.into()),
+				Moment::from(10u32),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_next_phase_timestamp_works() {
+	new_test_ext(ONE_DAY).execute_with(|| {
+		assert_ok!(EncointerScheduler::set_next_phase_timestamp(
+			Origin::signed(master()),
+			Moment::from(10u32)
+		));
+
+		assert_eq!(EncointerScheduler::next_phase_timestamp(), Moment::from(10u32));
+		assert_ok!(EncointerScheduler::set_next_phase_timestamp(
+			Origin::signed(master()),
+			Moment::from(11u32)
+		));
+
+		assert_eq!(EncointerScheduler::next_phase_timestamp(), Moment::from(11u32));
+	});
+}
