@@ -211,6 +211,9 @@ parameter_types! {
 	pub const ReputationLifetime: u32 = 1;
 	pub const EndorsementTicketsPerBootstrapper: u8 = 50;
 	pub const InactivityTimeout: u32 = 12;
+	pub const MeetupSizeTarget: u64 = 10;
+	pub const MeetupMinSize: u64 = 3;
+	pub const MeetupNewbieLimitDivider: u64 = 3;
 }
 
 #[macro_export]
@@ -224,6 +227,9 @@ macro_rules! impl_encointer_ceremonies {
 			type ReputationLifetime = ReputationLifetime;
 			type EndorsementTicketsPerBootstrapper = EndorsementTicketsPerBootstrapper;
 			type InactivityTimeout = InactivityTimeout;
+			type MeetupSizeTarget = MeetupSizeTarget;
+			type MeetupMinSize = MeetupMinSize;
+			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 		}
 	};
 }

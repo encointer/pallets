@@ -55,6 +55,9 @@ parameter_types! {
 	pub const MaxSpeedMps: u32 = 83;
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 	pub const InactivityTimeout: u32 = 12;
+	pub const MeetupSizeTarget: u64 = 10;
+	pub const MeetupMinSize: u64 = 3;
+	pub const MeetupNewbieLimitDivider: u64 = 3;
 }
 
 impl dut::Config for TestRuntime {
@@ -65,6 +68,9 @@ impl dut::Config for TestRuntime {
 	type ReputationLifetime = ReputationLifetime;
 	type EndorsementTicketsPerBootstrapper = EndorsementTicketsPerBootstrapper;
 	type InactivityTimeout = InactivityTimeout;
+	type MeetupSizeTarget = MeetupSizeTarget;
+	type MeetupMinSize = MeetupMinSize;
+	type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 }
 
 // boilerplate
