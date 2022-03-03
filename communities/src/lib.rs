@@ -35,7 +35,7 @@ use encointer_primitives::{
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
-use frame_support::{ensure, traits::Get};
+use frame_support::ensure;
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
@@ -48,6 +48,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use encointer_primitives::communities::{MaxSpeedMpsType, MinSolarTripTimeType};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -62,13 +63,6 @@ pub mod pallet {
 
 		/// Required origin for adding or updating a community (though can always be Root).
 		type CommunityMaster: EnsureOrigin<Self::Origin>;
-
-		/// [s] minimum adversary trip time between two locations measured in local (solar) time.
-		#[pallet::constant]
-		type MinSolarTripTimeS: Get<u32>;
-		/// [m/s] max speed over ground of adversary
-		#[pallet::constant]
-		type MaxSpeedMps: Get<u32>;
 	}
 
 	#[pallet::call]
@@ -278,6 +272,26 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		pub fn set_min_solar_trip_time_s(
+			origin: OriginFor<T>,
+			min_solar_trip_time_s: MinSolarTripTimeType,
+		) -> DispatchResultWithPostInfo {
+			T::CommunityMaster::ensure_origin(origin)?;
+			<MinSolarTripTimeS<T>>::put(min_solar_trip_time_s);
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		pub fn set_max_speed_mps(
+			origin: OriginFor<T>,
+			max_speed_mps: MaxSpeedMpsType,
+		) -> DispatchResultWithPostInfo {
+			T::CommunityMaster::ensure_origin(origin)?;
+			<MaxSpeedMps<T>>::put(max_speed_mps);
+			Ok(().into())
+		}
 	}
 
 	#[pallet::event]
@@ -369,6 +383,36 @@ pub mod pallet {
 	#[pallet::getter(fn nominal_income)]
 	pub type NominalIncome<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, NominalIncomeType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn min_solar_trip_time_s)]
+	pub(super) type MinSolarTripTimeS<T: Config> =
+		StorageValue<_, MinSolarTripTimeType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn max_speed_mps)]
+	pub(super) type MaxSpeedMps<T: Config> = StorageValue<_, MaxSpeedMpsType, ValueQuery>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub min_solar_trip_time_s: MinSolarTripTimeType,
+		pub max_speed_mps: MaxSpeedMpsType,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { min_solar_trip_time_s: Default::default(), max_speed_mps: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			<MinSolarTripTimeS<T>>::put(&self.min_solar_trip_time_s);
+			<MaxSpeedMps<T>>::put(&self.max_speed_mps);
+		}
+	}
 }
 
 impl<T: Config> Pallet<T> {
@@ -428,7 +472,7 @@ impl<T: Config> Pallet<T> {
 
 		// FIXME: this will not panic, but make sure!
 		let dt = (from.lon - to.lon) * 240; //time, the sun-high needs to travel between locations [s]
-		let tflight = d / T::MaxSpeedMps::get(); // time required to travel between locations at MaxSpeedMps [s]
+		let tflight = d / Self::max_speed_mps(); // time required to travel between locations at MaxSpeedMps [s]
 		let dt: u32 = i64::lossy_from(dt.abs()).saturated_into();
 		tflight.checked_sub(dt).unwrap_or(0)
 	}
@@ -488,14 +532,14 @@ impl<T: Config> Pallet<T> {
 
 		//check if northern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.n)
 		}
 
 		//check if southern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.s)
 		}
@@ -518,42 +562,42 @@ impl<T: Config> Pallet<T> {
 
 		//check if north eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.ne)
 		}
 
 		//check if eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.e)
 		}
 
 		//check if south eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.se)
 		}
 
 		//check if north western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.nw)
 		}
 
 		//check if western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.w)
 		}
 
 		//check if south western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.sw)
 		}
@@ -588,7 +632,7 @@ impl<T: Config> Pallet<T> {
 		let nearby_locations = Self::get_nearby_locations(location)?;
 		for nearby_location in nearby_locations {
 			ensure!(
-				Self::solar_trip_time(location, &nearby_location) >= T::MinSolarTripTimeS::get(),
+				Self::solar_trip_time(location, &nearby_location) >= Self::min_solar_trip_time_s(),
 				<Error<T>>::MinimumDistanceViolationToOtherLocation
 			);
 		}

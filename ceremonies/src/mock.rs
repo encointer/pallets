@@ -51,8 +51,6 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const ReputationLifetime: u32 = 6;
 	pub const EndorsementTicketsPerBootstrapper: u8 = 50;
-	pub const MinSolarTripTimeS: u32 = 1;
-	pub const MaxSpeedMps: u32 = 83;
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 	pub const InactivityTimeout: u32 = 12;
 	pub const MeetupSizeTarget: u64 = 10;
@@ -102,5 +100,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
+
+	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+
 	t.into()
 }

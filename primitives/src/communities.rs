@@ -47,6 +47,8 @@ pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I64F64;
 pub type NominalIncome = I64F64;
+pub type MinSolarTripTimeType = u32;
+pub type MaxSpeedMpsType = u32;
 
 /// Ensure that the demurrage is in a sane range.
 /// Must be positive for demuragge to decrease balances
