@@ -16,11 +16,11 @@
 
 use super::*;
 use mock::{
-	new_test_ext, EncointerBalances, EncointerCeremonies, EncointerCommunities, EncointerScheduler,
-	Origin, System, TestClaim, TestProofOfAttendance, TestRuntime, Timestamp,
+	master, new_test_ext, EncointerBalances, EncointerCeremonies, EncointerCommunities,
+	EncointerScheduler, Origin, System, TestClaim, TestProofOfAttendance, TestRuntime, Timestamp,
 };
+use sp_runtime::DispatchError;
 
-use crate::mock::EndorsementTicketsPerBootstrapper;
 use approx::assert_abs_diff_eq;
 use encointer_primitives::{
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
@@ -36,7 +36,9 @@ use sp_core::{sr25519, Pair, H256, U256};
 use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
 use test_utils::{
-	helpers::{account_id, bootstrappers, last_event, register_test_community},
+	helpers::{
+		account_id, assert_dispatch_err, bootstrappers, last_event, register_test_community,
+	},
 	*,
 };
 
@@ -955,8 +957,11 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
 
-		let endorsees = add_population((EndorsementTicketsPerBootstrapper::get() + 1) as usize, 6);
-		for i in 0..EndorsementTicketsPerBootstrapper::get() {
+		let endorsees = add_population(
+			(EncointerCeremonies::endorsement_tickets_per_bootstrapper() + 1) as usize,
+			6,
+		);
+		for i in 0..EncointerCeremonies::endorsement_tickets_per_bootstrapper() {
 			assert_ok!(EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
@@ -979,7 +984,10 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 			EncointerCeremonies::endorse_newcomer(
 				Origin::signed(alice.clone()),
 				cid,
-				account_id(&endorsees[EndorsementTicketsPerBootstrapper::get() as usize]),
+				account_id(
+					&endorsees
+						[EncointerCeremonies::endorsement_tickets_per_bootstrapper() as usize]
+				),
 			),
 			Error::<TestRuntime>::NoMoreNewbieTickets,
 		);
@@ -1124,7 +1132,7 @@ fn ceremony_index_and_purging_registry_works() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		let reputation_lifetime = <TestRuntime as Config>::ReputationLifetime::get();
+		let reputation_lifetime = EncointerCeremonies::reputation_lifetime();
 
 		assert_ok!(register(alice.clone(), cid, None));
 		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1).unwrap(), alice);
@@ -1612,5 +1620,86 @@ fn generate_meetup_assignment_params_is_random() {
 		let a2 = EncointerCeremonies::assignments((cid, cindex));
 
 		assert_ne!(a1, a2)
+	});
+}
+
+#[test]
+fn set_inactivity_timeout_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCeremonies::set_inactivity_timeout(
+				Origin::signed(AccountKeyring::Bob.into()),
+				1u32,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_inactivity_timeout_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_inactivity_timeout(Origin::signed(master()), 2u32));
+
+		assert_eq!(EncointerCeremonies::inactivity_timeout(), 2u32);
+		assert_ok!(EncointerCeremonies::set_inactivity_timeout(Origin::signed(master()), 3u32));
+
+		assert_eq!(EncointerCeremonies::inactivity_timeout(), 3u32);
+	});
+}
+
+#[test]
+fn set_endorsement_tickets_per_bootstrapper_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
+				Origin::signed(AccountKeyring::Bob.into()),
+				1u8,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_endorsement_tickets_per_bootstrapper_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
+			Origin::signed(master()),
+			2u8
+		));
+
+		assert_eq!(EncointerCeremonies::endorsement_tickets_per_bootstrapper(), 2u8);
+		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
+			Origin::signed(master()),
+			3u8
+		));
+
+		assert_eq!(EncointerCeremonies::endorsement_tickets_per_bootstrapper(), 3u8);
+	});
+}
+
+#[test]
+fn set_reputation_lifetime_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCeremonies::set_reputation_lifetime(
+				Origin::signed(AccountKeyring::Bob.into()),
+				1u32,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_reputation_lifetime_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_reputation_lifetime(Origin::signed(master()), 2u32));
+
+		assert_eq!(EncointerCeremonies::reputation_lifetime(), 2u32);
+		assert_ok!(EncointerCeremonies::set_reputation_lifetime(Origin::signed(master()), 3u32));
+
+		assert_eq!(EncointerCeremonies::reputation_lifetime(), 3u32);
 	});
 }
