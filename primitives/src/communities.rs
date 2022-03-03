@@ -193,7 +193,7 @@ pub struct CommunityMetadata {
 	/// utf8 encoded abbreviation of the name
 	pub symbol: PalletString,
 	/// ipfs cid for multi-resolution resource for the community icon
-	pub icons: IpfsCid,
+	pub assets: IpfsCid,
 	/// ipfs cid for style resources
 	pub theme: Option<IpfsCid>,
 	/// optional link to a community site
@@ -217,11 +217,11 @@ impl CommunityMetadata {
 	pub fn new(
 		name: PalletString,
 		symbol: PalletString,
-		icons: IpfsCid,
+		assets: IpfsCid,
 		theme: Option<IpfsCid>,
 		url: Option<PalletString>,
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
-		let meta = CommunityMetadata { name, symbol, icons, theme, url };
+		let meta = CommunityMetadata { name, symbol, assets, theme, url };
 		match meta.validate() {
 			Ok(()) => Ok(meta),
 			Err(e) => Err(e),
@@ -239,7 +239,7 @@ impl CommunityMetadata {
 			.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
 		validate_ascii(&self.symbol.as_bytes_or_noop())
 			.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
-		validate_ipfs_cid(&self.icons).map_err(|e| CommunityMetadataError::InvalidIpfsCid(e))?;
+		validate_ipfs_cid(&self.assets).map_err(|e| CommunityMetadataError::InvalidIpfsCid(e))?;
 
 		if self.name.len() > 20 {
 			return Err(CommunityMetadataError::TooManyCharactersInName(self.name.len() as u8))
@@ -268,7 +268,7 @@ impl Default for CommunityMetadata {
 		CommunityMetadata {
 			name: "Default".into(),
 			symbol: "DEF".into(),
-			icons: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
+			assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
 			theme: None,
 			url: Some("DefaultUrl".into()),
 		}
@@ -364,9 +364,9 @@ mod tests {
 	}
 
 	#[test]
-	fn validate_metadata_fails_for_invalid_icons_cid() {
+	fn validate_metadata_fails_for_invalid_assets_cid() {
 		let meta = CommunityMetadata {
-			icons: "IhaveCorrectLengthButWrongSymbols1111111111111".into(),
+			assets: "IhaveCorrectLengthButWrongSymbols1111111111111".into(),
 			..Default::default()
 		};
 		assert_eq!(
