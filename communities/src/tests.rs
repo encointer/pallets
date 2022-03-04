@@ -412,6 +412,8 @@ fn add_new_location_errs_with_invalid_origin() {
 #[test]
 fn remove_community_works() {
 	new_test_ext().execute_with(|| {
+		let alice = AccountKeyring::Alice.to_account_id();
+
 		let cid = register_test_community(None, 0.0, 0.0);
 		let cid2 = register_test_community(None, 1.0, 1.0);
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
@@ -450,8 +452,15 @@ fn remove_community_works() {
 		assert_eq!(locations, expected_locations);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(100)));
+		assert_ok!(EncointerBalances::issue(cid2, &alice, BalanceType::from_num(100)));
+		assert_eq!(EncointerCommunities::get_all_balances(&alice).len(), 2);
+
 		// remove first location
 		EncointerCommunities::remove_community(cid);
+
+		// assert that balances have been purged
+		assert_eq!(EncointerCommunities::get_all_balances(&alice).len(), 1);
 
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
 		assert_eq!(EncointerCommunities::locations(&cid2, &geo_hash3), vec![location3]);
@@ -982,5 +991,16 @@ fn get_all_balances_works() {
 		assert_eq!(balances_bob[1].1.principal, 30);
 		assert_eq!(balances_bob[2].0, cid3);
 		assert_eq!(balances_bob[2].1.principal, 10);
+	});
+}
+
+#[test]
+fn purge_community_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::purge_community(Origin::signed(AccountKeyring::Bob.into()), cid),
+			DispatchError::BadOrigin,
+		);
 	});
 }
