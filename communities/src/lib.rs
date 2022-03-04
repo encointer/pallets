@@ -273,7 +273,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational,))]
 		pub fn set_min_solar_trip_time_s(
 			origin: OriginFor<T>,
 			min_solar_trip_time_s: MinSolarTripTimeType,
@@ -283,7 +283,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational,))]
 		pub fn set_max_speed_mps(
 			origin: OriginFor<T>,
 			max_speed_mps: MaxSpeedMpsType,

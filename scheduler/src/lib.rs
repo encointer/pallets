@@ -27,7 +27,7 @@ use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
 	dispatch::DispatchResult,
 	traits::{Get, OnTimestampSet},
-	weights::{DispatchClass, Pays},
+	weights::DispatchClass,
 };
 use log::info;
 use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
@@ -147,7 +147,7 @@ pub mod pallet {
 		/// Manually transition to next phase without affecting the ceremony rhythm
 		///
 		/// May only be called from `T::CeremonyMaster`.
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational))]
 		pub fn next_phase(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
 
@@ -159,7 +159,7 @@ pub mod pallet {
 		/// Push next phase change by one entire day
 		///
 		/// May only be called from `T::CeremonyMaster`.
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational))]
 		pub fn push_by_one_day(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
 
@@ -169,7 +169,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational))]
 		pub fn set_phase_duration(
 			origin: OriginFor<T>,
 			ceremony_phase: CeremonyPhaseType,
@@ -180,7 +180,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational))]
 		pub fn set_next_phase_timestamp(
 			origin: OriginFor<T>,
 			timestamp: T::Moment,

@@ -382,7 +382,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational,))]
 		pub fn set_inactivity_timeout(
 			origin: OriginFor<T>,
 			inactivity_timeout: InactivityTimeoutType,
@@ -392,7 +392,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational,))]
 		pub fn set_endorsement_tickets_per_bootstrapper(
 			origin: OriginFor<T>,
 			endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
@@ -402,7 +402,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational, Pays::No))]
+		#[pallet::weight((1000, DispatchClass::Operational,))]
 		pub fn set_reputation_lifetime(
 			origin: OriginFor<T>,
 			reputation_lifetime: ReputationLifetimeType,
@@ -725,16 +725,19 @@ pub mod pallet {
 	pub(super) type InactivityCounters<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, u32>;
 
+	/// The number of ceremony cycles a community can skip ceremonies before it gets purged
 	#[pallet::storage]
 	#[pallet::getter(fn inactivity_timeout)]
 	pub(super) type InactivityTimeout<T: Config> =
 		StorageValue<_, InactivityTimeoutType, ValueQuery>;
 
+	/// The number newbies a bootstrapper can endorse to accelerate community growth
 	#[pallet::storage]
 	#[pallet::getter(fn endorsement_tickets_per_bootstrapper)]
 	pub(super) type EndorsementTicketsPerBootstrapper<T: Config> =
 		StorageValue<_, EndorsementTicketsPerBootstrapperType, ValueQuery>;
 
+	/// The number of ceremony cycles that a participant's reputation is valid for
 	#[pallet::storage]
 	#[pallet::getter(fn reputation_lifetime)]
 	pub(super) type ReputationLifetime<T: Config> =
