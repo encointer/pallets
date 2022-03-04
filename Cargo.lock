@@ -1005,7 +1005,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "encointer-ceremonies-assignment"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "sp-core",
@@ -1055,7 +1055,7 @@ checksum = "68b91989ae21441195d7d9b9993a2f9295c7e1a8c96255d8b729accddc124797"
 
 [[package]]
 name = "ep-core"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -3182,7 +3182,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances-rpc"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "jsonrpc-core",
@@ -3200,7 +3200,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances-rpc-runtime-api"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -3226,7 +3226,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "jsonrpc-core",
@@ -3244,7 +3244,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -3279,7 +3279,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "jsonrpc-core",
@@ -3297,7 +3297,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
-version = "0.1.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -3355,7 +3355,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-personhood-oracle"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -3397,7 +3397,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-sybil-gate-template"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "encointer-primitives",
  "frame-support",
