@@ -2,7 +2,7 @@
 name = "pallet-encointer-balances"
 version = "0.8.1"
 authors = ["encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
@@ -11,7 +11,6 @@ scale-info = { version = "1.0", default-features = false }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 
 # substrate deps
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
@@ -34,6 +33,5 @@ std = [
 	"scale-info/std",
 	"sp-std/std",
 	"sp-runtime/std",
-	"encointer-communities/std",
 	"encointer-primitives/std",
 ]
