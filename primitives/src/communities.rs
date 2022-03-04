@@ -192,7 +192,7 @@ pub struct CommunityMetadata {
 	pub name: PalletString,
 	/// utf8 encoded abbreviation of the name
 	pub symbol: PalletString,
-	/// ipfs cid for multi-resolution resource for the community icon
+	/// IPFS cid to assets necessary for community branding
 	pub assets: IpfsCid,
 	/// ipfs cid for style resources
 	pub theme: Option<IpfsCid>,
