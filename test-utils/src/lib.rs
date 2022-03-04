@@ -180,19 +180,12 @@ macro_rules! impl_encointer_balances {
 	};
 }
 
-parameter_types! {
-	pub const MinSolarTripTimeS: u32 = 1;
-	pub const MaxSpeedMps: u32 = 83;
-}
-
 #[macro_export]
 macro_rules! impl_encointer_communities {
 	($t:ident) => {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
 			type CommunityMaster = EnsureAlice;
-			type MinSolarTripTimeS = MinSolarTripTimeS;
-			type MaxSpeedMps = MaxSpeedMps;
 		}
 	};
 }
@@ -208,9 +201,6 @@ macro_rules! test_runtime {
 }
 
 parameter_types! {
-	pub const ReputationLifetime: u32 = 1;
-	pub const EndorsementTicketsPerBootstrapper: u8 = 50;
-	pub const InactivityTimeout: u32 = 12;
 	pub const MeetupSizeTarget: u64 = 10;
 	pub const MeetupMinSize: u64 = 3;
 	pub const MeetupNewbieLimitDivider: u64 = 3;
@@ -221,12 +211,10 @@ macro_rules! impl_encointer_ceremonies {
 	($t:ident) => {
 		impl encointer_ceremonies::Config for $t {
 			type Event = Event;
+			type CeremonyMaster = EnsureAlice;
 			type Public = <Signature as Verify>::Signer;
 			type Signature = Signature;
 			type RandomnessSource = frame_support_test::TestRandomness<$t>;
-			type ReputationLifetime = ReputationLifetime;
-			type EndorsementTicketsPerBootstrapper = EndorsementTicketsPerBootstrapper;
-			type InactivityTimeout = InactivityTimeout;
 			type MeetupSizeTarget = MeetupSizeTarget;
 			type MeetupMinSize = MeetupMinSize;
 			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;

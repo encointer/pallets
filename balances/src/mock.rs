@@ -17,6 +17,7 @@
 //! Mock runtime for the encointer_balances module
 
 use encointer_primitives::balances::Demurrage;
+use frame_support::pallet_prelude::GenesisBuild;
 
 use crate as dut;
 
@@ -56,8 +57,10 @@ impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::default()
-		.build_storage::<TestRuntime>()
-		.unwrap()
-		.into()
+	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+
+	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+
+	t.into()
 }
