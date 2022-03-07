@@ -17,7 +17,6 @@
 //! Mock runtime for the encointer_balances module
 
 use encointer_primitives::balances::Demurrage;
-use frame_support::pallet_prelude::GenesisBuild;
 
 use crate as dut;
 

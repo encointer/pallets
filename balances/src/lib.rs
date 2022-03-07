@@ -243,6 +243,10 @@ impl<T: Config> Pallet<T> {
 	pub fn set_demurrage(cid: &CommunityIdentifier, demurrage: Demurrage) {
 		<DemurragePerBlock<T>>::insert(cid, &demurrage);
 	}
+
+	pub fn purge_balances(cid: CommunityIdentifier) {
+		<Balance<T>>::remove_prefix(cid, None);
+	}
 }
 
 #[cfg(test)]
