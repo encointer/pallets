@@ -78,12 +78,13 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
 		.lon
 		.lossy_into();
 
-	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
+	let mut t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
 		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING) +
 		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING) +
 		(cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING) +
 		ONE_DAY / 2 -
 		(mlon / 360.0 * ONE_DAY as f64) as u64;
+	t += EncointerCeremonies::meetup_time_offset() as u64;
 	t.into()
 }
 
@@ -1123,6 +1124,17 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 - mtime as i64)
 				.abs() as u64
 		);
+
+		EncointerCeremonies::set_meetup_time_offset(
+			Origin::signed(master()),
+			Moment::from(100_000u64),
+		)
+		.ok();
+		assert!(
+			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 -
+				(mtime + 100_000u64) as i64)
+				.abs() as u64
+		);
 	});
 }
 
@@ -1701,5 +1713,36 @@ fn set_reputation_lifetime_works() {
 		assert_ok!(EncointerCeremonies::set_reputation_lifetime(Origin::signed(master()), 3u32));
 
 		assert_eq!(EncointerCeremonies::reputation_lifetime(), 3u32);
+	});
+}
+
+#[test]
+fn set_meetup_time_offset_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCeremonies::set_meetup_time_offset(
+				Origin::signed(AccountKeyring::Bob.into()),
+				Moment::from(5u32),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_meetup_time_offset_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_meetup_time_offset(
+			Origin::signed(master()),
+			Moment::from(5u32),
+		));
+
+		assert_eq!(EncointerCeremonies::meetup_time_offset(), Moment::from(5u32),);
+		assert_ok!(EncointerCeremonies::set_meetup_time_offset(
+			Origin::signed(master()),
+			Moment::from(6u32),
+		));
+
+		assert_eq!(EncointerCeremonies::meetup_time_offset(), Moment::from(6u32),);
 	});
 }

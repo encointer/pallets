@@ -411,6 +411,16 @@ pub mod pallet {
 			<ReputationLifetime<T>>::put(reputation_lifetime);
 			Ok(().into())
 		}
+
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn set_meetup_time_offset(
+			origin: OriginFor<T>,
+			meetup_time_offset: T::Moment,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<MeetupTimeOffset<T>>::put(meetup_time_offset);
+			Ok(().into())
+		}
 	}
 
 	#[pallet::event]
@@ -743,6 +753,10 @@ pub mod pallet {
 	pub(super) type ReputationLifetime<T: Config> =
 		StorageValue<_, ReputationLifetimeType, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn meetup_time_offset)]
+	pub(super) type MeetupTimeOffset<T: Config> = StorageValue<_, T::Moment, ValueQuery>;
+
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>
 	where
@@ -755,6 +769,7 @@ pub mod pallet {
 		pub inactivity_timeout: InactivityTimeoutType,
 		pub endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
 		pub reputation_lifetime: ReputationLifetimeType,
+		pub meetup_time_offset: T::Moment,
 	}
 
 	#[cfg(feature = "std")]
@@ -770,6 +785,7 @@ pub mod pallet {
 				inactivity_timeout: Default::default(),
 				endorsement_tickets_per_bootstrapper: Default::default(),
 				reputation_lifetime: Default::default(),
+				meetup_time_offset: Default::default(),
 			}
 		}
 	}
@@ -786,6 +802,7 @@ pub mod pallet {
 			<InactivityTimeout<T>>::put(&self.inactivity_timeout);
 			<EndorsementTicketsPerBootstrapper<T>>::put(&self.endorsement_tickets_per_bootstrapper);
 			<ReputationLifetime<T>>::put(&self.reputation_lifetime);
+			<MeetupTimeOffset<T>>::put(&self.meetup_time_offset);
 		}
 	}
 }
@@ -1375,7 +1392,7 @@ impl<T: Config> Pallet<T> {
 		let next = <encointer_scheduler::Pallet<T>>::next_phase_timestamp();
 		let start = next - duration;
 
-		Some(meetup_time(location, start, T::MomentsPerDay::get()))
+		Some(meetup_time(location, start, T::MomentsPerDay::get(), Self::meetup_time_offset()))
 	}
 
 	/// Returns the community-specific nominal income if it is set. Otherwise returns the
