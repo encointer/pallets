@@ -418,6 +418,9 @@ pub mod pallet {
 			meetup_time_offset: T::Moment,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+				return Err(<Error<T>>::WrongPhaseForChangingMeetupTimeOffset.into())
+			}
 			<MeetupTimeOffset<T>>::put(meetup_time_offset);
 			Ok(().into())
 		}
@@ -490,6 +493,8 @@ pub mod pallet {
 		CheckedMath,
 		/// Only Bootstrappers are allowed to be registered at this time
 		OnlyBootstrappers,
+		/// MeetupTimeOffset can only be changed during registering
+		WrongPhaseForChangingMeetupTimeOffset,
 	}
 
 	#[pallet::storage]

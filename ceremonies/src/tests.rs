@@ -1068,15 +1068,21 @@ fn endorsing_two_newbies_works() {
 
 // integration tests ////////////////////////////////
 
-#[rstest(lat_micro, lon_micro,
-case(0, 0),
-case(1_000_000, 1_000_000),
-case(0, 2_234_567),
-case(2_000_000, 155_000_000),
-case(1_000_000, -2_000_000),
-case(-31_000_000, -155_000_000),
+#[rstest(lat_micro, lon_micro, meetup_time_offset,
+case(0, 0, 0),
+case(1_000_000, 1_000_000, 0),
+case(0, 2_234_567, 0),
+case(2_000_000, 155_000_000, 0),
+case(1_000_000, -2_000_000, 0),
+case(-31_000_000, -155_000_000, 0),
+case(0, 0, 100_000),
+case(1_000_000, 1_000_000, 100_000),
+case(0, 2_234_567, 100_000),
+case(2_000_000, 155_000_000, 100_000),
+case(1_000_000, -2_000_000, 100_000),
+case(-31_000_000, -155_000_000, 100_000),
 )]
-fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
+fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: u64) {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(0);
 		run_to_block(1);
@@ -1098,6 +1104,13 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 			(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)) + ONE_DAY
 		);
 		register_alice_bob_ferdie(cid);
+
+		EncointerCeremonies::set_meetup_time_offset(
+			Origin::signed(master()),
+			Moment::from(meetup_time_offset),
+		)
+		.ok();
+
 		run_to_next_phase();
 
 		assert_eq!(cindex, 1);
@@ -1108,7 +1121,7 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 		assert_eq!(cindex, 1);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
 
-		let mtime = if lon_micro >= 0 {
+		let mut mtime = if lon_micro >= 0 {
 			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2 -
 				(lon_micro * ONE_DAY as i64 / 360_000_000) as u64
 		} else {
@@ -1117,22 +1130,13 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 				(lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
 		};
 
+		mtime += meetup_time_offset;
+
 		let location = EncointerCeremonies::get_meetup_location((cid, cindex), 1).unwrap();
 
 		let tol = 60_000; // [ms]
 		assert!(
 			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 - mtime as i64)
-				.abs() as u64
-		);
-
-		EncointerCeremonies::set_meetup_time_offset(
-			Origin::signed(master()),
-			Moment::from(100_000u64),
-		)
-		.ok();
-		assert!(
-			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 -
-				(mtime + 100_000u64) as i64)
 				.abs() as u64
 		);
 	});
