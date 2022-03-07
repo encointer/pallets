@@ -37,6 +37,7 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -53,6 +54,7 @@ impl dut::Config for TestRuntime {
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_encointer_scheduler!(TestRuntime);
+impl_encointer_balances!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {

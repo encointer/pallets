@@ -25,7 +25,7 @@ use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
 use frame_system::{self as frame_system, ensure_signed};
 use log::debug;
 use sp_runtime::traits::StaticLookup;
-use sp_std::{convert::TryInto, prelude::Vec, vec};
+use sp_std::convert::TryInto;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -51,7 +51,7 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + encointer_communities::Config {
+	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// the default demurrage rate applied to community balances
 		#[pallet::constant]
@@ -113,20 +113,14 @@ pub mod pallet {
 		BalanceEntry<T::BlockNumber>,
 		ValueQuery,
 	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn demurrage_per_block)]
+	pub type DemurragePerBlock<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Demurrage, ValueQuery>;
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn get_all_balances(
-		account: &T::AccountId,
-	) -> Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> {
-		let mut balances: Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> = vec![];
-		for community in <encointer_communities::Pallet<T>>::community_identifiers().into_iter() {
-			if Balance::<T>::contains_key(community, account.clone()) {
-				balances.push((community, Balance::<T>::get(community, account.clone())));
-			}
-		}
-		return balances
-	}
 	pub fn balance(community_id: CommunityIdentifier, who: &T::AccountId) -> BalanceType {
 		Self::balance_entry_updated(community_id, who).principal
 	}
@@ -243,8 +237,11 @@ impl<T: Config> Pallet<T> {
 	/// Returns the community-specific demurrage if it is set. Otherwise returns the
 	/// the demurrage defined in the genesis config
 	fn demurrage(cid: &CommunityIdentifier) -> BalanceType {
-		encointer_communities::DemurragePerBlock::<T>::try_get(cid)
-			.unwrap_or_else(|_| T::DefaultDemurrage::get())
+		<DemurragePerBlock<T>>::try_get(cid).unwrap_or_else(|_| T::DefaultDemurrage::get())
+	}
+
+	pub fn set_demurrage(cid: &CommunityIdentifier, demurrage: Demurrage) {
+		<DemurragePerBlock<T>>::insert(cid, &demurrage);
 	}
 }
 

@@ -25,7 +25,7 @@
 
 use codec::Encode;
 use encointer_primitives::{
-	balances::{BalanceType, Demurrage},
+	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::PalletString,
 	communities::{
 		consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
@@ -58,7 +58,9 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + encointer_scheduler::Config {
+	pub trait Config:
+		frame_system::Config + encointer_scheduler::Config + encointer_balances::Config
+	{
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Required origin for adding or updating a community (though can always be Root).
@@ -121,7 +123,7 @@ pub mod pallet {
 			<Bootstrappers<T>>::insert(&cid, &bootstrappers);
 			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
 
-			demurrage.map(|d| <DemurragePerBlock<T>>::insert(&cid, d));
+			demurrage.map(|d| <encointer_balances::Pallet<T>>::set_demurrage(&cid, d));
 			nominal_income.map(|i| <NominalIncome<T>>::insert(&cid, i));
 
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
@@ -244,7 +246,7 @@ pub mod pallet {
 			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			Self::ensure_cid_exists(&cid)?;
 
-			<DemurragePerBlock<T>>::insert(&cid, &demurrage);
+			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage);
 
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
 			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
@@ -373,11 +375,6 @@ pub mod pallet {
 	pub(super) type CommunityMetadata<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, CommunityMetadataType, ValueQuery>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn demurrage_per_block)]
-	pub type DemurragePerBlock<T: Config> =
-		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Demurrage, ValueQuery>;
-
 	/// Amount of UBI to be paid for every attended ceremony.
 	#[pallet::storage]
 	#[pallet::getter(fn nominal_income)]
@@ -457,7 +454,6 @@ impl<T: Config> Pallet<T> {
 		<CommunityIdentifiers<T>>::mutate(|v| v.retain(|&x| x != cid));
 
 		<CommunityMetadata<T>>::remove(cid);
-		<DemurragePerBlock<T>>::remove(cid);
 
 		<NominalIncome<T>>::remove(cid);
 	}
@@ -654,6 +650,21 @@ impl<T: Config> Pallet<T> {
 		<Locations<T>>::iter_prefix_values(&cid)
 			.reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect())
 			.unwrap()
+	}
+
+	pub fn get_all_balances(
+		account: &T::AccountId,
+	) -> Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> {
+		let mut balances: Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> = vec![];
+		for cid in Self::community_identifiers().into_iter() {
+			if encointer_balances::Balance::<T>::contains_key(cid, account.clone()) {
+				balances.push((
+					cid,
+					<encointer_balances::Pallet<T>>::balance_entry(cid, &account.clone()),
+				));
+			}
+		}
+		return balances
 	}
 }
 

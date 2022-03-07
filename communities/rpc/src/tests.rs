@@ -21,7 +21,8 @@ use sp_core::offchain::storage::InMemOffchainStorage;
 fn caching_works() {
 	let storage = InMemOffchainStorage::default();
 	let client = ();
-	let communities: Communities<_, (), _> = Communities::new(Arc::new(client), storage, true);
+	let communities: Communities<_, (), _> =
+		Communities::new(Arc::new(client), storage, true, DenyUnsafe::Yes);
 
 	let cid_names = vec![CidName::new(Default::default(), "hello world".into())];
 

@@ -39,7 +39,6 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -52,15 +51,12 @@ impl dut::Config for TestRuntime {
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_encointer_communities!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-
-	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
-
-	t.into()
+	frame_system::GenesisConfig::default()
+		.build_storage::<TestRuntime>()
+		.unwrap()
+		.into()
 }
