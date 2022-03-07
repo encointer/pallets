@@ -173,6 +173,7 @@ pub fn meetup_time<Moment: Copy + AtLeast32Bit>(
 	location: Location,
 	attesting_start: Moment,
 	one_day: Moment,
+	offset: Moment,
 ) -> Moment {
 	let per_degree = one_day / Moment::from(360u32);
 
@@ -181,9 +182,9 @@ pub fn meetup_time<Moment: Copy + AtLeast32Bit>(
 	let lon_time_abs = Moment::from(lon_abs) * per_degree;
 
 	if location.lon < Degree::from_num(0) {
-		attesting_start + one_day / Moment::from(2u32) + lon_time_abs
+		attesting_start + one_day / Moment::from(2u32) + lon_time_abs + offset
 	} else {
-		attesting_start + one_day / Moment::from(2u32) - lon_time_abs
+		attesting_start + one_day / Moment::from(2u32) - lon_time_abs + offset
 	}
 }
 

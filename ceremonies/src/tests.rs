@@ -78,12 +78,13 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
 		.lon
 		.lossy_into();
 
-	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
+	let mut t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
 		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING) +
 		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING) +
 		(cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING) +
 		ONE_DAY / 2 -
 		(mlon / 360.0 * ONE_DAY as f64) as u64;
+	t += EncointerCeremonies::meetup_time_offset() as u64;
 	t.into()
 }
 
@@ -1067,15 +1068,21 @@ fn endorsing_two_newbies_works() {
 
 // integration tests ////////////////////////////////
 
-#[rstest(lat_micro, lon_micro,
-case(0, 0),
-case(1_000_000, 1_000_000),
-case(0, 2_234_567),
-case(2_000_000, 155_000_000),
-case(1_000_000, -2_000_000),
-case(-31_000_000, -155_000_000),
+#[rstest(lat_micro, lon_micro, meetup_time_offset,
+case(0, 0, 0),
+case(1_000_000, 1_000_000, 0),
+case(0, 2_234_567, 0),
+case(2_000_000, 155_000_000, 0),
+case(1_000_000, -2_000_000, 0),
+case(-31_000_000, -155_000_000, 0),
+case(0, 0, 100_000),
+case(1_000_000, 1_000_000, 100_000),
+case(0, 2_234_567, 100_000),
+case(2_000_000, 155_000_000, 100_000),
+case(1_000_000, -2_000_000, 100_000),
+case(-31_000_000, -155_000_000, 100_000),
 )]
-fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
+fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: u64) {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(0);
 		run_to_block(1);
@@ -1097,6 +1104,13 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 			(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)) + ONE_DAY
 		);
 		register_alice_bob_ferdie(cid);
+
+		EncointerCeremonies::set_meetup_time_offset(
+			Origin::signed(master()),
+			Moment::from(meetup_time_offset),
+		)
+		.ok();
+
 		run_to_next_phase();
 
 		assert_eq!(cindex, 1);
@@ -1107,7 +1121,7 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 		assert_eq!(cindex, 1);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
 
-		let mtime = if lon_micro >= 0 {
+		let mut mtime = if lon_micro >= 0 {
 			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2 -
 				(lon_micro * ONE_DAY as i64 / 360_000_000) as u64
 		} else {
@@ -1115,6 +1129,8 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64) {
 				2 * ONE_DAY + ONE_DAY / 2 +
 				(lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
 		};
+
+		mtime += meetup_time_offset;
 
 		let location = EncointerCeremonies::get_meetup_location((cid, cindex), 1).unwrap();
 
@@ -1701,5 +1717,36 @@ fn set_reputation_lifetime_works() {
 		assert_ok!(EncointerCeremonies::set_reputation_lifetime(Origin::signed(master()), 3u32));
 
 		assert_eq!(EncointerCeremonies::reputation_lifetime(), 3u32);
+	});
+}
+
+#[test]
+fn set_meetup_time_offset_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCeremonies::set_meetup_time_offset(
+				Origin::signed(AccountKeyring::Bob.into()),
+				Moment::from(5u32),
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_meetup_time_offset_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_meetup_time_offset(
+			Origin::signed(master()),
+			Moment::from(5u32),
+		));
+
+		assert_eq!(EncointerCeremonies::meetup_time_offset(), Moment::from(5u32),);
+		assert_ok!(EncointerCeremonies::set_meetup_time_offset(
+			Origin::signed(master()),
+			Moment::from(6u32),
+		));
+
+		assert_eq!(EncointerCeremonies::meetup_time_offset(), Moment::from(6u32),);
 	});
 }

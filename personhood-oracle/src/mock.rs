@@ -82,6 +82,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		inactivity_timeout: 12,
 		endorsement_tickets_per_bootstrapper: 50,
 		reputation_lifetime: 6,
+		meetup_time_offset: 0,
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
