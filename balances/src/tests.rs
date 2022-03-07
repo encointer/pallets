@@ -134,3 +134,19 @@ fn transfer_with_demurrage_exceeding_amount_should_fail() {
 		);
 	});
 }
+
+#[test]
+fn purge_balances_works() {
+	new_test_ext().execute_with(|| {
+		let cid = CommunityIdentifier::default();
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
+		assert_eq!(EncointerBalances::balance(cid, &alice), BalanceType::from_num(50.1));
+		assert_ok!(EncointerBalances::issue(cid, &bob, BalanceType::from_num(12)));
+		assert_eq!(EncointerBalances::balance(cid, &bob), BalanceType::from_num(12));
+		EncointerBalances::purge_balances(cid);
+		assert_eq!(EncointerBalances::balance(cid, &alice), 0);
+		assert_eq!(EncointerBalances::balance(cid, &bob), 0);
+	})
+}

@@ -294,6 +294,16 @@ pub mod pallet {
 			<MaxSpeedMps<T>>::put(max_speed_mps);
 			Ok(().into())
 		}
+
+		#[pallet::weight(10_000)]
+		pub fn purge_community(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+		) -> DispatchResultWithPostInfo {
+			T::CommunityMaster::ensure_origin(origin)?;
+			Self::remove_community(cid);
+			Ok(().into())
+		}
 	}
 
 	#[pallet::event]
@@ -456,6 +466,8 @@ impl<T: Config> Pallet<T> {
 		<CommunityMetadata<T>>::remove(cid);
 
 		<NominalIncome<T>>::remove(cid);
+
+		<encointer_balances::Pallet<T>>::purge_balances(cid);
 	}
 
 	pub fn insert_bootstrappers(cid: CommunityIdentifier, bootstrappers: Vec<T::AccountId>) {
