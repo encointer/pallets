@@ -1,9 +1,6 @@
 use crate::*;
 use approx::assert_abs_diff_eq;
-use encointer_primitives::{
-	balances::{BalanceType},
-	fixed::traits::LossyInto,
-};
+use encointer_primitives::{balances::BalanceType, fixed::traits::LossyInto};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 
