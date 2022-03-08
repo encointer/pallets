@@ -3185,12 +3185,14 @@ name = "pallet-encointer-bazaar"
 version = "0.8.1"
 dependencies = [
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
  "pallet-encointer-communities",
  "parity-scale-codec",
  "scale-info",
+ "sp-core",
  "sp-io",
  "sp-std",
  "test-utils",
