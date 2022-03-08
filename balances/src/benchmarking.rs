@@ -1,16 +1,11 @@
 use crate::*;
 use approx::assert_abs_diff_eq;
 use encointer_primitives::{
-	balances::{BalanceType, Demurrage},
+	balances::{BalanceType},
 	fixed::traits::LossyInto,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
-use frame_support::parameter_types;
 use frame_system::RawOrigin;
-
-parameter_types! {
-	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
-}
 
 benchmarks! {
 	transfer {
