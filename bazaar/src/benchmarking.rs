@@ -1,16 +1,9 @@
 use crate::*;
-use encointer_primitives::{
-	balances::{BalanceType, Demurrage},
-	communities::{
-		CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree, Location,
-	},
-	fixed::traits::LossyInto,
+use encointer_primitives::communities::{
+	CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree, Location,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
-use frame_support::parameter_types;
 use frame_system::RawOrigin;
-
-use sp_core::crypto::AccountId32;
 
 fn test_url() -> String {
 	"https://test.com".to_string()
