@@ -1270,6 +1270,13 @@ impl<T: Config> Pallet<T> {
 			target: LOG,
 			"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
 		);
+
+		// accept one missing attestation if more than 5 ballot-winning participants for better usability
+		let min_attestations = match vote_count {
+			1..=5 => vote_count - 1,
+			_ => vote_count - 2
+		};
+
 		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index);
 		let mut reward_count = 0;
 		for participant in &meetup_participants {
@@ -1287,7 +1294,7 @@ impl<T: Config> Pallet<T> {
 				&Self::attestation_index((*cid, cindex), &participant),
 			) {
 				Some(attestees) =>
-					if attestees.len() < (vote_count - 1) as usize {
+					if attestees.len() < min_attestations as usize {
 						debug!(
 							target: LOG,
 							"skipped participant because didn't testify for honest peers: {:?}",
@@ -1313,7 +1320,7 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 
-			if was_attested_count < (vote_count - 1) {
+			if was_attested_count < min_attestations {
 				debug!(
 					"skipped participant because of too few attestations ({}): {:?}",
 					was_attested_count, participant
