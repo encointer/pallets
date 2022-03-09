@@ -23,7 +23,7 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
-use encointer_primitives::{ceremonies::Reputation, communities::CommunityIdentifier};
+use encointer_primitives::{ceremonies::CommunityReputation, scheduler::CeremonyIndexType};
 
 #[rpc]
 pub trait CeremoniesApi<BlockHash, AccountId>
@@ -35,7 +35,7 @@ where
 		&self,
 		account: AccountId,
 		at: Option<BlockHash>,
-	) -> Result<Vec<(CommunityIdentifier, Reputation)>>;
+	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>>;
 }
 
 pub struct Ceremonies<Client, Block, AccountId> {
@@ -63,18 +63,12 @@ where
 		&self,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<(CommunityIdentifier, Reputation)>> {
+	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>> {
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		return Ok(api
-			.get_reputations(&at)
-			.map_err(runtime_error_into_rpc_err)?
-			.iter()
-			.filter(|t| t.1 == account)
-			.map(|t| (t.0 .0.clone(), t.2.clone()))
-			.collect())
+		return Ok(api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err)?)
 	}
 }
 

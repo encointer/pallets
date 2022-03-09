@@ -813,8 +813,13 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn get_reputations() -> Vec<(CommunityCeremony, T::AccountId, Reputation)> {
-		return ParticipantReputation::<T>::iter().collect()
+	pub fn get_reputations(
+		account: &T::AccountId,
+	) -> Vec<(CeremonyIndexType, CommunityReputation)> {
+		return ParticipantReputation::<T>::iter()
+			.filter(|t| &t.1 == account)
+			.map(|t| (t.0 .1, CommunityReputation::new(t.0 .0, t.2)))
+			.collect()
 	}
 
 	fn register(

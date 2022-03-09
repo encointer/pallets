@@ -21,13 +21,13 @@
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
-use encointer_primitives::ceremonies::{CommunityCeremony, Reputation};
+use encointer_primitives::ceremonies::{CeremonyIndexType, CommunityReputation};
 use sp_api::{Decode, Encode};
 
 sp_api::decl_runtime_apis! {
 	pub trait CeremoniesApi<AccountId>
 	where AccountId: Encode + Decode
 	{
-		fn get_reputations() -> Vec<(CommunityCeremony, AccountId, Reputation)>;
+		fn get_reputations(account: &AccountId) -> Vec<(CeremonyIndexType, CommunityReputation)>;
 	}
 }
