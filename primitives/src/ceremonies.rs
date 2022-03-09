@@ -14,18 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
+
+use crate::communities::{CommunityIdentifier, Location};
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash, IdentifyAccount, Verify};
 
-#[cfg(feature = "serde_derive")]
-use serde::{Deserialize, Serialize};
-
-use crate::{
-	communities::{CommunityIdentifier, Location},
-	scheduler::CeremonyIndexType,
-};
+pub use crate::scheduler::CeremonyIndexType;
 
 pub type ParticipantIndexType = u64;
 pub type MeetupIndexType = u64;
@@ -186,6 +184,22 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
 			.as_ref()
 			.map(|sig| sig.verify(&self.payload_encoded()[..], &self.claimant_public))
 			.unwrap_or(false)
+	}
+}
+
+/// Reputation that is linked to a specific community
+#[derive(
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+pub struct CommunityReputation {
+	pub community_identifier: CommunityIdentifier,
+	pub reputation: Reputation,
+}
+
+impl CommunityReputation {
+	pub fn new(community_identifier: CommunityIdentifier, reputation: Reputation) -> Self {
+		Self { community_identifier, reputation }
 	}
 }
 
