@@ -215,29 +215,6 @@ impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountI
 	}
 }
 
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use test_utils::{AccountId, AccountKeyring, Moment, Signature};
-
-	#[test]
-	fn claim_verification_works() {
-		let alice = AccountKeyring::Alice.pair();
-		let claim = ClaimOfAttendance::<Signature, AccountId, Moment>::new_unsigned(
-			alice.public().into(),
-			1,
-			Default::default(),
-			1,
-			Default::default(),
-			Default::default(),
-			3,
-		)
-		.sign(&alice);
-
-		assert!(claim.verify_signature())
-	}
-}
-
 #[derive(
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
@@ -276,4 +253,27 @@ pub struct AssignmentParams {
 	/// Second random group element in the interval (0, m). For locations the closest prime to m,
 	/// with s2 < m.
 	pub s2: u64,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use test_utils::{AccountId, AccountKeyring, Moment, Signature};
+
+	#[test]
+	fn claim_verification_works() {
+		let alice = AccountKeyring::Alice.pair();
+		let claim = ClaimOfAttendance::<Signature, AccountId, Moment>::new_unsigned(
+			alice.public().into(),
+			1,
+			Default::default(),
+			1,
+			Default::default(),
+			Default::default(),
+			3,
+		)
+		.sign(&alice);
+
+		assert!(claim.verify_signature())
+	}
 }
