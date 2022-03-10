@@ -76,18 +76,21 @@ pub mod pallet {
 		+ encointer_scheduler::Config
 	{
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		type CeremonyMaster: EnsureOrigin<Self::Origin>;
+
 		type Public: IdentifyAccount<AccountId = Self::AccountId>;
 		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
 		type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
-		// The number of ceremony cycles that a participant's reputation valid for
+		// Target number of participants per meetup
 		#[pallet::constant]
-		type ReputationLifetime: Get<u32>;
-		// The number newbies a bootstrapper can endorse to accelerate community growth
+		type MeetupSizeTarget: Get<u64>;
+		// Minimum meetup size
 		#[pallet::constant]
-		type EndorsementTicketsPerBootstrapper: Get<u8>;
-		// The number of ceremony cycles a community can skip ceremonies before it gets purged
+		type MeetupMinSize: Get<u64>;
+		// Divisor used to determine the ratio of newbies allowed in relation to other participants
 		#[pallet::constant]
-		type InactivityTimeout: Get<u32>;
+		type MeetupNewbieLimitDivider: Get<u64>;
 	}
 
 	#[pallet::call]
@@ -121,7 +124,7 @@ pub mod pallet {
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
 				ensure!(
 					p.ceremony_index >=
-						cindex.checked_sub(T::ReputationLifetime::get()).unwrap_or(0),
+						cindex.checked_sub(Self::reputation_lifetime()).unwrap_or(0),
 					Error::<T>::ProofOutdated
 				);
 				ensure!(
@@ -343,7 +346,7 @@ pub mod pallet {
 
 			ensure!(
 				<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-					T::EndorsementTicketsPerBootstrapper::get(),
+					Self::endorsement_tickets_per_bootstrapper(),
 				Error::<T>::NoMoreNewbieTickets
 			);
 
@@ -376,6 +379,49 @@ pub mod pallet {
 				Self::validate_one_meetup_and_issue_rewards(&sender, &cid)?;
 
 			Self::deposit_event(Event::RewardsIssued(cid, meetup_index, reward_count));
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn set_inactivity_timeout(
+			origin: OriginFor<T>,
+			inactivity_timeout: InactivityTimeoutType,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<InactivityTimeout<T>>::put(inactivity_timeout);
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn set_endorsement_tickets_per_bootstrapper(
+			origin: OriginFor<T>,
+			endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<EndorsementTicketsPerBootstrapper<T>>::put(endorsement_tickets_per_bootstrapper);
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn set_reputation_lifetime(
+			origin: OriginFor<T>,
+			reputation_lifetime: ReputationLifetimeType,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<ReputationLifetime<T>>::put(reputation_lifetime);
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn set_meetup_time_offset(
+			origin: OriginFor<T>,
+			meetup_time_offset: T::Moment,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+				return Err(<Error<T>>::WrongPhaseForChangingMeetupTimeOffset.into())
+			}
+			<MeetupTimeOffset<T>>::put(meetup_time_offset);
 			Ok(().into())
 		}
 	}
@@ -447,6 +493,8 @@ pub mod pallet {
 		CheckedMath,
 		/// Only Bootstrappers are allowed to be registered at this time
 		OnlyBootstrappers,
+		/// MeetupTimeOffset can only be changed during registering
+		WrongPhaseForChangingMeetupTimeOffset,
 	}
 
 	#[pallet::storage]
@@ -692,6 +740,28 @@ pub mod pallet {
 	pub(super) type InactivityCounters<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, u32>;
 
+	/// The number of ceremony cycles a community can skip ceremonies before it gets purged
+	#[pallet::storage]
+	#[pallet::getter(fn inactivity_timeout)]
+	pub(super) type InactivityTimeout<T: Config> =
+		StorageValue<_, InactivityTimeoutType, ValueQuery>;
+
+	/// The number newbies a bootstrapper can endorse to accelerate community growth
+	#[pallet::storage]
+	#[pallet::getter(fn endorsement_tickets_per_bootstrapper)]
+	pub(super) type EndorsementTicketsPerBootstrapper<T: Config> =
+		StorageValue<_, EndorsementTicketsPerBootstrapperType, ValueQuery>;
+
+	/// The number of ceremony cycles that a participant's reputation is valid for
+	#[pallet::storage]
+	#[pallet::getter(fn reputation_lifetime)]
+	pub(super) type ReputationLifetime<T: Config> =
+		StorageValue<_, ReputationLifetimeType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn meetup_time_offset)]
+	pub(super) type MeetupTimeOffset<T: Config> = StorageValue<_, T::Moment, ValueQuery>;
+
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>
 	where
@@ -701,6 +771,10 @@ pub mod pallet {
 		pub ceremony_reward: BalanceType,
 		pub location_tolerance: u32,
 		pub time_tolerance: T::Moment,
+		pub inactivity_timeout: InactivityTimeoutType,
+		pub endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
+		pub reputation_lifetime: ReputationLifetimeType,
+		pub meetup_time_offset: T::Moment,
 	}
 
 	#[cfg(feature = "std")]
@@ -713,6 +787,10 @@ pub mod pallet {
 				ceremony_reward: Default::default(),
 				location_tolerance: Default::default(),
 				time_tolerance: Default::default(),
+				inactivity_timeout: Default::default(),
+				endorsement_tickets_per_bootstrapper: Default::default(),
+				reputation_lifetime: Default::default(),
+				meetup_time_offset: Default::default(),
 			}
 		}
 	}
@@ -726,13 +804,22 @@ pub mod pallet {
 			<CeremonyReward<T>>::put(&self.ceremony_reward);
 			<LocationTolerance<T>>::put(&self.location_tolerance);
 			<TimeTolerance<T>>::put(&self.time_tolerance);
+			<InactivityTimeout<T>>::put(&self.inactivity_timeout);
+			<EndorsementTicketsPerBootstrapper<T>>::put(&self.endorsement_tickets_per_bootstrapper);
+			<ReputationLifetime<T>>::put(&self.reputation_lifetime);
+			<MeetupTimeOffset<T>>::put(&self.meetup_time_offset);
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn get_reputations() -> Vec<(CommunityCeremony, T::AccountId, Reputation)> {
-		return ParticipantReputation::<T>::iter().collect()
+	pub fn get_reputations(
+		account: &T::AccountId,
+	) -> Vec<(CeremonyIndexType, CommunityReputation)> {
+		return ParticipantReputation::<T>::iter()
+			.filter(|t| &t.1 == account)
+			.map(|t| (t.0 .1, CommunityReputation::new(t.0 .0, t.2)))
+			.collect()
 	}
 
 	fn register(
@@ -838,7 +925,7 @@ impl<T: Config> Pallet<T> {
 			target: LOG,
 			"generating meetup assignment params for cid: {:?}", community_ceremony.0
 		);
-		let meetup_multiplier = 10u64;
+		let meetup_multiplier = T::MeetupSizeTarget::get();
 		let assignment_allowance =
 			Self::compute_assignment_allowance(community_ceremony, meetup_multiplier)?;
 		let num_meetups = checked_ceil_division(
@@ -846,7 +933,7 @@ impl<T: Config> Pallet<T> {
 			meetup_multiplier,
 		)
 		.ok_or(Error::<T>::CheckedMath)?;
-		if assignment_allowance.get_number_of_participants() < 3 {
+		if assignment_allowance.get_number_of_participants() < T::MeetupMinSize::get() {
 			info!(
 				target: LOG,
 				"less than 3 participants available for a meetup. will not assign any meetups for cid {:?}",
@@ -943,7 +1030,8 @@ impl<T: Config> Pallet<T> {
 
 		let num_assigned_newbies = min(
 			min(num_registered_newbies, seats_left),
-			(num_registered_bootstrappers + num_assigned_reputables + num_assigned_endorsees) / 3, //safe; sum equals total
+			(num_registered_bootstrappers + num_assigned_reputables + num_assigned_endorsees) /
+				T::MeetupNewbieLimitDivider::get(), //safe; sum equals total
 		);
 		info!(
 			target: LOG,
@@ -984,7 +1072,7 @@ impl<T: Config> Pallet<T> {
 
 	fn purge_community(cid: CommunityIdentifier) {
 		let current = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
-		let reputation_lifetime = T::ReputationLifetime::get();
+		let reputation_lifetime = Self::reputation_lifetime();
 		for cindex in max(current - reputation_lifetime, 0)..current {
 			if cindex > reputation_lifetime {
 				Self::purge_registry(cindex - reputation_lifetime - 1);
@@ -1314,7 +1402,7 @@ impl<T: Config> Pallet<T> {
 		let next = <encointer_scheduler::Pallet<T>>::next_phase_timestamp();
 		let start = next - duration;
 
-		Some(meetup_time(location, start, T::MomentsPerDay::get()))
+		Some(meetup_time(location, start, T::MomentsPerDay::get(), Self::meetup_time_offset()))
 	}
 
 	/// Returns the community-specific nominal income if it is set. Otherwise returns the
@@ -1341,12 +1429,12 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			CeremonyPhaseType::REGISTERING => {
 				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
-				if cindex > T::ReputationLifetime::get() {
-					Self::purge_registry(cindex - T::ReputationLifetime::get() - 1);
+				if cindex > Self::reputation_lifetime() {
+					Self::purge_registry(cindex - Self::reputation_lifetime() - 1);
 				}
 				let inactives = Self::get_inactive_communities(
 					<encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1,
-					T::InactivityTimeout::get(),
+					Self::inactivity_timeout(),
 					<encointer_communities::Pallet<T>>::community_identifiers(),
 				);
 				for inactive in inactives {

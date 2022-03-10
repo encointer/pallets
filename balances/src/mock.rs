@@ -38,7 +38,6 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -51,7 +50,6 @@ impl dut::Config for TestRuntime {
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_encointer_communities!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime);
 
 // genesis values

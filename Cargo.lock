@@ -3168,10 +3168,10 @@ version = "0.8.1"
 dependencies = [
  "approx",
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-encointer-communities",
  "parity-scale-codec",
  "scale-info",
  "sp-io",
@@ -3181,44 +3181,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-balances-rpc"
-version = "0.1.0"
-dependencies = [
- "encointer-primitives",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
- "log",
- "pallet-encointer-balances-rpc-runtime-api",
- "parking_lot",
- "sc-rpc",
- "sc-rpc-api",
- "sp-api",
- "sp-blockchain",
- "sp-runtime",
-]
-
-[[package]]
-name = "pallet-encointer-balances-rpc-runtime-api"
-version = "0.1.0"
-dependencies = [
- "encointer-primitives",
- "frame-support",
- "sp-api",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-encointer-bazaar"
 version = "0.8.1"
 dependencies = [
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
  "pallet-encointer-communities",
  "parity-scale-codec",
  "scale-info",
+ "sp-core",
  "sp-io",
  "sp-std",
  "test-utils",
@@ -3315,6 +3289,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "pallet-encointer-balances",
  "pallet-encointer-scheduler",
  "parity-scale-codec",
  "scale-info",

@@ -44,8 +44,6 @@ frame_support::construct_runtime!(
 );
 
 parameter_types! {
-	pub const ReputationLifetime: u32 = 1;
-	pub const EndorsementTicketsPerBootstrapper: u8 = 50;
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 }
 
@@ -81,6 +79,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		ceremony_reward: BalanceType::from_num(1),
 		location_tolerance: LOCATION_TOLERANCE, // [m]
 		time_tolerance: TIME_TOLERANCE,         // [ms]
+		inactivity_timeout: 12,
+		endorsement_tickets_per_bootstrapper: 50,
+		reputation_lifetime: 6,
+		meetup_time_offset: 0,
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

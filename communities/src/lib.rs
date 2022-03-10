@@ -25,7 +25,7 @@
 
 use codec::Encode;
 use encointer_primitives::{
-	balances::{BalanceType, Demurrage},
+	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::PalletString,
 	communities::{
 		consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
@@ -35,7 +35,7 @@ use encointer_primitives::{
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
-use frame_support::{ensure, traits::Get};
+use frame_support::ensure;
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
@@ -48,6 +48,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use encointer_primitives::communities::{MaxSpeedMpsType, MinSolarTripTimeType};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -57,18 +58,13 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + encointer_scheduler::Config {
+	pub trait Config:
+		frame_system::Config + encointer_scheduler::Config + encointer_balances::Config
+	{
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Required origin for adding or updating a community (though can always be Root).
 		type CommunityMaster: EnsureOrigin<Self::Origin>;
-
-		/// [s] minimum adversary trip time between two locations measured in local (solar) time.
-		#[pallet::constant]
-		type MinSolarTripTimeS: Get<u32>;
-		/// [m/s] max speed over ground of adversary
-		#[pallet::constant]
-		type MaxSpeedMps: Get<u32>;
 	}
 
 	#[pallet::call]
@@ -127,7 +123,7 @@ pub mod pallet {
 			<Bootstrappers<T>>::insert(&cid, &bootstrappers);
 			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
 
-			demurrage.map(|d| <DemurragePerBlock<T>>::insert(&cid, d));
+			demurrage.map(|d| <encointer_balances::Pallet<T>>::set_demurrage(&cid, d));
 			nominal_income.map(|i| <NominalIncome<T>>::insert(&cid, i));
 
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
@@ -250,7 +246,7 @@ pub mod pallet {
 			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			Self::ensure_cid_exists(&cid)?;
 
-			<DemurragePerBlock<T>>::insert(&cid, &demurrage);
+			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage);
 
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
 			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
@@ -276,6 +272,36 @@ pub mod pallet {
 			info!(target: LOG, " updated nominal income for cid: {:?}", cid);
 			Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
 
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn set_min_solar_trip_time_s(
+			origin: OriginFor<T>,
+			min_solar_trip_time_s: MinSolarTripTimeType,
+		) -> DispatchResultWithPostInfo {
+			T::CommunityMaster::ensure_origin(origin)?;
+			<MinSolarTripTimeS<T>>::put(min_solar_trip_time_s);
+			Ok(().into())
+		}
+
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn set_max_speed_mps(
+			origin: OriginFor<T>,
+			max_speed_mps: MaxSpeedMpsType,
+		) -> DispatchResultWithPostInfo {
+			T::CommunityMaster::ensure_origin(origin)?;
+			<MaxSpeedMps<T>>::put(max_speed_mps);
+			Ok(().into())
+		}
+
+		#[pallet::weight(10_000)]
+		pub fn purge_community(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+		) -> DispatchResultWithPostInfo {
+			T::CommunityMaster::ensure_origin(origin)?;
+			Self::remove_community(cid);
 			Ok(().into())
 		}
 	}
@@ -359,16 +385,41 @@ pub mod pallet {
 	pub(super) type CommunityMetadata<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, CommunityMetadataType, ValueQuery>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn demurrage_per_block)]
-	pub type DemurragePerBlock<T: Config> =
-		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Demurrage, ValueQuery>;
-
 	/// Amount of UBI to be paid for every attended ceremony.
 	#[pallet::storage]
 	#[pallet::getter(fn nominal_income)]
 	pub type NominalIncome<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, NominalIncomeType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn min_solar_trip_time_s)]
+	pub(super) type MinSolarTripTimeS<T: Config> =
+		StorageValue<_, MinSolarTripTimeType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn max_speed_mps)]
+	pub(super) type MaxSpeedMps<T: Config> = StorageValue<_, MaxSpeedMpsType, ValueQuery>;
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub min_solar_trip_time_s: MinSolarTripTimeType,
+		pub max_speed_mps: MaxSpeedMpsType,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { min_solar_trip_time_s: Default::default(), max_speed_mps: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			<MinSolarTripTimeS<T>>::put(&self.min_solar_trip_time_s);
+			<MaxSpeedMps<T>>::put(&self.max_speed_mps);
+		}
+	}
 }
 
 impl<T: Config> Pallet<T> {
@@ -413,9 +464,10 @@ impl<T: Config> Pallet<T> {
 		<CommunityIdentifiers<T>>::mutate(|v| v.retain(|&x| x != cid));
 
 		<CommunityMetadata<T>>::remove(cid);
-		<DemurragePerBlock<T>>::remove(cid);
 
 		<NominalIncome<T>>::remove(cid);
+
+		<encointer_balances::Pallet<T>>::purge_balances(cid);
 	}
 
 	pub fn insert_bootstrappers(cid: CommunityIdentifier, bootstrappers: Vec<T::AccountId>) {
@@ -428,7 +480,7 @@ impl<T: Config> Pallet<T> {
 
 		// FIXME: this will not panic, but make sure!
 		let dt = (from.lon - to.lon) * 240; //time, the sun-high needs to travel between locations [s]
-		let tflight = d / T::MaxSpeedMps::get(); // time required to travel between locations at MaxSpeedMps [s]
+		let tflight = d / Self::max_speed_mps(); // time required to travel between locations at MaxSpeedMps [s]
 		let dt: u32 = i64::lossy_from(dt.abs()).saturated_into();
 		tflight.checked_sub(dt).unwrap_or(0)
 	}
@@ -488,14 +540,14 @@ impl<T: Config> Pallet<T> {
 
 		//check if northern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.n)
 		}
 
 		//check if southern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.s)
 		}
@@ -518,42 +570,42 @@ impl<T: Config> Pallet<T> {
 
 		//check if north eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.ne)
 		}
 
 		//check if eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.e)
 		}
 
 		//check if south eastern neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.se)
 		}
 
 		//check if north western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.nw)
 		}
 
 		//check if western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.w)
 		}
 
 		//check if south western neighbour bucket needs to be included
 		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location) <
-			T::MinSolarTripTimeS::get()
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.sw)
 		}
@@ -588,7 +640,7 @@ impl<T: Config> Pallet<T> {
 		let nearby_locations = Self::get_nearby_locations(location)?;
 		for nearby_location in nearby_locations {
 			ensure!(
-				Self::solar_trip_time(location, &nearby_location) >= T::MinSolarTripTimeS::get(),
+				Self::solar_trip_time(location, &nearby_location) >= Self::min_solar_trip_time_s(),
 				<Error<T>>::MinimumDistanceViolationToOtherLocation
 			);
 		}
@@ -610,6 +662,21 @@ impl<T: Config> Pallet<T> {
 		<Locations<T>>::iter_prefix_values(&cid)
 			.reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect())
 			.unwrap()
+	}
+
+	pub fn get_all_balances(
+		account: &T::AccountId,
+	) -> Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> {
+		let mut balances: Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> = vec![];
+		for cid in Self::community_identifiers().into_iter() {
+			if encointer_balances::Balance::<T>::contains_key(cid, account.clone()) {
+				balances.push((
+					cid,
+					<encointer_balances::Pallet<T>>::balance_entry(cid, &account.clone()),
+				));
+			}
+		}
+		return balances
 	}
 }
 

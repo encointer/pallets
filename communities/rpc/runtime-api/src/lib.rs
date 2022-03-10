@@ -22,15 +22,21 @@
 use sp_std::vec::Vec;
 
 use encointer_primitives::{
+	balances::BalanceEntry,
 	common::PalletString,
 	communities::{CommunityIdentifier, Location},
 };
+use sp_api::{Decode, Encode};
 
 sp_api::decl_runtime_apis! {
 
-	pub trait CommunitiesApi {
+	pub trait CommunitiesApi<AccountId, BlockNumber>
+		where AccountId: Encode + Decode,
+		BlockNumber: Encode + Decode{
+
 		fn get_cids() -> Vec<CommunityIdentifier>;
 		fn get_name(cid: &CommunityIdentifier) -> Option<PalletString>;
 		fn get_locations(cid: &CommunityIdentifier) -> Vec<Location>;
+		fn get_all_balances(account: &AccountId) -> Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>;
 	}
 }

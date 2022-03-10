@@ -17,6 +17,7 @@
 //! Mock runtime for the encointer_communities module
 
 pub use crate as dut;
+
 use frame_support::pallet_prelude::GenesisBuild;
 
 use test_utils::*;
@@ -25,11 +26,6 @@ use encointer_primitives::scheduler::CeremonyPhaseType;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
-
-frame_support::parameter_types! {
-	pub const MinSolarTripTimeS: u32 = 1;
-	pub const MaxSpeedMps: u32 = 83;
-}
 
 frame_support::construct_runtime!(
 	pub enum TestRuntime where
@@ -41,20 +37,24 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
 	}
 );
+
+pub fn master() -> AccountId {
+	AccountId::from(AccountKeyring::Alice)
+}
 
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type CommunityMaster = EnsureAlice;
-	type MinSolarTripTimeS = MinSolarTripTimeS;
-	type MaxSpeedMps = MaxSpeedMps;
 }
 
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_encointer_scheduler!(TestRuntime);
+impl_encointer_balances!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -71,5 +71,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
+
+	let conf = dut::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+
 	t.into()
 }

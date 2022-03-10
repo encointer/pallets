@@ -19,22 +19,28 @@ mod tests;
 
 use jsonrpc_core::{Error, ErrorCode, Result};
 use jsonrpc_derive::rpc;
-use sp_api::{Decode, Encode, ProvideRuntimeApi};
+use sp_api::{Decode, Encode, HeaderT, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
-use encointer_primitives::communities::{
-	consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier, Location,
+use encointer_primitives::{
+	balances::BalanceEntry,
+	communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier, Location},
 };
 use parking_lot::RwLock;
+use sc_rpc_api::DenyUnsafe;
 use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 
 const CIDS_KEY: &[u8; 4] = b"cids";
 
 #[rpc]
-pub trait CommunitiesApi<BlockHash> {
+pub trait CommunitiesApi<BlockHash, AccountId, BlockNumber>
+where
+	AccountId: 'static + Encode + Decode + Send + Sync,
+	BlockNumber: 'static + Encode + Decode + Send + Sync,
+{
 	#[rpc(name = "communities_getAll")]
 	fn communities_get_all(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
 
@@ -44,6 +50,13 @@ pub trait CommunitiesApi<BlockHash> {
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
 	) -> Result<Vec<Location>>;
+
+	#[rpc(name = "communities_getAllBalances")]
+	fn communities_get_all_balances(
+		&self,
+		account: AccountId,
+		at: Option<BlockHash>,
+	) -> Result<Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>>;
 }
 
 pub struct Communities<Client, Block, S> {
@@ -51,6 +64,7 @@ pub struct Communities<Client, Block, S> {
 	storage: Arc<RwLock<S>>,
 	offchain_indexing: bool,
 	_marker: std::marker::PhantomData<Block>,
+	deny_unsafe: DenyUnsafe,
 }
 
 impl<C, Block, S> Communities<C, Block, S>
@@ -58,12 +72,18 @@ where
 	S: 'static + OffchainStorage,
 {
 	/// Create new `Communities` with the given reference to the client and to the offchain storage
-	pub fn new(client: Arc<C>, storage: S, offchain_indexing: bool) -> Self {
+	pub fn new(
+		client: Arc<C>,
+		storage: S,
+		offchain_indexing: bool,
+		deny_unsafe: DenyUnsafe,
+	) -> Self {
 		Communities {
 			client,
 			storage: Arc::new(RwLock::new(storage)),
 			offchain_indexing,
 			_marker: Default::default(),
+			deny_unsafe,
 		}
 	}
 
@@ -121,11 +141,16 @@ macro_rules! refresh_cache {
 	};
 }
 
-impl<C, Block, S> CommunitiesApi<<Block as BlockT>::Hash> for Communities<C, Block, S>
+type BlockNumberFor<B> = <<B as BlockT>::Header as HeaderT>::Number;
+
+impl<C, Block, S, AccountId>
+	CommunitiesApi<<Block as BlockT>::Hash, AccountId, BlockNumberFor<Block>>
+	for Communities<C, Block, S>
 where
+	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Block: BlockT,
 	C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	C::Api: CommunitiesRuntimeApi<Block>,
+	C::Api: CommunitiesRuntimeApi<Block, AccountId, BlockNumberFor<Block>>,
 	S: 'static + OffchainStorage,
 {
 	fn communities_get_all(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
@@ -167,6 +192,18 @@ where
 			},
 			None => Err(storage_not_found_error(cache_key)),
 		}
+	}
+
+	fn communities_get_all_balances(
+		&self,
+		account: AccountId,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> Result<Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<Block>>)>> {
+		self.deny_unsafe.check_if_safe()?;
+
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		return Ok(api.get_all_balances(&at, &account).map_err(runtime_error_into_rpc_err)?)
 	}
 }
 

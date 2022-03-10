@@ -17,10 +17,13 @@
 use super::*;
 use approx::assert_abs_diff_eq;
 use frame_support::assert_ok;
-use mock::{dut, new_test_ext, EncointerCommunities, Origin, System, TestRuntime};
+use mock::{
+	dut, master, new_test_ext, EncointerBalances, EncointerCommunities, Origin, System, TestRuntime,
+};
 use sp_core::sr25519;
 use sp_runtime::DispatchError;
 
+use encointer_primitives::balances::BalanceType;
 use test_utils::{
 	helpers::{account_id, assert_dispatch_err, bootstrappers, last_event},
 	*,
@@ -66,27 +69,29 @@ fn testdata_lat_long() {
 
 #[test]
 fn solar_trip_time_works() {
-	// one degree equator
-	let a = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
-	let b = Location { lat: T::from_num(0i32), lon: T::from_num(1i32) }; // one degree lat is 111km at the equator
-	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 1099);
-	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&b, &a), 1099);
-	// Reykjavik one degree lon: expect to yield much shorter times than at the equator
-	let a = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(-21.895410_f64) }; // this is reykjavik
-	let b = Location { lat: T::from_num(64.135_480), lon: T::from_num(-20.895410) };
-	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 344);
+	new_test_ext().execute_with(|| {
+		// one degree equator
+		let a = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
+		let b = Location { lat: T::from_num(0i32), lon: T::from_num(1i32) }; // one degree lat is 111km at the equator
+		assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 1099);
+		assert_eq!(EncointerCommunities::solar_trip_time(&b, &a), 1099);
+		// Reykjavik one degree lon: expect to yield much shorter times than at the equator
+		let a = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(-21.895410_f64) }; // this is reykjavik
+		let b = Location { lat: T::from_num(64.135_480), lon: T::from_num(-20.895410) };
+		assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 344);
 
-	// Reykjavik 111km: expect to yield much shorter times than at the equator because
-	// next time zone is much closer in meter overland.
-	// -> require locations to be further apart (in east-west) at this latitude
-	let a = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(0_f64) }; // this is at reykjavik lat
-	let b = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(2.290000_f64) }; // 2.29° is 111km
-	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 789);
-	// maximal
-	let a = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
-	let b = Location { lat: T::from_num(0i32), lon: T::from_num(180i32) };
-	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&a, &b), 110318);
-	assert_eq!(dut::Pallet::<TestRuntime>::solar_trip_time(&b, &a), 110318);
+		// Reykjavik 111km: expect to yield much shorter times than at the equator because
+		// next time zone is much closer in meter overland.
+		// -> require locations to be further apart (in east-west) at this latitude
+		let a = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(0_f64) }; // this is at reykjavik lat
+		let b = Location { lat: T::from_num(64.135480_f64), lon: T::from_num(2.290000_f64) }; // 2.29° is 111km
+		assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 789);
+		// maximal
+		let a = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
+		let b = Location { lat: T::from_num(0i32), lon: T::from_num(180i32) };
+		assert_eq!(EncointerCommunities::solar_trip_time(&a, &b), 110318);
+		assert_eq!(EncointerCommunities::solar_trip_time(&b, &a), 110318);
+	})
 }
 
 #[test]
@@ -310,7 +315,7 @@ fn updating_demurrage_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
-		assert!(DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
+		assert!(encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
 		let demurrage = Demurrage::from_num(0.0001);
 		assert_ok!(EncointerCommunities::update_demurrage(
 			Origin::signed(AccountKeyring::Alice.into()),
@@ -321,7 +326,10 @@ fn updating_demurrage_works() {
 			last_event::<TestRuntime>(),
 			Some(Event::DemurrageUpdated(cid, demurrage).into())
 		);
-		assert_eq!(DemurragePerBlock::<TestRuntime>::try_get(&cid).unwrap(), demurrage);
+		assert_eq!(
+			encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(&cid).unwrap(),
+			demurrage
+		);
 	});
 }
 
@@ -404,6 +412,8 @@ fn add_new_location_errs_with_invalid_origin() {
 #[test]
 fn remove_community_works() {
 	new_test_ext().execute_with(|| {
+		let alice = AccountKeyring::Alice.to_account_id();
+
 		let cid = register_test_community(None, 0.0, 0.0);
 		let cid2 = register_test_community(None, 1.0, 1.0);
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
@@ -442,8 +452,15 @@ fn remove_community_works() {
 		assert_eq!(locations, expected_locations);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(100)));
+		assert_ok!(EncointerBalances::issue(cid2, &alice, BalanceType::from_num(100)));
+		assert_eq!(EncointerCommunities::get_all_balances(&alice).len(), 2);
+
 		// remove first location
 		EncointerCommunities::remove_community(cid);
+
+		// assert that balances have been purged
+		assert_eq!(EncointerCommunities::get_all_balances(&alice).len(), 1);
 
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
 		assert_eq!(EncointerCommunities::locations(&cid2, &geo_hash3), vec![location3]);
@@ -888,5 +905,102 @@ fn get_locations_works() {
 		result.sort();
 		expected_result.sort();
 		assert_eq!(result, expected_result);
+	});
+}
+
+#[test]
+fn set_min_solar_trip_time_s_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCommunities::set_min_solar_trip_time_s(
+				Origin::signed(AccountKeyring::Bob.into()),
+				1u32,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_min_solar_trip_time_s_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCommunities::set_min_solar_trip_time_s(Origin::signed(master()), 2u32));
+
+		assert_eq!(EncointerCommunities::min_solar_trip_time_s(), 2u32);
+		assert_ok!(EncointerCommunities::set_min_solar_trip_time_s(Origin::signed(master()), 3u32));
+
+		assert_eq!(EncointerCommunities::min_solar_trip_time_s(), 3u32);
+	});
+}
+
+#[test]
+fn set_max_speed_mps_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCommunities::set_max_speed_mps(
+				Origin::signed(AccountKeyring::Bob.into()),
+				1u32,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_max_speed_mps_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCommunities::set_max_speed_mps(Origin::signed(master()), 2u32));
+
+		assert_eq!(EncointerCommunities::max_speed_mps(), 2u32);
+		assert_ok!(EncointerCommunities::set_max_speed_mps(Origin::signed(master()), 3u32));
+
+		assert_eq!(EncointerCommunities::max_speed_mps(), 3u32);
+	});
+}
+
+#[test]
+fn get_all_balances_works() {
+	new_test_ext().execute_with(|| {
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+
+		let cid = register_test_community(None, 0.0, 0.0);
+		let cid2 = register_test_community(None, 1.0, 1.0);
+		let cid3 = register_test_community(None, 2.0, 2.0);
+
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(100)));
+		assert_ok!(EncointerBalances::issue(cid, &bob, BalanceType::from_num(50)));
+
+		assert_ok!(EncointerBalances::issue(cid2, &alice, BalanceType::from_num(20)));
+		assert_ok!(EncointerBalances::issue(cid2, &bob, BalanceType::from_num(30)));
+
+		assert_ok!(EncointerBalances::issue(cid3, &bob, BalanceType::from_num(10)));
+
+		let balances_alice = EncointerCommunities::get_all_balances(&alice);
+		assert_eq!(balances_alice.len(), 2);
+		assert_eq!(balances_alice[0].0, cid);
+		assert_eq!(balances_alice[0].1.principal, 100);
+		assert_eq!(balances_alice[1].0, cid2);
+		assert_eq!(balances_alice[1].1.principal, 20);
+
+		let balances_bob = EncointerCommunities::get_all_balances(&bob);
+		assert_eq!(balances_bob.len(), 3);
+		assert_eq!(balances_bob[0].0, cid);
+		assert_eq!(balances_bob[0].1.principal, 50);
+		assert_eq!(balances_bob[1].0, cid2);
+		assert_eq!(balances_bob[1].1.principal, 30);
+		assert_eq!(balances_bob[2].0, cid3);
+		assert_eq!(balances_bob[2].1.principal, 10);
+	});
+}
+
+#[test]
+fn purge_community_errs_with_invalid_origin() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community(None, 0.0, 0.0);
+		assert_dispatch_err(
+			EncointerCommunities::purge_community(Origin::signed(AccountKeyring::Bob.into()), cid),
+			DispatchError::BadOrigin,
+		);
 	});
 }

@@ -17,6 +17,7 @@
 //! Unit tests for the encointer_balances module.
 
 use super::*;
+use crate::mock::DefaultDemurrage;
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use encointer_primitives::{
 	communities::CommunityIdentifier,
@@ -24,12 +25,8 @@ use encointer_primitives::{
 };
 use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
 use mock::{new_test_ext, EncointerBalances, System, TestRuntime};
-use test_utils::{
-	helpers::{last_event, register_test_community},
-	AccountKeyring,
-};
-
-use crate::mock::DefaultDemurrage;
+use sp_std::str::FromStr;
+use test_utils::{helpers::last_event, AccountKeyring};
 
 #[test]
 fn issue_should_work() {
@@ -103,7 +100,7 @@ fn transfer_should_work() {
 fn demurrage_should_work() {
 	new_test_ext().execute_with(|| {
 		let alice = AccountKeyring::Alice.to_account_id();
-		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid = CommunityIdentifier::from_str("aaaaaaaaaa").unwrap();
 		System::set_block_number(0);
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(1)));
 		System::set_block_number(1);
@@ -125,7 +122,7 @@ fn transfer_with_demurrage_exceeding_amount_should_fail() {
 	let alice = AccountKeyring::Alice.to_account_id();
 	let bob = AccountKeyring::Bob.to_account_id();
 	new_test_ext().execute_with(|| {
-		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid = CommunityIdentifier::from_str("aaaaaaaaaa").unwrap();
 		System::set_block_number(0);
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(100)));
 		//one year later
@@ -136,4 +133,20 @@ fn transfer_with_demurrage_exceeding_amount_should_fail() {
 			Error::<TestRuntime>::BalanceTooLow,
 		);
 	});
+}
+
+#[test]
+fn purge_balances_works() {
+	new_test_ext().execute_with(|| {
+		let cid = CommunityIdentifier::default();
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
+		assert_eq!(EncointerBalances::balance(cid, &alice), BalanceType::from_num(50.1));
+		assert_ok!(EncointerBalances::issue(cid, &bob, BalanceType::from_num(12)));
+		assert_eq!(EncointerBalances::balance(cid, &bob), BalanceType::from_num(12));
+		EncointerBalances::purge_balances(cid);
+		assert_eq!(EncointerBalances::balance(cid, &alice), 0);
+		assert_eq!(EncointerBalances::balance(cid, &bob), 0);
+	})
 }

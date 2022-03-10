@@ -15,15 +15,12 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate as dut;
+use frame_support::pallet_prelude::GenesisBuild;
 
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
-
-frame_support::parameter_types! {
-	pub const MinSolarTripTimeS: u32 = 1;
-}
 
 frame_support::construct_runtime!(
 	pub enum TestRuntime where
@@ -53,8 +50,10 @@ impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::default()
-		.build_storage::<TestRuntime>()
-		.unwrap()
-		.into()
+	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+
+	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+
+	t.into()
 }
