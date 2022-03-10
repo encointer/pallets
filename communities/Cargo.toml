@@ -11,9 +11,8 @@ scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
-
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "master" }
@@ -33,13 +32,19 @@ default = ["std"]
 std = [
 	"codec/std",
 	"log/std",
+	"scale-info/std",
+
+	# local deps
+	"encointer-primitives/std",
+	"encointer-balances/std",
+	"encointer-scheduler/std",
+
+	# substrate deps
 	"frame-support/std",
 	"frame-system/std",
-	"scale-info/std",
 	"sp-io/std",
 	"sp-std/std",
 	"sp-runtime/std",
-	"encointer-primitives/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 
