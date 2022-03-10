@@ -9,7 +9,7 @@ bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 concat-arrays = { version = "0.1.2", default-features = false }
 crc = "2.1.0"
-geohash = { git = "https://github.com/encointer/geohash", tag = "v0.12.0" }
+geohash = { tag = "v0.13.0", git = "https://github.com/encointer/geohash" }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 serde = { version = "1.0.136", optional = true, default-features = false, features = ["derive","alloc"] }
