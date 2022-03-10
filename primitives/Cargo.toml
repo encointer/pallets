@@ -6,13 +6,13 @@ edition = "2018"
 
 [dependencies]
 bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive", "max-encoded-len"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
 concat-arrays = { version = "0.1.2", default-features = false }
-crc = "2.0.0"
+crc = "2.1.0"
 geohash = { git = "https://github.com/encointer/geohash", tag = "v0.12.0" }
 log = { version = "0.4.14", default-features = false }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.101", optional = true, default-features = false, features = ["derive","alloc"] }
+scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
+serde = { version = "1.0.136", optional = true, default-features = false, features = ["derive","alloc"] }
 
 # local deps
 ep-core = { path = "core", default-features = false }
@@ -28,7 +28,7 @@ xcm = { optional = true, default-features = false, git = "https://github.com/par
 
 [dev-dependencies]
 test-utils = { path = "../test-utils" }
-serde_json = "1.0.72"
+serde_json = "1.0.79"
 
 [features]
 default = ["std", "serde_derive"]

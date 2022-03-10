@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 log = { version = "0.4.14", default-features = false }
-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false, features = ["sybil"]}
@@ -24,7 +24,7 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-f
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "master" }
 
 [dev-dependencies]
-hex = { version = "*" }
+hex = "0.4.3"
 sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 test-utils = { path = "../test-utils" }

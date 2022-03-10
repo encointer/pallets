@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 log = { version = "0.4.14", default-features = false }
-codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
@@ -24,9 +24,9 @@ sp-runtime = { version = "5.0.0", git = "https://github.com/paritytech/substrate
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
 [dev-dependencies]
-approx = "0.5.0"
-itertools = "0.10.0"
-rstest = "0.6.4"
+approx = "0.5.1"
+itertools = "0.10.3"
+rstest = "0.12.0"
 sp-core = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = { path = "../test-utils" }
