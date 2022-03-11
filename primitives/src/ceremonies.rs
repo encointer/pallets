@@ -232,6 +232,7 @@ impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountI
 #[derive(
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct AssignmentCount {
 	pub bootstrappers: ParticipantIndexType,
 	pub reputables: ParticipantIndexType,
@@ -248,6 +249,7 @@ impl AssignmentCount {
 #[derive(
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Assignment {
 	pub bootstrappers_reputables: AssignmentParams,
 	pub endorsees: AssignmentParams,
@@ -259,6 +261,7 @@ pub struct Assignment {
 #[derive(
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct AssignmentParams {
 	/// Random prime below number of meetup participants. For locations this is the amount of locations.
 	pub m: u64,
