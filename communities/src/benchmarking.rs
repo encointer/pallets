@@ -133,4 +133,5 @@ benchmarks! {
 	verify { }
 }
 
-impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::TestRuntime);
+// Don't runt the tests with cargo test, they take an hour
+// impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::TestRuntime);
