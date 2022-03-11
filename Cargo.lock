@@ -3358,6 +3358,7 @@ name = "pallet-encointer-scheduler"
 version = "0.8.1"
 dependencies = [
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
