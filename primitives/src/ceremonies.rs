@@ -267,6 +267,7 @@ pub struct Assignment {
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AssignmentParams {
 	/// Random prime below number of meetup participants. For locations this is the amount of locations.
 	pub m: u64,
