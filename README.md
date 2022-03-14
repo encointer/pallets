@@ -32,6 +32,7 @@ shim as a workaround for that issue in [ep-core](./primitives/core), which can b
 
 ```rust
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BalanceEntry<BlockNumber> {
 	/// The balance of the account after last manual adjustment
 	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_fixed"))]
