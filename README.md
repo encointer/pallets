@@ -42,6 +42,4 @@ pub struct BalanceEntry<BlockNumber> {
 }
 ```
 
-We also apply substrate's standard of serializing with `camelCase`. Everything that is automatically serialized in the 
-RPCs does that already, but we want to make sure that we do the same when we serialize in other contexts, e.g. dumping 
- to JSON-files.
+We also apply substrate's standard of serializing with `camelCase`.
