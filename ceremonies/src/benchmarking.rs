@@ -210,7 +210,6 @@ benchmarks! {
 		<T as frame_system::Config>::Event: From<pallet::Event<T>>
 	}
 
-	// register reputable
 	register_participant {
 	let cid = create_community::<T>();
 
@@ -226,19 +225,6 @@ benchmarks! {
 			Pallet::<T>::participant_reputation((cid, cindex - 1), account_id::<T>(&zoran)),
 			Reputation::VerifiedLinked
 		);
-	}
-
-	// register newbie
-	register_participant_newbie {
-	let cid = create_community::<T>();
-
-	let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		assert_ok!(encointer_balances::Pallet::<T>::issue(cid, &account_id::<T>(&zoran), NominalIncome::from_num(1)));
-	assert_eq!(NewbieCount::<T>::get((cid, cindex)), 0);
-	}: register_participant(RawOrigin::Signed(account_id::<T>(&zoran)), cid, None)
-	verify {
-		assert_eq!(NewbieCount::<T>::get((cid, cindex)), 1);
 	}
 
 	attest_claims {
