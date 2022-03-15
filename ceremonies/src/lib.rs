@@ -415,7 +415,7 @@ pub mod pallet {
 		#[pallet::weight((1000, DispatchClass::Operational,))]
 		pub fn set_meetup_time_offset(
 			origin: OriginFor<T>,
-			meetup_time_offset: T::Moment,
+			meetup_time_offset: MeetupTimeOffsetType,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
@@ -760,7 +760,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn meetup_time_offset)]
-	pub(super) type MeetupTimeOffset<T: Config> = StorageValue<_, T::Moment, ValueQuery>;
+	pub(super) type MeetupTimeOffset<T: Config> = StorageValue<_, MeetupTimeOffsetType, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>
@@ -774,7 +774,7 @@ pub mod pallet {
 		pub inactivity_timeout: InactivityTimeoutType,
 		pub endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
 		pub reputation_lifetime: ReputationLifetimeType,
-		pub meetup_time_offset: T::Moment,
+		pub meetup_time_offset: MeetupTimeOffsetType,
 	}
 
 	#[cfg(feature = "std")]
@@ -1402,7 +1402,12 @@ impl<T: Config> Pallet<T> {
 		let next = <encointer_scheduler::Pallet<T>>::next_phase_timestamp();
 		let start = next - duration;
 
-		Some(meetup_time(location, start, T::MomentsPerDay::get(), Self::meetup_time_offset()))
+		Some(meetup_time::<T::Moment>(
+			location,
+			start,
+			T::MomentsPerDay::get(),
+			Self::meetup_time_offset(),
+		))
 	}
 
 	/// Returns the community-specific nominal income if it is set. Otherwise returns the

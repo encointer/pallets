@@ -4,8 +4,8 @@
 
 use crate::math::{checked_ceil_division, checked_modulo, find_prime_below, mod_inv};
 use encointer_primitives::{
-	ceremonies::{AssignmentParams, MeetupIndexType, ParticipantIndexType},
-	communities::{Degree, Location, LossyFrom},
+	ceremonies::{AssignmentParams, MeetupIndexType, MeetupTimeOffsetType, ParticipantIndexType},
+	communities::{Location, LossyFrom},
 	RandomNumberGenerator,
 };
 use sp_runtime::{
@@ -173,19 +173,21 @@ pub fn meetup_time<Moment: Copy + AtLeast32Bit>(
 	location: Location,
 	attesting_start: Moment,
 	one_day: Moment,
-	offset: Moment,
+	offset: MeetupTimeOffsetType,
 ) -> Moment {
-	let per_degree = one_day / Moment::from(360u32);
+	let one_day_u64: u64 = one_day.saturated_into();
+	let per_degree: i64 = one_day_u64 as i64 / 360i64;
 
+	// The meetups start at high sun at 180 degrees and during one day the meetup locations travel
+	// along the globe until the very last meetup happens at high sun at -180 degrees.
+	// So we scale the range 180...-180 to 0...360
 	// rounding to the lower integer degree. Max error: 240s = 4min
-	let lon_abs: u32 = i64::lossy_from(location.lon.abs()).saturated_into();
-	let lon_time_abs = Moment::from(lon_abs) * per_degree;
+	let lon: i64 = (i64::lossy_from(location.lon.round_to_zero()) - 180i64).abs();
 
-	if location.lon < Degree::from_num(0) {
-		attesting_start + one_day / Moment::from(2u32) + lon_time_abs + offset
-	} else {
-		attesting_start + one_day / Moment::from(2u32) - lon_time_abs + offset
-	}
+	let lon_time = lon * per_degree;
+	let attesting_start_u64: u64 = attesting_start.saturated_into();
+	let meetup_time = attesting_start_u64 as i64 + lon_time + offset as i64;
+	(meetup_time as u64).saturated_into()
 }
 
 #[cfg(test)]
