@@ -421,6 +421,12 @@ pub mod pallet {
 			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
 				return Err(<Error<T>>::WrongPhaseForChangingMeetupTimeOffset.into())
 			}
+
+			// Meetup time offset needs to be in [-8h, 8h]
+			if meetup_time_offset.abs() > 8 * 3600 * 1000 {
+				return Err(<Error<T>>::InvalidMeetupTimeOffset.into())
+			}
+
 			<MeetupTimeOffset<T>>::put(meetup_time_offset);
 			Ok(().into())
 		}
@@ -495,6 +501,8 @@ pub mod pallet {
 		OnlyBootstrappers,
 		/// MeetupTimeOffset can only be changed during registering
 		WrongPhaseForChangingMeetupTimeOffset,
+		/// MeetupTimeOffset needs to be in [-8h, 8h]
+		InvalidMeetupTimeOffset,
 	}
 
 	#[pallet::storage]

@@ -1746,13 +1746,45 @@ fn set_meetup_time_offset_errs_with_bad_origin() {
 }
 
 #[test]
+fn set_meetup_time_offset_fails_with_invalid_value() {
+	new_test_ext().execute_with(|| {
+		assert_err!(
+			EncointerCeremonies::set_meetup_time_offset(
+				Origin::signed(master()),
+				-8 * 3600 * 1000 - 1,
+			),
+			Error::<TestRuntime>::InvalidMeetupTimeOffset,
+		);
+
+		assert_err!(
+			EncointerCeremonies::set_meetup_time_offset(
+				Origin::signed(master()),
+				8 * 3600 * 1000 + 1,
+			),
+			Error::<TestRuntime>::InvalidMeetupTimeOffset,
+		);
+	});
+}
+
+#[test]
+fn set_meetup_time_offset_fails_with_wrong_phase() {
+	new_test_ext().execute_with(|| {
+		run_to_next_phase();
+		assert_err!(
+			EncointerCeremonies::set_meetup_time_offset(Origin::signed(master()), 5i32,),
+			Error::<TestRuntime>::WrongPhaseForChangingMeetupTimeOffset,
+		);
+	});
+}
+
+#[test]
 fn set_meetup_time_offset_works() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(EncointerCeremonies::set_meetup_time_offset(Origin::signed(master()), 5i32,));
 
 		assert_eq!(EncointerCeremonies::meetup_time_offset(), 5i32,);
-		assert_ok!(EncointerCeremonies::set_meetup_time_offset(Origin::signed(master()), 6i32,));
+		assert_ok!(EncointerCeremonies::set_meetup_time_offset(Origin::signed(master()), -6i32,));
 
-		assert_eq!(EncointerCeremonies::meetup_time_offset(), 6i32,);
+		assert_eq!(EncointerCeremonies::meetup_time_offset(), -6i32,);
 	});
 }
