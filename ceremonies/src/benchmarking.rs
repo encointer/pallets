@@ -69,7 +69,7 @@ where
 	pair.public().into()
 }
 
-fn prove_attendance<T: Config>(
+fn create_proof_of_attendance<T: Config>(
 	prover: T::AccountId,
 	cid: CommunityIdentifier,
 	cindex: CeremonyIndexType,
@@ -161,7 +161,7 @@ pub fn set_timestamp<T: Config>(t: T::Moment) {
 	let _ = pallet_timestamp::Pallet::<T>::set(RawOrigin::None.into(), t);
 }
 
-fn get_proof_of_attendance<T: Config>(
+fn fake_last_attendance_and_get_proof<T: Config>(
 	prover: &sr25519::Pair,
 	cid: CommunityIdentifier,
 ) -> ProofOfAttendance<T::Signature, T::AccountId>
@@ -187,7 +187,7 @@ where
 	);
 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 	IssuedRewards::<T>::insert((cid, cindex - 1), 0, ());
-	let proof = prove_attendance::<T>(prover_account_id, cid, cindex - 1, &prover);
+	let proof = create_proof_of_attendance::<T>(prover_account_id, cid, cindex - 1, &prover);
 	proof
 }
 
@@ -214,7 +214,7 @@ benchmarks! {
 	let cid = create_community::<T>();
 
 	let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-	let proof = get_proof_of_attendance::<T>(&zoran, cid);
+	let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
 	assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
@@ -231,7 +231,7 @@ benchmarks! {
 		let cid = create_community::<T>();
 
 		let attestor = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
-		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&attestor.clone())).into(), cid, Some(get_proof_of_attendance::<T>(&attestor.clone(), cid))));
+		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&attestor.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&attestor.clone(), cid))));
 
 		let mut attestees: Vec<sr25519::Pair> = vec![];
 		let mut proofs: Vec<ProofOfAttendance<T::Signature, T::AccountId>> = vec![];
@@ -240,7 +240,7 @@ benchmarks! {
 			let p = sr25519::Pair::from_entropy(&[i as u8; 32], None).0;
 			attestees.push(p.clone());
 			if i < 7 {
-				proofs.push(get_proof_of_attendance::<T>(&p.clone(), cid));
+				proofs.push(fake_last_attendance_and_get_proof::<T>(&p.clone(), cid));
 			}
 		}
 
@@ -303,7 +303,7 @@ benchmarks! {
 			let p = sr25519::Pair::from_entropy(&[i as u8; 32], None).0;
 			users.push(p.clone());
 			if i < 8 {
-				proofs.push(get_proof_of_attendance::<T>(&p.clone(), cid));
+				proofs.push(fake_last_attendance_and_get_proof::<T>(&p.clone(), cid));
 			}
 		}
 
