@@ -200,6 +200,48 @@ pub fn last_event<T: Config>() -> Option<<T as frame_system::Config>::Event> {
 	Some(event.clone())
 }
 
+fn register_users<T: Config>(
+	cid: CommunityIdentifier,
+	num_newbies: u32,
+	num_reputables: u32,
+) -> Vec<sr25519::Pair>
+where
+	<T as frame_system::Config>::AccountId: From<sp_core::sr25519::Public>,
+	<T as Config>::Signature: From<sp_core::sr25519::Signature>,
+{
+	let mut users: Vec<sr25519::Pair> = vec![];
+	let mut proofs: Vec<ProofOfAttendance<T::Signature, T::AccountId>> = vec![];
+
+	let num_users_total = num_newbies + num_reputables;
+	// create users and fake reputation
+	for i in 0..num_users_total {
+		let p = sr25519::Pair::from_entropy(&[i as u8; 32], None).0;
+		users.push(p.clone());
+		if i < num_reputables {
+			proofs.push(fake_last_attendance_and_get_proof::<T>(&p.clone(), cid));
+		}
+	}
+
+	// register users
+	for i in 0..num_users_total {
+		let p = users[i as usize].clone();
+		if i < num_reputables {
+			assert_ok!(Pallet::<T>::register_participant(
+				RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(),
+				cid,
+				Some(proofs[i as usize].clone())
+			));
+		} else {
+			assert_ok!(Pallet::<T>::register_participant(
+				RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(),
+				cid,
+				None
+			));
+		}
+	}
+	users
+}
+
 benchmarks! {
 	where_clause {
 		where
@@ -233,26 +275,7 @@ benchmarks! {
 		let attestor = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
 		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&attestor.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&attestor.clone(), cid))));
 
-		let mut attestees: Vec<sr25519::Pair> = vec![];
-		let mut proofs: Vec<ProofOfAttendance<T::Signature, T::AccountId>> = vec![];
-		// create users and fake reputation
-		for i in 0..9 {
-			let p = sr25519::Pair::from_entropy(&[i as u8; 32], None).0;
-			attestees.push(p.clone());
-			if i < 7 {
-				proofs.push(fake_last_attendance_and_get_proof::<T>(&p.clone(), cid));
-			}
-		}
-
-		// register users
-		for i in 0..9 {
-			let p = attestees[i as usize].clone();
-			if i < 7 {
-			assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(), cid, Some(proofs[i as usize].clone())));
-			} else {
-				assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(), cid, None));
-			}
-		}
+		let attestees =  register_users::<T>(cid, 2, 7);
 
 		run_to_next_phase::<T>();
 		run_to_next_phase::<T>();
@@ -296,26 +319,8 @@ benchmarks! {
 		frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + T::BlockNumber::from(1u64)); // this is needed to assert events
 		let cid = create_community::<T>();
 
-		let mut users: Vec<sr25519::Pair> = vec![];
-		let mut proofs: Vec<ProofOfAttendance<T::Signature, T::AccountId>> = vec![];
-		// create users and fake reputation
-		for i in 0..10 {
-			let p = sr25519::Pair::from_entropy(&[i as u8; 32], None).0;
-			users.push(p.clone());
-			if i < 8 {
-				proofs.push(fake_last_attendance_and_get_proof::<T>(&p.clone(), cid));
-			}
-		}
 
-		// register users
-		for i in 0..10 {
-			let p = users[i as usize].clone();
-			if i < 8 {
-			assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(), cid, Some(proofs[i as usize].clone())));
-			} else {
-				assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(), cid, None));
-			}
-		}
+		let users = register_users::<T>(cid, 2, 8);
 
 		run_to_next_phase::<T>();
 		run_to_next_phase::<T>();
