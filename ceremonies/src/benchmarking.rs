@@ -223,21 +223,17 @@ where
 	}
 
 	// register users
-	for i in 0..num_users_total {
-		let p = users[i as usize].clone();
-		if i < num_reputables {
-			assert_ok!(Pallet::<T>::register_participant(
-				RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(),
-				cid,
-				Some(proofs[i as usize].clone())
-			));
-		} else {
-			assert_ok!(Pallet::<T>::register_participant(
-				RawOrigin::Signed(account_id::<T>(&(p.clone()))).into(),
-				cid,
-				None
-			));
+	for (i, p) in users.iter().enumerate() {
+		let mut maybe_proof = None;
+		if i < num_reputables as usize {
+			maybe_proof = Some(proofs[i].clone())
 		}
+
+		assert_ok!(Pallet::<T>::register_participant(
+	              RawOrigin::Signed(account_id::<T>(p)).into(),
+		      cid,
+		      maybe_proof
+	      ));
 	}
 	users
 }
