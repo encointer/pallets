@@ -389,6 +389,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<InactivityTimeout<T>>::put(inactivity_timeout);
+			debug!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
 			Self::deposit_event(Event::InactivityTimeoutUpdated(inactivity_timeout));
 			Ok(().into())
 		}
@@ -400,6 +401,11 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<EndorsementTicketsPerBootstrapper<T>>::put(endorsement_tickets_per_bootstrapper);
+			debug!(
+				target: LOG,
+				"set endorsement tickets per bootstrapper to {}",
+				endorsement_tickets_per_bootstrapper
+			);
 			Self::deposit_event(Event::EndorsementTicketsPerBootstrapperUpdated(
 				endorsement_tickets_per_bootstrapper,
 			));
@@ -413,6 +419,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<ReputationLifetime<T>>::put(reputation_lifetime);
+			debug!(target: LOG, "set reputation lifetime to {}", reputation_lifetime);
 			Self::deposit_event(Event::ReputationLifetimeUpdated(reputation_lifetime));
 			Ok(().into())
 		}
@@ -433,7 +440,19 @@ pub mod pallet {
 			}
 
 			<MeetupTimeOffset<T>>::put(meetup_time_offset);
+			debug!(target: LOG, "set meetup time offset to {} ms", meetup_time_offset);
 			Self::deposit_event(Event::MeetupTimeOffsetUpdated(meetup_time_offset));
+			Ok(().into())
+		}
+		#[pallet::weight((1000, DispatchClass::Operational,))]
+		pub fn purge_ceremony_history(
+			origin: OriginFor<T>,
+			community_ceremony: CommunityCeremony,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+
+			Self::purge_community_ceremony(community_ceremony);
+
 			Ok(().into())
 		}
 	}
@@ -457,6 +476,8 @@ pub mod pallet {
 		ReputationLifetimeUpdated(ReputationLifetimeType),
 		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups will take place
 		MeetupTimeOffsetUpdated(MeetupTimeOffsetType),
+		/// the registry for given ceremony index and community has been purged
+		CommunityCeremonyHistoryPurged(CommunityIdentifier, CeremonyIndexType),
 	}
 
 	#[pallet::error]
@@ -517,6 +538,8 @@ pub mod pallet {
 		WrongPhaseForChangingMeetupTimeOffset,
 		/// MeetupTimeOffset needs to be in [-8h, 8h]
 		InvalidMeetupTimeOffset,
+		/// the history for given ceremony index and community has been purged
+		CommunityCeremonyHistoryPurged,
 	}
 
 	#[pallet::storage]
@@ -901,6 +924,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn purge_community_ceremony(cc: CommunityCeremony) {
+		let cid = cc.1;
+		let cindex = cc.0;
+
+		debug!(target: LOG, "purging ceremony index {} history for {:?}", cindex, cid);
+
 		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
 		<BootstrapperIndex<T>>::remove_prefix(cc, None);
 		<BootstrapperCount<T>>::insert(cc, 0);
@@ -921,14 +949,20 @@ impl<T: Config> Pallet<T> {
 
 		Assignments::<T>::remove(cc);
 
+		<ParticipantReputation<T>>::remove_prefix(cc, None);
+
 		<Endorsees<T>>::remove_prefix(cc, None);
+		<EndorseesCount<T>>::insert(cc, 0);
 		<MeetupCount<T>>::insert(cc, 0);
+
 		<AttestationRegistry<T>>::remove_prefix(cc, None);
 		<AttestationIndex<T>>::remove_prefix(cc, None);
 		<AttestationCount<T>>::insert(cc, 0);
-		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
 
+		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
 		<IssuedRewards<T>>::remove_prefix(cc, None);
+
+		Self::deposit_event(Event::CommunityCeremonyHistoryPurged(cindex, cid));
 	}
 
 	fn purge_registry(cindex: CeremonyIndexType) {
