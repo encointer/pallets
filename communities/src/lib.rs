@@ -282,6 +282,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 			<MinSolarTripTimeS<T>>::put(min_solar_trip_time_s);
+			info!(target: LOG, "set min solar trip time to {} s", min_solar_trip_time_s);
 			Self::deposit_event(Event::MinSolarTripTimeSUpdated(min_solar_trip_time_s));
 			Ok(().into())
 		}
@@ -293,6 +294,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 			<MaxSpeedMps<T>>::put(max_speed_mps);
+			info!(target: LOG, "set max speed mps to {}", max_speed_mps);
 			Self::deposit_event(Event::MaxSpeedMpsUpdated(max_speed_mps));
 			Ok(().into())
 		}
@@ -459,6 +461,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn remove_community(cid: CommunityIdentifier) {
+		info!(target: LOG, "removing community {:?}", cid);
 		for (geo_hash, locations) in <Locations<T>>::iter_prefix(&cid) {
 			for location in locations {
 				Self::remove_location_intern(cid, location, geo_hash.clone());

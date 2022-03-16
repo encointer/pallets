@@ -389,7 +389,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<InactivityTimeout<T>>::put(inactivity_timeout);
-			debug!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
+			info!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
 			Self::deposit_event(Event::InactivityTimeoutUpdated(inactivity_timeout));
 			Ok(().into())
 		}
@@ -401,7 +401,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<EndorsementTicketsPerBootstrapper<T>>::put(endorsement_tickets_per_bootstrapper);
-			debug!(
+			info!(
 				target: LOG,
 				"set endorsement tickets per bootstrapper to {}",
 				endorsement_tickets_per_bootstrapper
@@ -419,7 +419,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<ReputationLifetime<T>>::put(reputation_lifetime);
-			debug!(target: LOG, "set reputation lifetime to {}", reputation_lifetime);
+			info!(target: LOG, "set reputation lifetime to {}", reputation_lifetime);
 			Self::deposit_event(Event::ReputationLifetimeUpdated(reputation_lifetime));
 			Ok(().into())
 		}
@@ -440,7 +440,7 @@ pub mod pallet {
 			}
 
 			<MeetupTimeOffset<T>>::put(meetup_time_offset);
-			debug!(target: LOG, "set meetup time offset to {} ms", meetup_time_offset);
+			info!(target: LOG, "set meetup time offset to {} ms", meetup_time_offset);
 			Self::deposit_event(Event::MeetupTimeOffsetUpdated(meetup_time_offset));
 			Ok(().into())
 		}
@@ -927,7 +927,7 @@ impl<T: Config> Pallet<T> {
 		let cid = cc.1;
 		let cindex = cc.0;
 
-		debug!(target: LOG, "purging ceremony index {} history for {:?}", cindex, cid);
+		info!(target: LOG, "purging ceremony index {} history for {:?}", cindex, cid);
 
 		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
 		<BootstrapperIndex<T>>::remove_prefix(cc, None);
