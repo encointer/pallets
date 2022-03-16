@@ -282,6 +282,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 			<MinSolarTripTimeS<T>>::put(min_solar_trip_time_s);
+			info!(target: LOG, "set min solar trip time to {} s", min_solar_trip_time_s);
+			Self::deposit_event(Event::MinSolarTripTimeSUpdated(min_solar_trip_time_s));
 			Ok(().into())
 		}
 
@@ -292,6 +294,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 			<MaxSpeedMps<T>>::put(max_speed_mps);
+			info!(target: LOG, "set max speed mps to {}", max_speed_mps);
+			Self::deposit_event(Event::MaxSpeedMpsUpdated(max_speed_mps));
 			Ok(().into())
 		}
 
@@ -321,6 +325,12 @@ pub mod pallet {
 		LocationAdded(CommunityIdentifier, Location),
 		/// A location has been removed
 		LocationRemoved(CommunityIdentifier, Location),
+		/// A security parameter for minimum meetup location distance has changed
+		MinSolarTripTimeSUpdated(MinSolarTripTimeType),
+		/// A security parameter for minimum meetup location distance has changed
+		MaxSpeedMpsUpdated(MaxSpeedMpsType),
+		/// a community has been purged
+		CommunityPurged(CommunityIdentifier),
 	}
 
 	#[pallet::error]
@@ -451,6 +461,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn remove_community(cid: CommunityIdentifier) {
+		info!(target: LOG, "removing community {:?}", cid);
 		for (geo_hash, locations) in <Locations<T>>::iter_prefix(&cid) {
 			for location in locations {
 				Self::remove_location_intern(cid, location, geo_hash.clone());
@@ -468,6 +479,8 @@ impl<T: Config> Pallet<T> {
 		<NominalIncome<T>>::remove(cid);
 
 		<encointer_balances::Pallet<T>>::purge_balances(cid);
+
+		Self::deposit_event(Event::CommunityPurged(cid));
 	}
 
 	pub fn insert_bootstrappers(cid: CommunityIdentifier, bootstrappers: Vec<T::AccountId>) {
