@@ -33,7 +33,7 @@ use encointer_ceremonies_assignment::{
 };
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::*,
+	ceremonies::{consts::REPUTATION_CACHE_DIRTY_KEY, *},
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -1343,7 +1343,14 @@ impl<T: Config> Pallet<T> {
 				);
 			}
 			reward_count += 1;
+			sp_io::offchain_index::set(
+				[REPUTATION_CACHE_DIRTY_KEY, participant.encode().as_slice()]
+					.concat()
+					.as_slice(),
+				&true.encode(),
+			);
 		}
+
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
 		info!(target: LOG, "issuing rewards completed");
 		Ok((meetup_index, reward_count))
