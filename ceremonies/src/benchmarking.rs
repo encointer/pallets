@@ -47,15 +47,17 @@ where
 	let genesis_time = T::Moment::from(GENESIS_TIME);
 	let one_day = T::Moment::from(ONE_DAY);
 
-	let mut t: T::Moment = genesis_time - (genesis_time % one_day) +
+	let t: T::Moment = genesis_time - (genesis_time % one_day) +
 		ci * encointer_scheduler::Pallet::<T>::phase_durations(CeremonyPhaseType::REGISTERING) +
 		ci * encointer_scheduler::Pallet::<T>::phase_durations(CeremonyPhaseType::ASSIGNING) +
 		(ci - T::Moment::from(1)) *
 			encointer_scheduler::Pallet::<T>::phase_durations(CeremonyPhaseType::ATTESTING) +
 		one_day / T::Moment::from(2) -
 		T::Moment::from((mlon / 360.0 * ONE_DAY as f64) as u64);
-	t += Pallet::<T>::meetup_time_offset().into();
-	t
+
+	let t_u64: u64 = t.unique_saturated_into();
+	let time = t_u64 as i64 + Pallet::<T>::meetup_time_offset() as i64;
+	T::Moment::from(time as u64)
 }
 
 pub fn account_id<T: Config>(pair: &sr25519::Pair) -> T::AccountId
@@ -347,9 +349,9 @@ benchmarks! {
 	}
 
 	set_meetup_time_offset {
-	}: _(RawOrigin::Root, 12u64.into())
+	}: _(RawOrigin::Root, 12i32)
 	verify {
-		assert_eq!(MeetupTimeOffset::<T>::get(), 12u64.into())
+		assert_eq!(MeetupTimeOffset::<T>::get(), 12i32)
 	}
 
 	set_reputation_lifetime {
