@@ -366,6 +366,17 @@ benchmarks! {
 		assert_eq!(EndorsementTicketsPerBootstrapper::<T>::get(), 10)
 	}
 
+	purge_community_ceremony {
+		let cid = create_community::<T>();
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let user = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
+		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&user.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&user.clone(), cid))));
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
+	}: _(RawOrigin::Root, (cid, cindex))
+	verify {
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
+	}
+
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::TestRuntime);
