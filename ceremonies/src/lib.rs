@@ -1473,7 +1473,7 @@ impl<T: Config> Pallet<T> {
 			.unwrap_or_else(|_| Self::ceremony_reward())
 	}
 
-	#[cfg(test)]
+	#[cfg(any(test, feature = "runtime-benchmarks"))]
 	// only to be used by tests
 	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
 		<ParticipantReputation<T>>::insert(&cidcindex, account, rep);
@@ -1506,6 +1506,8 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	}
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]

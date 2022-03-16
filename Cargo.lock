@@ -3232,6 +3232,7 @@ dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
  "encointer-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "itertools",
