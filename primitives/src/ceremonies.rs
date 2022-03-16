@@ -32,6 +32,7 @@ pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 pub type InactivityTimeoutType = u32;
 pub type EndorsementTicketsPerBootstrapperType = u8;
 pub type ReputationLifetimeType = u32;
+pub type MeetupTimeOffsetType = i32;
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
