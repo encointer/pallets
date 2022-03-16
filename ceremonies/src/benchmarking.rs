@@ -1,6 +1,6 @@
 use crate::*;
 use encointer_primitives::communities::{
-	CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree, Location, LossyInto,
+	CommunityIdentifier, CommunityMetadata, Degree, Location, LossyInto,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::{
@@ -23,16 +23,12 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
 
 	let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-	let community_meta: CommunityMetadataType = CommunityMetadataType {
-		name: "Default".into(),
-		symbol: "DEF".into(),
-		..Default::default()
-	};
+
 	encointer_communities::Pallet::<T>::new_community(
 		RawOrigin::Root.into(),
 		location,
 		bs.clone(),
-		community_meta.clone(),
+		CommunityMetadata::default(),
 		None,
 		None,
 	)
@@ -218,7 +214,7 @@ where
 		let p = sr25519::Pair::from_entropy(&[i as u8; 32], None).0;
 		users.push(p.clone());
 		if i < num_reputables {
-			proofs.push(fake_last_attendance_and_get_proof::<T>(&p.clone(), cid));
+			proofs.push(fake_last_attendance_and_get_proof::<T>(&p, cid));
 		}
 	}
 
@@ -230,10 +226,10 @@ where
 		}
 
 		assert_ok!(Pallet::<T>::register_participant(
-	              RawOrigin::Signed(account_id::<T>(p)).into(),
-		      cid,
-		      maybe_proof
-	      ));
+			RawOrigin::Signed(account_id::<T>(p)).into(),
+			cid,
+			maybe_proof
+		));
 	}
 	users
 }
