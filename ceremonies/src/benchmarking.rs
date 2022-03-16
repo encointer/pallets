@@ -253,13 +253,13 @@ benchmarks! {
 	}
 
 	register_participant {
-	let cid = create_community::<T>();
+		let cid = create_community::<T>();
 
-	let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-	let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
-	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
-	assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
 	}: _(RawOrigin::Signed(account_id::<T>(&zoran)), cid, Some(proof))
 	verify {
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
@@ -310,7 +310,7 @@ benchmarks! {
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
 		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 0);
-		}: _(RawOrigin::Signed(alice), cid, account_id::<T>(&newbie))
+	}: _(RawOrigin::Signed(alice), cid, account_id::<T>(&newbie))
 	verify {
 		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 1);
 	}
@@ -339,9 +339,9 @@ benchmarks! {
 			let claims = get_all_claims::<T>(&attestees, cid, cindex, mindex, loc, time, 10);
 			assert_ok!(Pallet::<T>::attest_claims(RawOrigin::Signed(account_id::<T>(&attestor)).into(), claims));
 		}
-	//
-	run_to_next_phase::<T>();
-	assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
+
+		run_to_next_phase::<T>();
+		assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
 	}: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid)
 	verify {
 		assert_eq!(last_event::<T>(), Some(Event::RewardsIssued(cid, 1, 10).into()));
