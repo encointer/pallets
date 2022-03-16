@@ -445,13 +445,13 @@ pub mod pallet {
 			Ok(().into())
 		}
 		#[pallet::weight((1000, DispatchClass::Operational,))]
-		pub fn purge_ceremony_history(
+		pub fn purge_community_ceremony(
 			origin: OriginFor<T>,
 			community_ceremony: CommunityCeremony,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 
-			Self::purge_community_ceremony(community_ceremony);
+			Self::purge_community_ceremony_internal(community_ceremony);
 
 			Ok(().into())
 		}
@@ -468,7 +468,7 @@ pub mod pallet {
 		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
 		/// rewards have been claimed and issued successfully for N participants for their meetup at the previous ceremony
 		RewardsIssued(CommunityIdentifier, MeetupIndexType, u8),
-		/// inactivity timeout has changes. affects how many ceremony cycles a community can be idle before getting purged
+		/// inactivity timeout has changed. affects how many ceremony cycles a community can be idle before getting purged
 		InactivityTimeoutUpdated(InactivityTimeoutType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
 		EndorsementTicketsPerBootstrapperUpdated(EndorsementTicketsPerBootstrapperType),
@@ -923,7 +923,7 @@ impl<T: Config> Pallet<T> {
 			<NewbieIndex<T>>::contains_key((cid, cindex), &sender)
 	}
 
-	fn purge_community_ceremony(cc: CommunityCeremony) {
+	fn purge_community_ceremony_internal(cc: CommunityCeremony) {
 		let cid = cc.1;
 		let cindex = cc.0;
 
@@ -968,7 +968,7 @@ impl<T: Config> Pallet<T> {
 	fn purge_registry(cindex: CeremonyIndexType) {
 		let cids = <encointer_communities::Pallet<T>>::community_identifiers();
 		for cid in cids.into_iter() {
-			Self::purge_community_ceremony((cid, cindex));
+			Self::purge_community_ceremony_internal((cid, cindex));
 		}
 		debug!(target: LOG, "purged registry for ceremony {}", cindex);
 	}
