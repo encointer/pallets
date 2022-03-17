@@ -1391,10 +1391,7 @@ impl<T: Config> Pallet<T> {
 				);
 			}
 			reward_count += 1;
-			sp_io::offchain_index::set(
-				&reputation_cache_dirty_key(participant.encode()),
-				&true.encode(),
-			);
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(&participant), &true.encode());
 		}
 
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());

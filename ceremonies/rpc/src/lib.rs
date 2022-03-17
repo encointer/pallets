@@ -47,10 +47,10 @@ where
 
 pub struct Ceremonies<Client, Block, AccountId, S> {
 	client: Arc<Client>,
-	_marker: std::marker::PhantomData<(Block, AccountId)>,
 	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
 	offchain_indexing: bool,
+	_marker: std::marker::PhantomData<(Block, AccountId)>,
 }
 
 impl<Client, Block, AccountId, S> Ceremonies<Client, Block, AccountId, S>
@@ -112,9 +112,9 @@ where
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let reputations =
 			api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err).unwrap();
-		let cache_key = &reputation_cache_key(account.encode());
+		let cache_key = &reputation_cache_key(&account);
 		self.set_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key, &reputations);
-		self.set_storage(&reputation_cache_dirty_key(account.encode()), &false)
+		self.set_storage(&reputation_cache_dirty_key(&account), &false)
 	}
 }
 
@@ -138,11 +138,11 @@ where
 			return Err(offchain_indexing_disabled_error("ceremonies_getReputations"))
 		}
 
-		if self.cache_dirty(&reputation_cache_dirty_key(account.encode())) {
+		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
 			self.refresh_reputation_cache(account.clone(), at);
 		}
 
-		let cache_key = &reputation_cache_key(account.encode());
+		let cache_key = &reputation_cache_key(&account);
 		match self.get_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key) {
 			Some(reputation_list) => Ok(reputation_list),
 			None => Err(storage_not_found_error(cache_key)),
