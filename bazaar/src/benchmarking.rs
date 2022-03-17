@@ -33,7 +33,8 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 		community_meta.clone(),
 		None,
 		None,
-	).ok();
+	)
+	.ok();
 
 	let cid = CommunityIdentifier::new(location, bs).unwrap();
 	cid
