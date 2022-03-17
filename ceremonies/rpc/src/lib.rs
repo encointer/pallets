@@ -20,13 +20,13 @@ use parking_lot::RwLock;
 use sc_rpc::DenyUnsafe;
 use sp_api::{offchain::OffchainStorage, Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{app_crypto::ByteArray, generic::BlockId, traits::Block as BlockT};
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
 
 use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 use encointer_primitives::{
 	ceremonies::{
-		consts::{REPUTATION_CACHE_DIRTY_KEY, STORAGE_PREFIX, STORAGE_REPUTATION_KEY},
+		consts::STORAGE_PREFIX, reputation_cache_dirty_key, reputation_cache_key,
 		CommunityReputation,
 	},
 	scheduler::CeremonyIndexType,
@@ -35,7 +35,7 @@ use encointer_primitives::{
 #[rpc]
 pub trait CeremoniesApi<BlockHash, AccountId>
 where
-	AccountId: 'static + Encode + Decode + Send + Sync + ByteArray,
+	AccountId: 'static + Encode + Decode + Send + Sync,
 {
 	#[rpc(name = "ceremonies_getReputations")]
 	fn get_reputations(
@@ -45,7 +45,7 @@ where
 	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>>;
 }
 
-pub struct Ceremonies<Client, Block, AccountId: ByteArray, S> {
+pub struct Ceremonies<Client, Block, AccountId, S> {
 	client: Arc<Client>,
 	_marker: std::marker::PhantomData<(Block, AccountId)>,
 	deny_unsafe: DenyUnsafe,
@@ -57,7 +57,7 @@ impl<Client, Block, AccountId, S> Ceremonies<Client, Block, AccountId, S>
 where
 	S: 'static + OffchainStorage,
 	Block: sp_api::BlockT,
-	AccountId: 'static + Encode + Decode + Send + Sync + ByteArray,
+	AccountId: 'static + Encode + Decode + Send + Sync,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	Client::Api: CeremoniesRuntimeApi<Block, AccountId>,
 {
@@ -112,19 +112,16 @@ where
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let reputations =
 			api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err).unwrap();
-		let cache_key = &(STORAGE_REPUTATION_KEY, account.as_slice()).encode()[..];
+		let cache_key = &reputation_cache_key(account.encode());
 		self.set_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key, &reputations);
-		self.set_storage(
-			[REPUTATION_CACHE_DIRTY_KEY, account.encode().as_slice()].concat().as_slice(),
-			&false,
-		)
+		self.set_storage(&reputation_cache_dirty_key(account.encode()), &false)
 	}
 }
 
 impl<Client, Block, AccountId, S> CeremoniesApi<<Block as BlockT>::Hash, AccountId>
 	for Ceremonies<Client, Block, AccountId, S>
 where
-	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq + ByteArray,
+	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Block: BlockT,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	Client::Api: CeremoniesRuntimeApi<Block, AccountId>,
@@ -141,13 +138,11 @@ where
 			return Err(offchain_indexing_disabled_error("ceremonies_getReputations"))
 		}
 
-		if self.cache_dirty(
-			[REPUTATION_CACHE_DIRTY_KEY, account.encode().as_slice()].concat().as_slice(),
-		) {
+		if self.cache_dirty(&reputation_cache_dirty_key(account.encode())) {
 			self.refresh_reputation_cache(account.clone(), at);
 		}
 
-		let cache_key = &(STORAGE_REPUTATION_KEY, account.as_slice()).encode()[..];
+		let cache_key = &reputation_cache_key(account.encode());
 		match self.get_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key) {
 			Some(reputation_list) => Ok(reputation_list),
 			None => Err(storage_not_found_error(cache_key)),

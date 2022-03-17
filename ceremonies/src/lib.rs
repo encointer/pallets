@@ -33,7 +33,7 @@ use encointer_ceremonies_assignment::{
 };
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::{consts::REPUTATION_CACHE_DIRTY_KEY, *},
+	ceremonies::*,
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -1344,9 +1344,7 @@ impl<T: Config> Pallet<T> {
 			}
 			reward_count += 1;
 			sp_io::offchain_index::set(
-				[REPUTATION_CACHE_DIRTY_KEY, participant.encode().as_slice()]
-					.concat()
-					.as_slice(),
+				&reputation_cache_dirty_key(participant.encode()),
 				&true.encode(),
 			);
 		}

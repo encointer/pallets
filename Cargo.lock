@@ -3265,7 +3265,6 @@ dependencies = [
  "sc-rpc-api",
  "sp-api",
  "sp-blockchain",
- "sp-core",
  "sp-runtime",
 ]
 
