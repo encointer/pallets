@@ -17,12 +17,15 @@ encointer-communities = { package = "pallet-encointer-communities", path = "../c
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "master" }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false, optional = true}
+
 
 [dev-dependencies]
 approx = "0.5.1"
@@ -48,3 +51,5 @@ std = [
 	"encointer-primitives/std",
 	"encointer-scheduler/std",
 ]
+
+runtime-benchmarks = ["frame-benchmarking", "sp-core"]
