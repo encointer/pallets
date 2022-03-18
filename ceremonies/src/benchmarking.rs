@@ -8,7 +8,7 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize},
 };
 use frame_system::RawOrigin;
-use sp_core::{sr25519, Pair};
+use sp_application_crypto::{sp_core, sr25519, Pair};
 use sp_runtime::traits::UniqueSaturatedInto;
 
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
