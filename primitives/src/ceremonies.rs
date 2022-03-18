@@ -37,9 +37,6 @@ pub type MeetupTimeOffsetType = i32;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
-#[cfg(feature = "std")]
-use sp_core::Pair;
-
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum Reputation {
@@ -161,10 +158,10 @@ impl<Signature, AccountId: Clone + Encode, Moment: Encode + Copy>
 			.encode()
 	}
 
-	#[cfg(feature = "std")]
+	#[cfg(any(feature = "std", feature = "full_crypto"))]
 	pub fn sign<P>(self, pair: &P) -> Self
 	where
-		P: Pair,
+		P: sp_core::Pair,
 		Signature: From<P::Signature>,
 	{
 		let mut claim_mut = self;
