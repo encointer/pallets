@@ -47,9 +47,9 @@ where
 {
 	let mlon: f64 = location.lon.lossy_into();
 
-	let ci = T::Moment::from(cindex.into());
-	let genesis_time = T::Moment::from(GENESIS_TIME);
-	let one_day = T::Moment::from(ONE_DAY);
+	let ci: T::Moment = cindex.into();
+	let genesis_time: T::Moment = GENESIS_TIME.into();
+	let one_day: T::Moment = ONE_DAY.into();
 
 	let t: T::Moment = genesis_time - (genesis_time % one_day) +
 		ci * encointer_scheduler::Pallet::<T>::phase_durations(CeremonyPhaseType::REGISTERING) +
@@ -125,22 +125,23 @@ where
 /// Run until a particular block.
 fn run_to_block<T: Config>(n: T::BlockNumber)
 where
-	<T as frame_system::Config>::BlockNumber: From<u64>,
 	<T as pallet_timestamp::Config>::Moment: From<u64>,
 {
 	while frame_system::Pallet::<T>::block_number() < n {
-		if frame_system::Pallet::<T>::block_number() > 1.into() {
+		if frame_system::Pallet::<T>::block_number() > 1u32.into() {
 			frame_system::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 		}
-		let new_timestamp: u64 = (T::BlockNumber::from(GENESIS_TIME) +
-			T::BlockNumber::from(BLOCKTIME) * n)
-			.unique_saturated_into();
 
-		set_timestamp::<T>(T::Moment::from(new_timestamp));
+		let n_u64: u64 = n.unique_saturated_into();
+		let new_timestamp: u64 = GENESIS_TIME + BLOCKTIME * n_u64;
+
+		set_timestamp::<T>(new_timestamp.into());
+
 		pallet_timestamp::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 		frame_system::Pallet::<T>::set_block_number(
-			frame_system::Pallet::<T>::block_number() + 1.into(),
+			frame_system::Pallet::<T>::block_number() + 1u32.into(),
 		);
+
 		frame_system::Pallet::<T>::on_initialize(frame_system::Pallet::<T>::block_number());
 	}
 }
@@ -148,13 +149,13 @@ where
 /// Progress blocks until the phase changes
 fn run_to_next_phase<T: Config>()
 where
-	<T as frame_system::Config>::BlockNumber: From<u64>,
+	// <T as frame_system::Config>::BlockNumber: From<u64>,
 	<T as pallet_timestamp::Config>::Moment: From<u64>,
 {
 	let phase = encointer_scheduler::Pallet::<T>::current_phase();
 	let mut blocknr = frame_system::Pallet::<T>::block_number();
 	while phase == encointer_scheduler::Pallet::<T>::current_phase() {
-		blocknr += 1.into();
+		blocknr += 1u32.into();
 		run_to_block::<T>(blocknr);
 	}
 }
@@ -246,7 +247,7 @@ benchmarks! {
 		<T as frame_system::Config>::AccountId: From<sp_core::sr25519::Public>,
 		<T as Config>::Signature: From<sp_core::sr25519::Signature>,
 		<T as pallet_timestamp::Config>::Moment: From<u64>,
-		<T as frame_system::Config>::BlockNumber: From<u64>,
+		<T as frame_system::Config>::BlockNumber: From<u32>,
 		<T as frame_system::Config>::Event: From<pallet::Event<T>>
 	}
 
@@ -314,7 +315,7 @@ benchmarks! {
 	}
 
 	claim_rewards {
-		frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + T::BlockNumber::from(1u64)); // this is needed to assert events
+		frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + 1u32.into()); // this is needed to assert events
 		let cid = create_community::<T>();
 
 
