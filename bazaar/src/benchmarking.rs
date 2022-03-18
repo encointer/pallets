@@ -26,14 +26,15 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 		symbol: "DEF".into(),
 		..Default::default()
 	};
-	let res = encointer_communities::Pallet::<T>::new_community(
+	encointer_communities::Pallet::<T>::new_community(
 		RawOrigin::Root.into(),
 		location,
 		bs.clone(),
 		community_meta.clone(),
 		None,
 		None,
-	);
+	)
+	.ok();
 
 	let cid = CommunityIdentifier::new(location, bs).unwrap();
 	cid
