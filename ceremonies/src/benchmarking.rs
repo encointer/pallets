@@ -15,6 +15,10 @@ pub const GENESIS_TIME: u64 = 1_585_058_843_000;
 pub const ONE_DAY: u64 = 86_400_000;
 pub const BLOCKTIME: u64 = 3_600_000;
 
+fn pair(seed: &[u8; 32]) -> sr25519::Pair {
+	sr25519::Pair::from_seed(seed)
+}
+
 fn create_community<T: Config>() -> CommunityIdentifier {
 	let alice: T::AccountId = account("alice", 1, 1);
 	let bob: T::AccountId = account("bob", 2, 2);
@@ -213,7 +217,7 @@ where
 	let num_users_total = num_newbies + num_reputables;
 	// create users and fake reputation
 	for i in 0..num_users_total {
-		let p = sr25519::Pair::from_entropy(&[i as u8; 32], None).0;
+		let p = pair(&[i as u8; 32]);
 		users.push(p.clone());
 		if i < num_reputables {
 			proofs.push(fake_last_attendance_and_get_proof::<T>(&p, cid));
@@ -249,7 +253,7 @@ benchmarks! {
 	register_participant {
 		let cid = create_community::<T>();
 
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let zoran = pair(&[9u8; 32]);
 		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
@@ -266,7 +270,7 @@ benchmarks! {
 	attest_claims {
 		let cid = create_community::<T>();
 
-		let attestor = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
+		let attestor = pair(&[10u8; 32]);
 		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&attestor.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&attestor.clone(), cid))));
 
 		let attestees =  register_users::<T>(cid, 2, 7);
@@ -299,7 +303,7 @@ benchmarks! {
 			NominalIncome::from_num(1)
 		));
 
-		let newbie = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
+		let newbie = pair(&[10u8; 32]);
 		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&newbie.clone())).into(), cid, None));
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
@@ -369,7 +373,7 @@ benchmarks! {
 	purge_community_ceremony {
 		let cid = create_community::<T>();
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		let user = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
+		let user = pair(&[10u8; 32]);
 		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&user.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&user.clone(), cid))));
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
 	}: _(RawOrigin::Root, (cid, cindex))
