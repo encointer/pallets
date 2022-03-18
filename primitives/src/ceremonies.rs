@@ -279,6 +279,7 @@ pub struct AssignmentParams {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use sp_core::Pair;
 	use test_utils::{AccountId, AccountKeyring, Moment, Signature};
 
 	#[test]
