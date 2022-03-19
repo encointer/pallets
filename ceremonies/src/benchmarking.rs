@@ -1,7 +1,5 @@
 use crate::*;
-use encointer_primitives::communities::{
-	CommunityIdentifier, CommunityMetadata, Degree, Location, LossyInto,
-};
+use encointer_primitives::communities::{CommunityIdentifier, CommunityMetadata, Degree, Location};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::{
 	assert_ok,
@@ -13,7 +11,6 @@ use sp_core::{crypto::ByteArray, sr25519};
 use sp_runtime::{traits::UniqueSaturatedInto, RuntimeAppPublic};
 
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
-pub const ONE_DAY: u64 = 86_400_000;
 pub const BLOCKTIME: u64 = 6000;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
@@ -58,29 +55,6 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 	.ok();
 	let cid = CommunityIdentifier::new(location, bs).unwrap();
 	cid
-}
-
-fn correct_meetup_time<T: Config>(cindex: CeremonyIndexType, location: Location) -> T::Moment
-where
-	<T as pallet_timestamp::Config>::Moment: From<u64>,
-{
-	let mlon: f64 = location.lon.lossy_into();
-
-	let ci: T::Moment = cindex.into();
-	let genesis_time: T::Moment = GENESIS_TIME.into();
-	let one_day: T::Moment = ONE_DAY.into();
-
-	let t: T::Moment = genesis_time - (genesis_time % one_day) +
-		ci * encointer_scheduler::Pallet::<T>::phase_durations(CeremonyPhaseType::REGISTERING) +
-		ci * encointer_scheduler::Pallet::<T>::phase_durations(CeremonyPhaseType::ASSIGNING) +
-		(ci - T::Moment::from(1)) *
-			encointer_scheduler::Pallet::<T>::phase_durations(CeremonyPhaseType::ATTESTING) +
-		one_day / T::Moment::from(2) -
-		T::Moment::from((mlon / 360.0 * ONE_DAY as f64) as u64);
-
-	let t_u64: u64 = t.unique_saturated_into();
-	let time = t_u64 as i64 + Pallet::<T>::meetup_time_offset() as i64;
-	T::Moment::from(time as u64)
 }
 
 fn create_proof_of_attendance<T: Config>(
@@ -306,10 +280,10 @@ benchmarks! {
 
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
-		let time = correct_meetup_time::<T>(cindex, loc);
+		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
 		let mindex = 1;
 
-		let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc,time, 10);
+		let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc, time, 10);
 		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 0);
 
 	}: _(RawOrigin::Signed(attestor_account), claims)
@@ -352,7 +326,7 @@ benchmarks! {
 
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
-		let time = correct_meetup_time::<T>(cindex, loc);
+		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
 		let mindex = 1;
 
 		// attest_claims
