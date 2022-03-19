@@ -29,14 +29,17 @@ fn sign(signer: &TestPublic, data: &Vec<u8>) -> sr25519::Signature {
 	signer.sign(data).unwrap().into()
 }
 
-fn create_community<T: Config>() -> CommunityIdentifier {
+fn bootstrappers<T: frame_system::Config>() -> Vec<T::AccountId> {
 	let alice: T::AccountId = account("alice", 1, 1);
 	let bob: T::AccountId = account("bob", 2, 2);
 	let charlie: T::AccountId = account("charlie", 3, 3);
 
-	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+	vec![alice.clone(), bob.clone(), charlie.clone()]
+}
 
-	let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+fn create_community<T: Config>() -> CommunityIdentifier {
+	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+	let bs = bootstrappers::<T>();
 
 	encointer_communities::Pallet::<T>::new_community(
 		RawOrigin::Root.into(),
@@ -103,7 +106,6 @@ where
 	claims
 }
 
-/// Progress blocks until the phase changes
 fn next_phase<T: Config>() {
 	encointer_scheduler::Pallet::<T>::next_phase(RawOrigin::Root.into()).unwrap();
 }
