@@ -109,10 +109,7 @@ where
 }
 
 /// Run until a particular block.
-fn run_to_block<T: Config>(n: T::BlockNumber)
-where
-	<T as pallet_timestamp::Config>::Moment: From<u64>,
-{
+fn run_to_block<T: Config>(n: T::BlockNumber) {
 	while frame_system::Pallet::<T>::block_number() < n {
 		if frame_system::Pallet::<T>::block_number() > 1u32.into() {
 			frame_system::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
@@ -123,7 +120,7 @@ where
 
 		let new_timestamp: u64 = GENESIS_TIME + block_time * n_moment;
 
-		set_timestamp::<T>(new_timestamp.into());
+		set_timestamp::<T>(new_timestamp.saturated_into());
 
 		pallet_timestamp::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 		frame_system::Pallet::<T>::set_block_number(
@@ -135,11 +132,7 @@ where
 }
 
 /// Progress blocks until the phase changes
-fn run_to_next_phase<T: Config>()
-where
-	// <T as frame_system::Config>::BlockNumber: From<u64>,
-	<T as pallet_timestamp::Config>::Moment: From<u64>,
-{
+fn run_to_next_phase<T: Config>() {
 	let phase = encointer_scheduler::Pallet::<T>::current_phase();
 	let mut blocknr = frame_system::Pallet::<T>::block_number();
 	while phase == encointer_scheduler::Pallet::<T>::current_phase() {
@@ -248,8 +241,6 @@ benchmarks! {
 		where
 		<T as frame_system::Config>::AccountId: ByteArray,
 		<T as Config>::Signature: From<sr25519::Signature>,
-		<T as pallet_timestamp::Config>::Moment: From<u64>,
-		<T as frame_system::Config>::BlockNumber: From<u32>,
 		<T as frame_system::Config>::Event: From<pallet::Event<T>>
 	}
 
