@@ -3,21 +3,22 @@ use encointer_primitives::communities::{CommunityIdentifier, CommunityMetadata, 
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
-use sp_application_crypto::KeyTypeId;
 use sp_core::{crypto::ByteArray, sr25519};
 use sp_runtime::RuntimeAppPublic;
 
-pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
-
+/// Our own little test-crypto module because we can't use the `sp-core::sr25519` signing methods
+/// in the runtime.
 mod app_sr25519 {
-	use super::TEST_KEY_TYPE_ID;
+	use sp_application_crypto::KeyTypeId;
+	pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
+
 	use sp_application_crypto::{app_crypto, sr25519};
 	app_crypto!(sr25519, TEST_KEY_TYPE_ID);
 }
 
 type TestPublic = app_sr25519::Public;
 
-/// Generates a pair in the test externalities' `KeyStoreExt`.
+/// Generates a pair in the externalities' `KeyStoreExt`.
 ///
 /// Returns the public key of the generated pair.
 fn generate_pair() -> TestPublic {
