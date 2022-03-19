@@ -1448,7 +1448,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	// this function only works during ATTESTING, so we're keeping it for private use
-	fn get_meetup_time(location: Location) -> Option<T::Moment> {
+	pub(crate) fn get_meetup_time(location: Location) -> Option<T::Moment> {
 		if !(<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
 			return None
 		}

@@ -6,6 +6,7 @@ use encointer_primitives::{
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::{assert_ok, parameter_types};
 use frame_system::RawOrigin;
+use sp_std::borrow::ToOwned;
 
 const NUM_LOCATIONS: u32 = 200;
 
@@ -111,12 +112,14 @@ benchmarks! {
 	update_community_metadata {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 		let mut new_community_metadata = CommunityMetadata::default();
-		new_community_metadata.name = "99charsaaaaaaaaaaaaa".into();
+		let new_community_name: PalletString = "99charsaaaaaaaaaaaaa".to_owned().into();
+
+		new_community_metadata.name = new_community_name.clone();
 	} : {
 		assert_ok!(Communities::<T>::update_community_metadata(RawOrigin::Root.into(), cid, new_community_metadata));
 	}
 	verify {
-		assert_eq!(Pallet::<T>::community_metadata(&cid).name, "99charsaaaaaaaaaaaaa");
+		assert_eq!(Pallet::<T>::community_metadata(&cid).name, new_community_name);
 	}
 
 	update_demurrage {

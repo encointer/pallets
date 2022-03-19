@@ -54,7 +54,7 @@ pub mod storage;
 pub const NONE: u64 = 0;
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
 pub const ONE_DAY: u64 = 86_400_000;
-pub const BLOCKTIME: u64 = 3_600_000; //1h per block
+pub const BLOCKTIME: u64 = 6_000; // 6s per block
 pub const TIME_TOLERANCE: u64 = 600000; // [ms]
 pub const LOCATION_TOLERANCE: u32 = 1000; // [m]
 pub const ZERO: BalanceType = BalanceType::from_bits(0x0);
@@ -122,7 +122,7 @@ macro_rules! impl_frame_system {
 
 pub type Moment = u64;
 parameter_types! {
-	pub const MinimumPeriod: Moment = 1;
+	pub const MinimumPeriod: Moment = BLOCKTIME / 2;
 }
 
 #[macro_export]
