@@ -55,6 +55,7 @@ use sp_std::{cmp::max, prelude::*, vec};
 const LOG: &str = "encointer";
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -91,11 +92,13 @@ pub mod pallet {
 		// Divisor used to determine the ratio of newbies allowed in relation to other participants
 		#[pallet::constant]
 		type MeetupNewbieLimitDivider: Get<u64>;
+
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::register_participant(), DispatchClass::Normal, Pays::Yes))]
 		pub fn register_participant(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -160,7 +163,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::attest_claims(), DispatchClass::Normal, Pays::Yes))]
 		pub fn attest_claims(
 			origin: OriginFor<T>,
 			claims: Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>>,
@@ -326,7 +329,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::endorse_newcomer(), DispatchClass::Normal, Pays::Yes))]
 		pub fn endorse_newcomer(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -369,7 +372,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::claim_rewards(), DispatchClass::Normal, Pays::Yes))]
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -382,7 +385,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational,))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_inactivity_timeout(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_inactivity_timeout(
 			origin: OriginFor<T>,
 			inactivity_timeout: InactivityTimeoutType,
@@ -394,7 +397,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational,))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_bootstrapper(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_bootstrapper(
 			origin: OriginFor<T>,
 			endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
@@ -412,7 +415,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational,))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_reputation_lifetime(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_reputation_lifetime(
 			origin: OriginFor<T>,
 			reputation_lifetime: ReputationLifetimeType,
@@ -444,7 +447,7 @@ pub mod pallet {
 			Self::deposit_event(Event::MeetupTimeOffsetUpdated(meetup_time_offset));
 			Ok(().into())
 		}
-		#[pallet::weight((1000, DispatchClass::Operational,))]
+		#[pallet::weight((<T as Config>::WeightInfo::purge_community_ceremony(), DispatchClass::Normal, Pays::Yes))]
 		pub fn purge_community_ceremony(
 			origin: OriginFor<T>,
 			community_ceremony: CommunityCeremony,
@@ -1505,6 +1508,8 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 		}
 	}
 }
+
+mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
