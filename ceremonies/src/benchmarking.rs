@@ -14,7 +14,7 @@ use sp_runtime::{traits::UniqueSaturatedInto, RuntimeAppPublic};
 
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
 pub const ONE_DAY: u64 = 86_400_000;
-pub const BLOCKTIME: u64 = 3_600_000;
+pub const BLOCKTIME: u64 = 6000;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
