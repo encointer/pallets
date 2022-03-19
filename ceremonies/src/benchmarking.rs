@@ -342,36 +342,36 @@ benchmarks! {
 		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 1);
 	}
 
-	// claim_rewards {
-	// 	frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + 1u32.into()); // this is needed to assert events
-	// 	let cid = create_community::<T>();
-	// 	let users = register_users::<T>(cid, 2, 8);
-	//
-	// 	run_to_next_phase::<T>();
-	// 	run_to_next_phase::<T>();
-	//
-	// 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-	// 	let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
-	// 	let time = correct_meetup_time::<T>(cindex, loc);
-	// 	let mindex = 1;
-	//
-	// 	// attest_claims
-	// 	for i in 0..10 {
-	// 		let attestor = users[i as usize].clone();
-	// 		let mut attestees = users.clone();
-	// 		attestees.remove(i as usize);
-	// 		let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc, time, 10);
-	// 		assert_ok!(Pallet::<T>::attest_claims(RawOrigin::Signed(account_id::<T>(&attestor)).into(), claims));
-	// 	}
-	//
-	// 	run_to_next_phase::<T>();
-	// 	assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
-	//
-	// }: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid)
-	// verify {
-	// 	assert_eq!(last_event::<T>(), Some(Event::RewardsIssued(cid, 1, 10).into()));
-	// 	assert!(IssuedRewards::<T>::contains_key((cid, cindex), mindex));
-	// }
+	claim_rewards {
+		frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + 1u32.into()); // this is needed to assert events
+		let cid = create_community::<T>();
+		let users = register_users::<T>(cid, 2, 8);
+
+		run_to_next_phase::<T>();
+		run_to_next_phase::<T>();
+
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+		let time = correct_meetup_time::<T>(cindex, loc);
+		let mindex = 1;
+
+		// attest_claims
+		for i in 0..10 {
+			let attestor = users[i as usize].clone();
+			let mut attestees = users.clone();
+			attestees.remove(i as usize);
+			let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc, time, 10);
+			assert_ok!(Pallet::<T>::attest_claims(RawOrigin::Signed(account_id::<T>(&attestor)).into(), claims));
+		}
+
+		run_to_next_phase::<T>();
+		assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
+
+	}: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid)
+	verify {
+		assert_eq!(last_event::<T>(), Some(Event::RewardsIssued(cid, 1, 10).into()));
+		assert!(IssuedRewards::<T>::contains_key((cid, cindex), mindex));
+	}
 
 	set_inactivity_timeout {
 	}: _(RawOrigin::Root, 13)
