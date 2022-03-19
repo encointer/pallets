@@ -37,8 +37,12 @@ fn bootstrappers<T: frame_system::Config>() -> Vec<T::AccountId> {
 	vec![alice.clone(), bob.clone(), charlie.clone()]
 }
 
+fn test_location() -> Location {
+	Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) }
+}
+
 fn create_community<T: Config>() -> CommunityIdentifier {
-	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+	let location = test_location();
 	let bs = bootstrappers::<T>();
 
 	encointer_communities::Pallet::<T>::new_community(
@@ -236,7 +240,7 @@ benchmarks! {
 		next_phase::<T>();
 
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+		let loc = test_location();
 		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
 		let mindex = 1;
 
@@ -282,7 +286,7 @@ benchmarks! {
 		next_phase::<T>();
 
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+		let loc = test_location();
 		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
 		let mindex = 1;
 
