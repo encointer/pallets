@@ -34,6 +34,7 @@ use encointer_primitives::{
 };
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -44,6 +45,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + encointer_communities::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -53,7 +55,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::create_business(), DispatchClass::Normal, Pays::Yes))]
 		pub fn create_business(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -79,7 +81,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::update_business(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_business(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -100,7 +102,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::delete_business(), DispatchClass::Normal, Pays::Yes))]
 		pub fn delete_business(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -124,7 +126,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::create_offering(), DispatchClass::Normal, Pays::Yes))]
 		pub fn create_offering(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -151,7 +153,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::update_offering(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_offering(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -175,7 +177,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::delete_offering(), DispatchClass::Normal, Pays::Yes))]
 		pub fn delete_offering(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -262,6 +264,8 @@ impl<T: Config> Pallet<T> {
 		return OfferingRegistry::<T>::iter_prefix_values(bid).collect()
 	}
 }
+
+mod weights;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;

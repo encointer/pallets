@@ -68,6 +68,7 @@ impl dut::Config for TestRuntime {
 	type MeetupSizeTarget = MeetupSizeTarget;
 	type MeetupMinSize = MeetupMinSize;
 	type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
+	type WeightInfo = ();
 }
 
 // boilerplate
