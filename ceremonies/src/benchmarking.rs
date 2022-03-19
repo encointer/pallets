@@ -317,7 +317,7 @@ benchmarks! {
 		let cid = create_community::<T>();
 		let alice: T::AccountId = account("alice", 1, 1);
 
-		// issue some income such that nebies are allowed to register
+		// issue some income such that newbies are allowed to register
 		assert_ok!(encointer_balances::Pallet::<T>::issue(
 			cid,
 			&alice,
@@ -325,30 +325,19 @@ benchmarks! {
 		));
 
 		let newbie = pair(&[10u8; 32]);
-		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&newbie.clone())).into(), cid, None));
+		assert_ok!(Pallet::<T>::register_participant(
+			RawOrigin::Signed(account_id::<T>(&newbie)).into(),
+			cid, None
+		));
+
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
-	// endorse_newcomer {
-	// 	let cid = create_community::<T>();
-	// 	let alice: T::AccountId = account("alice", 1, 1);
-	//
-	// 	// issue some income such that nebies are allowed to register
-	// 	assert_ok!(encointer_balances::Pallet::<T>::issue(
-	// 		cid,
-	// 		&alice,
-	// 		NominalIncome::from_num(1)
-	// 	));
-	//
-	// 	let newbie = pair(&[10u8; 32]);
-	// 	assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&newbie.clone())).into(), cid, None));
-	// 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-	//
-	// 	assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 0);
-	// }: _(RawOrigin::Signed(alice), cid, account_id::<T>(&newbie))
-	// verify {
-	// 	assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 1);
-	// }
-	//
+		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 0);
+	}: _(RawOrigin::Signed(alice), cid, account_id::<T>(&newbie))
+	verify {
+		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 1);
+	}
+
 	// claim_rewards {
 	// 	frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + 1u32.into()); // this is needed to assert events
 	// 	let cid = create_community::<T>();
