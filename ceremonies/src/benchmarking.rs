@@ -8,10 +8,9 @@ use frame_support::{
 use frame_system::RawOrigin;
 use sp_application_crypto::KeyTypeId;
 use sp_core::{crypto::ByteArray, sr25519};
-use sp_runtime::{traits::UniqueSaturatedInto, RuntimeAppPublic};
+use sp_runtime::{traits::SaturatedConversion, RuntimeAppPublic};
 
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
-pub const BLOCKTIME: u64 = 6000;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
@@ -119,8 +118,10 @@ where
 			frame_system::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 		}
 
-		let n_u64: u64 = n.unique_saturated_into();
-		let new_timestamp: u64 = GENESIS_TIME + BLOCKTIME * n_u64;
+		let n_moment: u64 = n.saturated_into();
+		let block_time: u64 = block_time::<T>().saturated_into();
+
+		let new_timestamp: u64 = GENESIS_TIME + block_time * n_moment;
 
 		set_timestamp::<T>(new_timestamp.into());
 
@@ -149,6 +150,15 @@ where
 
 pub fn set_timestamp<T: Config>(t: T::Moment) {
 	let _ = pallet_timestamp::Pallet::<T>::set(RawOrigin::None.into(), t);
+}
+
+/// Gets the block time [ms/block].
+///
+/// Usually, (at least in all encointer-runtimes) the `MinimumPeriod` is defined
+/// as `SLOT_DURATION` / 2. We define it like this because hardcoding the block time is error-prone,
+/// and not the same for our parachain and solo-chain.
+pub fn block_time<T: pallet_timestamp::Config>() -> T::Moment {
+	T::MinimumPeriod::get() * 2u32.into()
 }
 
 pub fn account_id<T: Config>(account: &TestPublic) -> T::AccountId
