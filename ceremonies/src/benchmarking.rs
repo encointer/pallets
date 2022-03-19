@@ -110,6 +110,10 @@ where
 	claims
 }
 
+/// Goes to next ceremony phase.
+///
+/// We purposely don't use `run_to_next_phase` because in the actual node aura complained
+/// when the timestamps were manipulated.
 fn next_phase<T: Config>() {
 	encointer_scheduler::Pallet::<T>::next_phase(RawOrigin::Root.into()).unwrap();
 }
