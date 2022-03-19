@@ -28,8 +28,8 @@ type TestPublic = app_sr25519::Public;
 
 /// Generates a pair in the test externalities' `KeyStoreExt`.
 ///
-///
-fn pair() -> TestPublic {
+/// Returns the public key of the generated pair.
+fn generate_pair() -> TestPublic {
 	// passing a seed gives an error for some reason
 	TestPublic::generate_pair(None)
 }
@@ -236,7 +236,7 @@ where
 	let num_users_total = num_newbies + num_reputables;
 	// create users and fake reputation
 	for i in 0..num_users_total {
-		let p = pair(&[i as u8; 32]);
+		let p = generate_pair();
 		users.push(p.clone());
 		if i < num_reputables {
 			proofs.push(fake_last_attendance_and_get_proof::<T>(&p, cid));
@@ -272,7 +272,7 @@ benchmarks! {
 	register_participant {
 		let cid = create_community::<T>();
 
-		let zoran = pair(&[9u8; 32]);
+		let zoran = generate_pair();
 		let zoran_account= account_id::<T>(&zoran);
 		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
@@ -290,7 +290,7 @@ benchmarks! {
 	attest_claims {
 		let cid = create_community::<T>();
 
-		let attestor = pair(&[10u8; 32]);
+		let attestor = generate_pair();
 		let attestor_account = account_id::<T>(&attestor);
 
 		assert_ok!(Pallet::<T>::register_participant(
@@ -328,7 +328,7 @@ benchmarks! {
 			NominalIncome::from_num(1)
 		));
 
-		let newbie = pair(&[10u8; 32]);
+		let newbie = generate_pair();
 		assert_ok!(Pallet::<T>::register_participant(
 			RawOrigin::Signed(account_id::<T>(&newbie)).into(),
 			cid, None
@@ -400,7 +400,7 @@ benchmarks! {
 	// purge_community_ceremony {
 	// 	let cid = create_community::<T>();
 	// 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-	// 	let user = pair(&[10u8; 32]);
+	// 	let user = generate_pair();
 	// 	assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&user.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&user.clone(), cid))));
 	// 	assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
 	// }: _(RawOrigin::Root, (cid, cindex))
