@@ -25,7 +25,8 @@ sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 
 # benchmarking
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "master" }
-sp-application-crypto = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false, optional = true, features = ["full_crypto"] }
+sp-application-crypto = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false, optional = true }
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false, optional = true }
 
 
 [dev-dependencies]
@@ -50,6 +51,8 @@ std = [
 	"encointer-communities/std",
 	"encointer-primitives/std",
 	"encointer-scheduler/std",
+	"frame-benchmarking/std",
+	"sp-core/std",
 ]
 
-runtime-benchmarks = ["frame-benchmarking", "encointer-primitives/full_crypto", "sp-application-crypto"]
+runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto", "sp-core"]
