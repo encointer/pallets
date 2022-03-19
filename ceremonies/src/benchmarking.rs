@@ -287,23 +287,28 @@ benchmarks! {
 		let cid = create_community::<T>();
 
 		let attestor = pair(&[10u8; 32]);
-		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&attestor.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&attestor.clone(), cid))));
+		let attestor_account = account_id::<T>(&attestor);
+
+		assert_ok!(Pallet::<T>::register_participant(
+			RawOrigin::Signed(attestor_account.clone()).into(),
+			cid,
+			Some(fake_last_attendance_and_get_proof::<T>(&attestor, cid)))
+		);
 
 		let attestees =  register_users::<T>(cid, 2, 7);
 
 		run_to_next_phase::<T>();
 		run_to_next_phase::<T>();
 
-
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
 		let time = correct_meetup_time::<T>(cindex, loc);
 		let mindex = 1;
 
-
-		let claims = get_all_claims::<T>(&attestees, cid, cindex, mindex, loc,time, 10);
+		let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc,time, 10);
 		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 0);
-	}: _(RawOrigin::Signed(account_id::<T>(&attestor)), claims)
+
+	}: _(RawOrigin::Signed(attestor_account), claims)
 	verify {
 		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 1);
 	}
