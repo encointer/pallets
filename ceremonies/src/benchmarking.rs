@@ -342,71 +342,71 @@ benchmarks! {
 		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 1);
 	}
 
-	claim_rewards {
-		frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + 1u32.into()); // this is needed to assert events
-		let cid = create_community::<T>();
-		let users = register_users::<T>(cid, 2, 8);
+	// claim_rewards {
+	// 	frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + 1u32.into()); // this is needed to assert events
+	// 	let cid = create_community::<T>();
+	// 	let users = register_users::<T>(cid, 2, 8);
+	//
+	// 	run_to_next_phase::<T>();
+	// 	run_to_next_phase::<T>();
+	//
+	// 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+	// 	let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+	// 	let time = correct_meetup_time::<T>(cindex, loc);
+	// 	let mindex = 1;
+	//
+	// 	// attest_claims
+	// 	for i in 0..10 {
+	// 		let attestor = users[i as usize].clone();
+	// 		let mut attestees = users.clone();
+	// 		attestees.remove(i as usize);
+	// 		let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc, time, 10);
+	// 		assert_ok!(Pallet::<T>::attest_claims(RawOrigin::Signed(account_id::<T>(&attestor)).into(), claims));
+	// 	}
+	//
+	// 	run_to_next_phase::<T>();
+	// 	assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
+	//
+	// }: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid)
+	// verify {
+	// 	assert_eq!(last_event::<T>(), Some(Event::RewardsIssued(cid, 1, 10).into()));
+	// 	assert!(IssuedRewards::<T>::contains_key((cid, cindex), mindex));
+	// }
 
-		run_to_next_phase::<T>();
-		run_to_next_phase::<T>();
-
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
-		let time = correct_meetup_time::<T>(cindex, loc);
-		let mindex = 1;
-
-		// attest_claims
-		for i in 0..10 {
-			let attestor = users[i as usize].clone();
-			let mut attestees = users.clone();
-			attestees.remove(i as usize);
-			let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc, time, 10);
-			assert_ok!(Pallet::<T>::attest_claims(RawOrigin::Signed(account_id::<T>(&attestor)).into(), claims));
-		}
-
-		run_to_next_phase::<T>();
-		assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
-
-	}: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid)
+	set_inactivity_timeout {
+	}: _(RawOrigin::Root, 13)
 	verify {
-		assert_eq!(last_event::<T>(), Some(Event::RewardsIssued(cid, 1, 10).into()));
-		assert!(IssuedRewards::<T>::contains_key((cid, cindex), mindex));
+		assert_eq!(InactivityTimeout::<T>::get(), 13)
 	}
 
-	// set_inactivity_timeout {
-	// }: _(RawOrigin::Root, 13)
-	// verify {
-	// 	assert_eq!(InactivityTimeout::<T>::get(), 13)
-	// }
-	//
-	// set_meetup_time_offset {
-	// }: _(RawOrigin::Root, 12i32)
-	// verify {
-	// 	assert_eq!(MeetupTimeOffset::<T>::get(), 12i32)
-	// }
-	//
-	// set_reputation_lifetime {
-	// }: _(RawOrigin::Root, 11)
-	// verify {
-	// 	assert_eq!(ReputationLifetime::<T>::get(), 11)
-	// }
-	//
-	// set_endorsement_tickets_per_bootstrapper {
-	// }: _(RawOrigin::Root, 10)
-	// verify {
-	// 	assert_eq!(EndorsementTicketsPerBootstrapper::<T>::get(), 10)
-	// }
-	//
-	// purge_community_ceremony {
-	// 	let cid = create_community::<T>();
-	// 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-	// 	let user = generate_pair();
-	// 	assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&user.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&user.clone(), cid))));
-	// 	assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
-	// }: _(RawOrigin::Root, (cid, cindex))
-	// verify {
-	// 	assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
-	// }
+	set_meetup_time_offset {
+	}: _(RawOrigin::Root, 12i32)
+	verify {
+		assert_eq!(MeetupTimeOffset::<T>::get(), 12i32)
+	}
+
+	set_reputation_lifetime {
+	}: _(RawOrigin::Root, 11)
+	verify {
+		assert_eq!(ReputationLifetime::<T>::get(), 11)
+	}
+
+	set_endorsement_tickets_per_bootstrapper {
+	}: _(RawOrigin::Root, 10)
+	verify {
+		assert_eq!(EndorsementTicketsPerBootstrapper::<T>::get(), 10)
+	}
+
+	purge_community_ceremony {
+		let cid = create_community::<T>();
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let user = generate_pair();
+		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&user.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&user.clone(), cid))));
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
+	}: _(RawOrigin::Root, (cid, cindex))
+	verify {
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
+	}
 
 }
 
