@@ -1,16 +1,11 @@
 use crate::*;
 use encointer_primitives::communities::{CommunityIdentifier, CommunityMetadata, Degree, Location};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
-use frame_support::{
-	assert_ok,
-	traits::{OnFinalize, OnInitialize},
-};
+use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use sp_application_crypto::KeyTypeId;
 use sp_core::{crypto::ByteArray, sr25519};
-use sp_runtime::{traits::SaturatedConversion, RuntimeAppPublic};
-
-pub const GENESIS_TIME: u64 = 1_585_058_843_000;
+use sp_runtime::RuntimeAppPublic;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
@@ -108,50 +103,9 @@ where
 	claims
 }
 
-/// Run until a particular block.
-fn run_to_block<T: Config>(n: T::BlockNumber) {
-	while frame_system::Pallet::<T>::block_number() < n {
-		if frame_system::Pallet::<T>::block_number() > 1u32.into() {
-			frame_system::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
-		}
-
-		let n_moment: u64 = n.saturated_into();
-		let block_time: u64 = block_time::<T>().saturated_into();
-
-		let new_timestamp: u64 = GENESIS_TIME + block_time * n_moment;
-
-		set_timestamp::<T>(new_timestamp.saturated_into());
-
-		pallet_timestamp::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
-		frame_system::Pallet::<T>::set_block_number(
-			frame_system::Pallet::<T>::block_number() + 1u32.into(),
-		);
-
-		frame_system::Pallet::<T>::on_initialize(frame_system::Pallet::<T>::block_number());
-	}
-}
-
 /// Progress blocks until the phase changes
-fn run_to_next_phase<T: Config>() {
-	let phase = encointer_scheduler::Pallet::<T>::current_phase();
-	let mut blocknr = frame_system::Pallet::<T>::block_number();
-	while phase == encointer_scheduler::Pallet::<T>::current_phase() {
-		blocknr += 1u32.into();
-		run_to_block::<T>(blocknr);
-	}
-}
-
-pub fn set_timestamp<T: Config>(t: T::Moment) {
-	let _ = pallet_timestamp::Pallet::<T>::set(RawOrigin::None.into(), t);
-}
-
-/// Gets the block time [ms/block].
-///
-/// Usually, (at least in all encointer-runtimes) the `MinimumPeriod` is defined
-/// as `SLOT_DURATION` / 2. We define it like this because hardcoding the block time is error-prone,
-/// and not the same for our parachain and solo-chain.
-pub fn block_time<T: pallet_timestamp::Config>() -> T::Moment {
-	T::MinimumPeriod::get() * 2u32.into()
+fn next_phase<T: Config>() {
+	encointer_scheduler::Pallet::<T>::next_phase(RawOrigin::Root.into()).unwrap();
 }
 
 pub fn account_id<T: Config>(account: &TestPublic) -> T::AccountId
@@ -276,8 +230,8 @@ benchmarks! {
 
 		let attestees =  register_users::<T>(cid, 2, 7);
 
-		run_to_next_phase::<T>();
-		run_to_next_phase::<T>();
+		next_phase::<T>();
+		next_phase::<T>();
 
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
@@ -322,8 +276,8 @@ benchmarks! {
 		let cid = create_community::<T>();
 		let users = register_users::<T>(cid, 2, 8);
 
-		run_to_next_phase::<T>();
-		run_to_next_phase::<T>();
+		next_phase::<T>();
+		next_phase::<T>();
 
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let loc = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
@@ -339,7 +293,7 @@ benchmarks! {
 			assert_ok!(Pallet::<T>::attest_claims(RawOrigin::Signed(account_id::<T>(&attestor)).into(), claims));
 		}
 
-		run_to_next_phase::<T>();
+		next_phase::<T>();
 		assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
 
 	}: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid)
