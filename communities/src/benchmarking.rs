@@ -153,6 +153,7 @@ benchmarks! {
 	}
 
 	purge_community {
+		// Todo: Properly benchmark this #189
 
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 		let mut cids = vec![CommunityIdentifier::default(); 1_000_000];
@@ -161,7 +162,6 @@ benchmarks! {
 
 	} : _(RawOrigin::Root, cid)
 	verify {
-		// assert_eq!(Pallet::<T>::max_speed_mps(), 1_000_000_000);
 	}
 }
 
