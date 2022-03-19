@@ -34,6 +34,7 @@ approx = "0.5.1"
 itertools = "0.10.3"
 rstest = "0.12.0"
 sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-keystore = { version = "0.12.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = { path = "../test-utils" }
 
 [features]

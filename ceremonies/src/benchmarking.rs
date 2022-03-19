@@ -26,8 +26,12 @@ mod app_sr25519 {
 
 type TestPublic = app_sr25519::Public;
 
-fn pair(seed: &[u8; 32]) -> TestPublic {
-	TestPublic::generate_pair(Some(seed.to_vec()))
+/// Generates a pair in the test externalities' `KeyStoreExt`.
+///
+///
+fn pair() -> TestPublic {
+	// passing a seed gives an error for some reason
+	TestPublic::generate_pair(None)
 }
 
 fn sign(signer: &TestPublic, data: &Vec<u8>) -> sr25519::Signature {
@@ -406,4 +410,16 @@ benchmarks! {
 
 }
 
-impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::TestRuntime);
+impl_benchmark_test_suite!(Pallet, crate::benchmarking::new_test_ext(), crate::mock::TestRuntime);
+
+#[cfg(test)]
+fn new_test_ext() -> sp_io::TestExternalities {
+	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
+	use sp_std::sync::Arc;
+
+	let mut ext = crate::mock::new_test_ext();
+
+	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
+
+	ext
+}
