@@ -45,6 +45,7 @@ frame_support::construct_runtime!(
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type DefaultDemurrage = DefaultDemurrage;
+	type WeightInfo = ();
 }
 
 // boilerplate

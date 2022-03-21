@@ -37,6 +37,9 @@ serde_derive = [
     "ep-core/serde_derive",
     "serde",
 ]
+full_crypto = [
+    "sp-core/full_crypto"
+]
 std = [
     "bs58/std",
     "codec/std",

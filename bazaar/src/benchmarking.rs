@@ -4,13 +4,14 @@ use encointer_primitives::communities::{
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+use sp_std::borrow::ToOwned;
 
-fn test_url() -> String {
-	"https://test.com".to_string()
+fn test_url() -> PalletString {
+	"https://test.com".to_owned().into()
 }
 
-fn example_url() -> String {
-	"https://example.com".to_string()
+fn example_url() -> PalletString {
+	"https://example.com".to_owned().into()
 }
 
 fn create_community<T: Config>() -> CommunityIdentifier {
@@ -26,14 +27,15 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 		symbol: "DEF".into(),
 		..Default::default()
 	};
-	let res = encointer_communities::Pallet::<T>::new_community(
+	encointer_communities::Pallet::<T>::new_community(
 		RawOrigin::Root.into(),
 		location,
 		bs.clone(),
 		community_meta.clone(),
 		None,
 		None,
-	);
+	)
+	.ok();
 
 	let cid = CommunityIdentifier::new(location, bs).unwrap();
 	cid

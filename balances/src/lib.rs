@@ -30,6 +30,7 @@ use sp_std::convert::TryInto;
 // Logger target
 const LOG: &str = "encointer";
 
+pub use crate::weights::WeightInfo;
 /// Demurrage rate per block.
 /// Assuming 50% demurrage per year and a block time of 5s
 /// ```matlab
@@ -56,12 +57,14 @@ pub mod pallet {
 		/// the default demurrage rate applied to community balances
 		#[pallet::constant]
 		type DefaultDemurrage: Get<Demurrage>;
+
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Transfer some balance to another account.
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::transfer(), DispatchClass::Normal, Pays::Yes))]
 		pub fn transfer(
 			origin: OriginFor<T>,
 			dest: <T::Lookup as StaticLookup>::Source,
@@ -248,6 +251,8 @@ impl<T: Config> Pallet<T> {
 		<Balance<T>>::remove_prefix(cid, None);
 	}
 }
+
+pub mod weights;
 
 #[cfg(test)]
 mod mock;

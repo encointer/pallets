@@ -54,7 +54,7 @@ pub mod storage;
 pub const NONE: u64 = 0;
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
 pub const ONE_DAY: u64 = 86_400_000;
-pub const BLOCKTIME: u64 = 3_600_000; //1h per block
+pub const BLOCKTIME: u64 = 6_000; // 6s per block
 pub const TIME_TOLERANCE: u64 = 600000; // [ms]
 pub const LOCATION_TOLERANCE: u32 = 1000; // [m]
 pub const ZERO: BalanceType = BalanceType::from_bits(0x0);
@@ -122,7 +122,7 @@ macro_rules! impl_frame_system {
 
 pub type Moment = u64;
 parameter_types! {
-	pub const MinimumPeriod: Moment = 1;
+	pub const MinimumPeriod: Moment = BLOCKTIME / 2;
 }
 
 #[macro_export]
@@ -179,6 +179,7 @@ macro_rules! impl_encointer_balances {
 		impl encointer_balances::Config for $t {
 			type Event = Event;
 			type DefaultDemurrage = DefaultDemurrage;
+			type WeightInfo = ();
 		}
 	};
 }
@@ -189,6 +190,7 @@ macro_rules! impl_encointer_communities {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
 			type CommunityMaster = EnsureAlice;
+			type WeightInfo = ();
 		}
 	};
 }
@@ -221,6 +223,7 @@ macro_rules! impl_encointer_ceremonies {
 			type MeetupSizeTarget = MeetupSizeTarget;
 			type MeetupMinSize = MeetupMinSize;
 			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
+			type WeightInfo = ();
 		}
 	};
 }
@@ -237,6 +240,7 @@ macro_rules! impl_encointer_scheduler {
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
+			type WeightInfo = ();
 		}
 	};
 	($t:ident) => {
@@ -245,6 +249,7 @@ macro_rules! impl_encointer_scheduler {
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
+			type WeightInfo = ();
 		}
 	};
 }

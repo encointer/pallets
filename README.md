@@ -26,6 +26,13 @@ a registry for classifieds from community members, linking to IPFS
 a digital personhood verification oracle with XCM support. See pallet sybil-gate-example for how to use this from another parachain
 
 ## Dev Hints
+
+### Benchmarking
+You can automatically update the `WeightInfo` definitions by running the benchmarks in an encointer-node with the
+script in the node's repository: `./scripts/benchmark_runtime.sh` and uncommenting the line with 
+`frame-weight-template-full-info.hbs` (see the script's documentation).
+
+### Serializing
 * There is a know issue with serializing u-/i128 in the json-rpc crate, see (https://github.com/paritytech/substrate/issues/4641). 
 This affects us predominantly when serializing fixed point numbers in the custom RPCs. There is a custom serialization
 shim as a workaround for that issue in [ep-core](./primitives/core), which can be used as custom serde attribute like:
