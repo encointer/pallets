@@ -1394,7 +1394,9 @@ impl<T: Config> Pallet<T> {
 				);
 			}
 			reward_count += 1;
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(&participant), &true.encode());
 		}
+
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
 		info!(target: LOG, "issuing rewards completed");
 		Ok((meetup_index, reward_count))
