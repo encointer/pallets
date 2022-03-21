@@ -20,9 +20,11 @@ encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../sched
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+
+# benchmarking
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "master" }
 sp-application-crypto = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false, optional = true }
 sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false, optional = true }
@@ -52,6 +54,7 @@ std = [
 	"encointer-primitives/std",
 	"encointer-scheduler/std",
 	"frame-benchmarking/std",
+	"sp-io/std",
 	"sp-core/std",
 ]
 
