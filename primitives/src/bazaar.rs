@@ -25,6 +25,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessIdentifier<AccountId> {
 	pub community_identifier: CommunityIdentifier,
 	pub controller: AccountId,
@@ -38,6 +39,7 @@ impl<AccountId> BusinessIdentifier<AccountId> {
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessData {
 	pub url: PalletString,
 	pub last_oid: u32,
@@ -53,6 +55,7 @@ pub type OfferingIdentifier = u32;
 
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct OfferingData {
 	pub url: PalletString,
 }

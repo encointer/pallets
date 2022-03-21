@@ -72,6 +72,7 @@ pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()>
 	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CommunityIdentifier {
 	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_array"))]
 	geohash: [u8; 5],
@@ -174,6 +175,7 @@ fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct Location {
 	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_fixed"))]
 	pub lat: Degree,
@@ -189,6 +191,7 @@ impl Location {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CommunityMetadata {
 	/// utf8 encoded name
 	pub name: PalletString,
@@ -204,6 +207,7 @@ pub struct CommunityMetadata {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CidName {
 	pub cid: CommunityIdentifier,
 	pub name: PalletString,

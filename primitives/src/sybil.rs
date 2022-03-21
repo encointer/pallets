@@ -32,6 +32,7 @@ use crate::scheduler::CeremonyIndexType;
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct IssuePersonhoodUniquenessRatingCall {
 	call_index: [u8; 2],
 	request: OpaqueRequest,
@@ -71,6 +72,7 @@ impl IssuePersonhoodUniquenessRatingCall {
 /// Contains the necessary information to ask for an XCM return message.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, Default, Copy, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CallMetadata {
 	/// The index must match the position of the module in `construct_runtime!`.
 	pallet_index: u8,
@@ -106,6 +108,7 @@ impl Default for SybilResponse {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct SybilResponseCall {
 	call_index: [u8; 2],
 	request_hash: H256,
@@ -135,6 +138,7 @@ impl SybilResponseCall {
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct PersonhoodUniquenessRating {
 	attested: CeremonyIndexType,
 	last_n_ceremonies: CeremonyIndexType,

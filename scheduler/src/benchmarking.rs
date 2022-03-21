@@ -3,7 +3,7 @@
 use super::*;
 
 use crate::Pallet as Scheduler;
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
 
@@ -14,13 +14,16 @@ benchmarks! {
 		assert_ok!(Scheduler::<T>::next_phase(RawOrigin::Root.into()));
 	}
 	verify {
+		assert_eq!(crate::CurrentPhase::<T>::get(), CeremonyPhaseType::REGISTERING)
 	}
 
 	push_by_one_day {
+		let current_timestamp = crate::NextPhaseTimestamp::<T>::get();
 	}: {
 		assert_ok!(Scheduler::<T>::push_by_one_day(RawOrigin::Root.into()));
 	}
 	verify {
+		assert_eq!(crate::NextPhaseTimestamp::<T>::get(), current_timestamp + T::MomentsPerDay::get());
 	}
 }
 

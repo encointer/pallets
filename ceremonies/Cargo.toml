@@ -23,12 +23,18 @@ pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech
 sp-runtime = {  git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.17" }
 sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.17" }
 
+# benchmarking
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v0.9.17" }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false, optional = true }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false, optional = true }
+
+
 [dev-dependencies]
 approx = "0.5.1"
 itertools = "0.10.3"
 rstest = "0.12.0"
 sp-core = {git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
-sp-io = {  git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-keystore = {  git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 test-utils = { path = "../test-utils" }
 
 [features]
@@ -46,4 +52,8 @@ std = [
 	"encointer-communities/std",
 	"encointer-primitives/std",
 	"encointer-scheduler/std",
+	"frame-benchmarking/std",
+	"sp-core/std",
 ]
+
+runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto", "sp-core"]

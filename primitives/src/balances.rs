@@ -40,6 +40,7 @@ pub type Demurrage = I64F64;
 	Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BalanceEntry<BlockNumber> {
 	/// The balance of the account after last manual adjustment
 	#[cfg_attr(feature = "serde_derive", serde(with = "serialize_fixed"))]

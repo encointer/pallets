@@ -32,12 +32,10 @@ pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 pub type InactivityTimeoutType = u32;
 pub type EndorsementTicketsPerBootstrapperType = u8;
 pub type ReputationLifetimeType = u32;
+pub type MeetupTimeOffsetType = i32;
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
-
-#[cfg(feature = "std")]
-use sp_core::Pair;
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
@@ -75,6 +73,7 @@ pub enum ParticipantType {
 	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
 	pub claimant_public: AccountId,
 	pub ceremony_index: CeremonyIndexType,
@@ -159,10 +158,10 @@ impl<Signature, AccountId: Clone + Encode, Moment: Encode + Copy>
 			.encode()
 	}
 
-	#[cfg(feature = "std")]
+	#[cfg(any(feature = "std", feature = "full_crypto"))]
 	pub fn sign<P>(self, pair: &P) -> Self
 	where
-		P: Pair,
+		P: sp_core::Pair,
 		Signature: From<P::Signature>,
 	{
 		let mut claim_mut = self;
@@ -192,6 +191,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
 	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CommunityReputation {
 	pub community_identifier: CommunityIdentifier,
 	pub reputation: Reputation,
@@ -207,6 +207,7 @@ impl CommunityReputation {
 	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct ProofOfAttendance<Signature, AccountId> {
 	pub prover_public: AccountId,
 	pub ceremony_index: CeremonyIndexType,
@@ -233,6 +234,7 @@ impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountI
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AssignmentCount {
 	pub bootstrappers: ParticipantIndexType,
 	pub reputables: ParticipantIndexType,
@@ -250,6 +252,7 @@ impl AssignmentCount {
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct Assignment {
 	pub bootstrappers_reputables: AssignmentParams,
 	pub endorsees: AssignmentParams,
@@ -262,6 +265,7 @@ pub struct Assignment {
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AssignmentParams {
 	/// Random prime below number of meetup participants. For locations this is the amount of locations.
 	pub m: u64,
@@ -275,6 +279,7 @@ pub struct AssignmentParams {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use sp_core::Pair;
 	use test_utils::{AccountId, AccountKeyring, Moment, Signature};
 
 	#[test]
