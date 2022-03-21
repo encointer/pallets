@@ -139,6 +139,30 @@ benchmarks! {
 	verify {
 		assert_eq!(Pallet::<T>::nominal_income(&cid), 33);
 	}
+
+	set_min_solar_trip_time_s {
+	} : _(RawOrigin::Root, 1_000_000_000)
+	verify {
+		assert_eq!(Pallet::<T>::min_solar_trip_time_s(), 1_000_000_000);
+	}
+
+	set_max_speed_mps {
+	} : _(RawOrigin::Root, 1_000_000_000)
+	verify {
+		assert_eq!(Pallet::<T>::max_speed_mps(), 1_000_000_000);
+	}
+
+	purge_community {
+		// Todo: Properly benchmark this #189
+
+		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
+		let mut cids = vec![CommunityIdentifier::default(); 1_000_000];
+		cids.push(cid);
+		CommunityIdentifiers::<T>::put(cids);
+
+	} : _(RawOrigin::Root, cid)
+	verify {
+	}
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::TestRuntime);

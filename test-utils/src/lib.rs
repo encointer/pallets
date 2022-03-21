@@ -179,6 +179,7 @@ macro_rules! impl_encointer_balances {
 		impl encointer_balances::Config for $t {
 			type Event = Event;
 			type DefaultDemurrage = DefaultDemurrage;
+			type WeightInfo = ();
 		}
 	};
 }
@@ -189,6 +190,7 @@ macro_rules! impl_encointer_communities {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
 			type CommunityMaster = EnsureAlice;
+			type WeightInfo = ();
 		}
 	};
 }
@@ -221,6 +223,7 @@ macro_rules! impl_encointer_ceremonies {
 			type MeetupSizeTarget = MeetupSizeTarget;
 			type MeetupMinSize = MeetupMinSize;
 			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
+			type WeightInfo = ();
 		}
 	};
 }
@@ -237,6 +240,7 @@ macro_rules! impl_encointer_scheduler {
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
+			type WeightInfo = ();
 		}
 	};
 	($t:ident) => {
@@ -245,6 +249,7 @@ macro_rules! impl_encointer_scheduler {
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
+			type WeightInfo = ();
 		}
 	};
 }

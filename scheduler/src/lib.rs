@@ -36,6 +36,7 @@ use sp_std::{ops::Rem, prelude::*};
 // Logger target
 const LOG: &str = "encointer";
 
+pub use crate::weights::WeightInfo;
 pub use pallet::*;
 
 #[frame_support::pallet]
@@ -59,6 +60,8 @@ pub mod pallet {
 		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
 		#[pallet::constant]
 		type MomentsPerDay: Get<Self::Moment>;
+
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::event]
@@ -147,7 +150,7 @@ pub mod pallet {
 		/// Manually transition to next phase without affecting the ceremony rhythm
 		///
 		/// May only be called from `T::CeremonyMaster`.
-		#[pallet::weight((1000, DispatchClass::Operational))]
+		#[pallet::weight((<T as Config>::WeightInfo::next_phase(), DispatchClass::Normal, Pays::Yes))]
 		pub fn next_phase(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
 
@@ -159,7 +162,7 @@ pub mod pallet {
 		/// Push next phase change by one entire day
 		///
 		/// May only be called from `T::CeremonyMaster`.
-		#[pallet::weight((1000, DispatchClass::Operational))]
+		#[pallet::weight((<T as Config>::WeightInfo::push_by_one_day(), DispatchClass::Normal, Pays::Yes))]
 		pub fn push_by_one_day(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
 
@@ -169,7 +172,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_phase_duration(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_phase_duration(
 			origin: OriginFor<T>,
 			ceremony_phase: CeremonyPhaseType,
@@ -180,7 +183,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_next_phase_timestamp(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_next_phase_timestamp(
 			origin: OriginFor<T>,
 			timestamp: T::Moment,
@@ -279,6 +282,8 @@ pub trait OnCeremonyPhaseChange {
 impl OnCeremonyPhaseChange for () {
 	fn on_ceremony_phase_change(_: CeremonyPhaseType) {}
 }
+
+mod weights;
 
 #[cfg(test)]
 mod mock;
