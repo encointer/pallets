@@ -16,21 +16,34 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod impl_fungibles;
+
+pub use crate::weights::WeightInfo;
+use codec::EncodeLike;
+use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	communities::CommunityIdentifier,
 	fixed::transcendental::exp,
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
+use frame_support::{
+	dispatch::DispatchResult,
+	ensure,
+	traits::{
+		tokens::{fungibles, BalanceConversion},
+		Get,
+	},
+};
 use frame_system::{self as frame_system, ensure_signed};
 use log::debug;
-use sp_runtime::traits::StaticLookup;
+use pallet_asset_tx_payment::HandleCredit;
+use pallet_transaction_payment::OnChargeTransaction;
+use sp_runtime::{traits::StaticLookup, AccountId32};
 use sp_std::convert::TryInto;
 
 // Logger target
 const LOG: &str = "encointer";
 
-pub use crate::weights::WeightInfo;
 /// Demurrage rate per block.
 /// Assuming 50% demurrage per year and a block time of 5s
 /// ```matlab
@@ -46,6 +59,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::AccountId32;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -249,6 +263,72 @@ impl<T: Config> Pallet<T> {
 
 	pub fn purge_balances(cid: CommunityIdentifier) {
 		<Balance<T>>::remove_prefix(cid, None);
+	}
+}
+
+pub(crate) type OnChargeTransactionOf<T> =
+	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
+// Balance type alias.
+pub(crate) type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
+
+pub(crate) type AssetBalanceOf<T> =
+	<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
+		<T as frame_system::Config>::AccountId,
+	>>::Balance;
+pub(crate) type AssetIdOf<T> =
+	<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
+		<T as frame_system::Config>::AccountId,
+	>>::AssetId;
+
+pub struct BalanceToCommunityBalance<T>(PhantomData<T>);
+impl<T> BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>
+	for BalanceToCommunityBalance<T>
+where
+	T: Config + pallet_asset_tx_payment::Config,
+	encointer_primitives::communities::CommunityIdentifier: From<AssetIdOf<T>>,
+	AssetBalanceOf<T>: From<u128>,
+	<T as pallet_asset_tx_payment::Config>::Fungibles:
+		fungibles::InspectMetadata<<T as frame_system::Config>::AccountId>,
+{
+	type Error = Error<T>;
+
+	fn to_asset_balance(
+		balance: BalanceOf<T>,
+		asset_id: AssetIdOf<T>,
+	) -> Result<AssetBalanceOf<T>, Self::Error> {
+		let decimals =
+			<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::InspectMetadata<
+				<T as frame_system::Config>::AccountId,
+			>>::decimals(&asset_id.into());
+
+		// simply return a fixed value of 0.01 for now
+		return Ok(((0.01f64 * (10 ^ decimals) as f64) as u128).into())
+	}
+}
+
+pub struct BurnCredit();
+impl<T> HandleCredit<<T as frame_system::Config>::AccountId, pallet::Pallet<T>> for BurnCredit
+where
+	T: Config + frame_system::Config,
+{
+	fn handle_credit(
+		credit: fungibles::CreditOf<<T as frame_system::Config>::AccountId, pallet::Pallet<T>>,
+	) {
+		// CreditOf means that total supply is larger than sum of all accounts
+		// this is because from the AccountId the fee was deducted
+
+		// burn it
+		let current_block = frame_system::Pallet::<T>::block_number();
+		let new_total_issuance = BalanceEntry {
+			principal: <TotalIssuance<T>>::get(credit.asset()).principal -
+				Pallet::<T>::fungible_balance_to_balance_type(
+					credit.asset().into(),
+					credit.peek().into(),
+				),
+			last_update: current_block,
+		};
+
+		<TotalIssuance<T>>::insert(credit.asset(), new_total_issuance)
 	}
 }
 
