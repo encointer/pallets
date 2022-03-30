@@ -53,10 +53,6 @@ impl<T: Config> Pallet<T> {
 		let decimals = Self::decimals(&asset);
 		let mut result: BalanceType = BalanceType::from_num(0);
 
-		let ten_to_the_negative_decimals =
-			powi::<BalanceType, BalanceType>(BalanceType::from_num(10), -1 * (decimals as i32))
-				.unwrap();
-
 		result = result +
 			BalanceType::from_num(
 				((fungible_balance << 64) >> 64) as f64 / (10i128.pow(decimals as u32) as f64),
