@@ -22,7 +22,7 @@ pub use crate::weights::WeightInfo;
 use codec::EncodeLike;
 use core::marker::PhantomData;
 use encointer_primitives::{
-	balances::{BalanceEntry, BalanceType, Demurrage},
+	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
 	communities::CommunityIdentifier,
 	fixed::transcendental::exp,
 };
@@ -35,7 +35,7 @@ use frame_support::{
 	},
 };
 use frame_system::{self as frame_system, ensure_signed};
-use log::debug;
+use log::{debug, info};
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{traits::StaticLookup, AccountId32};
@@ -73,6 +73,8 @@ pub mod pallet {
 		type DefaultDemurrage: Get<Demurrage>;
 
 		type WeightInfo: WeightInfo;
+
+		type CeremonyMaster: EnsureOrigin<Self::Origin>;
 	}
 
 	#[pallet::call]
@@ -92,6 +94,37 @@ pub mod pallet {
 			Self::deposit_event(Event::Transferred(community_id, from, to, amount));
 			Ok(().into())
 		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::transfer(), DispatchClass::Normal))]
+		pub fn set_fee_conversion_factor(
+			origin: OriginFor<T>,
+			fee_conversion_factor: FeeConversionFactorType,
+		) -> DispatchResultWithPostInfo {
+			T::CeremonyMaster::ensure_origin(origin)?;
+			<FeeConversionFactor<T>>::put(fee_conversion_factor);
+			info!(target: LOG, "set fee conversion factor to {}", fee_conversion_factor);
+			Self::deposit_event(Event::FeeConversionFactorUpdated(fee_conversion_factor));
+			Ok(().into())
+		}
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub fee_conversion_factor: FeeConversionFactorType,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { fee_conversion_factor: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			<FeeConversionFactor<T>>::put(&self.fee_conversion_factor);
+		}
 	}
 
 	#[pallet::event]
@@ -99,6 +132,8 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Token transfer success `[community_id, from, to, amount]`
 		Transferred(CommunityIdentifier, T::AccountId, T::AccountId, BalanceType),
+		/// fee conversion factor updated successfully
+		FeeConversionFactorUpdated(FeeConversionFactorType),
 	}
 
 	#[pallet::error]
@@ -135,6 +170,11 @@ pub mod pallet {
 	#[pallet::getter(fn demurrage_per_block)]
 	pub type DemurragePerBlock<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Demurrage, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn fee_conversion_factor)]
+	pub(super) type FeeConversionFactor<T: Config> =
+		StorageValue<_, FeeConversionFactorType, ValueQuery>;
 }
 
 impl<T: Config> Pallet<T> {
@@ -289,6 +329,7 @@ where
 	AssetBalanceOf<T>: From<u128>,
 	<T as pallet_asset_tx_payment::Config>::Fungibles:
 		fungibles::InspectMetadata<<T as frame_system::Config>::AccountId>,
+	u128: From<BalanceOf<T>>,
 {
 	type Error = Error<T>;
 
@@ -301,8 +342,19 @@ where
 				<T as frame_system::Config>::AccountId,
 			>>::decimals(&asset_id.into());
 
-		// simply return a fixed value of 0.01 for now
-		return Ok(((0.01f64 * (10 ^ decimals) as f64) as u128).into())
+		let fee_conversion_factor = Pallet::<T>::fee_conversion_factor();
+		let balance_u128: u128 = balance.into();
+		// 5.233 micro ksm correspond to 0.01 units of the community currency assuming a feeConversionFactor of 10_000
+		// the KSM balance parameter comes with 12 decimals
+		// 5.233 * 10^6 pKSM = 0.01 * 10^decimals LEU
+		// 5.233 * 10^6 pKSM = 0.01 * 10^(decimals - 4) * feeConversionFactor LEU
+		// 1 pKSM = (0.01 * 10^(decimals - 4) * feeConversionFactor) / (5.233 * 10^6) LEU
+		// 1 pKSM = (0.01 * 10^(decimals - 10) * feeConversionFactor) / 5.233 LEU
+		return Ok((balance_u128 *
+			(((0.01f64 / 5.233f64) *
+				10f64.powf((decimals - 10) as f64) *
+				fee_conversion_factor as f64) as u128))
+			.into())
 	}
 }
 

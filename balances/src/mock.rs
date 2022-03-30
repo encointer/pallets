@@ -16,10 +16,9 @@
 
 //! Mock runtime for the encointer_balances module
 
-use encointer_primitives::balances::Demurrage;
-
 use crate as dut;
-
+use encointer_primitives::balances::Demurrage;
+use frame_support::pallet_prelude::GenesisBuild;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -46,6 +45,7 @@ impl dut::Config for TestRuntime {
 	type Event = Event;
 	type DefaultDemurrage = DefaultDemurrage;
 	type WeightInfo = ();
+	type CeremonyMaster = EnsureAlice;
 }
 
 // boilerplate
@@ -55,8 +55,14 @@ impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	frame_system::GenesisConfig::default()
-		.build_storage::<TestRuntime>()
-		.unwrap()
-		.into()
+	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+
+	let conf = dut::GenesisConfig { fee_conversion_factor: 10_000 };
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+
+	t.into()
+}
+
+pub fn master() -> AccountId {
+	AccountId::from(AccountKeyring::Alice)
 }

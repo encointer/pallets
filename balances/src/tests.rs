@@ -33,9 +33,13 @@ use frame_support::{
 		OnInitialize,
 	},
 };
-use mock::{new_test_ext, EncointerBalances, System, TestRuntime};
+use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
+use sp_runtime::DispatchError;
 use sp_std::str::FromStr;
-use test_utils::{helpers::last_event, AccountKeyring};
+use test_utils::{
+	helpers::{assert_dispatch_err, last_event},
+	AccountKeyring,
+};
 
 #[test]
 fn issue_should_work() {
@@ -435,4 +439,29 @@ fn set_balance_and_set_total_issuance_works() {
 		10000
 	));
 	})
+}
+
+#[test]
+fn set_fee_conversion_factor_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerBalances::set_fee_conversion_factor(
+				Origin::signed(AccountKeyring::Bob.into()),
+				5u32,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_fee_conversion_factor_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 5u32));
+
+		assert_eq!(EncointerBalances::fee_conversion_factor(), 5u32);
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 6u32,));
+
+		assert_eq!(EncointerBalances::fee_conversion_factor(), 6u32);
+	});
 }

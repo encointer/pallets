@@ -36,6 +36,8 @@ pub type BalanceType = I64F64;
 /// 1.3188e-07 : halving time of 1 year if blocktime is 6s
 pub type Demurrage = I64F64;
 
+pub type FeeConversionFactorType = u32;
+
 #[derive(
 	Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, TypeInfo, MaxEncodedLen,
 )]
