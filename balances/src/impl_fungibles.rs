@@ -1,5 +1,5 @@
 use super::*;
-use encointer_primitives::common::PalletString;
+use encointer_primitives::{common::PalletString, fixed::transcendental::powi};
 use frame_support::{
 	inherent::Vec,
 	traits::{
@@ -53,14 +53,20 @@ impl<T: Config> Pallet<T> {
 		let decimals = Self::decimals(&asset);
 		let mut result: BalanceType = BalanceType::from_num(0);
 
+		let ten_to_the_negative_decimals =
+			powi::<BalanceType, BalanceType>(BalanceType::from_num(10), -1 * (decimals as i32))
+				.unwrap();
+
 		result = result +
 			BalanceType::from_num(
-				((fungible_balance << 64) >> 64) as f64 * 10f64.powf(decimals as f64 * -1f64),
+				((fungible_balance << 64) >> 64) as f64 / (10i128.pow(decimals as u32) as f64),
 			);
+
 		result = result +
-			BalanceType::from_num(
-				((fungible_balance >> 64) << 64) as f64 * 10f64.powf(decimals as f64 * -1f64),
-			);
+			BalanceType::from_num(fungible_balance >> 64) *
+				BalanceType::from_num(
+					2i128.pow(64) as f64 / 10i128.pow(decimals as u32) as f64,
+				);
 		result
 	}
 }

@@ -210,6 +210,12 @@ fn balance_type_to_fungible_balance_works() {
 fn fungible_balance_to_balance_type_works() {
 	new_test_ext().execute_with(|| {
 		let cid = CommunityIdentifier::default();
+
+		assert_eq!(
+			EncointerBalances::fungible_balance_to_balance_type(cid, 0_000_000_100_000_000_000u128),
+			BalanceType::from_num(0.0000001f64)
+		);
+
 		assert_eq!(
 			EncointerBalances::fungible_balance_to_balance_type(cid, 1_000_000_000_000_000_000u128),
 			BalanceType::from_num(1f64)
