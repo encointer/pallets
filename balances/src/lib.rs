@@ -306,19 +306,17 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-pub(crate) type OnChargeTransactionOf<T> =
-	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
+pub type OnChargeTransactionOf<T> = <T as pallet_transaction_payment::Config>::OnChargeTransaction;
 // Balance type alias.
-pub(crate) type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
+pub type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
 
-pub(crate) type AssetBalanceOf<T> =
+pub type AssetBalanceOf<T> =
 	<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
 		<T as frame_system::Config>::AccountId,
 	>>::Balance;
-pub(crate) type AssetIdOf<T> =
-	<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
-		<T as frame_system::Config>::AccountId,
-	>>::AssetId;
+pub type AssetIdOf<T> = <<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
+	<T as frame_system::Config>::AccountId,
+>>::AssetId;
 
 pub struct BalanceToCommunityBalance<T>(PhantomData<T>);
 impl<T> BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>
@@ -352,7 +350,7 @@ where
 		// 1 pKSM = (0.01 * 10^(decimals - 10) * feeConversionFactor) / 5.233 LEU
 		return Ok((balance_u128 *
 			(((0.01f64 / 5.233f64) *
-				10f64.powf((decimals - 10) as f64) *
+				10i128.pow((decimals - 10) as u32) as f64 *
 				fee_conversion_factor as f64) as u128))
 			.into())
 	}
