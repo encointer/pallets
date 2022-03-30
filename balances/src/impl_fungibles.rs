@@ -27,7 +27,7 @@ impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 }
 
 impl<T: Config> Pallet<T> {
-	pub(crate) fn balance_type_to_fungible_balance(
+	pub fn balance_type_to_fungible_balance(
 		asset: <Pallet<T> as fungibles::Inspect<T::AccountId>>::AssetId,
 		balance: BalanceType,
 	) -> <Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance {
@@ -46,7 +46,7 @@ impl<T: Config> Pallet<T> {
 		result
 	}
 
-	pub(crate) fn fungible_balance_to_balance_type(
+	pub fn fungible_balance_to_balance_type(
 		asset: <Pallet<T> as fungibles::Inspect<T::AccountId>>::AssetId,
 		fungible_balance: <Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance,
 	) -> BalanceType {

@@ -24,6 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
+use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::PalletString,
@@ -35,8 +36,12 @@ use encointer_primitives::{
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
-use frame_support::ensure;
+use frame_support::{
+	ensure,
+	traits::{fungibles, tokens::BalanceConversion},
+};
 use log::{info, warn};
+use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
 
@@ -693,6 +698,67 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 		return balances
+	}
+}
+
+pub type OnChargeTransactionOf<T> = <T as pallet_transaction_payment::Config>::OnChargeTransaction;
+// Balance type alias.
+pub type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
+
+pub type AssetBalanceOf<T> =
+	<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
+		<T as frame_system::Config>::AccountId,
+	>>::Balance;
+pub type AssetIdOf<T> = <<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
+	<T as frame_system::Config>::AccountId,
+>>::AssetId;
+
+pub struct BalanceToCommunityBalance<T>(PhantomData<T>);
+impl<T> BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>
+	for BalanceToCommunityBalance<T>
+where
+	T: Config + pallet_asset_tx_payment::Config,
+	encointer_primitives::communities::CommunityIdentifier: From<AssetIdOf<T>>,
+	AssetBalanceOf<T>: From<u128>,
+	<T as pallet_asset_tx_payment::Config>::Fungibles:
+		fungibles::InspectMetadata<<T as frame_system::Config>::AccountId>,
+	u128: From<BalanceOf<T>>,
+{
+	type Error = Error<T>;
+
+	fn to_asset_balance(
+		balance: BalanceOf<T>,
+		asset_id: AssetIdOf<T>,
+	) -> Result<AssetBalanceOf<T>, Self::Error> {
+		let decimals =
+			<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::InspectMetadata<
+				<T as frame_system::Config>::AccountId,
+			>>::decimals(&asset_id.into());
+
+		let fee_conversion_factor = encointer_balances::Pallet::<T>::fee_conversion_factor();
+		let reward = encointer_balances::Pallet::<T>::balance_type_to_fungible_balance(
+			asset_id.into(),
+			Pallet::<T>::nominal_income(CommunityIdentifier::from(asset_id)),
+		);
+		let balance_u128: u128 = balance.into();
+
+		// 5.233 micro ksm correspond to 0.01 units of the community currency assuming a feeConversionFactor of 10_000
+		// the KSM balance parameter comes with 12 decimals
+		// 5.233 * 10^6 pKSM = 0.01 * 10^decimals LEU
+		// 5.233 * 10^6 pKSM = 0.01 * 10^(decimals - 4) * feeConversionFactor LEU
+		// 1 pKSM = (0.01 * 10^(decimals - 4) * feeConversionFactor) / (5.233 * 10^6) LEU
+		// 1 pKSM = (0.01 * 10^(decimals - 10) * feeConversionFactor) / 5.233 LEU
+		let conversion_factor = ((0.01f64 / 5.233f64) *
+			10i128.pow((decimals - 10) as u32) as f64 *
+			fee_conversion_factor as f64) as u128;
+
+		// assuming a nominal income of 20
+		let reward_factor = reward /
+			encointer_balances::Pallet::<T>::balance_type_to_fungible_balance(
+				asset_id.into(),
+				BalanceType::from_num(20i32),
+			);
+		return Ok((balance_u128 * reward_factor * conversion_factor).into())
 	}
 }
 
