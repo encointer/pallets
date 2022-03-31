@@ -1,6 +1,7 @@
 [workspace]
 members = [
     'balances',
+    'balances-tx-payment-extension',
     'bazaar',
     'bazaar/rpc',
     'bazaar/rpc/runtime-api',

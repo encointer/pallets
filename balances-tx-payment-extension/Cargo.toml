@@ -1,0 +1,31 @@
+[package]
+name = "balances-tx-payment-extension"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pallet-encointer-balances = { path = "../balances", default-features = false }
+pallet-encointer-communities = { path = "../communities", default-features = false }
+encointer-primitives = { path = "../primitives", default-features = false }
+
+# substrate dependencies
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+pallet-asset-tx-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+
+[features]
+default = ["std"]
+std = [
+    "pallet-encointer-balances/std",
+    "pallet-encointer-communities/std",
+    "encointer-primitives/std",
+
+    # substrate deps
+    "frame-support/std",
+    "frame-system/std",
+    "pallet-asset-tx-payment/std",
+    "pallet-transaction-payment/std",
+    "sp-runtime/std",
+]

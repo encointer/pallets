@@ -349,6 +349,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "balances-tx-payment-extension"
+version = "0.1.0"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "frame-system",
+ "pallet-asset-tx-payment",
+ "pallet-encointer-balances",
+ "pallet-encointer-communities",
+ "pallet-transaction-payment",
+ "sp-runtime",
+]
+
+[[package]]
 name = "base-x"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3162,6 +3176,7 @@ dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -3315,10 +3330,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-asset-tx-payment",
  "pallet-encointer-balances",
  "pallet-encointer-scheduler",
- "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

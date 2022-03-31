@@ -16,8 +16,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod impl_fungibles;
-
 pub use crate::weights::WeightInfo;
 use codec::EncodeLike;
 use core::marker::PhantomData;
@@ -52,6 +50,16 @@ const LOG: &str = "encointer";
 // FIXME: how to define negative hex literal?
 //pub const DemurrageRate: BalanceType = BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 pub use pallet::*;
+
+mod impl_fungibles;
+pub mod weights;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -330,14 +338,3 @@ where
 		<TotalIssuance<T>>::insert(credit.asset(), new_total_issuance)
 	}
 }
-
-pub mod weights;
-
-#[cfg(test)]
-mod mock;
-
-#[cfg(test)]
-mod tests;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
