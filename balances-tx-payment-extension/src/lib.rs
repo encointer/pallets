@@ -12,14 +12,13 @@ mod tests;
 pub use balance_conversion::*;
 
 pub type OnChargeTransactionOf<T> = <T as pallet_transaction_payment::Config>::OnChargeTransaction;
-// Balance type alias.
+
 pub type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
 
-pub type AssetBalanceOf<T> =
-	<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
-		<T as frame_system::Config>::AccountId,
-	>>::Balance;
+pub type FungiblesOf<T> = <T as pallet_asset_tx_payment::Config>::Fungibles;
 
-pub type AssetIdOf<T> = <<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
-	<T as frame_system::Config>::AccountId,
->>::AssetId;
+pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
+
+pub type AssetBalanceOf<T> = <FungiblesOf<T> as fungibles::Inspect<AccountIdOf<T>>>::Balance;
+
+pub type AssetIdOf<T> = <FungiblesOf<T> as fungibles::Inspect<AccountIdOf<T>>>::AssetId;
