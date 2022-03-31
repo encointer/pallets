@@ -21,6 +21,7 @@ use sp_core::RuntimeDebug;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::traits::Convert;
 
 #[cfg(feature = "serde_derive")]
 use ep_core::serde::serialize_fixed;
@@ -49,4 +50,46 @@ pub struct BalanceEntry<BlockNumber> {
 	pub principal: BalanceType,
 	/// The time (block height) at which the balance was last adjusted
 	pub last_update: BlockNumber,
+}
+
+/// Our BalanceType is I64F64, so the smallest possible number is
+/// 2^-64 = 5.42101086242752217003726400434970855712890625 × 10^-20
+/// and the upper bound is 2^63 + 1 = 9.223372036854775809 × 10^18
+///
+/// We choose 18 decimals and lose some precision, but can prevent overflows that way.
+const ENCOINTER_BALANCE_DECIMALS: u32 = 18;
+
+struct EncointerBalanceConverter {}
+
+impl Convert<BalanceType, u128> for EncointerBalanceConverter {
+	fn convert(balance: BalanceType) -> u128 {
+		let decimals = ENCOINTER_BALANCE_DECIMALS;
+
+		let bits = balance.to_bits();
+		let mut result: u128 = 0;
+
+		result += (bits >> 64) as u128 * 10u128.pow(decimals);
+
+		result += (BalanceType::from_bits((bits as i64) as i128) * // <- to truncate
+			BalanceType::from_num(10u128.pow(decimals)))
+		.to_num::<u128>();
+		result
+	}
+}
+
+impl Convert<u128, BalanceType> for EncointerBalanceConverter {
+	fn convert(fungible_balance: u128) -> BalanceType {
+		let decimals = ENCOINTER_BALANCE_DECIMALS;
+
+		let mut result: BalanceType = BalanceType::from_num(0);
+
+		result += BalanceType::from_num(
+			((fungible_balance << 64) >> 64) as f64 / (10i128.pow(decimals as u32) as f64),
+		);
+
+		result += BalanceType::from_num(fungible_balance >> 64) *
+			BalanceType::from_num(2i128.pow(64) as f64 / 10i128.pow(decimals as u32) as f64);
+
+		result
+	}
 }
