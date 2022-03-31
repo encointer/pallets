@@ -17,7 +17,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use crate::weights::WeightInfo;
-use codec::EncodeLike;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
@@ -27,15 +26,12 @@ use encointer_primitives::{
 use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
-	traits::{
-		tokens::{fungibles, BalanceConversion},
-		Get,
-	},
+	traits::{tokens::fungibles, Get},
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::{debug, info};
 use pallet_asset_tx_payment::HandleCredit;
-use sp_runtime::{traits::StaticLookup, AccountId32};
+use sp_runtime::traits::StaticLookup;
 use sp_std::convert::TryInto;
 
 // Logger target
@@ -66,7 +62,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::AccountId32;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]

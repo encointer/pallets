@@ -1,5 +1,5 @@
 use super::*;
-use encointer_primitives::{common::PalletString, fixed::transcendental::powi};
+use encointer_primitives::common::PalletString;
 use frame_support::{
 	inherent::Vec,
 	traits::{
@@ -7,7 +7,7 @@ use frame_support::{
 		tokens::{DepositConsequence, WithdrawConsequence},
 	},
 };
-use sp_runtime::{traits::Zero, DispatchError};
+use sp_runtime::traits::Zero;
 
 impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 	fn name(asset: &Self::AssetId) -> Vec<u8> {
