@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{AssetBalanceOf, AssetIdOf, BalanceOf};
+use crate::{AccountIdOf, AssetBalanceOf, AssetIdOf, BalanceOf, FungiblesOf};
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
 use frame_support::traits::{fungibles, tokens::BalanceConversion};
@@ -52,10 +52,9 @@ impl<T> BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>
 	for BalanceToCommunityBalance<T>
 where
 	T: CommunitiesConfig + pallet_asset_tx_payment::Config,
-	encointer_primitives::communities::CommunityIdentifier: From<AssetIdOf<T>>,
+	CommunityIdentifier: From<AssetIdOf<T>>,
 	AssetBalanceOf<T>: From<u128>,
-	<T as pallet_asset_tx_payment::Config>::Fungibles:
-		fungibles::InspectMetadata<<T as frame_system::Config>::AccountId>,
+	FungiblesOf<T>: fungibles::InspectMetadata<AccountIdOf<T>>,
 	u128: From<BalanceOf<T>>,
 {
 	type Error = frame_system::Error<T>;
@@ -64,10 +63,9 @@ where
 		balance: BalanceOf<T>,
 		asset_id: AssetIdOf<T>,
 	) -> Result<AssetBalanceOf<T>, Self::Error> {
-		let decimals =
-			<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::InspectMetadata<
-				<T as frame_system::Config>::AccountId,
-			>>::decimals(&asset_id.into());
+		let decimals = <FungiblesOf<T> as fungibles::InspectMetadata<AccountIdOf<T>>>::decimals(
+			&asset_id.into(),
+		);
 
 		let fee_conversion_factor = BalancesPallet::<T>::fee_conversion_factor();
 		let reward = BalancesPallet::<T>::balance_type_to_fungible_balance(
