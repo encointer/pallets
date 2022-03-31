@@ -1,22 +1,9 @@
+use crate::{AssetBalanceOf, AssetIdOf, BalanceOf};
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
 use frame_support::traits::{fungibles, tokens::BalanceConversion};
 use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_communities::{Config as CommunitiesConfig, Pallet as CommunitiesPallet};
-use pallet_transaction_payment::OnChargeTransaction;
-
-pub type OnChargeTransactionOf<T> = <T as pallet_transaction_payment::Config>::OnChargeTransaction;
-// Balance type alias.
-pub type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
-
-pub type AssetBalanceOf<T> =
-	<<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
-		<T as frame_system::Config>::AccountId,
-	>>::Balance;
-
-pub type AssetIdOf<T> = <<T as pallet_asset_tx_payment::Config>::Fungibles as fungibles::Inspect<
-	<T as frame_system::Config>::AccountId,
->>::AssetId;
 
 pub fn balance_to_community_balance<T: CommunitiesConfig>(
 	balance: u128,
