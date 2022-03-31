@@ -16,7 +16,6 @@
 
 use super::*;
 use approx::assert_abs_diff_eq;
-use encointer_balances::Balance;
 use frame_support::assert_ok;
 use mock::{
 	dut, master, new_test_ext, EncointerBalances, EncointerCommunities, Origin, System, TestRuntime,

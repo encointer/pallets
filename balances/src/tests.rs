@@ -411,7 +411,6 @@ mod impl_fungibles {
 			let wrong_cid = CommunityIdentifier::from_str("aaaaaaaaaa").unwrap();
 			let alice = AccountKeyring::Alice.to_account_id();
 			let bob = AccountKeyring::Bob.to_account_id();
-			let ferdie = AccountKeyring::Ferdie.to_account_id();
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(10)));
 			assert_ok!(EncointerBalances::issue(cid, &bob, BalanceType::from_num(1)));
 

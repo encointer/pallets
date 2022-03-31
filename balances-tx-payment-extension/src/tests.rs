@@ -2,26 +2,8 @@ use crate::{
 	balance_to_community_balance,
 	mock::{new_test_ext, TestRuntime},
 };
-use approx::{assert_abs_diff_eq, assert_relative_eq};
-use encointer_primitives::{
-	balances::BalanceType,
-	communities::CommunityIdentifier,
-	fixed::{traits::LossyInto, transcendental::exp},
-};
-use frame_support::{
-	assert_noop, assert_ok,
-	traits::{
-		tokens::{
-			fungibles::{Inspect, InspectMetadata, Unbalanced},
-			DepositConsequence, WithdrawConsequence,
-		},
-		OnInitialize,
-	},
-};
-use test_utils::{
-	helpers::{assert_dispatch_err, last_event, register_test_community},
-	AccountKeyring,
-};
+use approx::assert_abs_diff_eq;
+use test_utils::helpers::register_test_community;
 
 #[test]
 fn balance_to_community_balance_works() {

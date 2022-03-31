@@ -38,10 +38,6 @@ frame_support::construct_runtime!(
 	}
 );
 
-pub fn master() -> AccountId {
-	AccountId::from(AccountKeyring::Alice)
-}
-
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime);
