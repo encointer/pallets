@@ -1,5 +1,5 @@
 [package]
-name = "balances-tx-payment-extension"
+name = "encointer-balances-tx-payment"
 version = "0.1.0"
 edition = "2021"
 
