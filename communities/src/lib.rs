@@ -36,10 +36,7 @@ use encointer_primitives::{
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
-use frame_support::{
-	ensure,
-	traits::{fungibles, tokens::BalanceConversion},
-};
+use frame_support::ensure;
 use log::{info, warn};
 use sp_runtime::{DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};

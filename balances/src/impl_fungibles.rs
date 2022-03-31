@@ -10,15 +10,15 @@ use frame_support::{
 use sp_runtime::traits::Zero;
 
 impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
-	fn name(asset: &Self::AssetId) -> Vec<u8> {
+	fn name(_asset: &Self::AssetId) -> Vec<u8> {
 		PalletString::from("Encointer").into()
 	}
 
-	fn symbol(asset: &Self::AssetId) -> Vec<u8> {
+	fn symbol(_asset: &Self::AssetId) -> Vec<u8> {
 		PalletString::from("ETR").into()
 	}
 
-	fn decimals(asset: &Self::AssetId) -> u8 {
+	fn decimals(_asset: &Self::AssetId) -> u8 {
 		// Our BalanceType is I64F64, so the smallest possible number is 2^-64 = 5.42101086242752217003726400434970855712890625 × 10^-20
 		//  and an upper bound is 2^63 + 1 = 9.223372036854775809 × 10^18
 		// so we chose 18 decimals and lose some precision but can prevent overflows that way.
@@ -75,7 +75,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		Self::balance_type_to_fungible_balance(asset, Pallet::<T>::total_issuance(asset))
 	}
 
-	fn minimum_balance(asset: Self::AssetId) -> Self::Balance {
+	fn minimum_balance(_asset: Self::AssetId) -> Self::Balance {
 		0
 	}
 
@@ -86,7 +86,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 	fn reducible_balance(
 		asset: Self::AssetId,
 		who: &T::AccountId,
-		keep_alive: bool,
+		_keep_alive: bool,
 	) -> Self::Balance {
 		Self::balance_type_to_fungible_balance(asset, Pallet::<T>::balance(asset, who))
 	}

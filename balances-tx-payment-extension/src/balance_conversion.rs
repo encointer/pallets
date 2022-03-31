@@ -1,9 +1,6 @@
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
-use frame_support::{
-	ensure,
-	traits::{fungibles, tokens::BalanceConversion},
-};
+use frame_support::traits::{fungibles, tokens::BalanceConversion};
 use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_communities::{Config as CommunitiesConfig, Pallet as CommunitiesPallet};
 use pallet_transaction_payment::OnChargeTransaction;
