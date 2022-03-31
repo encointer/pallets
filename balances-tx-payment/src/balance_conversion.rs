@@ -16,14 +16,14 @@
 
 use crate::{AccountIdOf, AssetBalanceOf, AssetIdOf, BalanceOf, FungiblesOf};
 use core::marker::PhantomData;
-use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
+use encointer_primitives::{balances::EncointerBalanceConverter, communities::CommunityIdentifier};
 use frame_support::traits::{fungibles, tokens::BalanceConversion};
 use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_communities::{Config as CommunitiesConfig, Pallet as CommunitiesPallet};
+use sp_runtime::traits::Convert;
 
 pub fn balance_to_community_balance<T: CommunitiesConfig>(
 	balance: u128,
-	cid: CommunityIdentifier,
 	reward: u128,
 	fee_conversion_factor: u32,
 	asset_balance_decimals: u8,
@@ -38,12 +38,8 @@ pub fn balance_to_community_balance<T: CommunitiesConfig>(
 		10i128.pow((asset_balance_decimals - 10) as u32) as f64 *
 		fee_conversion_factor as f64) as u128;
 
-	// assuming a nominal income of 20
-	return (balance * conversion_factor * reward) /
-		BalancesPallet::<T>::balance_type_to_fungible_balance(
-			cid.into(),
-			BalanceType::from_num(20i32),
-		)
+	// assuming a nominal income
+	return balance * conversion_factor * reward
 }
 
 pub struct BalanceToCommunityBalance<T>(PhantomData<T>);
@@ -68,19 +64,12 @@ where
 		);
 
 		let fee_conversion_factor = BalancesPallet::<T>::fee_conversion_factor();
-		let reward = BalancesPallet::<T>::balance_type_to_fungible_balance(
-			asset_id.into(),
-			CommunitiesPallet::<T>::nominal_income(CommunityIdentifier::from(asset_id)),
-		);
+		let reward = EncointerBalanceConverter::convert(CommunitiesPallet::<T>::nominal_income(
+			CommunityIdentifier::from(asset_id),
+		));
 		let balance_u128: u128 = balance.into();
 
-		Ok(balance_to_community_balance::<T>(
-			balance_u128,
-			CommunityIdentifier::from(asset_id),
-			reward,
-			fee_conversion_factor,
-			decimals,
-		)
-		.into())
+		Ok(balance_to_community_balance::<T>(balance_u128, reward, fee_conversion_factor, decimals)
+			.into())
 	}
 }

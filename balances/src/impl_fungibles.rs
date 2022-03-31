@@ -15,15 +15,12 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use encointer_primitives::common::PalletString;
+use encointer_primitives::{balances::EncointerBalanceConverter, common::PalletString};
 use frame_support::{
 	inherent::Vec,
-	traits::{
-		fungibles::InspectMetadata,
-		tokens::{DepositConsequence, WithdrawConsequence},
-	},
+	traits::tokens::{DepositConsequence, WithdrawConsequence},
 };
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{Convert, Zero};
 
 impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 	fn name(_asset: &Self::AssetId) -> Vec<u8> {
@@ -42,45 +39,12 @@ impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 	}
 }
 
-impl<T: Config> Pallet<T> {
-	pub fn balance_type_to_fungible_balance(
-		asset: <Pallet<T> as fungibles::Inspect<T::AccountId>>::AssetId,
-		balance: BalanceType,
-	) -> <Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance {
-		assert!(balance >= BalanceType::from_num(0));
-		let decimals = Self::decimals(&asset);
+fn fungible(balance: BalanceType) -> u128 {
+	EncointerBalanceConverter::convert(balance)
+}
 
-		let bits = balance.to_bits();
-		let mut result: u128 = 0;
-
-		result = result + (bits >> 64) as u128 * 10u128.pow(decimals as u32);
-
-		result = result +
-			(BalanceType::from_bits((bits as i64) as i128) *
-				BalanceType::from_num(10u128.pow(decimals as u32)))
-			.to_num::<u128>();
-		result
-	}
-
-	pub fn fungible_balance_to_balance_type(
-		asset: <Pallet<T> as fungibles::Inspect<T::AccountId>>::AssetId,
-		fungible_balance: <Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance,
-	) -> BalanceType {
-		let decimals = Self::decimals(&asset);
-		let mut result: BalanceType = BalanceType::from_num(0);
-
-		result = result +
-			BalanceType::from_num(
-				((fungible_balance << 64) >> 64) as f64 / (10i128.pow(decimals as u32) as f64),
-			);
-
-		result = result +
-			BalanceType::from_num(fungible_balance >> 64) *
-				BalanceType::from_num(
-					2i128.pow(64) as f64 / 10i128.pow(decimals as u32) as f64,
-				);
-		result
-	}
+fn balance_type(fungible: u128) -> BalanceType {
+	EncointerBalanceConverter::convert(fungible)
 }
 
 impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
@@ -88,7 +52,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 	type Balance = u128;
 
 	fn total_issuance(asset: Self::AssetId) -> Self::Balance {
-		Self::balance_type_to_fungible_balance(asset, Pallet::<T>::total_issuance(asset))
+		fungible(Pallet::<T>::total_issuance(asset))
 	}
 
 	fn minimum_balance(_asset: Self::AssetId) -> Self::Balance {
@@ -96,7 +60,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 	}
 
 	fn balance(asset: Self::AssetId, who: &T::AccountId) -> Self::Balance {
-		Self::balance_type_to_fungible_balance(asset, Pallet::<T>::balance(asset, who))
+		fungible(Pallet::<T>::balance(asset, who))
 	}
 
 	fn reducible_balance(
@@ -104,7 +68,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		who: &T::AccountId,
 		_keep_alive: bool,
 	) -> Self::Balance {
-		Self::balance_type_to_fungible_balance(asset, Pallet::<T>::balance(asset, who))
+		fungible(Pallet::<T>::balance(asset, who))
 	}
 
 	fn can_deposit(
@@ -118,7 +82,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 
 		let total_issuance = Pallet::<T>::total_issuance_entry(asset).principal;
 
-		let balance_amount = Self::fungible_balance_to_balance_type(asset, amount);
+		let balance_amount = balance_type(amount);
 		if total_issuance.checked_add(balance_amount).is_none() {
 			return DepositConsequence::Overflow
 		}
@@ -144,10 +108,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		};
 
 		let total_issuance = Pallet::<T>::total_issuance_entry(asset);
-		if Self::balance_type_to_fungible_balance(asset, total_issuance.principal)
-			.checked_sub(amount)
-			.is_none()
-		{
+		if fungible(total_issuance.principal).checked_sub(amount).is_none() {
 			return Underflow
 		}
 
@@ -155,8 +116,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 			return Success
 		}
 
-		let balance =
-			Self::balance_type_to_fungible_balance(asset, Pallet::<T>::balance(asset, who));
+		let balance = fungible(Pallet::<T>::balance(asset, who));
 
 		if balance.checked_sub(amount).is_none() {
 			return NoFunds
@@ -175,10 +135,7 @@ impl<T: Config> fungibles::Unbalanced<T::AccountId> for Pallet<T> {
 		<Balance<T>>::insert(
 			asset,
 			who,
-			BalanceEntry {
-				principal: Self::fungible_balance_to_balance_type(asset, amount),
-				last_update: current_block,
-			},
+			BalanceEntry { principal: balance_type(amount), last_update: current_block },
 		);
 		Ok(())
 	}
@@ -187,10 +144,7 @@ impl<T: Config> fungibles::Unbalanced<T::AccountId> for Pallet<T> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		<TotalIssuance<T>>::insert(
 			asset,
-			BalanceEntry {
-				principal: Self::fungible_balance_to_balance_type(asset, amount),
-				last_update: current_block,
-			},
+			BalanceEntry { principal: balance_type(amount), last_update: current_block },
 		);
 	}
 }

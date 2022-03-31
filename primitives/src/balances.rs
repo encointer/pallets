@@ -59,8 +59,9 @@ pub struct BalanceEntry<BlockNumber> {
 /// We choose 18 decimals and lose some precision, but can prevent overflows that way.
 const ENCOINTER_BALANCE_DECIMALS: u32 = 18;
 
-struct EncointerBalanceConverter {}
+pub struct EncointerBalanceConverter;
 
+// Todo: Make u128 generic
 impl Convert<BalanceType, u128> for EncointerBalanceConverter {
 	fn convert(balance: BalanceType) -> u128 {
 		let decimals = ENCOINTER_BALANCE_DECIMALS;
