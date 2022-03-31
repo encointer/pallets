@@ -18,7 +18,7 @@ pub type AssetIdOf<T> = <<T as pallet_asset_tx_payment::Config>::Fungibles as fu
 	<T as frame_system::Config>::AccountId,
 >>::AssetId;
 
-fn balance_to_community_balance<T: CommunitiesConfig>(
+pub fn balance_to_community_balance<T: CommunitiesConfig>(
 	balance: u128,
 	cid: CommunityIdentifier,
 	reward: u128,

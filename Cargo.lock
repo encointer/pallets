@@ -352,6 +352,7 @@ dependencies = [
 name = "balances-tx-payment-extension"
 version = "0.1.0"
 dependencies = [
+ "approx",
  "encointer-primitives",
  "frame-support",
  "frame-system",
@@ -359,7 +360,11 @@ dependencies = [
  "pallet-encointer-balances",
  "pallet-encointer-communities",
  "pallet-transaction-payment",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
  "sp-runtime",
+ "test-utils",
 ]
 
 [[package]]
