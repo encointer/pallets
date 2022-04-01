@@ -1043,6 +1043,7 @@ dependencies = [
  "geohash",
  "log",
  "parity-scale-codec",
+ "rstest",
  "scale-info",
  "serde",
  "serde_json",

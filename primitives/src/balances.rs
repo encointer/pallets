@@ -112,19 +112,20 @@ mod tests {
 	use super::*;
 	use crate::fixed::traits::LossyInto;
 	use approx::assert_abs_diff_eq;
+	use rstest::*;
 
-	#[test]
-	fn u128_to_balance_type_conversion_works() {
+	#[rstest(
+		balance,
+		expected_result,
+		case(0_000_000_100_000_000_000u128, 0.0000001),
+		case(1_000_000_000_000_000_000u128, 1f64),
+		case(0_100_000_000_000_000_000u128, 0.1)
+	)]
+	fn u128_to_balance_type_conversion_works(balance: u128, expected_result: f64) {
 		let balance_type = |b_u128| EncointerBalanceConverter::convert(b_u128);
 
-		let res: f64 = balance_type(0_000_000_100_000_000_000u128).lossy_into();
-		assert_abs_diff_eq!(res, 0.0000001, epsilon = 1.0e-12);
-
-		let res: f64 = balance_type(1_000_000_000_000_000_000u128).lossy_into();
-		assert_abs_diff_eq!(res, 1f64, epsilon = 1.0e-12);
-
-		let res: f64 = balance_type(0_100_000_000_000_000_000u128).lossy_into();
-		assert_abs_diff_eq!(res, 0.1, epsilon = 1.0e-12);
+		let res: f64 = balance_type(balance).lossy_into();
+		assert_abs_diff_eq!(res, expected_result, epsilon = 1.0e-12);
 	}
 
 	#[test]
@@ -134,4 +135,12 @@ mod tests {
 		let res: f64 = balance_type(123_456_000_000_000_000_000u128).lossy_into();
 		assert_abs_diff_eq!(res, 123.456, epsilon = 1.0e-12);
 	}
+	//
+	// #[test]
+	// fn balance_type_to_u128_conversion_works() {
+	// 	let balance_type = |b_u128| EncointerBalanceConverter::convert(b_u128);
+	//
+	// 	let res: f64 = balance_type(0_000_000_100_000_000_000u128).lossy_into();
+	// 	assert_abs_diff_eq!(res, 0.0000001, epsilon = 1.0e-12);
+	// }
 }
