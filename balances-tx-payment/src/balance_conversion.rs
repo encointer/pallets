@@ -14,31 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{AccountIdOf, AssetBalanceOf, AssetIdOf, BalanceOf, FungiblesOf};
+use crate::{AssetBalanceOf, AssetIdOf, BalanceOf};
 use core::marker::PhantomData;
-use encointer_primitives::{balances::EncointerBalanceConverter, communities::CommunityIdentifier};
-use frame_support::traits::{fungibles, tokens::BalanceConversion};
+use encointer_primitives::{
+	balances::{EncointerBalanceConverter, ENCOINTER_BALANCE_DECIMALS},
+	communities::CommunityIdentifier,
+};
+use frame_support::traits::tokens::BalanceConversion;
 use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_communities::{Config as CommunitiesConfig, Pallet as CommunitiesPallet};
 use sp_runtime::traits::Convert;
 
-pub fn balance_to_community_balance<T: CommunitiesConfig>(
+/// Transforms the native token to the community currency
+///
+/// Assumptions:
+/// * Native token has 12 decimals
+/// * fee_conversion_factor is in Units [CC] / [KSM]
+pub fn balance_to_community_balance(
 	balance: u128,
 	reward: u128,
 	fee_conversion_factor: u32,
-	asset_balance_decimals: u8,
 ) -> u128 {
-	// 5.233 micro ksm correspond to 0.01 units of the community currency assuming a feeConversionFactor of 10_000
-	// the KSM balance parameter comes with 12 decimals
-	// 5.233 * 10^6 pKSM = 0.01 * 10^decimals LEU
-	// 5.233 * 10^6 pKSM = 0.01 * 10^(decimals - 4) * feeConversionFactor LEU
-	// 1 pKSM = (0.01 * 10^(decimals - 4) * feeConversionFactor) / (5.233 * 10^6) LEU
-	// 1 pKSM = (0.01 * 10^(decimals - 10) * feeConversionFactor) / 5.233 LEU
-	let conversion_factor = ((0.01f64 / 5.233f64) *
-		10i128.pow((asset_balance_decimals - 10) as u32) as f64 *
-		fee_conversion_factor as f64) as u128;
+	// incorporate difference in decimals
+	let conversion_factor =
+		fee_conversion_factor as u128 * 10u128.pow(ENCOINTER_BALANCE_DECIMALS - 12);
 
-	// assuming a nominal income
 	return balance * conversion_factor * reward
 }
 
@@ -50,7 +50,6 @@ where
 	T: CommunitiesConfig + pallet_asset_tx_payment::Config,
 	CommunityIdentifier: From<AssetIdOf<T>>,
 	AssetBalanceOf<T>: From<u128>,
-	FungiblesOf<T>: fungibles::InspectMetadata<AccountIdOf<T>>,
 	u128: From<BalanceOf<T>>,
 {
 	type Error = frame_system::Error<T>;
@@ -59,17 +58,12 @@ where
 		balance: BalanceOf<T>,
 		asset_id: AssetIdOf<T>,
 	) -> Result<AssetBalanceOf<T>, Self::Error> {
-		let decimals = <FungiblesOf<T> as fungibles::InspectMetadata<AccountIdOf<T>>>::decimals(
-			&asset_id.into(),
-		);
-
 		let fee_conversion_factor = BalancesPallet::<T>::fee_conversion_factor();
 		let reward = EncointerBalanceConverter::convert(CommunitiesPallet::<T>::nominal_income(
 			CommunityIdentifier::from(asset_id),
 		));
 		let balance_u128: u128 = balance.into();
 
-		Ok(balance_to_community_balance::<T>(balance_u128, reward, fee_conversion_factor, decimals)
-			.into())
+		Ok(balance_to_community_balance(balance_u128, reward, fee_conversion_factor).into())
 	}
 }

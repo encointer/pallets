@@ -57,7 +57,7 @@ pub struct BalanceEntry<BlockNumber> {
 /// and the upper bound is 2^63 + 1 = 9.223372036854775809 × 10^18
 ///
 /// We choose 18 decimals and lose some precision, but can prevent overflows that way.
-const ENCOINTER_BALANCE_DECIMALS: u32 = 18;
+pub const ENCOINTER_BALANCE_DECIMALS: u32 = 18;
 
 pub struct EncointerBalanceConverter;
 

@@ -112,6 +112,19 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
+		/// Example parameter tuning for the fee-conversion
+		///
+		/// [CC]: 	1 Unit of Community Currency
+		/// NI: 	Nominal Income. Unit = [CC]
+		/// FCF: 	Fee Conversion Factor. Unit = [CC^2] / [KSM]
+		/// CB:		Balance in Community Currency [CC]
+		///
+		/// The following equation should hold for fee design:
+		/// (5*10^-6) [KSM] * FCF = (CB / NI) [CC]
+		///
+		/// Example to get 0.01 [CC] for 5 [muKSM] and a NI of 20 [CC].
+		///
+		/// FCF = 0.01 [CC] / (20 * 5*10^-6 [KSM]) =  0.2 / (5 * 10^-6) = 40_000
 		pub fee_conversion_factor: FeeConversionFactorType,
 	}
 
