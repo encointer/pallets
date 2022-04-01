@@ -17,6 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::traits::fungibles;
+use pallet_asset_tx_payment::HandleCredit;
 use pallet_transaction_payment::OnChargeTransaction;
 
 pub mod balance_conversion;
@@ -38,3 +39,17 @@ pub type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 pub type AssetBalanceOf<T> = <FungiblesOf<T> as fungibles::Inspect<AccountIdOf<T>>>::Balance;
 
 pub type AssetIdOf<T> = <FungiblesOf<T> as fungibles::Inspect<AccountIdOf<T>>>::AssetId;
+
+pub struct BurnCredit;
+impl<T> HandleCredit<<T as frame_system::Config>::AccountId, pallet_encointer_balances::Pallet<T>>
+	for BurnCredit
+where
+	T: frame_system::Config + pallet_encointer_balances::Config,
+{
+	fn handle_credit(
+		_credit: fungibles::CreditOf<AccountIdOf<T>, pallet_encointer_balances::Pallet<T>>,
+	) {
+		// just doing nothing with the credit, will use the default implementation
+		// of fungibles an decrease total issuance.
+	}
+}

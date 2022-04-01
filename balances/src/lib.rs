@@ -30,7 +30,6 @@ use frame_support::{
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::{debug, info};
-use pallet_asset_tx_payment::HandleCredit;
 use sp_runtime::traits::StaticLookup;
 use sp_std::convert::TryInto;
 
@@ -318,31 +317,5 @@ impl<T: Config> Pallet<T> {
 
 	pub fn purge_balances(cid: CommunityIdentifier) {
 		<Balance<T>>::remove_prefix(cid, None);
-	}
-}
-
-pub struct BurnCredit();
-impl<T> HandleCredit<<T as frame_system::Config>::AccountId, pallet::Pallet<T>> for BurnCredit
-where
-	T: Config + frame_system::Config,
-{
-	fn handle_credit(
-		credit: fungibles::CreditOf<<T as frame_system::Config>::AccountId, pallet::Pallet<T>>,
-	) {
-		// CreditOf means that total supply is larger than sum of all accounts
-		// this is because from the AccountId the fee was deducted
-
-		// burn it
-		let current_block = frame_system::Pallet::<T>::block_number();
-		let new_total_issuance = BalanceEntry {
-			principal: <TotalIssuance<T>>::get(credit.asset()).principal -
-				Pallet::<T>::fungible_balance_to_balance_type(
-					credit.asset().into(),
-					credit.peek().into(),
-				),
-			last_update: current_block,
-		};
-
-		<TotalIssuance<T>>::insert(credit.asset(), new_total_issuance)
 	}
 }
