@@ -1035,6 +1035,7 @@ dependencies = [
 name = "encointer-primitives"
 version = "0.8.1"
 dependencies = [
+ "approx",
  "bs58",
  "concat-arrays",
  "crc",

@@ -191,6 +191,7 @@ fn set_fee_conversion_factor_works() {
 
 mod impl_fungibles {
 	use super::*;
+	use crate::impl_fungibles::{balance_type, fungible};
 
 	#[test]
 	fn name_symbol_and_decimals_work() {
@@ -209,71 +210,24 @@ mod impl_fungibles {
 	#[test]
 	fn balance_type_to_fungible_balance_works() {
 		new_test_ext().execute_with(|| {
-			let cid = CommunityIdentifier::default();
 			// a delta of 10000 corresponds to 10000 * 10 ^ -18 = 10 ^ -14
 			assert!(almost_eq(
-				EncointerBalances::balance_type_to_fungible_balance(
-					cid,
-					BalanceType::from_num(1f64)
-				),
+				fungible(BalanceType::from_num(1f64)),
 				1_000_000_000_000_000_000u128,
 				10000
 			));
 
 			assert!(almost_eq(
-				EncointerBalances::balance_type_to_fungible_balance(
-					cid,
-					BalanceType::from_num(0.1f64)
-				),
+				fungible(BalanceType::from_num(0.1f64)),
 				0_100_000_000_000_000_000u128,
 				10000
 			));
 
 			assert!(almost_eq(
-				EncointerBalances::balance_type_to_fungible_balance(
-					cid,
-					BalanceType::from_num(123.456f64)
-				),
+				fungible(BalanceType::from_num(123.456f64)),
 				123_456_000_000_000_000_000u128,
 				10000
 			));
-		})
-	}
-
-	#[test]
-	fn fungible_balance_to_balance_type_works() {
-		new_test_ext().execute_with(|| {
-			let cid = CommunityIdentifier::default();
-
-			assert_eq!(
-				EncointerBalances::fungible_balance_to_balance_type(
-					cid,
-					0_000_000_100_000_000_000u128
-				),
-				BalanceType::from_num(0.0000001f64)
-			);
-
-			assert_eq!(
-				EncointerBalances::fungible_balance_to_balance_type(
-					cid,
-					1_000_000_000_000_000_000u128
-				),
-				BalanceType::from_num(1f64)
-			);
-
-			assert_eq!(
-				EncointerBalances::fungible_balance_to_balance_type(
-					cid,
-					0_100_000_000_000_000_000u128
-				),
-				BalanceType::from_num(0.1f64)
-			);
-			let balance: f64 = EncointerBalances::fungible_balance_to_balance_type(
-				cid,
-				123_456_000_000_000_000_000u128,
-			)
-			.lossy_into();
-			assert_relative_eq!(balance, 123.456f64, epsilon = 1.0e-14);
 		})
 	}
 
@@ -353,10 +307,7 @@ mod impl_fungibles {
 				EncointerBalances::can_deposit(
 					cid,
 					&ferdie,
-					EncointerBalances::balance_type_to_fungible_balance(
-						cid,
-						BalanceType::from_num(4.5 * 10f64.powf(18f64))
-					)
+					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64)))
 				) == DepositConsequence::Overflow
 			);
 
@@ -384,22 +335,13 @@ mod impl_fungibles {
 				EncointerBalances::can_deposit(
 					cid,
 					&alice,
-					EncointerBalances::balance_type_to_fungible_balance(
-						cid,
-						BalanceType::from_num(4.5 * 10f64.powf(18f64))
-					)
+					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64)))
 				) == DepositConsequence::Overflow
 			);
 
 			assert!(
-				EncointerBalances::can_deposit(
-					cid,
-					&alice,
-					EncointerBalances::balance_type_to_fungible_balance(
-						cid,
-						BalanceType::from_num(1)
-					)
-				) == DepositConsequence::Success
+				EncointerBalances::can_deposit(cid, &alice, fungible(BalanceType::from_num(1))) ==
+					DepositConsequence::Success
 			);
 		})
 	}
@@ -420,47 +362,23 @@ mod impl_fungibles {
 			);
 
 			assert!(
-				EncointerBalances::can_withdraw(
-					cid,
-					&bob,
-					EncointerBalances::balance_type_to_fungible_balance(
-						cid,
-						BalanceType::from_num(12)
-					)
-				) == WithdrawConsequence::Underflow
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(12))) ==
+					WithdrawConsequence::Underflow
 			);
 
 			assert!(
-				EncointerBalances::can_withdraw(
-					cid,
-					&bob,
-					EncointerBalances::balance_type_to_fungible_balance(
-						cid,
-						BalanceType::from_num(0)
-					)
-				) == WithdrawConsequence::Success
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(0))) ==
+					WithdrawConsequence::Success
 			);
 
 			assert!(
-				EncointerBalances::can_withdraw(
-					cid,
-					&bob,
-					EncointerBalances::balance_type_to_fungible_balance(
-						cid,
-						BalanceType::from_num(2)
-					)
-				) == WithdrawConsequence::NoFunds
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(2))) ==
+					WithdrawConsequence::NoFunds
 			);
 
 			assert!(
-				EncointerBalances::can_withdraw(
-					cid,
-					&bob,
-					EncointerBalances::balance_type_to_fungible_balance(
-						cid,
-						BalanceType::from_num(1)
-					)
-				) == WithdrawConsequence::Success
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(1))) ==
+					WithdrawConsequence::Success
 			);
 		})
 	}

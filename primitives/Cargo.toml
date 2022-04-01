@@ -29,6 +29,7 @@ xcm = { optional = true, default-features = false, git = "https://github.com/par
 [dev-dependencies]
 test-utils = { path = "../test-utils" }
 serde_json = "1.0.79"
+approx = "0.5.1"
 
 [features]
 default = ["std", "serde_derive"]

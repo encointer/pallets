@@ -39,11 +39,11 @@ impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 	}
 }
 
-fn fungible(balance: BalanceType) -> u128 {
+pub(crate) fn fungible(balance: BalanceType) -> u128 {
 	EncointerBalanceConverter::convert(balance)
 }
 
-fn balance_type(fungible: u128) -> BalanceType {
+pub(crate) fn balance_type(fungible: u128) -> BalanceType {
 	EncointerBalanceConverter::convert(fungible)
 }
 
