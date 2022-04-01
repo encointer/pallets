@@ -16,10 +16,7 @@
 
 use crate::{AssetBalanceOf, AssetIdOf, BalanceOf};
 use core::marker::PhantomData;
-use encointer_primitives::{
-	balances::{EncointerBalanceConverter, ENCOINTER_BALANCE_DECIMALS},
-	communities::CommunityIdentifier,
-};
+use encointer_primitives::{balances::EncointerBalanceConverter, communities::CommunityIdentifier};
 use frame_support::traits::tokens::BalanceConversion;
 use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_communities::{Config as CommunitiesConfig, Pallet as CommunitiesPallet};
@@ -29,17 +26,14 @@ use sp_runtime::traits::Convert;
 ///
 /// Assumptions:
 /// * Native token has 12 decimals
-/// * fee_conversion_factor is in Units [CC] / [KSM]
+/// * fee_conversion_factor is in Units 1 / [KSM]
 pub fn balance_to_community_balance(
-	balance: u128,
+	balance: u128, // Unit = [pKSM]
 	reward: u128,
 	fee_conversion_factor: u32,
 ) -> u128 {
-	// incorporate difference in decimals
-	let conversion_factor =
-		fee_conversion_factor as u128 * 10u128.pow(ENCOINTER_BALANCE_DECIMALS - 12);
-
-	return balance * conversion_factor * reward
+	return balance.saturating_mul(fee_conversion_factor as u128).saturating_mul(reward) /
+		1_000_000_000_000 // <- unit discrepancy: balance [pKSM] vs. fee_conversion_factor [KSM]
 }
 
 pub struct BalanceToCommunityBalance<T>(PhantomData<T>);

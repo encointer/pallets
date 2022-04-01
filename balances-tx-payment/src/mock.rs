@@ -46,6 +46,7 @@ impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
 
 // genesis values
+#[allow(unused)]
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 
