@@ -75,7 +75,7 @@ impl Convert<BalanceType, u128> for EncointerBalanceConverter {
 
 		result += (bits >> 64) as u128 * ONE_ENCOINTER_BALANCE_UNIT;
 
-		result += BalanceType::from_bits((bits as i64) as i128) // <- to truncate
+		result += BalanceType::from_bits((bits as u64) as i128) // <- to truncate
 			.saturating_mul_int(ONE_ENCOINTER_BALANCE_UNIT as i128)
 			.to_num::<u128>();
 		result
