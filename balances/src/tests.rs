@@ -37,7 +37,7 @@ use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime}
 use sp_runtime::DispatchError;
 use sp_std::str::FromStr;
 use test_utils::{
-	helpers::{assert_dispatch_err, last_event},
+	helpers::{almost_eq, assert_dispatch_err, last_event},
 	AccountKeyring,
 };
 
@@ -191,7 +191,7 @@ fn set_fee_conversion_factor_works() {
 
 mod impl_fungibles {
 	use super::*;
-	use crate::impl_fungibles::{balance_type, fungible};
+	use crate::impl_fungibles::fungible;
 
 	#[test]
 	fn name_symbol_and_decimals_work() {
@@ -200,34 +200,6 @@ mod impl_fungibles {
 			assert_eq!(EncointerBalances::name(&cid), "Encointer".as_bytes().to_vec());
 			assert_eq!(EncointerBalances::symbol(&cid), "ETR".as_bytes().to_vec());
 			assert_eq!(EncointerBalances::decimals(&cid), 18);
-		})
-	}
-
-	fn almost_eq(a: u128, b: u128, delta: u128) -> bool {
-		let diff = if a > b { a - b } else { b - a };
-		return diff < delta
-	}
-	#[test]
-	fn balance_type_to_fungible_balance_works() {
-		new_test_ext().execute_with(|| {
-			// a delta of 10000 corresponds to 10000 * 10 ^ -18 = 10 ^ -14
-			assert!(almost_eq(
-				fungible(BalanceType::from_num(1f64)),
-				1_000_000_000_000_000_000u128,
-				10000
-			));
-
-			assert!(almost_eq(
-				fungible(BalanceType::from_num(0.1f64)),
-				0_100_000_000_000_000_000u128,
-				10000
-			));
-
-			assert!(almost_eq(
-				fungible(BalanceType::from_num(123.456f64)),
-				123_456_000_000_000_000_000u128,
-				10000
-			));
 		})
 	}
 

@@ -113,6 +113,7 @@ mod tests {
 	use crate::fixed::traits::LossyInto;
 	use approx::assert_abs_diff_eq;
 	use rstest::*;
+	use test_utils::helpers::almost_eq;
 
 	#[rstest(
 		balance,
@@ -135,12 +136,18 @@ mod tests {
 		let res: f64 = balance_type(123_456_000_000_000_000_000u128).lossy_into();
 		assert_abs_diff_eq!(res, 123.456, epsilon = 1.0e-12);
 	}
-	//
-	// #[test]
-	// fn balance_type_to_u128_conversion_works() {
-	// 	let balance_type = |b_u128| EncointerBalanceConverter::convert(b_u128);
-	//
-	// 	let res: f64 = balance_type(0_000_000_100_000_000_000u128).lossy_into();
-	// 	assert_abs_diff_eq!(res, 0.0000001, epsilon = 1.0e-12);
-	// }
+
+	#[rstest(
+		balance,
+		expected_result,
+		case(1f64, 1_000_000_000_000_000_000u128),
+		case(0.1f64, 0_100_000_000_000_000_000u128),
+		case(123.456f64, 123_456_000_000_000_000_000u128)
+	)]
+	fn balance_type_to_u128_conversion_works(balance: f64, expected_result: u128) {
+		let fungible = |balance_type| EncointerBalanceConverter::convert(balance_type);
+
+		let balance = BalanceType::from_num(balance);
+		assert!(almost_eq(fungible(balance), expected_result, 10000));
+	}
 }

@@ -85,3 +85,8 @@ pub fn last_event<T: frame_system::Config>() -> Option<T::Event> {
 pub fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: DispatchError) {
 	assert_eq!(actual.unwrap_err().error, expected)
 }
+
+pub fn almost_eq(a: u128, b: u128, delta: u128) -> bool {
+	let diff = if a > b { a - b } else { b - a };
+	return diff < delta
+}
