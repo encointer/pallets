@@ -22,6 +22,8 @@ use frame_support::{
 };
 use sp_runtime::traits::{Convert, Zero};
 
+// Implementation of this trait is just to satisfy the trait bounds of the
+// `pallet-asset-tx-payment`. It is not used in our case.
 impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 	fn name(_asset: &Self::AssetId) -> Vec<u8> {
 		PalletString::from("Encointer").into()
