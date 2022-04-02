@@ -193,6 +193,8 @@ mod impl_fungibles {
 	use super::*;
 	use crate::impl_fungibles::fungible;
 
+	type AccountId = <TestRuntime as frame_system::Config>::AccountId;
+
 	#[test]
 	fn name_symbol_and_decimals_work() {
 		new_test_ext().execute_with(|| {
@@ -209,35 +211,23 @@ mod impl_fungibles {
 			let cid = CommunityIdentifier::default();
 			let alice = AccountKeyring::Alice.to_account_id();
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
-			assert!(
-				almost_eq(
-					<EncointerBalances as Inspect<
-						<TestRuntime as frame_system::Config>::AccountId,
-					>>::balance(cid, &alice),
-					50_100_000_000_000_000_000u128,
-					10000
-				)
-			);
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
+				50_100_000_000_000_000_000u128,
+				10000
+			));
 
-			assert!(
-				almost_eq(
-					<EncointerBalances as Inspect<
-						<TestRuntime as frame_system::Config>::AccountId,
-					>>::reducible_balance(cid, &alice, false),
-					50_100_000_000_000_000_000u128,
-					10000
-				)
-			);
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::reducible_balance(cid, &alice, false),
+				50_100_000_000_000_000_000u128,
+				10000
+			));
 
-			assert!(
-				almost_eq(
-					<EncointerBalances as Inspect<
-						<TestRuntime as frame_system::Config>::AccountId,
-					>>::total_issuance(cid),
-					50_100_000_000_000_000_000u128,
-					10000
-				)
-			);
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
+				50_100_000_000_000_000_000u128,
+				10000
+			));
 		})
 	}
 
@@ -362,49 +352,33 @@ mod impl_fungibles {
 			let alice = AccountKeyring::Alice.to_account_id();
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(10)));
 
-			assert!(
-				almost_eq(
-					<EncointerBalances as Inspect<
-						<TestRuntime as frame_system::Config>::AccountId,
-					>>::balance(cid, &alice),
-					10_000_000_000_000_000_000u128,
-					10000
-				)
-			);
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
+				10_000_000_000_000_000_000u128,
+				10000
+			));
 
 			assert_ok!(EncointerBalances::set_balance(cid, &alice, 20_000_000_000_000_000_000u128));
 
-			assert!(
-				almost_eq(
-					<EncointerBalances as Inspect<
-						<TestRuntime as frame_system::Config>::AccountId,
-					>>::balance(cid, &alice),
-					20_000_000_000_000_000_000u128,
-					10000
-				)
-			);
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
+				20_000_000_000_000_000_000u128,
+				10000
+			));
 
-			assert!(
-				almost_eq(
-					<EncointerBalances as Inspect<
-						<TestRuntime as frame_system::Config>::AccountId,
-					>>::total_issuance(cid),
-					10_000_000_000_000_000_000u128,
-					10000
-				)
-			);
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
+				10_000_000_000_000_000_000u128,
+				10000
+			));
 
 			EncointerBalances::set_total_issuance(cid, 30_000_000_000_000_000_000u128);
 
-			assert!(
-				almost_eq(
-					<EncointerBalances as Inspect<
-						<TestRuntime as frame_system::Config>::AccountId,
-					>>::total_issuance(cid),
-					30_000_000_000_000_000_000u128,
-					10000
-				)
-			);
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
+				30_000_000_000_000_000_000u128,
+				10000
+			));
 		})
 	}
 }
