@@ -448,7 +448,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational,))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_time_tolerance(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_time_tolerance(
 			origin: OriginFor<T>,
 			time_tolerance: T::Moment,
@@ -460,7 +460,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational,))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_location_tolerance(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_location_tolerance(
 			origin: OriginFor<T>,
 			location_tolerance: u32,
