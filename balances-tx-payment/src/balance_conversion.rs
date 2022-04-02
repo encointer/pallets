@@ -56,8 +56,7 @@ where
 		let reward = EncointerBalanceConverter::convert(CommunitiesPallet::<T>::nominal_income(
 			CommunityIdentifier::from(asset_id),
 		));
-		let balance_u128: u128 = balance.into();
 
-		Ok(balance_to_community_balance(balance_u128, reward, fee_conversion_factor).into())
+		Ok(balance_to_community_balance(balance.into(), reward, fee_conversion_factor).into())
 	}
 }
