@@ -32,8 +32,11 @@ pub fn balance_to_community_balance(
 	reward: u128,
 	fee_conversion_factor: u32,
 ) -> u128 {
-	return balance.saturating_mul(fee_conversion_factor as u128).saturating_mul(reward) /
-		1_000_000_000_000 // <- unit discrepancy: balance [pKSM] vs. fee_conversion_factor [KSM]
+	return balance
+		.saturating_mul(fee_conversion_factor as u128)
+		.saturating_mul(reward)
+		.checked_div(1_000_000_000_000) // <- unit discrepancy: balance [pKSM] vs. fee_conversion_factor [KSM]
+		.expect("Divisor != 0; qed")
 }
 
 pub struct BalanceToCommunityBalance<T>(PhantomData<T>);
