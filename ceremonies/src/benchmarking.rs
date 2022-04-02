@@ -337,6 +337,19 @@ benchmarks! {
 		assert_eq!(EndorsementTicketsPerBootstrapper::<T>::get(), 10)
 	}
 
+	set_time_tolerance {
+		let tolerance: T::Moment = 600_000u32.into();
+	}: _(RawOrigin::Root, tolerance)
+	verify {
+		assert_eq!(TimeTolerance::<T>::get(), tolerance)
+	}
+
+	set_location_tolerance {
+	}: _(RawOrigin::Root, 1000u32)
+	verify {
+		assert_eq!(LocationTolerance::<T>::get(), 1000u32)
+	}
+
 	purge_community_ceremony {
 		let cid = create_community::<T>();
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
