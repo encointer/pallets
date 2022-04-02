@@ -131,6 +131,7 @@ mod tests {
 
 	#[test]
 	fn u128_to_balance_type_conversion_does_not_overflow() {
+		// this test was problematic in the beginning
 		let balance_type = |b_u128| EncointerBalanceConverter::convert(b_u128);
 
 		let res: f64 = balance_type(123_456_000_000_000_000_000u128).lossy_into();
