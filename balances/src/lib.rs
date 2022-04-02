@@ -115,7 +115,7 @@ pub mod pallet {
 		///
 		/// [CC]:	1 Unit of Community Currency
 		/// NI:		Nominal Income. Unit = [CC]
-		/// FCF:	Fee Conversion Factor. Unit = [1/KSM]
+		/// FCF:	Fee Conversion Factor. Unit = [1/ KKSM] <- Kilo-KSM to be able to adjust fee factor in both ways.
 		/// CB:		Balance in Community Currency [CC]
 		///
 		/// The following equation should hold for fee design:
@@ -123,7 +123,7 @@ pub mod pallet {
 		///
 		/// Example to get 0.01 [CC] for 5 [muKSM] and a NI of 20 [CC].
 		///
-		/// FCF = 0.01 / (20 * 5*10^-6 [KSM]) = 0.01 / (20 * 5 * 10e-6) = 100
+		/// FCF = 0.01 / (20 * 5*10^-12 [KKSM]) = 0.01 / (20 * 5 * 10e-12) = 100_000
 		pub fee_conversion_factor: FeeConversionFactorType,
 	}
 

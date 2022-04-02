@@ -22,20 +22,32 @@ use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_communities::{Config as CommunitiesConfig, Pallet as CommunitiesPallet};
 use sp_runtime::traits::Convert;
 
+/// 1 micro KSM with 12 decimals
+pub const ONE_MICRO_KSM: u128 = 1_000_000;
+
+/// 1 KSM with 12 decimals
+pub const ONE_KSM: u128 = 1_000_000 * ONE_MICRO_KSM;
+
+/// 1 Kilo-KSM with 12 decimals
+pub const ONE_KILO_KSM: u128 = 1_000 * ONE_KSM;
+
 /// Transforms the native token to the community currency
 ///
 /// Assumptions:
 /// * Native token has 12 decimals
-/// * fee_conversion_factor is in Units 1 / [KSM]
+/// * fee_conversion_factor is in Units 1 / [pKSM]
+///
+/// Applies the formula:
+///
 pub fn balance_to_community_balance(
-	balance: u128, // Unit = [pKSM]
+	balance: u128,
 	reward: u128,
-	fee_conversion_factor: u32,
+	fee_conversion_factor: u128,
 ) -> u128 {
 	return balance
-		.saturating_mul(fee_conversion_factor as u128)
 		.saturating_mul(reward)
-		.checked_div(1_000_000_000_000) // <- unit discrepancy: balance [pKSM] vs. fee_conversion_factor [KSM]
+		.saturating_mul(fee_conversion_factor as u128)
+		.checked_div(ONE_KILO_KSM) // <- unit discrepancy: balance [pKSM] vs. fee_conversion_factor [KKSM]
 		.expect("Divisor != 0; qed")
 }
 

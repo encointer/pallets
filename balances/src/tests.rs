@@ -170,7 +170,7 @@ fn set_fee_conversion_factor_errs_with_bad_origin() {
 		assert_dispatch_err(
 			EncointerBalances::set_fee_conversion_factor(
 				Origin::signed(AccountKeyring::Bob.into()),
-				5u32,
+				5,
 			),
 			DispatchError::BadOrigin,
 		);
@@ -180,12 +180,12 @@ fn set_fee_conversion_factor_errs_with_bad_origin() {
 #[test]
 fn set_fee_conversion_factor_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 5u32));
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 5));
 
-		assert_eq!(EncointerBalances::fee_conversion_factor(), 5u32);
-		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 6u32,));
+		assert_eq!(EncointerBalances::fee_conversion_factor(), 5);
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 6));
 
-		assert_eq!(EncointerBalances::fee_conversion_factor(), 6u32);
+		assert_eq!(EncointerBalances::fee_conversion_factor(), 6);
 	});
 }
 
