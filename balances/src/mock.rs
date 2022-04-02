@@ -57,7 +57,7 @@ impl_encointer_scheduler!(TestRuntime);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 
-	let conf = dut::GenesisConfig { fee_conversion_factor: 40_000 };
+	let conf = dut::GenesisConfig { fee_conversion_factor: 100_000 };
 	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
 
 	t.into()
