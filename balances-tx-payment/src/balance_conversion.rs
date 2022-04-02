@@ -37,8 +37,8 @@ pub const ONE_KILO_KSM: u128 = 1_000 * ONE_KSM;
 /// * Native token has 12 decimals
 /// * fee_conversion_factor is in Units 1 / [pKSM]
 ///
-/// Applies the formula: KSM * FeeConversionFactor * Reward
-pub fn balance_to_community_balance(
+/// Applies the formula: Community Currency = KSM * FeeConversionFactor * Reward
+pub fn apply_fee_conversion_factor(
 	balance: u128,
 	reward: u128,
 	fee_conversion_factor: u128,
@@ -71,6 +71,6 @@ where
 			CommunityIdentifier::from(asset_id),
 		));
 
-		Ok(balance_to_community_balance(balance.into(), reward, fee_conversion_factor).into())
+		Ok(apply_fee_conversion_factor(balance.into(), reward, fee_conversion_factor).into())
 	}
 }

@@ -1,4 +1,4 @@
-use crate::{balance_to_community_balance, ONE_MICRO_KSM};
+use crate::{apply_fee_conversion_factor, ONE_MICRO_KSM};
 use rstest::*;
 
 /// 1 community currency token with 18 decimals
@@ -17,6 +17,6 @@ fn balance_to_community_balance_works(
 	conversion_factor: u128,
 	expected_community_balance: u128,
 ) {
-	let balance = balance_to_community_balance(ksm_balance, ceremony_reward, conversion_factor);
+	let balance = apply_fee_conversion_factor(ksm_balance, ceremony_reward, conversion_factor);
 	assert_eq!(balance, expected_community_balance);
 }
