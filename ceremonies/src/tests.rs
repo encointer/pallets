@@ -1788,3 +1788,19 @@ fn set_meetup_time_offset_works() {
 		assert_eq!(EncointerCeremonies::meetup_time_offset(), -6i32,);
 	});
 }
+
+#[test]
+fn set_time_tolerance_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_time_tolerance(Origin::signed(master()), 600));
+		assert_eq!(EncointerCeremonies::time_tolerance(), 600);
+	});
+}
+
+#[test]
+fn set_location_tolerance_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_location_tolerance(Origin::signed(master()), 1234));
+		assert_eq!(EncointerCeremonies::location_tolerance(), 1234);
+	});
+}

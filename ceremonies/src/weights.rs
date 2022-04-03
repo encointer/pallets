@@ -57,6 +57,8 @@ pub trait WeightInfo {
 	fn set_meetup_time_offset() -> Weight;
 	fn set_reputation_lifetime() -> Weight;
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight;
+	fn set_time_tolerance() -> Weight;
+	fn set_location_tolerance() -> Weight;
 	fn purge_community_ceremony() -> Weight;
 }
 
@@ -96,6 +98,14 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	}
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight {
 		(36_300_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	// Storage: EncointerCeremonies TimeTolerance (r:0 w:1)
+	fn set_time_tolerance() -> Weight {
+		(16_559_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+	// Storage: EncointerCeremonies LocationTolerance (r:0 w:1)
+	fn set_location_tolerance() -> Weight {
+		(15_876_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn purge_community_ceremony() -> Weight {
 		(272_200_000 as Weight).saturating_add(T::DbWeight::get().writes(12 as Weight))
@@ -137,6 +147,14 @@ impl WeightInfo for () {
 	}
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight {
 		(36_300_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	// Storage: EncointerCeremonies TimeTolerance (r:0 w:1)
+	fn set_time_tolerance() -> Weight {
+		(16_559_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	// Storage: EncointerCeremonies LocationTolerance (r:0 w:1)
+	fn set_location_tolerance() -> Weight {
+		(15_876_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn purge_community_ceremony() -> Weight {
 		(272_200_000 as Weight).saturating_add(RocksDbWeight::get().writes(12 as Weight))
