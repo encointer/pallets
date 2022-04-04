@@ -34,9 +34,12 @@ impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 	}
 
 	fn decimals(_asset: &Self::AssetId) -> u8 {
-		// Our BalanceType is I64F64, so the smallest possible number is 2^-64 = 5.42101086242752217003726400434970855712890625 × 10^-20
-		//  and an upper bound is 2^63 + 1 = 9.223372036854775809 × 10^18
+		// Our BalanceType is I64F64 which is base2 fixpoint and therefore doesn't use decimals (which would be base10 fixpoint)
+		// but in order to comply with this trait we need to define decimals nevertheless.
+		// the smallest possible number is 2^-64 = 5.42101086242752217003726400434970855712890625 × 10^-20
+		// and an upper bound is 2^63 + 1 = 9.223372036854775809 × 10^18
 		// so we chose 18 decimals and lose some precision but can prevent overflows that way.
+		// due to demurrage, that lost precision is meaningless anyway
 		18u8
 	}
 }

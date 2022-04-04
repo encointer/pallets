@@ -1,16 +1,16 @@
 use crate::{apply_fee_conversion_factor, ONE_MICRO_KSM};
 use rstest::*;
 
-/// 1 community currency token with 18 decimals
-const ONE_FUNGIBLE_ASSET: u128 = 1_000_000_000_000_000_000;
+/// one unit of community currency is a fixpoint with 64 fractional bits
+const ONE_CC: u128 = 1 << 64;
 
 #[rstest(ksm_balance, ceremony_reward, conversion_factor, expected_community_balance,
-case(5 * ONE_MICRO_KSM, 20 * ONE_FUNGIBLE_ASSET, 100_000, ONE_FUNGIBLE_ASSET / 100),
-case(10 * ONE_MICRO_KSM, 20 * ONE_FUNGIBLE_ASSET, 100_000, ONE_FUNGIBLE_ASSET / 50),
-case(5 * ONE_MICRO_KSM, 10 * ONE_FUNGIBLE_ASSET, 100_000, ONE_FUNGIBLE_ASSET / 200),
-case(5_000 * ONE_MICRO_KSM, 20 * ONE_FUNGIBLE_ASSET, 100_000, ONE_FUNGIBLE_ASSET * 10),
-case(5 * ONE_MICRO_KSM, 20_000_000 * ONE_FUNGIBLE_ASSET, 100_000, ONE_FUNGIBLE_ASSET * 10_000),
-case(5 * ONE_MICRO_KSM, 20_000_000 * ONE_FUNGIBLE_ASSET, 50_000, ONE_FUNGIBLE_ASSET * 5_000),
+case(5 * ONE_MICRO_KSM, 20 * ONE_CC, 100_000, ONE_CC / 100),
+case(10 * ONE_MICRO_KSM, 20 * ONE_CC, 100_000, ONE_CC / 50),
+case(5 * ONE_MICRO_KSM, 10 * ONE_CC, 100_000, ONE_CC / 200),
+case(5_000 * ONE_MICRO_KSM, 20 * ONE_CC, 100_000, ONE_CC * 10),
+case(5 * ONE_MICRO_KSM, 20_000_000 * ONE_CC, 100_000, ONE_CC * 10_000),
+case(5 * ONE_MICRO_KSM, 20_000_000 * ONE_CC, 50_000, ONE_CC * 5_000),
 )]
 fn balance_to_community_balance_works(
 	ksm_balance: u128,
