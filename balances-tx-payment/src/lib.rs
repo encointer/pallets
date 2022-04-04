@@ -26,6 +26,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+const LOG: &str = "encointer";
+
 pub use balance_conversion::*;
 
 pub type OnChargeTransactionOf<T> = <T as pallet_transaction_payment::Config>::OnChargeTransaction;
@@ -47,8 +49,16 @@ where
 	T: frame_system::Config + pallet_encointer_balances::Config,
 {
 	fn handle_credit(
-		_credit: fungibles::CreditOf<AccountIdOf<T>, pallet_encointer_balances::Pallet<T>>,
+		credit: fungibles::CreditOf<AccountIdOf<T>, pallet_encointer_balances::Pallet<T>>,
 	) {
+		// Fixme: this is only called with 0
+		log::debug!(
+			target: LOG,
+			"handling credit of asset {:?}, amount, {:?}",
+			credit.asset(),
+			credit.peek()
+		);
+
 		// just doing nothing with the credit, will use the default implementation
 		// of fungibles an decrease total issuance.
 	}
