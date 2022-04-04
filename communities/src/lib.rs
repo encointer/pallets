@@ -24,6 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
+use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::PalletString,

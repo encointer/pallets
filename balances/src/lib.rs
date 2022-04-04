@@ -16,21 +16,26 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use crate::weights::WeightInfo;
+use core::marker::PhantomData;
 use encointer_primitives::{
-	balances::{BalanceEntry, BalanceType, Demurrage},
+	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
 	communities::CommunityIdentifier,
 	fixed::transcendental::exp,
 };
-use frame_support::{dispatch::DispatchResult, ensure, traits::Get};
+use frame_support::{
+	dispatch::DispatchResult,
+	ensure,
+	traits::{tokens::fungibles, Get},
+};
 use frame_system::{self as frame_system, ensure_signed};
-use log::debug;
+use log::{debug, info};
 use sp_runtime::traits::StaticLookup;
 use sp_std::convert::TryInto;
 
 // Logger target
 const LOG: &str = "encointer";
 
-pub use crate::weights::WeightInfo;
 /// Demurrage rate per block.
 /// Assuming 50% demurrage per year and a block time of 5s
 /// ```matlab
@@ -40,6 +45,16 @@ pub use crate::weights::WeightInfo;
 // FIXME: how to define negative hex literal?
 //pub const DemurrageRate: BalanceType = BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 pub use pallet::*;
+
+mod impl_fungibles;
+pub mod weights;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -59,6 +74,8 @@ pub mod pallet {
 		type DefaultDemurrage: Get<Demurrage>;
 
 		type WeightInfo: WeightInfo;
+
+		type CeremonyMaster: EnsureOrigin<Self::Origin>;
 	}
 
 	#[pallet::call]
@@ -78,6 +95,50 @@ pub mod pallet {
 			Self::deposit_event(Event::Transferred(community_id, from, to, amount));
 			Ok(().into())
 		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::transfer(), DispatchClass::Normal))]
+		pub fn set_fee_conversion_factor(
+			origin: OriginFor<T>,
+			fee_conversion_factor: FeeConversionFactorType,
+		) -> DispatchResultWithPostInfo {
+			T::CeremonyMaster::ensure_origin(origin)?;
+			<FeeConversionFactor<T>>::put(fee_conversion_factor);
+			info!(target: LOG, "set fee conversion factor to {}", fee_conversion_factor);
+			Self::deposit_event(Event::FeeConversionFactorUpdated(fee_conversion_factor));
+			Ok(().into())
+		}
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		/// Example parameter tuning for the fee-conversion
+		///
+		/// [CC]:	1 Unit of Community Currency
+		/// NI:		Nominal Income. Unit = [CC]
+		/// FCF:	Fee Conversion Factor. Unit = [1/ KKSM] <- Kilo-KSM to be able to adjust fee factor in both ways.
+		/// CB:		Balance in Community Currency [CC]
+		///
+		/// The following equation should hold for fee design:
+		///  KSM * FCF * NI = CB -> FCF = CB / (NI * KSM)
+		///
+		/// Example to get 0.01 [CC] for 5 [muKSM] and a NI of 20 [CC].
+		///
+		/// FCF = 0.01 / (20 * 5*10^-12 [KKSM]) = 0.01 / (20 * 5 * 10e-12) = 100_000
+		pub fee_conversion_factor: FeeConversionFactorType,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { fee_conversion_factor: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			<FeeConversionFactor<T>>::put(&self.fee_conversion_factor);
+		}
 	}
 
 	#[pallet::event]
@@ -85,6 +146,8 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Token transfer success `[community_id, from, to, amount]`
 		Transferred(CommunityIdentifier, T::AccountId, T::AccountId, BalanceType),
+		/// fee conversion factor updated successfully
+		FeeConversionFactorUpdated(FeeConversionFactorType),
 	}
 
 	#[pallet::error]
@@ -121,6 +184,11 @@ pub mod pallet {
 	#[pallet::getter(fn demurrage_per_block)]
 	pub type DemurragePerBlock<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Demurrage, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn fee_conversion_factor)]
+	pub(super) type FeeConversionFactor<T: Config> =
+		StorageValue<_, FeeConversionFactorType, ValueQuery>;
 }
 
 impl<T: Config> Pallet<T> {
@@ -251,14 +319,3 @@ impl<T: Config> Pallet<T> {
 		<Balance<T>>::remove_prefix(cid, None);
 	}
 }
-
-pub mod weights;
-
-#[cfg(test)]
-mod mock;
-
-#[cfg(test)]
-mod tests;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
