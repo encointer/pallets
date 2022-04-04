@@ -427,7 +427,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((1000, DispatchClass::Operational,))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_meetup_time_offset(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_meetup_time_offset(
 			origin: OriginFor<T>,
 			meetup_time_offset: MeetupTimeOffsetType,
@@ -447,6 +447,31 @@ pub mod pallet {
 			Self::deposit_event(Event::MeetupTimeOffsetUpdated(meetup_time_offset));
 			Ok(().into())
 		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::set_time_tolerance(), DispatchClass::Normal, Pays::Yes))]
+		pub fn set_time_tolerance(
+			origin: OriginFor<T>,
+			time_tolerance: T::Moment,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<TimeTolerance<T>>::put(time_tolerance);
+			info!(target: LOG, "set meetup time tolerance to {:?}", time_tolerance);
+			Self::deposit_event(Event::TimeToleranceUpdated(time_tolerance));
+			Ok(().into())
+		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::set_location_tolerance(), DispatchClass::Normal, Pays::Yes))]
+		pub fn set_location_tolerance(
+			origin: OriginFor<T>,
+			location_tolerance: u32,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<LocationTolerance<T>>::put(location_tolerance);
+			info!(target: LOG, "set meetup location tolerance to {}", location_tolerance);
+			Self::deposit_event(Event::LocationToleranceUpdated(location_tolerance));
+			Ok(().into())
+		}
+
 		#[pallet::weight((<T as Config>::WeightInfo::purge_community_ceremony(), DispatchClass::Normal, Pays::Yes))]
 		pub fn purge_community_ceremony(
 			origin: OriginFor<T>,
@@ -479,6 +504,10 @@ pub mod pallet {
 		ReputationLifetimeUpdated(ReputationLifetimeType),
 		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups will take place
 		MeetupTimeOffsetUpdated(MeetupTimeOffsetType),
+		/// meetup time tolerance has changed
+		TimeToleranceUpdated(T::Moment),
+		/// meetup location tolerance changed [m]
+		LocationToleranceUpdated(u32),
 		/// the registry for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged(CommunityIdentifier, CeremonyIndexType),
 	}
@@ -1394,7 +1423,9 @@ impl<T: Config> Pallet<T> {
 				);
 			}
 			reward_count += 1;
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(&participant), &true.encode());
 		}
+
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
 		info!(target: LOG, "issuing rewards completed");
 		Ok((meetup_index, reward_count))

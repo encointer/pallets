@@ -23,10 +23,23 @@ use encointer_primitives::{
 	communities::CommunityIdentifier,
 	fixed::{traits::LossyInto, transcendental::exp},
 };
-use frame_support::{assert_noop, assert_ok, traits::OnInitialize};
-use mock::{new_test_ext, EncointerBalances, System, TestRuntime};
+use frame_support::{
+	assert_noop, assert_ok,
+	traits::{
+		tokens::{
+			fungibles::{Inspect, InspectMetadata, Unbalanced},
+			DepositConsequence, WithdrawConsequence,
+		},
+		OnInitialize,
+	},
+};
+use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
+use sp_runtime::DispatchError;
 use sp_std::str::FromStr;
-use test_utils::{helpers::last_event, AccountKeyring};
+use test_utils::{
+	helpers::{almost_eq, assert_dispatch_err, last_event},
+	AccountKeyring,
+};
 
 #[test]
 fn issue_should_work() {
@@ -149,4 +162,223 @@ fn purge_balances_works() {
 		assert_eq!(EncointerBalances::balance(cid, &alice), 0);
 		assert_eq!(EncointerBalances::balance(cid, &bob), 0);
 	})
+}
+
+#[test]
+fn set_fee_conversion_factor_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerBalances::set_fee_conversion_factor(
+				Origin::signed(AccountKeyring::Bob.into()),
+				5,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_fee_conversion_factor_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 5));
+
+		assert_eq!(EncointerBalances::fee_conversion_factor(), 5);
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 6));
+
+		assert_eq!(EncointerBalances::fee_conversion_factor(), 6);
+	});
+}
+
+mod impl_fungibles {
+	use super::*;
+	use crate::impl_fungibles::fungible;
+
+	type AccountId = <TestRuntime as frame_system::Config>::AccountId;
+
+	#[test]
+	fn name_symbol_and_decimals_work() {
+		new_test_ext().execute_with(|| {
+			let cid = CommunityIdentifier::default();
+			assert_eq!(EncointerBalances::name(&cid), "Encointer".as_bytes().to_vec());
+			assert_eq!(EncointerBalances::symbol(&cid), "ETR".as_bytes().to_vec());
+			assert_eq!(EncointerBalances::decimals(&cid), 18);
+		})
+	}
+
+	#[test]
+	fn total_issuance_and_balance_works() {
+		new_test_ext().execute_with(|| {
+			let cid = CommunityIdentifier::default();
+			let alice = AccountKeyring::Alice.to_account_id();
+			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
+				50_100_000_000_000_000_000u128,
+				10000
+			));
+
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::reducible_balance(cid, &alice, false),
+				50_100_000_000_000_000_000u128,
+				10000
+			));
+
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
+				50_100_000_000_000_000_000u128,
+				10000
+			));
+		})
+	}
+
+	#[test]
+	fn minimum_balance_works() {
+		new_test_ext().execute_with(|| {
+			let cid = CommunityIdentifier::default();
+			assert_eq!(EncointerBalances::minimum_balance(cid), 0);
+		})
+	}
+
+	#[test]
+	fn can_deposit_works() {
+		new_test_ext().execute_with(|| {
+			let cid = CommunityIdentifier::default();
+			let wrong_cid = CommunityIdentifier::from_str("aaaaaaaaaa").unwrap();
+			let alice = AccountKeyring::Alice.to_account_id();
+			let bob = AccountKeyring::Bob.to_account_id();
+			let ferdie = AccountKeyring::Ferdie.to_account_id();
+			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
+
+			assert!(
+				EncointerBalances::can_deposit(wrong_cid, &alice, 10) ==
+					DepositConsequence::UnknownAsset
+			);
+
+			assert_ok!(EncointerBalances::issue(
+				cid,
+				&alice,
+				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+			));
+			assert_ok!(EncointerBalances::issue(
+				cid,
+				&bob,
+				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+			));
+
+			assert!(
+				EncointerBalances::can_deposit(
+					cid,
+					&ferdie,
+					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64)))
+				) == DepositConsequence::Overflow
+			);
+
+			// in the very weird case where some some balances are negative we need to test for overflow of
+			// and account balance, because now an account can overflow but the total issuance does not.
+			assert_ok!(EncointerBalances::burn(
+				cid,
+				&bob,
+				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+			));
+
+			assert_ok!(EncointerBalances::issue(
+				cid,
+				&bob,
+				BalanceType::from_num(-4.5 * 10f64.powf(18f64))
+			));
+
+			assert_ok!(EncointerBalances::issue(
+				cid,
+				&alice,
+				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+			));
+
+			assert!(
+				EncointerBalances::can_deposit(
+					cid,
+					&alice,
+					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64)))
+				) == DepositConsequence::Overflow
+			);
+
+			assert!(
+				EncointerBalances::can_deposit(cid, &alice, fungible(BalanceType::from_num(1))) ==
+					DepositConsequence::Success
+			);
+		})
+	}
+
+	#[test]
+	fn can_withdraw_works() {
+		new_test_ext().execute_with(|| {
+			let cid = CommunityIdentifier::default();
+			let wrong_cid = CommunityIdentifier::from_str("aaaaaaaaaa").unwrap();
+			let alice = AccountKeyring::Alice.to_account_id();
+			let bob = AccountKeyring::Bob.to_account_id();
+			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(10)));
+			assert_ok!(EncointerBalances::issue(cid, &bob, BalanceType::from_num(1)));
+
+			assert!(
+				EncointerBalances::can_withdraw(wrong_cid, &alice, 10) ==
+					WithdrawConsequence::UnknownAsset
+			);
+
+			assert!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(12))) ==
+					WithdrawConsequence::Underflow
+			);
+
+			assert!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(0))) ==
+					WithdrawConsequence::Success
+			);
+
+			assert!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(2))) ==
+					WithdrawConsequence::NoFunds
+			);
+
+			assert!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(1))) ==
+					WithdrawConsequence::Success
+			);
+		})
+	}
+
+	#[test]
+	fn set_balance_and_set_total_issuance_works() {
+		new_test_ext().execute_with(|| {
+			let cid = CommunityIdentifier::default();
+			let alice = AccountKeyring::Alice.to_account_id();
+			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(10)));
+
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
+				10_000_000_000_000_000_000u128,
+				10000
+			));
+
+			assert_ok!(EncointerBalances::set_balance(cid, &alice, 20_000_000_000_000_000_000u128));
+
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
+				20_000_000_000_000_000_000u128,
+				10000
+			));
+
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
+				10_000_000_000_000_000_000u128,
+				10000
+			));
+
+			EncointerBalances::set_total_issuance(cid, 30_000_000_000_000_000_000u128);
+
+			assert!(almost_eq(
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
+				30_000_000_000_000_000_000u128,
+				10000
+			));
+		})
+	}
 }

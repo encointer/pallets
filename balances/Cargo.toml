@@ -19,6 +19,8 @@ frame-support = { version = "4.0.0-dev", default-features = false,git = "https:/
 frame-system = { version = "4.0.0-dev", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 sp-std = { version = "4.0.0-dev", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 sp-runtime = {  default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+pallet-transaction-payment = { version = "4.0.0-dev" , default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+pallet-asset-tx-payment  = { version = "4.0.0-dev" , default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 
 [dev-dependencies]
 approx = "0.5.1"

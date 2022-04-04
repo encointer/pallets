@@ -180,6 +180,7 @@ macro_rules! impl_encointer_balances {
 			type Event = Event;
 			type DefaultDemurrage = DefaultDemurrage;
 			type WeightInfo = ();
+			type CeremonyMaster = EnsureAlice;
 		}
 	};
 }
