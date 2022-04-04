@@ -51,7 +51,7 @@ where
 	fn handle_credit(
 		credit: fungibles::CreditOf<AccountIdOf<T>, pallet_encointer_balances::Pallet<T>>,
 	) {
-		// Fixme: this is only called with 0
+		// Fixme: `credit.peek()` is always zero
 		log::debug!(
 			target: LOG,
 			"handling credit of asset {:?}, amount, {:?}",
