@@ -27,8 +27,8 @@ sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate
 
 # benchmarking
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v0.9.17" }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false, optional = true }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false, optional = true }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true , branch = "polkadot-v0.9.17" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true , branch = "polkadot-v0.9.17" }
 
 
 [dev-dependencies]
