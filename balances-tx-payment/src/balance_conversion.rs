@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{AssetBalanceOf, AssetIdOf, BalanceOf, LOG};
+use crate::{AssetBalanceOf, AssetIdOf, BalanceOf};
 use core::marker::PhantomData;
 use encointer_primitives::{balances::EncointerBalanceConverter, communities::CommunityIdentifier};
 use frame_support::traits::tokens::BalanceConversion;
