@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+log = { version = "0.4.14", default-features = false }
+
 pallet-encointer-balances = { path = "../balances", default-features = false }
-pallet-encointer-communities = { path = "../communities", default-features = false }
+pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false }
 encointer-primitives = { path = "../primitives", default-features = false }
 
 # substrate dependencies
@@ -25,8 +27,11 @@ test-utils = { path = "../test-utils" }
 [features]
 default = ["std"]
 std = [
+    "log/std",
+
+    # encointer deps
     "pallet-encointer-balances/std",
-    "pallet-encointer-communities/std",
+    "pallet-encointer-ceremonies/std",
     "encointer-primitives/std",
 
     # substrate deps
