@@ -1502,7 +1502,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns the community-specific nominal income if it is set. Otherwise returns the
 	/// the ceremony reward defined in the genesis config.
-	fn nominal_income(cid: &CommunityIdentifier) -> NominalIncome {
+	pub fn nominal_income(cid: &CommunityIdentifier) -> NominalIncome {
 		encointer_communities::NominalIncome::<T>::try_get(cid)
 			.unwrap_or_else(|_| Self::ceremony_reward())
 	}
