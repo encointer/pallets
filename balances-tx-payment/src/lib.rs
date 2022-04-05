@@ -22,8 +22,6 @@ use pallet_transaction_payment::OnChargeTransaction;
 
 pub mod balance_conversion;
 #[cfg(test)]
-mod mock;
-#[cfg(test)]
 mod tests;
 
 const LOG: &str = "encointer";
