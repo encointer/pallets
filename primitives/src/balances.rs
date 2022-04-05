@@ -121,7 +121,7 @@ mod tests {
 		case(0_000_000_100_000_000_000u128, 0.0000001),
 		case(1_000_000_000_000_000_000u128, 1f64),
 		case(0_100_000_000_000_000_000u128, 0.1),
-		case(12_500_011_800_000_000u128, 0.0125_000_118) // test for potential back conversion error: #200
+		case(12_500_011_800_000_000u128, 0.0125_000_118) // test for potential back conversion error: https://github.com/encointer/encointer-node/issues/200
 	)]
 	fn u128_to_balance_type_conversion_works(balance: u128, expected_result: f64) {
 		let balance_type = |b_u128| EncointerBalanceConverter::convert(b_u128);
