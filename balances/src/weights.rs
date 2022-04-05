@@ -50,6 +50,7 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_encointer_balances.
 pub trait WeightInfo {
 	fn transfer() -> Weight;
+	fn set_fee_conversion_factor() -> Weight;
 }
 
 /// Weights for pallet_encointer_balances using the Encointer solo chain node and recommended hardware.
@@ -60,6 +61,10 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
+
+	fn set_fee_conversion_factor() -> Weight {
+		(16_300_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
 }
 
 // For tests
@@ -68,5 +73,9 @@ impl WeightInfo for () {
 		(136_500_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+	}
+
+	fn set_fee_conversion_factor() -> Weight {
+		(16_300_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 }
