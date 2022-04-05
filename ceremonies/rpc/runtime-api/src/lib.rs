@@ -21,13 +21,19 @@
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
-use encointer_primitives::ceremonies::{CeremonyIndexType, CommunityReputation};
+use encointer_primitives::{
+	ceremonies::{AggregatedAccountData, CeremonyIndexType, CommunityReputation},
+	communities::CommunityIdentifier,
+};
 use sp_api::{Decode, Encode};
 
 sp_api::decl_runtime_apis! {
-	pub trait CeremoniesApi<AccountId>
-	where AccountId: Encode + Decode
+	pub trait CeremoniesApi<AccountId, Moment>
+	where AccountId: Encode + Decode,
+	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: sp_api::Decode
+
 	{
 		fn get_reputations(account: &AccountId) -> Vec<(CeremonyIndexType, CommunityReputation)>;
+		fn get_aggregated_account_data(cid:CommunityIdentifier, account: &AccountId) -> AggregatedAccountData<AccountId, Moment>;
 	}
 }

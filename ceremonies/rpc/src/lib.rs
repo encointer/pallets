@@ -27,15 +27,17 @@ use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 use encointer_primitives::{
 	ceremonies::{
 		consts::STORAGE_PREFIX, reputation_cache_dirty_key, reputation_cache_key,
-		CommunityReputation,
+		AggregatedAccountData, CommunityReputation,
 	},
+	communities::CommunityIdentifier,
 	scheduler::CeremonyIndexType,
 };
 
 #[rpc]
-pub trait CeremoniesApi<BlockHash, AccountId>
+pub trait CeremoniesApi<BlockHash, AccountId, Moment>
 where
 	AccountId: 'static + Encode + Decode + Send + Sync,
+	Moment: 'static + Encode + Decode + Send + Sync,
 {
 	#[rpc(name = "ceremonies_getReputations")]
 	fn get_reputations(
@@ -43,23 +45,33 @@ where
 		account: AccountId,
 		at: Option<BlockHash>,
 	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>>;
+
+	#[rpc(name = "ceremonies_getAggregatedAccountData")]
+	fn get_aggregated_account_data(
+		&self,
+		cid: CommunityIdentifier,
+		account: AccountId,
+		at: Option<BlockHash>,
+	) -> Result<AggregatedAccountData<AccountId, Moment>>;
 }
 
-pub struct Ceremonies<Client, Block, AccountId, S> {
+pub struct Ceremonies<Client, Block, AccountId, Moment, S> {
 	client: Arc<Client>,
 	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
 	offchain_indexing: bool,
-	_marker: std::marker::PhantomData<(Block, AccountId)>,
+	_marker: std::marker::PhantomData<(Block, AccountId, Moment)>,
 }
 
-impl<Client, Block, AccountId, S> Ceremonies<Client, Block, AccountId, S>
+impl<Client, Block, AccountId, Moment, S> Ceremonies<Client, Block, AccountId, Moment, S>
 where
 	S: 'static + OffchainStorage,
 	Block: sp_api::BlockT,
 	AccountId: 'static + Encode + Decode + Send + Sync,
+	Moment: 'static + Encode + Decode + Send + Sync,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	Client::Api: CeremoniesRuntimeApi<Block, AccountId>,
+	Client::Api: CeremoniesRuntimeApi<Block, AccountId, Moment>,
+	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: sp_api::Decode,
 {
 	/// Create new `Ceremonies` instance with the given reference to the client.
 	pub fn new(
@@ -118,14 +130,16 @@ where
 	}
 }
 
-impl<Client, Block, AccountId, S> CeremoniesApi<<Block as BlockT>::Hash, AccountId>
-	for Ceremonies<Client, Block, AccountId, S>
+impl<Client, Block, AccountId, Moment, S> CeremoniesApi<<Block as BlockT>::Hash, AccountId, Moment>
+	for Ceremonies<Client, Block, AccountId, Moment, S>
 where
 	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
+	Moment: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Block: BlockT,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	Client::Api: CeremoniesRuntimeApi<Block, AccountId>,
+	Client::Api: CeremoniesRuntimeApi<Block, AccountId, Moment>,
 	S: 'static + OffchainStorage,
+	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: sp_api::Decode,
 {
 	fn get_reputations(
 		&self,
@@ -147,6 +161,19 @@ where
 			Some(reputation_list) => Ok(reputation_list),
 			None => Err(storage_not_found_error(cache_key)),
 		}
+	}
+
+	fn get_aggregated_account_data(
+		&self,
+		cid: CommunityIdentifier,
+		account: AccountId,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> Result<AggregatedAccountData<AccountId, Moment>> {
+		self.deny_unsafe.check_if_safe()?;
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		api.get_aggregated_account_data(&at, cid, &account)
+			.map_err(runtime_error_into_rpc_err)
 	}
 }
 
