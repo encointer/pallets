@@ -75,14 +75,6 @@ where
 		let asset_fee =
 			apply_fee_conversion_factor(balance.into(), reward, fee_conversion_factor).into();
 
-		log::debug!(target: LOG, "[BalanceToCommunityBalance]: to_asset_balance:");
-		log::debug!(target: LOG, "asset_id: {:?}", asset_id);
-		log::debug!(target: LOG, "native balance: {:?}", balance);
-		log::debug!(target: LOG, "fee conversion factor: {:?}", fee_conversion_factor);
-		log::debug!(target: LOG, "ceremony reward [BalanceType]: {:?}", reward_balance_type);
-		log::debug!(target: LOG, "ceremony reward [u128]: {:?}", reward);
-		log::debug!(target: LOG, "asset fee [u128]: {:?}", asset_fee);
-
 		Ok(asset_fee)
 	}
 }
