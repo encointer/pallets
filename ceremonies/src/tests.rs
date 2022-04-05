@@ -1483,6 +1483,45 @@ fn get_meetup_location_works() {
 }
 
 #[test]
+fn meetup_with_only_one_newbie_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
+		let bootstrapper2 = account_id(&AccountKeyring::Bob.pair());
+		EncointerCommunities::insert_bootstrappers(
+			cid,
+			vec![bootstrapper.clone(), bootstrapper2.clone()],
+		);
+
+		let reputable = account_id(&AccountKeyring::Ferdie.pair());
+		let reputable2 = account_id(&AccountKeyring::Charlie.pair());
+
+		let newbie = account_id(&AccountKeyring::Eve.pair());
+
+		assert!(EncointerBalances::issue(cid, &reputable, NominalIncome::from_num(1)).is_ok());
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &bootstrapper, false));
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &bootstrapper2, false));
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &reputable, true));
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &reputable2, true));
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &newbie, false));
+
+		run_to_next_phase();
+
+		let mut participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
+		let mut expected_participants =
+			[bootstrapper, bootstrapper2, reputable, reputable2, newbie];
+		expected_participants.sort();
+		participants.sort();
+
+		assert_eq!(participants, expected_participants);
+	});
+}
+
+#[test]
 fn get_meetup_participants_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
