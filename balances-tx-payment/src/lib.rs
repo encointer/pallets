@@ -24,8 +24,6 @@ pub mod balance_conversion;
 #[cfg(test)]
 mod tests;
 
-const LOG: &str = "encointer";
-
 pub use balance_conversion::*;
 
 pub type OnChargeTransactionOf<T> = <T as pallet_transaction_payment::Config>::OnChargeTransaction;
