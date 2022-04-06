@@ -71,7 +71,7 @@ where
 	Moment: 'static + Encode + Decode + Send + Sync,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	Client::Api: CeremoniesRuntimeApi<Block, AccountId, Moment>,
-	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: sp_api::Decode,
+	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: Decode,
 {
 	/// Create new `Ceremonies` instance with the given reference to the client.
 	pub fn new(
