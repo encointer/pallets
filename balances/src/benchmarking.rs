@@ -9,10 +9,9 @@ benchmarks! {
 		let cid = CommunityIdentifier::default();
 		let alice: T::AccountId = account("alice", 1, 1);
 		let bob: T::AccountId = account("bob", 2, 2);
-		let bob_lookup: <T::Lookup as StaticLookup>::Source = T::Lookup::unlookup(bob.clone());
 
 		Pallet::<T>::issue(cid, &alice, BalanceType::from_num(12i32)).ok();
-	}: _(RawOrigin::Signed(alice.clone()), bob_lookup, cid, BalanceType::from_num(10i32))
+	}: _(RawOrigin::Signed(alice.clone()), bob.clone(), cid, BalanceType::from_num(10i32))
 	verify{
 		let balance_alice: f64 = Pallet::<T>::balance(cid, &alice).lossy_into();
 		assert_abs_diff_eq!(balance_alice, 2f64, epsilon= 0.0001);
