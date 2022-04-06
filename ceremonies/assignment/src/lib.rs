@@ -121,7 +121,8 @@ pub fn assignment_fn_inverse(
 		}
 
 		result.push(t3);
-		if t3 < participant_count - assignment_params.m {
+
+		if t3 + assignment_params.m < participant_count {
 			result.push(t3 + assignment_params.m)
 		}
 	}
@@ -242,6 +243,15 @@ mod tests {
 		n = 1u64;
 		num_participants = 10u64;
 		m = 7u64;
+		assignment_params = AssignmentParams { m, s1, s2 };
+		check_assignment(num_participants, assignment_params, n);
+
+		// in the case where there is only one participant, m will be 2 because it is the smallest prime number
+		s1 = 1u64;
+		s2 = 1u64;
+		n = 1u64;
+		num_participants = 1u64;
+		m = 2u64;
 		assignment_params = AssignmentParams { m, s1, s2 };
 		check_assignment(num_participants, assignment_params, n);
 	}

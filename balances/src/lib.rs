@@ -96,7 +96,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((<T as Config>::WeightInfo::transfer(), DispatchClass::Normal))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_fee_conversion_factor(), DispatchClass::Normal))]
 		pub fn set_fee_conversion_factor(
 			origin: OriginFor<T>,
 			fee_conversion_factor: FeeConversionFactorType,

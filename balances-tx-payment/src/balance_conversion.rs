@@ -19,7 +19,7 @@ use core::marker::PhantomData;
 use encointer_primitives::{balances::EncointerBalanceConverter, communities::CommunityIdentifier};
 use frame_support::traits::tokens::BalanceConversion;
 use pallet_encointer_balances::Pallet as BalancesPallet;
-use pallet_encointer_communities::{Config as CommunitiesConfig, Pallet as CommunitiesPallet};
+use pallet_encointer_ceremonies::{Config as CeremoniesConfig, Pallet as CeremoniesPallet};
 use sp_runtime::traits::Convert;
 
 /// 1 micro KSM with 12 decimals
@@ -55,7 +55,7 @@ pub struct BalanceToCommunityBalance<T>(PhantomData<T>);
 impl<T> BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>
 	for BalanceToCommunityBalance<T>
 where
-	T: CommunitiesConfig + pallet_asset_tx_payment::Config,
+	T: CeremoniesConfig + pallet_asset_tx_payment::Config,
 	CommunityIdentifier: From<AssetIdOf<T>>,
 	AssetBalanceOf<T>: From<u128>,
 	u128: From<BalanceOf<T>>,
@@ -67,10 +67,14 @@ where
 		asset_id: AssetIdOf<T>,
 	) -> Result<AssetBalanceOf<T>, Self::Error> {
 		let fee_conversion_factor = BalancesPallet::<T>::fee_conversion_factor();
-		let reward = EncointerBalanceConverter::convert(CommunitiesPallet::<T>::nominal_income(
-			CommunityIdentifier::from(asset_id),
-		));
 
-		Ok(apply_fee_conversion_factor(balance.into(), reward, fee_conversion_factor).into())
+		let reward_balance_type =
+			CeremoniesPallet::<T>::nominal_income(&CommunityIdentifier::from(asset_id));
+		let reward = EncointerBalanceConverter::convert(reward_balance_type);
+
+		let asset_fee =
+			apply_fee_conversion_factor(balance.into(), reward, fee_conversion_factor).into();
+
+		Ok(asset_fee)
 	}
 }
