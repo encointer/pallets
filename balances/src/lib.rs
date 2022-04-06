@@ -73,7 +73,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type DefaultDemurrage: Get<Demurrage>;
 
-		/// Existential deposit needed to have an account the respective community currency
+		/// Existential deposit needed to have an account in the respective community currency
 		///
 		/// This does currently not prevent dust-accounts, but it prevents account creation
 		/// by transferring tiny amounts of funds.
@@ -164,7 +164,7 @@ pub mod pallet {
 		TotalIssuanceOverflow,
 		/// Account to alter does not exist in community
 		NoAccount,
-		/// Balance to low to create an account
+		/// Balance too low to create an account
 		ExistentialDeposit,
 	}
 
