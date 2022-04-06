@@ -148,6 +148,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// Endowed a new account with a respective currency `[community_id, who, balance]`
+		Endowed { cid: CommunityIdentifier, who: T::AccountId, balance: BalanceType },
 		/// Token transfer success `[community_id, from, to, amount]`
 		Transferred(CommunityIdentifier, T::AccountId, T::AccountId, BalanceType),
 		/// fee conversion factor updated successfully
@@ -284,6 +286,7 @@ impl<T: Config> Pallet<T> {
 		if !Balance::<T>::contains_key(cid, &dest) {
 			ensure!(amount > T::ExistentialDeposit::get(), Error::<T>::ExistentialDeposit);
 			Self::new_account(&dest)?;
+			Self::deposit_event(Event::Endowed { cid, who: source.clone(), balance: amount });
 		}
 
 		let mut entry_to = Self::balance_entry_updated(cid, &dest);
