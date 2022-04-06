@@ -572,6 +572,8 @@ pub mod pallet {
 		InvalidMeetupTimeOffset,
 		/// the history for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged,
+		/// Unregistering can only be performed during the registering phase
+		WrongPhaseForUnregistering,
 	}
 
 	#[pallet::storage]
@@ -942,6 +944,45 @@ impl<T: Config> Pallet<T> {
 				ParticipantType::Newbie
 			};
 		Ok(participant_type)
+	}
+
+	/// removes a participant from the registry maintaining continuous indices
+	fn unregister_newbie(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		participant: &T::AccountId,
+	) -> Result<(), Error<T>> {
+		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+			return Err(<Error<T>>::WrongPhaseForUnregistering.into())
+		}
+
+		if !<NewbieIndex<T>>::contains_key((cid, cindex), &participant) {
+			return Ok(())
+		}
+
+		let participant_index = <NewbieIndex<T>>::get((cid, cindex), &participant);
+		let participant_count = <NewbieCount<T>>::get((cid, cindex));
+
+		<NewbieRegistry<T>>::remove((cid, cindex), &participant_index);
+		<NewbieIndex<T>>::remove((cid, cindex), &participant);
+
+		for idx in (participant_index + 1)..=participant_count {
+			let p = <NewbieRegistry<T>>::get((cid, cindex), &idx)
+				.expect("idx <= participant_count, so p is registered; qed");
+
+			let new_idx = idx - 1;
+			<NewbieIndex<T>>::insert((cid, cindex), &p, new_idx);
+			<NewbieRegistry<T>>::remove((cid, cindex), &idx);
+			<NewbieRegistry<T>>::insert((cid, cindex), &new_idx, &p);
+		}
+		<NewbieCount<T>>::insert(
+			(cid, cindex),
+			participant_count
+				.checked_sub(1)
+				.expect("participant is registered, thus participant_count > 0; qed"),
+		);
+
+		Ok(())
 	}
 
 	fn is_registered(
