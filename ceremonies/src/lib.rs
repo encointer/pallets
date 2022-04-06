@@ -1274,52 +1274,50 @@ impl<T: Config> Pallet<T> {
 
 		let assignment = Self::assignments(community_ceremony);
 
-		let participant_meetup_index: Option<MeetupIndexType>;
 		let participant_type = Self::get_participant_type(community_ceremony, participant)?;
 
-		participant_meetup_index = match participant_type {
+		let (participant_index, assignment_params) = match participant_type {
 			ParticipantType::Bootstrapper => {
 				let participant_index =
 					Self::bootstrapper_index(community_ceremony, &participant) - 1;
 				if participant_index < assignment_count.bootstrappers {
-					return meetup_index(
-						participant_index,
-						assignment.bootstrappers_reputables,
-						meetup_count,
-					)
+					(participant_index, assignment.bootstrappers_reputables)
+				} else {
+					return None
 				}
-				None
 			},
 			ParticipantType::Reputable => {
 				let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
 				if participant_index < assignment_count.reputables {
-					return meetup_index(
+					(
 						participant_index + assignment_count.bootstrappers,
 						assignment.bootstrappers_reputables,
-						meetup_count,
 					)
+				} else {
+					return None
 				}
-				None
 			},
 
 			ParticipantType::Endorsee => {
 				let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
 				if participant_index < assignment_count.endorsees {
-					return meetup_index(participant_index, assignment.endorsees, meetup_count)
+					(participant_index, assignment.endorsees)
+				} else {
+					return None
 				}
-				None
 			},
 
 			ParticipantType::Newbie => {
 				let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
 				if participant_index < assignment_count.newbies {
-					return meetup_index(participant_index, assignment.newbies, meetup_count)
+					(participant_index, assignment.newbies)
+				} else {
+					return None
 				}
-				None
 			},
 		};
 
-		participant_meetup_index
+		meetup_index(participant_index, assignment_params, meetup_count)
 	}
 
 	fn get_meetup_participants(
