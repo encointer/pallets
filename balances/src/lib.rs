@@ -30,7 +30,6 @@ use frame_support::{
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::{debug, info};
-use sp_runtime::traits::StaticLookup;
 use sp_std::convert::TryInto;
 
 // Logger target
@@ -84,15 +83,14 @@ pub mod pallet {
 		#[pallet::weight((<T as Config>::WeightInfo::transfer(), DispatchClass::Normal, Pays::Yes))]
 		pub fn transfer(
 			origin: OriginFor<T>,
-			dest: <T::Lookup as StaticLookup>::Source,
+			dest: T::AccountId,
 			community_id: CommunityIdentifier,
 			amount: BalanceType,
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
-			let to = T::Lookup::lookup(dest)?;
-			Self::transfer_(community_id, &from, &to, amount)?;
+			Self::transfer_(community_id, &from, &dest, amount)?;
 
-			Self::deposit_event(Event::Transferred(community_id, from, to, amount));
+			Self::deposit_event(Event::Transferred(community_id, from, dest, amount));
 			Ok(().into())
 		}
 
