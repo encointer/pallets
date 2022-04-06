@@ -30,6 +30,7 @@ use frame_support::{
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::{debug, info};
+use sp_runtime::DispatchError;
 use sp_std::convert::TryInto;
 
 // Logger target
@@ -72,6 +73,13 @@ pub mod pallet {
 		#[pallet::constant]
 		type DefaultDemurrage: Get<Demurrage>;
 
+		/// Existential deposit needed to have an account the respective community currency
+		///
+		/// This does currently not prevent dust-accounts, but it prevents account creation
+		/// by transferring tiny amounts of funds.
+		#[pallet::constant]
+		type ExistentialDeposit: Get<BalanceType>;
+
 		type WeightInfo: WeightInfo;
 
 		type CeremonyMaster: EnsureOrigin<Self::Origin>;
@@ -88,9 +96,7 @@ pub mod pallet {
 			amount: BalanceType,
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
-			Self::transfer_(community_id, &from, &dest, amount)?;
-
-			Self::deposit_event(Event::Transferred(community_id, from, dest, amount));
+			Self::do_transfer(community_id, from, dest, amount)?;
 			Ok(().into())
 		}
 
@@ -154,6 +160,10 @@ pub mod pallet {
 		BalanceTooLow,
 		/// the total issuance would overflow
 		TotalIssuanceOverflow,
+		/// Account to alter does not exist in community
+		NoAccount,
+		/// Balance to low to create an account
+		ExistentialDeposit,
 	}
 
 	#[pallet::storage]
@@ -219,7 +229,7 @@ impl<T: Config> Pallet<T> {
 	/// the formula applied is
 	///   balance_now = balance_last_written
 	///     * exp(-1* demurrage_rate_per_block * number_of_blocks_since_last_written)
-	fn apply_demurrage(
+	pub(crate) fn apply_demurrage(
 		entry: BalanceEntry<T::BlockNumber>,
 		demurrage: BalanceType,
 	) -> BalanceEntry<T::BlockNumber> {
@@ -242,25 +252,51 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn transfer_(
-		community_id: CommunityIdentifier,
-		from: &T::AccountId,
-		to: &T::AccountId,
-		amount: BalanceType,
-	) -> DispatchResult {
-		let mut entry_from = Self::balance_entry_updated(community_id, from);
-		ensure!(entry_from.principal >= amount, Error::<T>::BalanceTooLow);
-		//FIXME: delete account if it falls below existential deposit
-		if from != to {
-			let mut entry_to = Self::balance_entry_updated(community_id, to);
-			entry_from.principal -= amount;
-			entry_to.principal += amount;
-			<Balance<T>>::insert(community_id, from, entry_from);
-			<Balance<T>>::insert(community_id, to, entry_to);
-		} else {
-			<Balance<T>>::insert(community_id, from, entry_from);
-		}
+	/// Create a new account on-chain if it does not exist.
+	fn new_account(who: &T::AccountId) -> DispatchResult {
+		frame_system::Pallet::<T>::inc_sufficients(who);
 		Ok(())
+	}
+
+	pub fn do_transfer(
+		cid: CommunityIdentifier,
+		source: T::AccountId,
+		dest: T::AccountId,
+		amount: BalanceType,
+	) -> Result<BalanceType, DispatchError> {
+		// Early exist if no-op.
+		if amount == 0u128 {
+			Self::deposit_event(Event::Transferred(cid, source, dest, amount));
+			return Ok(amount)
+		}
+
+		ensure!(Balance::<T>::contains_key(cid, &source), Error::<T>::NoAccount);
+
+		let mut entry_from = Self::balance_entry_updated(cid, &source);
+		// FIXME: delete account if it falls below existential deposit
+		ensure!(entry_from.principal >= amount, Error::<T>::BalanceTooLow);
+
+		if source == dest {
+			<Balance<T>>::insert(cid, &source, entry_from);
+			return Ok(amount)
+		}
+
+		if !Balance::<T>::contains_key(cid, &dest) {
+			ensure!(amount > T::ExistentialDeposit::get(), Error::<T>::ExistentialDeposit);
+			Self::new_account(&dest)?;
+		}
+
+		let mut entry_to = Self::balance_entry_updated(cid, &dest);
+
+		entry_from.principal = entry_from.principal.saturating_sub(amount);
+		entry_to.principal = entry_to.principal.saturating_add(amount);
+
+		<Balance<T>>::insert(cid, &source, entry_from);
+		<Balance<T>>::insert(cid, &dest, entry_to);
+
+		Self::deposit_event(Event::Transferred(cid, source, dest, amount));
+
+		Ok(amount)
 	}
 
 	pub fn issue(
