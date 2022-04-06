@@ -931,9 +931,12 @@ impl<T: Config> Pallet<T> {
 					&locations,
 					location_assignment_params,
 				);
-				let location =
-					Self::get_meetup_location((cid, cindex), participant_meetup_index).unwrap();
-				meetup_time = Self::get_meetup_time(location);
+				if let Some(location) =
+					Self::get_meetup_location((cid, cindex), participant_meetup_index)
+				{
+					meetup_time = Self::get_meetup_time(location);
+				}
+
 				meetup_registry =
 					Some(Self::get_meetup_participants((cid, cindex), participant_meetup_index));
 			}
