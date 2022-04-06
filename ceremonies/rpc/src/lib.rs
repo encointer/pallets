@@ -39,7 +39,7 @@ where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	Moment: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "ceremonies_getReputations")]
+	#[rpc(name = "encointer_getReputations")]
 	fn get_reputations(
 		&self,
 		account: AccountId,
