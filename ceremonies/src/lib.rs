@@ -1275,55 +1275,50 @@ impl<T: Config> Pallet<T> {
 		let assignment = Self::assignments(community_ceremony);
 
 		let participant_meetup_index: Option<MeetupIndexType>;
-		if let Some(participant_type) = Self::get_participant_type(community_ceremony, participant)
-		{
-			participant_meetup_index = match participant_type {
-				ParticipantType::Bootstrapper => {
-					let participant_index =
-						Self::bootstrapper_index(community_ceremony, &participant) - 1;
-					if participant_index < assignment_count.bootstrappers {
-						return meetup_index(
-							participant_index,
-							assignment.bootstrappers_reputables,
-							meetup_count,
-						)
-					}
-					None
-				},
-				ParticipantType::Reputable => {
-					let participant_index =
-						Self::reputable_index(community_ceremony, &participant) - 1;
-					if participant_index < assignment_count.reputables {
-						return meetup_index(
-							participant_index + assignment_count.bootstrappers,
-							assignment.bootstrappers_reputables,
-							meetup_count,
-						)
-					}
-					None
-				},
+		let participant_type = Self::get_participant_type(community_ceremony, participant)?;
 
-				ParticipantType::Endorsee => {
-					let participant_index =
-						Self::endorsee_index(community_ceremony, &participant) - 1;
-					if participant_index < assignment_count.endorsees {
-						return meetup_index(participant_index, assignment.endorsees, meetup_count)
-					}
-					None
-				},
+		participant_meetup_index = match participant_type {
+			ParticipantType::Bootstrapper => {
+				let participant_index =
+					Self::bootstrapper_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.bootstrappers {
+					return meetup_index(
+						participant_index,
+						assignment.bootstrappers_reputables,
+						meetup_count,
+					)
+				}
+				None
+			},
+			ParticipantType::Reputable => {
+				let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.reputables {
+					return meetup_index(
+						participant_index + assignment_count.bootstrappers,
+						assignment.bootstrappers_reputables,
+						meetup_count,
+					)
+				}
+				None
+			},
 
-				ParticipantType::Newbie => {
-					let participant_index =
-						Self::newbie_index(community_ceremony, &participant) - 1;
-					if participant_index < assignment_count.newbies {
-						return meetup_index(participant_index, assignment.newbies, meetup_count)
-					}
-					None
-				},
-			}
-		} else {
-			return None
-		}
+			ParticipantType::Endorsee => {
+				let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.endorsees {
+					return meetup_index(participant_index, assignment.endorsees, meetup_count)
+				}
+				None
+			},
+
+			ParticipantType::Newbie => {
+				let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.newbies {
+					return meetup_index(participant_index, assignment.newbies, meetup_count)
+				}
+				None
+			},
+		};
+
 		participant_meetup_index
 	}
 
