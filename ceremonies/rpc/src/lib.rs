@@ -139,7 +139,7 @@ where
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
 	Client::Api: CeremoniesRuntimeApi<Block, AccountId, Moment>,
 	S: 'static + OffchainStorage,
-	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: sp_api::Decode,
+	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: Decode,
 {
 	fn get_reputations(
 		&self,

@@ -30,7 +30,7 @@ use sp_api::{Decode, Encode};
 sp_api::decl_runtime_apis! {
 	pub trait CeremoniesApi<AccountId, Moment>
 	where AccountId: Encode + Decode,
-	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: sp_api::Decode
+	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: Decode
 
 	{
 		fn get_reputations(account: &AccountId) -> Vec<(CeremonyIndexType, CommunityReputation)>;
