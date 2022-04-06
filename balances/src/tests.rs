@@ -156,6 +156,27 @@ fn transfer_should_create_new_account() {
 }
 
 #[test]
+fn transfer_does_not_create_new_account_if_below_ed() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+
+		let alice = AccountKeyring::Alice.to_account_id();
+
+		// does not exist on chain
+		let zoltan: AccountId32 = sr25519::Pair::from_entropy(&[9u8; 32], None).0.public().into();
+		let cid = CommunityIdentifier::default();
+		let amount = BalanceType::from_num(0.0000000001);
+
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50u128)));
+		assert_noop!(
+			EncointerBalances::transfer(Some(alice.clone()).into(), zoltan.clone(), cid, amount),
+			Error::<TestRuntime>::ExistentialDeposit,
+		);
+	});
+}
+
+#[test]
 fn demurrage_should_work() {
 	new_test_ext().execute_with(|| {
 		let alice = AccountKeyring::Alice.to_account_id();
