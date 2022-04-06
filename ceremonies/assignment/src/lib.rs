@@ -156,7 +156,7 @@ pub fn meetup_index(
 
 pub fn get_meetup_location_index(
 	meetup_index: MeetupIndexType,
-	locations: &Vec<Location>,
+	locations: &[Location],
 	location_assignment_params: AssignmentParams,
 ) -> Option<MeetupIndexType> {
 	assignment_fn(meetup_index, location_assignment_params, locations.len() as u64)
