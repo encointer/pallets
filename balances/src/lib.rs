@@ -286,7 +286,7 @@ impl<T: Config> Pallet<T> {
 		if !Balance::<T>::contains_key(cid, &dest) {
 			ensure!(amount > T::ExistentialDeposit::get(), Error::<T>::ExistentialDeposit);
 			Self::new_account(&dest)?;
-			Self::deposit_event(Event::Endowed { cid, who: source.clone(), balance: amount });
+			Self::deposit_event(Event::Endowed { cid, who: dest.clone(), balance: amount });
 		}
 
 		let mut entry_to = Self::balance_entry_updated(cid, &dest);

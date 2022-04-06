@@ -34,10 +34,10 @@ use frame_support::{
 	},
 };
 use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
-use sp_runtime::DispatchError;
+use sp_runtime::{app_crypto::Pair, testing::sr25519, AccountId32, DispatchError};
 use sp_std::str::FromStr;
 use test_utils::{
-	helpers::{almost_eq, assert_dispatch_err, last_event},
+	helpers::{almost_eq, assert_dispatch_err, events, last_event},
 	AccountKeyring,
 };
 
@@ -105,6 +105,52 @@ fn transfer_should_work() {
 		assert_noop!(
 			EncointerBalances::transfer(Some(alice).into(), bob, cid, BalanceType::from_num(60)),
 			Error::<TestRuntime>::BalanceTooLow,
+		);
+	});
+}
+
+#[test]
+fn transfer_should_create_new_account() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+
+		let alice = AccountKeyring::Alice.to_account_id();
+
+		// does not exist on chain
+		let zoltan: AccountId32 = sr25519::Pair::from_entropy(&[9u8; 32], None).0.public().into();
+		let cid = CommunityIdentifier::default();
+		let amount = BalanceType::from_num(9.999);
+
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50u128)));
+		assert_ok!(EncointerBalances::transfer(
+			Some(alice.clone()).into(),
+			zoltan.clone(),
+			cid,
+			amount
+		));
+
+		let events = events::<TestRuntime>();
+
+		assert_eq!(
+			events[0],
+			mock::Event::System(frame_system::Event::NewAccount { account: zoltan.clone() })
+		);
+
+		assert_eq!(
+			events[1],
+			mock::Event::EncointerBalances(crate::Event::Endowed {
+				cid,
+				who: zoltan.clone(),
+				balance: amount
+			})
+		);
+
+		assert_eq!(
+			events[2],
+			mock::Event::EncointerBalances(
+				crate::Event::Transferred(cid, alice, zoltan, amount).into()
+			),
 		);
 	});
 }
