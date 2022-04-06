@@ -23,11 +23,14 @@ use sp_runtime::DispatchError;
 
 use approx::assert_abs_diff_eq;
 use encointer_primitives::{
+	ceremonies::ParticipantType::Bootstrapper,
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
+	fixed::transcendental::exp,
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::{
 	assert_err, assert_ok,
+	dispatch::RawOrigin,
 	traits::{OnFinalize, OnInitialize},
 };
 use itertools::Itertools;
@@ -1841,5 +1844,136 @@ fn set_location_tolerance_works() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(EncointerCeremonies::set_location_tolerance(Origin::signed(master()), 1234));
 		assert_eq!(EncointerCeremonies::location_tolerance(), 1234);
+	});
+}
+
+#[test]
+fn get_participant_type_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let mut cindex = 1;
+
+		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		let reputable = account_id(&AccountKeyring::Bob.pair());
+		let newbie = account_id(&AccountKeyring::Eve.pair());
+		let endorsee = account_id(&AccountKeyring::Ferdie.pair());
+		let unregistered_user = account_id(&AccountKeyring::Charlie.pair());
+
+		assert!(EncointerBalances::issue(cid, &reputable, NominalIncome::from_num(1)).is_ok());
+		cindex += 1;
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(bootstrapper.clone()),
+			cid,
+			endorsee.clone()
+		));
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &bootstrapper, false));
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &reputable, true));
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &newbie, false));
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &endorsee, false));
+
+		assert_eq!(
+			EncointerCeremonies::get_participant_type((cid, cindex), &bootstrapper),
+			Some(ParticipantType::Bootstrapper)
+		);
+
+		assert_eq!(
+			EncointerCeremonies::get_participant_type((cid, cindex), &newbie),
+			Some(ParticipantType::Newbie)
+		);
+
+		assert_eq!(
+			EncointerCeremonies::get_participant_type((cid, cindex), &endorsee),
+			Some(ParticipantType::Endorsee)
+		);
+
+		assert_eq!(
+			EncointerCeremonies::get_participant_type((cid, cindex), &reputable),
+			Some(ParticipantType::Reputable)
+		);
+
+		assert_eq!(
+			EncointerCeremonies::get_participant_type((cid, cindex), &unregistered_user),
+			None
+		);
+	});
+}
+
+#[test]
+fn get_aggregated_account_data_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
+		let bootstrapper2 = account_id(&AccountKeyring::Bob.pair());
+		EncointerCommunities::insert_bootstrappers(
+			cid,
+			vec![bootstrapper.clone(), bootstrapper2.clone()],
+		);
+
+		let reputable = account_id(&AccountKeyring::Ferdie.pair());
+		let reputable2 = account_id(&AccountKeyring::Charlie.pair());
+
+		assert!(EncointerBalances::issue(cid, &reputable, NominalIncome::from_num(1)).is_ok());
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &bootstrapper, false));
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &bootstrapper2, false));
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &reputable, true));
+
+		let mut aggregated_account_data =
+			EncointerCeremonies::get_aggregated_account_data(cid, &bootstrapper);
+
+		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::REGISTERING);
+		assert_eq!(aggregated_account_data.global.ceremony_index, 1);
+		let mut personal = aggregated_account_data.personal.unwrap();
+		assert_eq!(personal.participant_type, ParticipantType::Bootstrapper);
+		assert_eq!(personal.meetup_index, None);
+		assert_eq!(personal.meetup_location_index, None);
+		assert_eq!(personal.meetup_time, None);
+		assert_eq!(personal.meetup_registry, None);
+
+		aggregated_account_data =
+			EncointerCeremonies::get_aggregated_account_data(cid, &reputable2);
+
+		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::REGISTERING);
+		assert_eq!(aggregated_account_data.global.ceremony_index, 1);
+
+		// reputable2 is not yet registered
+		assert_eq!(aggregated_account_data.personal, None);
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &reputable2, true));
+		aggregated_account_data =
+			EncointerCeremonies::get_aggregated_account_data(cid, &reputable2);
+		personal = aggregated_account_data.personal.unwrap();
+		// Now they are
+		assert_eq!(personal.participant_type, ParticipantType::Reputable);
+
+		run_to_next_phase();
+		run_to_next_phase();
+
+		// Now the assignment is made and the other fields should also be set
+		aggregated_account_data = EncointerCeremonies::get_aggregated_account_data(cid, &reputable);
+		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::ATTESTING);
+		assert_eq!(aggregated_account_data.global.ceremony_index, 1);
+
+		personal = aggregated_account_data.personal.unwrap();
+		assert_eq!(personal.participant_type, ParticipantType::Reputable);
+		assert_eq!(personal.meetup_index, Some(1));
+		assert_eq!(personal.meetup_location_index, Some(0));
+
+		assert_eq!(personal.meetup_time, Some(correct_meetup_time(&cid, 1)));
+
+		let meetup_registry = personal.meetup_registry.unwrap();
+		let expected_meetup_registry = vec![bootstrapper, bootstrapper2, reputable, reputable2];
+		assert_eq!(meetup_registry.len(), 4);
+		assert!(meetup_registry.iter().all(|item| expected_meetup_registry.contains(item)));
 	});
 }
