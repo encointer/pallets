@@ -1067,6 +1067,32 @@ fn endorsing_two_newbies_works() {
 	});
 }
 
+#[test]
+fn endorsing_after_registration_works() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		// a newbie
+		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+
+		assert!(EncointerBalances::issue(cid, &alice, NominalIncome::from_num(1)).is_ok());
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &yran, false));
+
+		assert!(NewbieIndex::<TestRuntime>::contains_key((cid, cindex), &yran));
+
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(alice.clone()),
+			cid,
+			yran.clone()
+		));
+
+		assert!(EndorseeIndex::<TestRuntime>::contains_key((cid, cindex), &yran));
+		assert!(!NewbieIndex::<TestRuntime>::contains_key((cid, cindex), &yran));
+	});
+}
+
 // integration tests ////////////////////////////////
 
 #[rstest(lat_micro, lon_micro, meetup_time_offset,

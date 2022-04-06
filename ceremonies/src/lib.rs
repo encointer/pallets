@@ -366,6 +366,11 @@ pub mod pallet {
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
 			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 
+			if <NewbieIndex<T>>::contains_key((cid, cindex), &newbie) {
+				Self::unregister_newbie(cid, cindex, &newbie)?;
+				Self::register(cid, cindex, &newbie, false)?;
+			}
+
 			debug!(target: LOG, "bootstrapper {:?} endorsed newbie: {:?}", sender, newbie);
 			Self::deposit_event(Event::EndorsedParticipant(cid, sender, newbie));
 
