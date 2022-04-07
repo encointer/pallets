@@ -17,7 +17,7 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use encointer_primitives::balances::Demurrage;
+use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::pallet_prelude::GenesisBuild;
 use test_utils::*;
 
@@ -26,6 +26,8 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::parameter_types! {
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+	/// 0.000005
+	pub const ExistentialDeposit: BalanceType = BalanceType::from_bits(0x0000000000000000000053e2d6238da4_i128);
 }
 
 frame_support::construct_runtime!(
@@ -44,6 +46,7 @@ frame_support::construct_runtime!(
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type DefaultDemurrage = DefaultDemurrage;
+	type ExistentialDeposit = ExistentialDeposit;
 	type WeightInfo = ();
 	type CeremonyMaster = EnsureAlice;
 }
