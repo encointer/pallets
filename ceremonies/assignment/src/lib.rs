@@ -52,7 +52,7 @@ pub fn generate_assignment_function_params<Hashing: Hash>(
 		) {
 			break
 		} else {
-			skip_count += 1;
+			skip_count += 1; // safe; skip_count <= 200;
 		}
 	}
 	return AssignmentParams { m: m as u64, s1: s1 as u64, s2: s2 as u64 }
