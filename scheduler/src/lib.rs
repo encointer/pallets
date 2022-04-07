@@ -29,8 +29,8 @@ use frame_support::{
 	traits::{Get, OnTimestampSet},
 	weights::DispatchClass,
 };
-use log::info;
-use sp_runtime::traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero};
+use log::{info, warn};
+use sp_runtime::traits::{CheckedDiv, One, Saturating, Zero};
 use sp_std::{ops::Rem, prelude::*};
 
 // Logger target
@@ -70,6 +70,12 @@ pub mod pallet {
 		/// Phase changed to `[new phase]`
 		PhaseChangedTo(CeremonyPhaseType),
 		CeremonySchedulePushedByOneDay,
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
+		/// a division by zero occured
+		DivisionByZero,
 	}
 
 	#[pallet::storage]
@@ -215,9 +221,7 @@ impl<T: Config> Pallet<T> {
 			},
 		};
 
-		let next = last_phase_timestamp
-			.checked_add(&<PhaseDurations<T>>::get(next_phase))
-			.expect("overflowing timestamp");
+		let next = last_phase_timestamp.saturating_add(<PhaseDurations<T>>::get(next_phase));
 		Self::resync_and_set_next_phase_timestamp(next)?;
 
 		<CurrentPhase<T>>::put(next_phase);
@@ -238,16 +242,18 @@ impl<T: Config> Pallet<T> {
 
 		let tnext = if tnext < now {
 			let gap = now - tnext;
-			let n = gap
-				.checked_div(&cycle_duration)
-				.expect("invalid phase durations: may not be zero");
-			tnext.saturating_add((cycle_duration).saturating_mul(n + T::Moment::one()))
+			if let Some(n) = gap.checked_div(&cycle_duration) {
+				tnext.saturating_add((cycle_duration).saturating_mul(n + T::Moment::one()))
+			} else {
+				return Err(<Error<T>>::DivisionByZero.into())
+			}
 		} else {
 			let gap = tnext - now;
-			let n = gap
-				.checked_div(&cycle_duration)
-				.expect("invalid phase durations: may not be zero");
-			tnext.saturating_sub(cycle_duration.saturating_mul(n))
+			if let Some(n) = gap.checked_div(&cycle_duration) {
+				tnext.saturating_sub(cycle_duration.saturating_mul(n))
+			} else {
+				return Err(<Error<T>>::DivisionByZero.into())
+			}
 		};
 		<NextPhaseTimestamp<T>>::put(tnext);
 		info!(target: LOG, "next phase change at: {:?}", tnext);
@@ -257,13 +263,23 @@ impl<T: Config> Pallet<T> {
 	fn on_timestamp_set(now: T::Moment) {
 		if Self::next_phase_timestamp() == T::Moment::zero() {
 			// only executed in first block after genesis.
+
+			// in case we upgrade from a runtime that didn't have this pallet or other curiosities
+			if <CurrentCeremonyIndex<T>>::get() == 0 {
+				<CurrentCeremonyIndex<T>>::put(1);
+			}
+
 			// set phase start to 0:00 UTC on the day of genesis
 			let next = (now - now.rem(T::MomentsPerDay::get()))
-				.checked_add(&<PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING))
-				.expect("overflowing timestamp");
-			Self::resync_and_set_next_phase_timestamp(next).expect("set next phase failed");
+				.saturating_add(<PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING));
+
+			if Self::resync_and_set_next_phase_timestamp(next).is_err() {
+				warn!(target: LOG, "resync ceremony phase failed");
+			};
 		} else if Self::next_phase_timestamp() < now {
-			Self::progress_phase().expect("phase progress error");
+			if Self::progress_phase().is_err() {
+				warn!(target: LOG, "progress ceremony phase failed");
+			};
 		}
 	}
 }
