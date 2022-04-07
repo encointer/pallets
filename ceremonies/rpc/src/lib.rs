@@ -46,7 +46,7 @@ where
 		at: Option<BlockHash>,
 	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>>;
 
-	#[rpc(name = "ceremonies_getAggregatedAccountData")]
+	#[rpc(name = "encointer_getAggregatedAccountData")]
 	fn get_aggregated_account_data(
 		&self,
 		cid: CommunityIdentifier,
