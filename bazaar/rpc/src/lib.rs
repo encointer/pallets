@@ -33,19 +33,19 @@ pub trait BazaarApi<BlockHash, AccountId>
 where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "encointer_bazaar_getBusinesses")]
+	#[rpc(name = "encointer_bazaarGetBusinesses")]
 	fn get_businesses(
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
 	) -> Result<Vec<BusinessData>>;
-	#[rpc(name = "encointer_bazaar_getOfferings")]
+	#[rpc(name = "encointer_bazaarGetOfferings")]
 	fn get_offerings(
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
 	) -> Result<Vec<OfferingData>>;
-	#[rpc(name = "encointer_bazaar_getOfferingsForBusiness")]
+	#[rpc(name = "encointer_bazaarGetOfferingsForBusiness")]
 	fn get_offerings_for_business(
 		&self,
 		bid: BusinessIdentifier<AccountId>,
