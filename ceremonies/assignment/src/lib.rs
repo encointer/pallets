@@ -122,8 +122,10 @@ pub fn assignment_fn_inverse(
 
 		result.push(t3);
 
-		if t3 + assignment_params.m < participant_count {
-			result.push(t3 + assignment_params.m)
+		if let Some(t3_plus_m) = t3.checked_add(assignment_params.m) {
+			if t3_plus_m < participant_count {
+				result.push(t3_plus_m)
+			}
 		}
 	}
 	Some(result)
