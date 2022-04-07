@@ -17,12 +17,16 @@
 //! Math functions used in the ceremonies pallet.
 
 use encointer_primitives::{RandomNumberGenerator, RandomPermutation};
-use sp_runtime::traits::Hash;
-use sp_std::vec::Vec;
+use sp_runtime::traits::{Hash, Zero};
+use sp_std::{ops::Rem, vec::Vec};
 
-pub fn checked_modulo(dividend: u64, divisor: u64) -> Option<u64> {
+pub fn checked_modulo<T: Rem<T> + Rem<Output = T> + Zero + PartialEq>(
+	dividend: T,
+	divisor: T,
+) -> Option<T> {
+	let zero = T::zero();
 	match divisor {
-		0 => Option::None,
+		_ if divisor == zero => Option::None,
 		_ => Some(dividend % divisor),
 	}
 }
@@ -123,19 +127,19 @@ pub fn find_random_coprime_below<H: Hash>(
 		.unwrap_or(1)
 }
 
-pub fn mod_inv(a: i64, module: i64) -> i64 {
+pub fn mod_inv(a: i64, module: i64) -> Option<i64> {
 	let mut mn = (module, a);
-	let mut xy = (0, 1);
+	let mut xy = (0i64, 1i64);
 
 	while mn.1 != 0 {
-		xy = (xy.1, xy.0 - (mn.0 / mn.1) * xy.1);
-		mn = (mn.1, mn.0 % mn.1);
+		xy = (xy.1, xy.0.checked_sub(mn.0.checked_div(mn.1)?.checked_mul(xy.1)?)?);
+		mn = (mn.1, checked_modulo::<i64>(mn.0, mn.1)?);
 	}
 
 	while xy.0 < 0 {
-		xy.0 += module;
+		xy.0 = xy.0.checked_add(module)?;
 	}
-	xy.0
+	Some(xy.0)
 }
 
 #[cfg(test)]
@@ -178,9 +182,9 @@ mod tests {
 
 	#[test]
 	fn mod_inv_works() {
-		assert_eq!(mod_inv(2, 7), 4);
-		assert_eq!(mod_inv(69, 113), 95);
-		assert_eq!(mod_inv(111, 113), 56);
+		assert_eq!(mod_inv(2, 7).unwrap(), 4);
+		assert_eq!(mod_inv(69, 113).unwrap(), 95);
+		assert_eq!(mod_inv(111, 113).unwrap(), 56);
 	}
 
 	#[test]

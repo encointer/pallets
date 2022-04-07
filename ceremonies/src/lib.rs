@@ -184,7 +184,8 @@ pub mod pallet {
 			let meetup_index = Self::get_meetup_index((cid, cindex), &sender)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
 			let mut meetup_participants =
-				Self::get_meetup_participants((cid, cindex), meetup_index);
+				Self::get_meetup_participants((cid, cindex), meetup_index)
+					.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			meetup_participants.retain(|x| x != &sender);
 			let num_registered = meetup_participants.len();
@@ -572,6 +573,8 @@ pub mod pallet {
 		InvalidMeetupTimeOffset,
 		/// the history for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged,
+		/// Error while finding meetup participants
+		GetMeetupParticipantsError,
 	}
 
 	#[pallet::storage]
@@ -938,7 +941,7 @@ impl<T: Config> Pallet<T> {
 				}
 
 				meetup_registry =
-					Some(Self::get_meetup_participants((cid, cindex), participant_meetup_index));
+					Self::get_meetup_participants((cid, cindex), participant_meetup_index);
 			}
 
 			aggregated_account_data_personal =
@@ -1326,7 +1329,7 @@ impl<T: Config> Pallet<T> {
 	fn get_meetup_participants(
 		community_ceremony: CommunityCeremony,
 		mut meetup_index: MeetupIndexType,
-	) -> Vec<T::AccountId> {
+	) -> Option<Vec<T::AccountId>> {
 		let mut result: Vec<T::AccountId> = vec![];
 		let meetup_count = Self::meetup_count(community_ceremony);
 
@@ -1337,7 +1340,7 @@ impl<T: Config> Pallet<T> {
 				target: LOG,
 				"Invalid meetup index > meetup count: {}, {}", meetup_index, meetup_count
 			);
-			return vec![]
+			return Some(vec![])
 		}
 
 		let params = Self::assignments(community_ceremony);
@@ -1349,7 +1352,7 @@ impl<T: Config> Pallet<T> {
 			params.bootstrappers_reputables,
 			meetup_count,
 			assigned.bootstrappers + assigned.reputables,
-		);
+		)?;
 		for p in bootstrappers_reputables {
 			if p < assigned.bootstrappers {
 				//safe; small number per meetup
@@ -1375,8 +1378,12 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		let endorsees =
-			assignment_fn_inverse(meetup_index, params.endorsees, meetup_count, assigned.endorsees);
+		let endorsees = assignment_fn_inverse(
+			meetup_index,
+			params.endorsees,
+			meetup_count,
+			assigned.endorsees,
+		)?;
 		for p in endorsees {
 			if p < assigned.endorsees {
 				//safe; small number per meetup
@@ -1391,7 +1398,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let newbies =
-			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies);
+			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies)?;
 		for p in newbies {
 			if p < assigned.newbies {
 				//safe; small number per meetup
@@ -1405,7 +1412,7 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		return result
+		return Some(result)
 	}
 
 	fn verify_attendee_signature(
@@ -1450,7 +1457,8 @@ impl<T: Config> Pallet<T> {
 			target: LOG,
 			"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
 		);
-		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index);
+		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index)
+			.ok_or(<Error<T>>::GetMeetupParticipantsError.into())?;
 		let mut reward_count = 0;
 		for participant in &meetup_participants {
 			if Self::meetup_participant_count_vote((cid, cindex), &participant) != n_confirmed {
@@ -1526,7 +1534,17 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		meetup_idx: MeetupIndexType,
 	) -> Option<(u32, u32)> {
-		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_idx);
+		let meetup_participants;
+		if let Some(mp) = Self::get_meetup_participants((*cid, cindex), meetup_idx) {
+			meetup_participants = mp;
+		} else {
+			debug!(
+				target: LOG,
+				"error computing meetup participants for meetup {:?}, cid: {:?}", meetup_idx, cid
+			);
+			return None
+		}
+
 		// first element is n, second the count of votes for n
 		let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
 		for p in meetup_participants {

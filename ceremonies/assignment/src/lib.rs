@@ -25,8 +25,8 @@ pub fn assignment_fn(
 	participant_index
 		.checked_mul(assignment_params.s1)?
 		.checked_add(assignment_params.s2)
-		.and_then(|div| checked_modulo(div, assignment_params.m))
-		.and_then(|div| checked_modulo(div, assignment_count))
+		.and_then(|div| checked_modulo::<u64>(div, assignment_params.m))
+		.and_then(|div| checked_modulo::<u64>(div, assignment_count))
 }
 
 /// Generates randomized `[AssignmentParams]` for `num_participants` to be distributed across
@@ -95,9 +95,9 @@ pub fn assignment_fn_inverse(
 	assignment_params: AssignmentParams,
 	assignment_count: u64,
 	participant_count: u64,
-) -> Vec<ParticipantIndexType> {
+) -> Option<Vec<ParticipantIndexType>> {
 	if assignment_count <= 0 {
-		return vec![]
+		return Some(vec![])
 	}
 
 	let mut max_index =
@@ -109,7 +109,7 @@ pub fn assignment_fn_inverse(
 	}
 
 	for i in 0..max_index {
-		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64);
+		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64)?;
 
 		let t3 = match t3(assignment_count, i, meetup_index, assignment_params, t2) {
 			Some(t3) => t3,
@@ -126,7 +126,7 @@ pub fn assignment_fn_inverse(
 			result.push(t3 + assignment_params.m)
 		}
 	}
-	result
+	Some(result)
 }
 
 fn t3(
@@ -267,7 +267,8 @@ mod tests {
 
 		// inverse function yields the same result
 		for i in 0..n {
-			let participants = assignment_fn_inverse(i, assignment_params, n, num_participants);
+			let participants =
+				assignment_fn_inverse(i, assignment_params, n, num_participants).unwrap();
 			for p in participants {
 				assigned_participants[p as usize] = true;
 				assert_eq!(locations[p as usize], i)
