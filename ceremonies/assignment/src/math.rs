@@ -87,13 +87,17 @@ pub fn find_prime_below(mut n: u64) -> u64 {
 		return 2u64
 	}
 	if n % 2 == 0 {
-		n -= 1;
+		n = n.checked_sub(1).expect("n > 2; qed");
 	}
 	while n > 0 {
 		if is_prime(n) {
 			return n
 		}
-		n -= 2;
+		if let Some(n_minus_two) = n.checked_sub(2) {
+			n = n_minus_two;
+		} else {
+			break
+		}
 	}
 	2u64
 }
