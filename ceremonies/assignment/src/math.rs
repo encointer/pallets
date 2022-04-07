@@ -32,7 +32,7 @@ pub fn checked_modulo<T: Rem<T> + Rem<Output = T> + Zero + PartialEq>(
 }
 
 pub fn checked_ceil_division(dividend: u64, divisor: u64) -> Option<u64> {
-	let dd = dividend.checked_add(divisor)? - 1;
+	let dd = dividend.checked_add(divisor)?.checked_sub(1)?;
 
 	dd.checked_div(divisor)
 }
@@ -194,5 +194,12 @@ mod tests {
 		assert_eq!(get_greatest_common_denominator(3, 9), 3);
 		assert_eq!(get_greatest_common_denominator(8, 36), 4);
 		assert_eq!(get_greatest_common_denominator(8, 1), 1);
+	}
+
+	#[test]
+	fn checked_ceil_division_works() {
+		assert_eq!(checked_ceil_division(6, 4).unwrap(), 2);
+		assert_eq!(checked_ceil_division(12, 3).unwrap(), 4);
+		assert_eq!(checked_ceil_division(0, 0), None);
 	}
 }
