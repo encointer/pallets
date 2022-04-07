@@ -27,7 +27,7 @@
 
 use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
-	assignment_fn_inverse, generate_assignment_function_params,
+	assignment_fn_inverse, generate_assignment_function_params, get_meetup_location_index,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
 	meetup_index, meetup_location, meetup_time,
 };
@@ -899,6 +899,66 @@ impl<T: Config> Pallet<T> {
 			.collect()
 	}
 
+	pub fn get_aggregated_account_data(
+		cid: CommunityIdentifier,
+		account: &T::AccountId,
+	) -> AggregatedAccountData<T::AccountId, T::Moment> {
+		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+		let aggregated_account_data_global = AggregatedAccountDataGlobal {
+			ceremony_phase: <encointer_scheduler::Pallet<T>>::current_phase(),
+			ceremony_index: cindex,
+		};
+
+		let aggregated_account_data_personal: Option<
+			AggregatedAccountDataPersonal<T::AccountId, T::Moment>,
+		>;
+
+		// check if the participant is registered. if not the entire personal field will be None.
+		if let Some(participant_type) = Self::get_participant_type((cid, cindex), account) {
+			let mut meetup_location_index: Option<MeetupIndexType> = None;
+			let mut meetup_time: Option<T::Moment> = None;
+			let mut meetup_registry: Option<Vec<T::AccountId>> = None;
+			let mut meetup_index: Option<MeetupIndexType> = None;
+
+			// check if the participant is already assigned to a meetup
+			if let Some(participant_meetup_index) = Self::get_meetup_index((cid, cindex), account) {
+				meetup_index = Some(participant_meetup_index);
+				let locations = <encointer_communities::Pallet<T>>::get_locations(&cid);
+				let location_assignment_params = Self::assignments((cid, cindex)).locations;
+
+				meetup_location_index = get_meetup_location_index(
+					participant_meetup_index,
+					&locations,
+					location_assignment_params,
+				);
+				if let Some(location) =
+					Self::get_meetup_location((cid, cindex), participant_meetup_index)
+				{
+					meetup_time = Self::get_meetup_time(location);
+				}
+
+				meetup_registry =
+					Some(Self::get_meetup_participants((cid, cindex), participant_meetup_index));
+			}
+
+			aggregated_account_data_personal =
+				Some(AggregatedAccountDataPersonal::<T::AccountId, T::Moment> {
+					participant_type,
+					meetup_index,
+					meetup_location_index,
+					meetup_time,
+					meetup_registry,
+				});
+		} else {
+			aggregated_account_data_personal = None;
+		}
+		let aggregated_account_data = AggregatedAccountData::<T::AccountId, T::Moment> {
+			global: aggregated_account_data_global,
+			personal: aggregated_account_data_personal,
+		};
+		aggregated_account_data
+	}
+
 	fn register(
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,
@@ -1189,6 +1249,25 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	fn get_participant_type(
+		community_ceremony: CommunityCeremony,
+		participant: &T::AccountId,
+	) -> Option<ParticipantType> {
+		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Bootstrapper)
+		}
+		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Reputable)
+		}
+		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Endorsee)
+		}
+		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Newbie)
+		}
+		None
+	}
+
 	fn get_meetup_index(
 		community_ceremony: CommunityCeremony,
 		participant: &T::AccountId,
@@ -1198,42 +1277,50 @@ impl<T: Config> Pallet<T> {
 
 		let assignment = Self::assignments(community_ceremony);
 
-		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::bootstrapper_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.bootstrappers {
-				return meetup_index(
-					participant_index,
-					assignment.bootstrappers_reputables,
-					meetup_count,
-				)
-			}
-		}
-		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.reputables {
-				return meetup_index(
-					participant_index + assignment_count.bootstrappers,
-					assignment.bootstrappers_reputables,
-					meetup_count,
-				)
-			}
-		}
+		let participant_type = Self::get_participant_type(community_ceremony, participant)?;
 
-		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.endorsees {
-				return meetup_index(participant_index, assignment.endorsees, meetup_count)
-			}
-		}
+		let (participant_index, assignment_params) = match participant_type {
+			ParticipantType::Bootstrapper => {
+				let participant_index =
+					Self::bootstrapper_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.bootstrappers {
+					(participant_index, assignment.bootstrappers_reputables)
+				} else {
+					return None
+				}
+			},
+			ParticipantType::Reputable => {
+				let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.reputables {
+					(
+						participant_index + assignment_count.bootstrappers,
+						assignment.bootstrappers_reputables,
+					)
+				} else {
+					return None
+				}
+			},
 
-		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.newbies {
-				return meetup_index(participant_index, assignment.newbies, meetup_count)
-			}
-		}
+			ParticipantType::Endorsee => {
+				let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.endorsees {
+					(participant_index, assignment.endorsees)
+				} else {
+					return None
+				}
+			},
 
-		None
+			ParticipantType::Newbie => {
+				let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.newbies {
+					(participant_index, assignment.newbies)
+				} else {
+					return None
+				}
+			},
+		};
+
+		meetup_index(participant_index, assignment_params, meetup_count)
 	}
 
 	fn get_meetup_participants(

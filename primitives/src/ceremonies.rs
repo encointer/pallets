@@ -34,6 +34,7 @@ pub type EndorsementTicketsPerBootstrapperType = u8;
 pub type ReputationLifetimeType = u32;
 pub type MeetupTimeOffsetType = i32;
 
+use crate::scheduler::CeremonyPhaseType;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
@@ -289,6 +290,35 @@ pub fn reputation_cache_key<Account: Encode>(account: Account) -> Vec<u8> {
 
 pub fn reputation_cache_dirty_key<Account: Encode>(account: Account) -> Vec<u8> {
 	(consts::REPUTATION_CACHE_DIRTY_KEY, account).encode()
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct AggregatedAccountDataPersonal<AccountId, Moment> {
+	pub participant_type: ParticipantType,
+	pub meetup_index: Option<MeetupIndexType>,
+	pub meetup_location_index: Option<MeetupIndexType>,
+	pub meetup_time: Option<Moment>,
+	pub meetup_registry: Option<Vec<AccountId>>,
+}
+
+#[derive(
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct AggregatedAccountDataGlobal {
+	pub ceremony_phase: CeremonyPhaseType,
+	pub ceremony_index: CeremonyIndexType,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct AggregatedAccountData<AccountId, Moment> {
+	pub global: AggregatedAccountDataGlobal,
+	pub personal: Option<AggregatedAccountDataPersonal<AccountId, Moment>>,
 }
 
 #[cfg(test)]

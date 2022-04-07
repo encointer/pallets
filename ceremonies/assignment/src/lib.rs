@@ -155,13 +155,21 @@ pub fn meetup_index(
 	Some(assignment_fn(participant_index, params, meetup_count)? + 1)
 }
 
+pub fn get_meetup_location_index(
+	meetup_index: MeetupIndexType,
+	locations: &[Location],
+	location_assignment_params: AssignmentParams,
+) -> Option<MeetupIndexType> {
+	assignment_fn(meetup_index, location_assignment_params, locations.len() as u64)
+}
+
 pub fn meetup_location(
 	meetup_index: MeetupIndexType,
 	locations: Vec<Location>,
 	location_assignment_params: AssignmentParams,
 ) -> Option<Location> {
 	let location_idx =
-		assignment_fn(meetup_index, location_assignment_params, locations.len() as u64)?;
+		get_meetup_location_index(meetup_index, &locations, location_assignment_params)?;
 
 	if location_idx < locations.len() as u64 {
 		Some(locations[(location_idx) as usize])
