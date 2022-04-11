@@ -2,7 +2,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::math::{checked_ceil_division, checked_modulo, find_prime_below, mod_inv};
+use crate::math::{checked_ceil_division, checked_mod_inv, checked_modulo, find_prime_below};
 use encointer_primitives::{
 	ceremonies::{AssignmentParams, MeetupIndexType, MeetupTimeOffsetType, ParticipantIndexType},
 	communities::{Location, LossyFrom},
@@ -109,7 +109,7 @@ pub fn assignment_fn_inverse(
 	}
 
 	for i in 0..max_index {
-		let t2 = mod_inv(assignment_params.s1 as i64, assignment_params.m as i64)?;
+		let t2 = checked_mod_inv(assignment_params.s1 as i64, assignment_params.m as i64)?;
 
 		let t3 = match t3(assignment_count, i, meetup_index, assignment_params, t2) {
 			Some(t3) => t3,

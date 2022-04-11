@@ -127,7 +127,7 @@ pub fn find_random_coprime_below<H: Hash>(
 		.unwrap_or(1)
 }
 
-pub fn mod_inv(a: i64, module: i64) -> Option<i64> {
+pub fn checked_mod_inv(a: i64, module: i64) -> Option<i64> {
 	let mut mn = (module, a);
 	let mut xy = (0i64, 1i64);
 
@@ -182,9 +182,9 @@ mod tests {
 
 	#[test]
 	fn mod_inv_works() {
-		assert_eq!(mod_inv(2, 7).unwrap(), 4);
-		assert_eq!(mod_inv(69, 113).unwrap(), 95);
-		assert_eq!(mod_inv(111, 113).unwrap(), 56);
+		assert_eq!(checked_mod_inv(2, 7).unwrap(), 4);
+		assert_eq!(checked_mod_inv(69, 113).unwrap(), 95);
+		assert_eq!(checked_mod_inv(111, 113).unwrap(), 56);
 	}
 
 	#[test]
