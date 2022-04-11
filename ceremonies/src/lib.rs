@@ -968,18 +968,15 @@ impl<T: Config> Pallet<T> {
 		let participant_index = <NewbieIndex<T>>::get((cid, cindex), &participant);
 		let participant_count = <NewbieCount<T>>::get((cid, cindex));
 
-		<NewbieRegistry<T>>::remove((cid, cindex), &participant_index);
+		let last_participant = <NewbieRegistry<T>>::get((cid, cindex), &participant_count)
+			.expect("Indices are continuous, thus index participant_count is Some; qed");
+
+		<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &last_participant);
+		<NewbieIndex<T>>::insert((cid, cindex), &last_participant, &participant_index);
+
+		<NewbieRegistry<T>>::remove((cid, cindex), &participant_count);
 		<NewbieIndex<T>>::remove((cid, cindex), &participant);
 
-		for idx in (participant_index + 1)..=participant_count {
-			let p = <NewbieRegistry<T>>::get((cid, cindex), &idx)
-				.expect("idx <= participant_count, so p is registered; qed");
-
-			let new_idx = idx - 1;
-			<NewbieIndex<T>>::insert((cid, cindex), &p, new_idx);
-			<NewbieRegistry<T>>::remove((cid, cindex), &idx);
-			<NewbieRegistry<T>>::insert((cid, cindex), &new_idx, &p);
-		}
 		<NewbieCount<T>>::insert(
 			(cid, cindex),
 			participant_count

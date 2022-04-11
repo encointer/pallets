@@ -1765,26 +1765,26 @@ fn unregistering_newbie_works() {
 
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 3);
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 1).unwrap(), alice);
-		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 2).unwrap(), charlie);
-		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 3).unwrap(), eve);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 2).unwrap(), eve);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 3).unwrap(), charlie);
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 4), None);
 
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &alice), 1);
-		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &charlie), 2);
-		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &eve), 3);
+		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &eve), 2);
+		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &charlie), 3);
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &bob), 0);
 
-		assert_ok!(EncointerCeremonies::unregister_newbie(cid, cindex, &eve));
+		assert_ok!(EncointerCeremonies::unregister_newbie(cid, cindex, &charlie));
 
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 2);
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 1).unwrap(), alice);
-		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 2).unwrap(), charlie);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 2).unwrap(), eve);
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 3), None);
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 4), None);
 
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &alice), 1);
-		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &charlie), 2);
-		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &eve), 0);
+		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &eve), 2);
+		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &charlie), 0);
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &bob), 0);
 	});
 }
