@@ -265,7 +265,8 @@ fn fully_attest_meetup(
 	mindex: MeetupIndexType,
 ) {
 	let cindex = EncointerScheduler::current_ceremony_index();
-	let meetup_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), mindex);
+	let meetup_participants =
+		EncointerCeremonies::get_meetup_participants((cid, cindex), mindex).unwrap();
 	for p in meetup_participants.iter() {
 		let mut others = Vec::with_capacity(meetup_participants.len() - 1);
 		for o in meetup_participants.iter() {
@@ -1514,7 +1515,8 @@ fn meetup_with_only_one_newbie_works() {
 
 		run_to_next_phase();
 
-		let mut participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
+		let mut participants =
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 1).unwrap();
 		let mut expected_participants =
 			[bootstrapper, bootstrapper2, reputable, reputable2, newbie];
 		expected_participants.sort();
@@ -1581,8 +1583,10 @@ fn get_meetup_participants_works() {
 			participants[6].clone(),
 			participants[11].clone(),
 		];
-		let mut m0_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 1);
-		let mut m1_participants = EncointerCeremonies::get_meetup_participants((cid, cindex), 2);
+		let mut m0_participants =
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 1).unwrap();
+		let mut m1_participants =
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 2).unwrap();
 
 		m0_expected_participants.sort();
 		m1_expected_participants.sort();
