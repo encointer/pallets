@@ -39,14 +39,14 @@ where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	Moment: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "ceremonies_getReputations")]
+	#[rpc(name = "encointer_getReputations")]
 	fn get_reputations(
 		&self,
 		account: AccountId,
 		at: Option<BlockHash>,
 	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>>;
 
-	#[rpc(name = "ceremonies_getAggregatedAccountData")]
+	#[rpc(name = "encointer_getAggregatedAccountData")]
 	fn get_aggregated_account_data(
 		&self,
 		cid: CommunityIdentifier,

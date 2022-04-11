@@ -41,17 +41,17 @@ where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	BlockNumber: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "communities_getAll")]
+	#[rpc(name = "encointer_getAllCommunities")]
 	fn communities_get_all(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
 
-	#[rpc(name = "communities_getLocations")]
+	#[rpc(name = "encointer_getLocations")]
 	fn communities_get_locations(
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
 	) -> Result<Vec<Location>>;
 
-	#[rpc(name = "communities_getAllBalances")]
+	#[rpc(name = "encointer_getAllBalances")]
 	fn communities_get_all_balances(
 		&self,
 		account: AccountId,
