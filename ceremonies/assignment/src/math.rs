@@ -20,10 +20,7 @@ use encointer_primitives::{RandomNumberGenerator, RandomPermutation};
 use sp_runtime::traits::{Hash, Zero};
 use sp_std::{ops::Rem, vec::Vec};
 
-pub fn checked_modulo<T: Rem<T> + Rem<Output = T> + Zero + PartialEq>(
-	dividend: T,
-	divisor: T,
-) -> Option<T> {
+pub fn checked_modulo<T: Rem<Output = T> + Zero + PartialEq>(dividend: T, divisor: T) -> Option<T> {
 	let zero = T::zero();
 	match divisor {
 		_ if divisor == zero => Option::None,
