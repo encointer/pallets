@@ -1024,12 +1024,13 @@ impl<T: Config> Pallet<T> {
 			return Err(<Error<T>>::WrongPhaseForUnregistering.into())
 		}
 
-		if !<NewbieIndex<T>>::contains_key((cid, cindex), &participant) {
+		let participant_count = <NewbieCount<T>>::get((cid, cindex));
+
+		if !<NewbieIndex<T>>::contains_key((cid, cindex), &participant) || participant_count < 1 {
 			return Ok(())
 		}
 
 		let participant_index = <NewbieIndex<T>>::get((cid, cindex), &participant);
-		let participant_count = <NewbieCount<T>>::get((cid, cindex));
 
 		let last_participant = <NewbieRegistry<T>>::get((cid, cindex), &participant_count)
 			.expect("Indices are continuous, thus index participant_count is Some; qed");

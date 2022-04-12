@@ -1797,6 +1797,22 @@ fn unregistering_newbie_works() {
 }
 
 #[test]
+fn unregistering_newbie_with_no_participants_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+
+		let alice = account_id(&AccountKeyring::Alice.pair());
+
+		assert_ok!(EncointerCeremonies::unregister_newbie(cid, cindex, &alice));
+	});
+}
+
+#[test]
 fn set_inactivity_timeout_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
