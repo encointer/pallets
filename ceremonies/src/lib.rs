@@ -1041,12 +1041,7 @@ impl<T: Config> Pallet<T> {
 		<NewbieRegistry<T>>::remove((cid, cindex), &participant_count);
 		<NewbieIndex<T>>::remove((cid, cindex), &participant);
 
-		<NewbieCount<T>>::insert(
-			(cid, cindex),
-			participant_count
-				.checked_sub(1)
-				.expect("participant is registered, thus participant_count > 0; qed"),
-		);
+		<NewbieCount<T>>::insert((cid, cindex), participant_count.saturating_sub(1));
 
 		Ok(())
 	}
