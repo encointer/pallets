@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-communities"
-version = "0.8.1"
+version = "1.0.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
 

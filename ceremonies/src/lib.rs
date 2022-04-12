@@ -27,7 +27,7 @@
 
 use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
-	assignment_fn_inverse, generate_assignment_function_params,
+	assignment_fn_inverse, generate_assignment_function_params, get_meetup_location_index,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
 	meetup_index, meetup_location, meetup_time,
 };
@@ -184,7 +184,8 @@ pub mod pallet {
 			let meetup_index = Self::get_meetup_index((cid, cindex), &sender)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
 			let mut meetup_participants =
-				Self::get_meetup_participants((cid, cindex), meetup_index);
+				Self::get_meetup_participants((cid, cindex), meetup_index)
+					.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			meetup_participants.retain(|x| x != &sender);
 			let num_registered = meetup_participants.len();
@@ -579,6 +580,8 @@ pub mod pallet {
 		CommunityCeremonyHistoryPurged,
 		/// Unregistering can only be performed during the registering phase
 		WrongPhaseForUnregistering,
+		/// Error while finding meetup participants
+		GetMeetupParticipantsError,
 	}
 
 	#[pallet::storage]
@@ -904,6 +907,66 @@ impl<T: Config> Pallet<T> {
 			.filter(|t| &t.1 == account)
 			.map(|t| (t.0 .1, CommunityReputation::new(t.0 .0, t.2)))
 			.collect()
+	}
+
+	pub fn get_aggregated_account_data(
+		cid: CommunityIdentifier,
+		account: &T::AccountId,
+	) -> AggregatedAccountData<T::AccountId, T::Moment> {
+		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+		let aggregated_account_data_global = AggregatedAccountDataGlobal {
+			ceremony_phase: <encointer_scheduler::Pallet<T>>::current_phase(),
+			ceremony_index: cindex,
+		};
+
+		let aggregated_account_data_personal: Option<
+			AggregatedAccountDataPersonal<T::AccountId, T::Moment>,
+		>;
+
+		// check if the participant is registered. if not the entire personal field will be None.
+		if let Some(participant_type) = Self::get_participant_type((cid, cindex), account) {
+			let mut meetup_location_index: Option<MeetupIndexType> = None;
+			let mut meetup_time: Option<T::Moment> = None;
+			let mut meetup_registry: Option<Vec<T::AccountId>> = None;
+			let mut meetup_index: Option<MeetupIndexType> = None;
+
+			// check if the participant is already assigned to a meetup
+			if let Some(participant_meetup_index) = Self::get_meetup_index((cid, cindex), account) {
+				meetup_index = Some(participant_meetup_index);
+				let locations = <encointer_communities::Pallet<T>>::get_locations(&cid);
+				let location_assignment_params = Self::assignments((cid, cindex)).locations;
+
+				meetup_location_index = get_meetup_location_index(
+					participant_meetup_index,
+					&locations,
+					location_assignment_params,
+				);
+				if let Some(location) =
+					Self::get_meetup_location((cid, cindex), participant_meetup_index)
+				{
+					meetup_time = Self::get_meetup_time(location);
+				}
+
+				meetup_registry =
+					Self::get_meetup_participants((cid, cindex), participant_meetup_index);
+			}
+
+			aggregated_account_data_personal =
+				Some(AggregatedAccountDataPersonal::<T::AccountId, T::Moment> {
+					participant_type,
+					meetup_index,
+					meetup_location_index,
+					meetup_time,
+					meetup_registry,
+				});
+		} else {
+			aggregated_account_data_personal = None;
+		}
+		let aggregated_account_data = AggregatedAccountData::<T::AccountId, T::Moment> {
+			global: aggregated_account_data_global,
+			personal: aggregated_account_data_personal,
+		};
+		aggregated_account_data
 	}
 
 	fn register(
@@ -1232,6 +1295,25 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	fn get_participant_type(
+		community_ceremony: CommunityCeremony,
+		participant: &T::AccountId,
+	) -> Option<ParticipantType> {
+		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Bootstrapper)
+		}
+		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Reputable)
+		}
+		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Endorsee)
+		}
+		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
+			return Some(ParticipantType::Newbie)
+		}
+		None
+	}
+
 	fn get_meetup_index(
 		community_ceremony: CommunityCeremony,
 		participant: &T::AccountId,
@@ -1241,48 +1323,56 @@ impl<T: Config> Pallet<T> {
 
 		let assignment = Self::assignments(community_ceremony);
 
-		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::bootstrapper_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.bootstrappers {
-				return meetup_index(
-					participant_index,
-					assignment.bootstrappers_reputables,
-					meetup_count,
-				)
-			}
-		}
-		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.reputables {
-				return meetup_index(
-					participant_index + assignment_count.bootstrappers,
-					assignment.bootstrappers_reputables,
-					meetup_count,
-				)
-			}
-		}
+		let participant_type = Self::get_participant_type(community_ceremony, participant)?;
 
-		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.endorsees {
-				return meetup_index(participant_index, assignment.endorsees, meetup_count)
-			}
-		}
+		let (participant_index, assignment_params) = match participant_type {
+			ParticipantType::Bootstrapper => {
+				let participant_index =
+					Self::bootstrapper_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.bootstrappers {
+					(participant_index, assignment.bootstrappers_reputables)
+				} else {
+					return None
+				}
+			},
+			ParticipantType::Reputable => {
+				let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.reputables {
+					(
+						participant_index + assignment_count.bootstrappers,
+						assignment.bootstrappers_reputables,
+					)
+				} else {
+					return None
+				}
+			},
 
-		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
-			let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
-			if participant_index < assignment_count.newbies {
-				return meetup_index(participant_index, assignment.newbies, meetup_count)
-			}
-		}
+			ParticipantType::Endorsee => {
+				let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.endorsees {
+					(participant_index, assignment.endorsees)
+				} else {
+					return None
+				}
+			},
 
-		None
+			ParticipantType::Newbie => {
+				let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
+				if participant_index < assignment_count.newbies {
+					(participant_index, assignment.newbies)
+				} else {
+					return None
+				}
+			},
+		};
+
+		meetup_index(participant_index, assignment_params, meetup_count)
 	}
 
 	fn get_meetup_participants(
 		community_ceremony: CommunityCeremony,
 		mut meetup_index: MeetupIndexType,
-	) -> Vec<T::AccountId> {
+	) -> Option<Vec<T::AccountId>> {
 		let mut result: Vec<T::AccountId> = vec![];
 		let meetup_count = Self::meetup_count(community_ceremony);
 
@@ -1293,7 +1383,7 @@ impl<T: Config> Pallet<T> {
 				target: LOG,
 				"Invalid meetup index > meetup count: {}, {}", meetup_index, meetup_count
 			);
-			return vec![]
+			return Some(vec![])
 		}
 
 		let params = Self::assignments(community_ceremony);
@@ -1305,7 +1395,7 @@ impl<T: Config> Pallet<T> {
 			params.bootstrappers_reputables,
 			meetup_count,
 			assigned.bootstrappers + assigned.reputables,
-		);
+		)?;
 		for p in bootstrappers_reputables {
 			if p < assigned.bootstrappers {
 				//safe; small number per meetup
@@ -1331,8 +1421,12 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		let endorsees =
-			assignment_fn_inverse(meetup_index, params.endorsees, meetup_count, assigned.endorsees);
+		let endorsees = assignment_fn_inverse(
+			meetup_index,
+			params.endorsees,
+			meetup_count,
+			assigned.endorsees,
+		)?;
 		for p in endorsees {
 			if p < assigned.endorsees {
 				//safe; small number per meetup
@@ -1347,7 +1441,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let newbies =
-			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies);
+			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies)?;
 		for p in newbies {
 			if p < assigned.newbies {
 				//safe; small number per meetup
@@ -1361,7 +1455,7 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		return result
+		return Some(result)
 	}
 
 	fn verify_attendee_signature(
@@ -1406,7 +1500,8 @@ impl<T: Config> Pallet<T> {
 			target: LOG,
 			"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
 		);
-		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index);
+		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index)
+			.ok_or(<Error<T>>::GetMeetupParticipantsError.into())?;
 		let mut reward_count = 0;
 		for participant in &meetup_participants {
 			if Self::meetup_participant_count_vote((cid, cindex), &participant) != n_confirmed {
@@ -1482,7 +1577,17 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		meetup_idx: MeetupIndexType,
 	) -> Option<(u32, u32)> {
-		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_idx);
+		let meetup_participants;
+		if let Some(mp) = Self::get_meetup_participants((*cid, cindex), meetup_idx) {
+			meetup_participants = mp;
+		} else {
+			debug!(
+				target: LOG,
+				"error computing meetup participants for meetup {:?}, cid: {:?}", meetup_idx, cid
+			);
+			return None
+		}
+
 		// first element is n, second the count of votes for n
 		let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
 		for p in meetup_participants {

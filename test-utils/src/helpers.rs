@@ -73,6 +73,15 @@ where
 	CommunityIdentifier::new(location, bs).unwrap()
 }
 
+pub fn events<T: frame_system::Config>() -> Vec<T::Event> {
+	let events = frame_system::Pallet::<T>::events()
+		.into_iter()
+		.map(|evt| evt.event)
+		.collect::<Vec<_>>();
+	frame_system::Pallet::<T>::reset_events();
+	events
+}
+
 pub fn last_event<T: frame_system::Config>() -> Option<T::Event> {
 	let events = frame_system::Pallet::<T>::events();
 	if events.len() < 1 {
