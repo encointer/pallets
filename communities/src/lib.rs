@@ -152,7 +152,7 @@ pub mod pallet {
 			T::CommunityMaster::ensure_origin(origin)?;
 
 			ensure!(
-				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
@@ -198,7 +198,7 @@ pub mod pallet {
 			T::CommunityMaster::ensure_origin(origin)?;
 
 			ensure!(
-				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;

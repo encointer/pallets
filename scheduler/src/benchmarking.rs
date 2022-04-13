@@ -8,10 +8,10 @@ use frame_system::RawOrigin;
 
 benchmarks! {
 	next_phase {
-		crate::CurrentPhase::<T>::put(CeremonyPhaseType::ATTESTING);
+		crate::CurrentPhase::<T>::put(CeremonyPhaseType::Attesting);
 	}: _(RawOrigin::Root)
 	verify {
-		assert_eq!(crate::CurrentPhase::<T>::get(), CeremonyPhaseType::REGISTERING)
+		assert_eq!(crate::CurrentPhase::<T>::get(), CeremonyPhaseType::Registering)
 	}
 
 	push_by_one_day {
@@ -23,9 +23,9 @@ benchmarks! {
 
 	set_phase_duration {
 		let timestamp: T::Moment = 1_000_000u32.into();
-	}: _(RawOrigin::Root, CeremonyPhaseType::REGISTERING, timestamp)
+	}: _(RawOrigin::Root, CeremonyPhaseType::Registering, timestamp)
 	verify {
-		assert_eq!(Scheduler::<T>::phase_durations(CeremonyPhaseType::REGISTERING), timestamp);
+		assert_eq!(Scheduler::<T>::phase_durations(CeremonyPhaseType::Registering), timestamp);
 	}
 
 	set_next_phase_timestamp {

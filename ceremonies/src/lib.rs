@@ -106,7 +106,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::REGISTERING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
 				Error::<T>::RegisteringPhaseRequired
 			);
 
@@ -170,7 +170,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::ATTESTING,
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Attesting,
 				Error::<T>::AttestationPhaseRequired
 			);
 			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
@@ -355,7 +355,7 @@ pub mod pallet {
 			);
 
 			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
-			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
 				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
 			}
 			ensure!(
@@ -439,7 +439,7 @@ pub mod pallet {
 			meetup_time_offset: MeetupTimeOffsetType,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
-			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
 				return Err(<Error<T>>::WrongPhaseForChangingMeetupTimeOffset.into())
 			}
 
@@ -1020,7 +1020,7 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		participant: &T::AccountId,
 	) -> Result<(), Error<T>> {
-		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
 			return Err(<Error<T>>::WrongPhaseForUnregistering.into())
 		}
 
@@ -1470,7 +1470,7 @@ impl<T: Config> Pallet<T> {
 		participant: &T::AccountId,
 		cid: &CommunityIdentifier,
 	) -> Result<(MeetupIndexType, u8), Error<T>> {
-		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
 			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
 		}
 
@@ -1627,12 +1627,12 @@ impl<T: Config> Pallet<T> {
 
 	// this function only works during ATTESTING, so we're keeping it for private use
 	pub(crate) fn get_meetup_time(location: Location) -> Option<T::Moment> {
-		if !(<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::ATTESTING) {
+		if !(<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Attesting) {
 			return None
 		}
 
 		let duration =
-			<encointer_scheduler::Pallet<T>>::phase_durations(CeremonyPhaseType::ATTESTING);
+			<encointer_scheduler::Pallet<T>>::phase_durations(CeremonyPhaseType::Attesting);
 		let next = <encointer_scheduler::Pallet<T>>::next_phase_timestamp();
 		let start = next - duration;
 
@@ -1661,11 +1661,11 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
-			CeremonyPhaseType::ASSIGNING => {
+			CeremonyPhaseType::Assigning => {
 				Self::generate_all_meetup_assignment_params();
 			},
-			CeremonyPhaseType::ATTESTING => {},
-			CeremonyPhaseType::REGISTERING => {
+			CeremonyPhaseType::Attesting => {},
+			CeremonyPhaseType::Registering => {
 				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
 				if cindex > Self::reputation_lifetime() {

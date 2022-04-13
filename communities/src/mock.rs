@@ -62,12 +62,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 
 	encointer_scheduler::GenesisConfig::<TestRuntime> {
-		current_phase: CeremonyPhaseType::REGISTERING,
+		current_phase: CeremonyPhaseType::Registering,
 		current_ceremony_index: 1,
 		phase_durations: vec![
-			(CeremonyPhaseType::REGISTERING, ONE_DAY),
-			(CeremonyPhaseType::ASSIGNING, ONE_DAY),
-			(CeremonyPhaseType::ATTESTING, ONE_DAY),
+			(CeremonyPhaseType::Registering, ONE_DAY),
+			(CeremonyPhaseType::Assigning, ONE_DAY),
+			(CeremonyPhaseType::Attesting, ONE_DAY),
 		],
 	}
 	.assimilate_storage(&mut t)
