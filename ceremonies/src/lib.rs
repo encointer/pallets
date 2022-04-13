@@ -367,6 +367,11 @@ pub mod pallet {
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
 			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 
+			if <NewbieIndex<T>>::contains_key((cid, cindex), &newbie) {
+				Self::unregister_newbie(cid, cindex, &newbie)?;
+				Self::register(cid, cindex, &newbie, false)?;
+			}
+
 			debug!(target: LOG, "bootstrapper {:?} endorsed newbie: {:?}", sender, newbie);
 			Self::deposit_event(Event::EndorsedParticipant(cid, sender, newbie));
 
@@ -573,6 +578,8 @@ pub mod pallet {
 		InvalidMeetupTimeOffset,
 		/// the history for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged,
+		/// Unregistering can only be performed during the registering phase
+		WrongPhaseForUnregistering,
 		/// Error while finding meetup participants
 		GetMeetupParticipantsError,
 	}
@@ -1005,6 +1012,38 @@ impl<T: Config> Pallet<T> {
 				ParticipantType::Newbie
 			};
 		Ok(participant_type)
+	}
+
+	/// removes a participant from the registry maintaining continuous indices
+	fn unregister_newbie(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		participant: &T::AccountId,
+	) -> Result<(), Error<T>> {
+		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::REGISTERING {
+			return Err(<Error<T>>::WrongPhaseForUnregistering.into())
+		}
+
+		let participant_count = <NewbieCount<T>>::get((cid, cindex));
+
+		if !<NewbieIndex<T>>::contains_key((cid, cindex), &participant) || participant_count < 1 {
+			return Ok(())
+		}
+
+		let participant_index = <NewbieIndex<T>>::get((cid, cindex), &participant);
+
+		let last_participant = <NewbieRegistry<T>>::get((cid, cindex), &participant_count)
+			.expect("Indices are continuous, thus index participant_count is Some; qed");
+
+		<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &last_participant);
+		<NewbieIndex<T>>::insert((cid, cindex), &last_participant, &participant_index);
+
+		<NewbieRegistry<T>>::remove((cid, cindex), &participant_count);
+		<NewbieIndex<T>>::remove((cid, cindex), &participant);
+
+		<NewbieCount<T>>::insert((cid, cindex), participant_count.saturating_sub(1));
+
+		Ok(())
 	}
 
 	fn is_registered(
