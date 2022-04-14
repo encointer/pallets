@@ -54,18 +54,18 @@ pub fn set_timestamp(t: u64) {
 fn ceremony_phase_statemachine_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::PhaseChangedTo(CeremonyPhaseType::ASSIGNING).into())
+			Some(Event::PhaseChangedTo(CeremonyPhaseType::Assigning).into())
 		);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
 	});
 }
@@ -101,7 +101,7 @@ fn timestamp_callback_works() {
 		set_timestamp(GENESIS_TIME);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)) + ONE_DAY
@@ -110,17 +110,17 @@ fn timestamp_callback_works() {
 		run_to_block(1);
 		set_timestamp(GENESIS_TIME + ONE_DAY);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 
 		run_to_block(2);
 		set_timestamp(GENESIS_TIME + 2 * ONE_DAY);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 
 		run_to_block(3);
 		set_timestamp(GENESIS_TIME + 3 * ONE_DAY);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 	});
 }
 
@@ -138,7 +138,7 @@ fn push_one_day_works() {
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
 		);
 
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 
 		run_to_block(1);
 		set_timestamp(genesis_time + TEN_MIN);
@@ -151,7 +151,7 @@ fn push_one_day_works() {
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 2 * ONE_DAY
 		);
 
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 	});
 }
 #[test]
@@ -165,7 +165,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_first_registering_phase
 		set_timestamp(genesis_time);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * TEN_MIN
@@ -184,7 +184,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_third_registering_phase
 		set_timestamp(genesis_time);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 7 * TEN_MIN
@@ -203,7 +203,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_third_assigning_phase()
 		set_timestamp(genesis_time);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 10 * TEN_MIN
@@ -222,7 +222,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_third_attesting_phase()
 		set_timestamp(genesis_time);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 10 * TEN_MIN
@@ -240,7 +240,7 @@ fn resync_after_next_phase_works() {
 		set_timestamp(genesis_time);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
@@ -252,7 +252,7 @@ fn resync_after_next_phase_works() {
 		// now use next_phase manually
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 2 * ONE_DAY
@@ -265,7 +265,7 @@ fn resync_after_next_phase_works() {
 		// again
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 3 * ONE_DAY
@@ -280,7 +280,7 @@ fn resync_after_next_phase_works() {
 		// even next_phase_timestamp in the future
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
@@ -300,7 +300,7 @@ fn resync_after_next_phase_works_during_assigning() {
 		set_timestamp(genesis_time);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
@@ -308,7 +308,7 @@ fn resync_after_next_phase_works_during_assigning() {
 
 		run_to_block(1);
 		set_timestamp(genesis_time + ONE_DAY + TEN_MIN);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 
 		// now use next_phase manually
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
@@ -316,7 +316,7 @@ fn resync_after_next_phase_works_during_assigning() {
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 2 * ONE_DAY
@@ -333,7 +333,7 @@ fn resync_after_next_phase_works_during_attesting() {
 		set_timestamp(genesis_time);
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
@@ -345,7 +345,7 @@ fn resync_after_next_phase_works_during_attesting() {
 		run_to_block(2);
 		set_timestamp(genesis_time + 2 * ONE_DAY + TEN_MIN);
 
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 
 		// now use next_phase manually
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
@@ -353,7 +353,7 @@ fn resync_after_next_phase_works_during_attesting() {
 		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 3 * ONE_DAY
@@ -367,7 +367,7 @@ fn set_phase_duration_errs_with_bad_origin() {
 		assert_dispatch_err(
 			EncointerScheduler::set_phase_duration(
 				Origin::signed(AccountKeyring::Bob.into()),
-				CeremonyPhaseType::REGISTERING,
+				CeremonyPhaseType::Registering,
 				Moment::from(10u32),
 			),
 			DispatchError::BadOrigin,
@@ -380,55 +380,55 @@ fn set_phase_duration_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_ok!(EncointerScheduler::set_phase_duration(
 			Origin::signed(master()),
-			CeremonyPhaseType::REGISTERING,
+			CeremonyPhaseType::Registering,
 			Moment::from(10u32)
 		));
 
 		assert_ok!(EncointerScheduler::set_phase_duration(
 			Origin::signed(master()),
-			CeremonyPhaseType::ASSIGNING,
+			CeremonyPhaseType::Assigning,
 			Moment::from(11u32)
 		));
 
 		assert_ok!(EncointerScheduler::set_phase_duration(
 			Origin::signed(master()),
-			CeremonyPhaseType::ATTESTING,
+			CeremonyPhaseType::Attesting,
 			Moment::from(12u32)
 		));
 
 		assert_eq!(
-			EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING),
+			EncointerScheduler::phase_durations(CeremonyPhaseType::Registering),
 			Moment::from(10u32)
 		);
 
 		assert_eq!(
-			EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING),
+			EncointerScheduler::phase_durations(CeremonyPhaseType::Assigning),
 			Moment::from(11u32)
 		);
 
 		assert_eq!(
-			EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING),
+			EncointerScheduler::phase_durations(CeremonyPhaseType::Attesting),
 			Moment::from(12u32)
 		);
 
 		assert_ok!(EncointerScheduler::set_phase_duration(
 			Origin::signed(master()),
-			CeremonyPhaseType::REGISTERING,
+			CeremonyPhaseType::Registering,
 			Moment::from(13u32)
 		));
 
 		assert_eq!(
-			EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING),
+			EncointerScheduler::phase_durations(CeremonyPhaseType::Registering),
 			Moment::from(13u32)
 		);
 
 		assert_eq!(
-			EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING),
+			EncointerScheduler::phase_durations(CeremonyPhaseType::Assigning),
 			Moment::from(11u32)
 		);
 
 		assert_eq!(
-			EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING),
+			EncointerScheduler::phase_durations(CeremonyPhaseType::Attesting),
 			Moment::from(12u32)
 		);
 	});

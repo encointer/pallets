@@ -89,7 +89,7 @@ pub mod pallet {
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForCurrentPhase() -> CeremonyPhaseType {
-		CeremonyPhaseType::REGISTERING
+		CeremonyPhaseType::Registering
 	}
 
 	#[pallet::storage]
@@ -130,7 +130,7 @@ pub mod pallet {
 		fn default() -> Self {
 			Self {
 				current_ceremony_index: Default::default(),
-				current_phase: CeremonyPhaseType::REGISTERING,
+				current_phase: CeremonyPhaseType::Registering,
 				phase_durations: Default::default(),
 			}
 		}
@@ -211,13 +211,13 @@ impl<T: Config> Pallet<T> {
 		let last_phase_timestamp = Self::next_phase_timestamp();
 
 		let next_phase = match current_phase {
-			CeremonyPhaseType::REGISTERING => CeremonyPhaseType::ASSIGNING,
-			CeremonyPhaseType::ASSIGNING => CeremonyPhaseType::ATTESTING,
-			CeremonyPhaseType::ATTESTING => {
+			CeremonyPhaseType::Registering => CeremonyPhaseType::Assigning,
+			CeremonyPhaseType::Assigning => CeremonyPhaseType::Attesting,
+			CeremonyPhaseType::Attesting => {
 				let next_ceremony_index = current_ceremony_index.saturating_add(1);
 				<CurrentCeremonyIndex<T>>::put(next_ceremony_index);
 				info!(target: LOG, "new ceremony phase with index {}", next_ceremony_index);
-				CeremonyPhaseType::REGISTERING
+				CeremonyPhaseType::Registering
 			},
 		};
 
@@ -235,9 +235,9 @@ impl<T: Config> Pallet<T> {
 	// 1. when the chain bootstraps and cycle duration is smaller than 24h, phases would cycle with every block until catched up
 	// 2. when next_phase() is used, we would introduce long idle phases because next_phase_timestamp would be pushed furhter and further into the future
 	fn resync_and_set_next_phase_timestamp(tnext: T::Moment) -> DispatchResult {
-		let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING) +
-			<PhaseDurations<T>>::get(CeremonyPhaseType::ASSIGNING) +
-			<PhaseDurations<T>>::get(CeremonyPhaseType::ATTESTING);
+		let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::Registering) +
+			<PhaseDurations<T>>::get(CeremonyPhaseType::Assigning) +
+			<PhaseDurations<T>>::get(CeremonyPhaseType::Attesting);
 		let now = <pallet_timestamp::Pallet<T>>::now();
 
 		let tnext = if tnext < now {
@@ -271,7 +271,7 @@ impl<T: Config> Pallet<T> {
 
 			// set phase start to 0:00 UTC on the day of genesis
 			let next = (now - now.rem(T::MomentsPerDay::get()))
-				.saturating_add(<PhaseDurations<T>>::get(CeremonyPhaseType::REGISTERING));
+				.saturating_add(<PhaseDurations<T>>::get(CeremonyPhaseType::Registering));
 
 			if Self::resync_and_set_next_phase_timestamp(next).is_err() {
 				warn!(target: LOG, "resync ceremony phase failed");

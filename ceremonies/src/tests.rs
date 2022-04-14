@@ -74,7 +74,7 @@ pub fn set_timestamp(t: u64) {
 
 /// get correct meetup time for a certain cid and meetup
 fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Moment {
-	//assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+	//assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 	let cindex = EncointerScheduler::current_ceremony_index() as u64;
 	let mlon: f64 = EncointerCeremonies::get_meetup_location((*cid, cindex as u32), mindex)
 		.unwrap()
@@ -82,9 +82,9 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
 		.lossy_into();
 
 	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
-		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::REGISTERING) +
-		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::ASSIGNING) +
-		(cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::ATTESTING) +
+		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Registering) +
+		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Assigning) +
+		(cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::Attesting) +
 		ONE_DAY / 2 -
 		(mlon / 360.0 * ONE_DAY as f64) as u64;
 
@@ -242,9 +242,9 @@ fn perform_bootstrapping_ceremony(
 	let cindex = EncointerScheduler::current_ceremony_index();
 
 	run_to_next_phase();
-	// ASSIGNING
+	// Assigning
 	run_to_next_phase();
-	// ATTESTING
+	// Attesting
 	let loc = EncointerCeremonies::get_meetup_location((cid, cindex as u32), 1).unwrap();
 	let time = correct_meetup_time(&cid, 1);
 
@@ -254,7 +254,7 @@ fn perform_bootstrapping_ceremony(
 		attest_all(account_id(&claimant), &bs.iter().collect(), cid, cindex, 1, loc, time, 6);
 	}
 	run_to_next_phase();
-	// REGISTERING
+	// Registering
 	cid
 }
 
@@ -393,7 +393,7 @@ fn registering_participant_in_wrong_phase_fails() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		run_to_next_phase();
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 		assert!(register(alice.clone(), cid, None).is_err());
 	});
 }
@@ -410,7 +410,7 @@ fn attest_claims_works() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		assert_eq!(
 			EncointerCeremonies::get_meetup_index((cid, cindex), &account_id(&alice)).unwrap(),
 			1
@@ -447,7 +447,7 @@ fn attest_claims_for_non_participant_fails_silently() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 
 		attest_all(
 			account_id(&alice),
@@ -477,7 +477,7 @@ fn attest_claims_for_non_participant_fails() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		let mut eve_claims: Vec<TestClaim> = vec![];
 		let loc = Location::default();
 		let time = correct_meetup_time(&cid, 1);
@@ -502,7 +502,7 @@ fn attest_claims_with_non_participant_fails_silently() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		attest_all(
 			account_id(&alice),
 			&vec![&bob, &eve],
@@ -531,7 +531,7 @@ fn attest_claims_with_wrong_meetup_index_fails() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		let loc = Location::default();
 		let time = correct_meetup_time(&cid, 1);
 		let mut alice_claims: Vec<TestClaim> = vec![];
@@ -568,7 +568,7 @@ fn attest_claims_with_wrong_ceremony_index_fails() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		let loc = Location::default();
 		let time = correct_meetup_time(&cid, 1);
 		let mut alice_attestations: Vec<TestClaim> = vec![];
@@ -605,7 +605,7 @@ fn attest_claims_with_wrong_timestamp_fails() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		let loc = Location { lon: Degree::from_num(25.9), lat: Degree::from_num(0) };
 		// too late!
 		let time = correct_meetup_time(&cid, 1) + TIME_TOLERANCE + 1;
@@ -633,7 +633,7 @@ fn attest_claims_with_wrong_location_fails() {
 		register_alice_bob_ferdie(cid);
 		run_to_next_phase();
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 
 		// too far away!
 		let mut loc = Location::default();
@@ -667,9 +667,9 @@ fn ballot_meetup_n_votes_works() {
 		register_charlie_dave_eve(cid);
 
 		run_to_next_phase();
-		// ASSIGNING
+		// Assigning
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		let loc = Location::default();
 		let time = correct_meetup_time(&cid, 1);
 		attest_all(
@@ -743,9 +743,9 @@ fn claim_rewards_works() {
 		let claim_ferdie = claim_base.clone().set_claimant(account_id(&ferdie)).sign(&ferdie);
 
 		run_to_next_phase();
-		// ASSIGNING
+		// Assigning
 		run_to_next_phase();
-		// ATTESTING
+		// Attesting
 		// Scenario:
 		//      ferdie doesn't show up
 		//      eve signs no one else
@@ -784,7 +784,7 @@ fn claim_rewards_works() {
 		assert_eq!(EncointerBalances::balance(cid, &account_id(&alice)), ZERO);
 
 		run_to_next_phase();
-		// REGISTERING
+		// Registering
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
 
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 2).into()));
@@ -1008,7 +1008,7 @@ fn endorsing_newbie_for_second_next_ceremony_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		run_to_next_phase();
 
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 		// a newbie
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
@@ -1134,7 +1134,7 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: i64
 
 		let cindex = EncointerScheduler::current_ceremony_index();
 		assert_eq!(cindex, 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::REGISTERING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
 			(GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)) + ONE_DAY
@@ -1150,12 +1150,12 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: i64
 		run_to_next_phase();
 
 		assert_eq!(cindex, 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ASSIGNING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 
 		run_to_next_phase();
 
 		assert_eq!(cindex, 1);
-		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::ATTESTING);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 
 		let mtime = if lon_micro >= 0 {
 			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2 -
@@ -1268,7 +1268,7 @@ fn grow_population_works() {
 
 		let cindex = EncointerScheduler::current_ceremony_index();
 		run_to_next_phase();
-		// ASSIGNING
+		// Assigning
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 0);
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 14);
@@ -1280,7 +1280,7 @@ fn grow_population_works() {
 		fully_attest_meetup(cid, participants.clone(), 1);
 
 		run_to_next_phase();
-		// REGISTERING
+		// Registering
 		for pair in participants.iter() {
 			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
 				.ok();
@@ -1293,7 +1293,7 @@ fn grow_population_works() {
 			register(account_id(&pair), cid, proof).unwrap();
 		}
 		run_to_next_phase();
-		// ASSIGNING
+		// Assigning
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 2);
@@ -1305,7 +1305,7 @@ fn grow_population_works() {
 		fully_attest_meetup(cid, participants.clone(), 1);
 
 		run_to_next_phase();
-		// REGISTERING
+		// Registering
 		for pair in participants.iter() {
 			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
 				.ok();
@@ -1318,7 +1318,7 @@ fn grow_population_works() {
 			register(account_id(&pair), cid, proof).unwrap();
 		}
 		run_to_next_phase();
-		// ASSIGNING
+		// Assigning
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 4);
@@ -1331,7 +1331,7 @@ fn grow_population_works() {
 		fully_attest_meetup(cid, participants.clone(), 2);
 
 		run_to_next_phase();
-		// REGISTERING
+		// Registering
 		for pair in participants.iter() {
 			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
 				.ok();
@@ -1347,7 +1347,7 @@ fn grow_population_works() {
 			register(account_id(&pair), cid, proof).unwrap();
 		}
 		run_to_next_phase();
-		// ASSIGNING
+		// Assigning
 		assert_eq!(proof_count, 13);
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
 	});
@@ -2050,7 +2050,7 @@ fn get_aggregated_account_data_works() {
 		let mut aggregated_account_data =
 			EncointerCeremonies::get_aggregated_account_data(cid, &bootstrapper);
 
-		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::REGISTERING);
+		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::Registering);
 		assert_eq!(aggregated_account_data.global.ceremony_index, 1);
 		let mut personal = aggregated_account_data.personal.unwrap();
 		assert_eq!(personal.participant_type, ParticipantType::Bootstrapper);
@@ -2062,7 +2062,7 @@ fn get_aggregated_account_data_works() {
 		aggregated_account_data =
 			EncointerCeremonies::get_aggregated_account_data(cid, &reputable2);
 
-		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::REGISTERING);
+		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::Registering);
 		assert_eq!(aggregated_account_data.global.ceremony_index, 1);
 
 		// reputable2 is not yet registered
@@ -2080,7 +2080,7 @@ fn get_aggregated_account_data_works() {
 
 		// Now the assignment is made and the other fields should also be set
 		aggregated_account_data = EncointerCeremonies::get_aggregated_account_data(cid, &reputable);
-		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::ATTESTING);
+		assert_eq!(aggregated_account_data.global.ceremony_phase, CeremonyPhaseType::Attesting);
 		assert_eq!(aggregated_account_data.global.ceremony_index, 1);
 
 		personal = aggregated_account_data.personal.unwrap();

@@ -56,12 +56,12 @@ impl_timestamp!(TestRuntime, EncointerScheduler);
 pub fn new_test_ext(phase_duration: u64) -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 	dut::GenesisConfig::<TestRuntime> {
-		current_phase: CeremonyPhaseType::REGISTERING,
+		current_phase: CeremonyPhaseType::Registering,
 		current_ceremony_index: 1,
 		phase_durations: vec![
-			(CeremonyPhaseType::REGISTERING, phase_duration),
-			(CeremonyPhaseType::ASSIGNING, phase_duration),
-			(CeremonyPhaseType::ATTESTING, phase_duration),
+			(CeremonyPhaseType::Registering, phase_duration),
+			(CeremonyPhaseType::Assigning, phase_duration),
+			(CeremonyPhaseType::Attesting, phase_duration),
 		],
 	}
 	.assimilate_storage(&mut t)
