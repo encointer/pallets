@@ -20,7 +20,7 @@ use sp_api::{offchain::OffchainStorage, Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
 	generic,
-	traits::{Block as BlockT, Extrinsic},
+	traits::{Block as BlockT, Dispatchable, Extrinsic},
 };
 use std::sync::Arc;
 
@@ -66,7 +66,7 @@ where
 impl<Client, P, AccountId> BalancesApi<AccountId> for Balances<Client, P, AccountId>
 where
 	P: TransactionPool + Sync + Send + 'static,
-	<P::Block as BlockT>::Extrinsic: Extrinsic + Fn<_>,
+	<P::Block as BlockT>::Extrinsic: Extrinsic,
 	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<P::Block> + HeaderBackend<P::Block>,
 	Client::Api: BalancesRuntimeApi<P::Block, AccountId>,
@@ -75,6 +75,15 @@ where
 		&self,
 		account_id: AccountId,
 	) -> Result<Vec<(AccountId, CommunityIdentifier, BalanceType)>> {
-		Ok(self.pool.ready().map(|tx| tx.data().call()).collect())
+		Ok(self
+			.pool
+			.ready()
+			.map(|tx| {
+				if tx.data().is_signed().unwrap_or(false) {
+					let call = tx.data().call().function;
+				}
+				(tx.data().origin(), CommunityIdentifier::default(), 0.into())
+			})
+			.collect())
 	}
 }
