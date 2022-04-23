@@ -1,9 +1,6 @@
 # Encointer Pallets
 
-![badge](https://img.shields.io/badge/substrate-2.0.1-success) 
-(but depending on master)
-
-[![Rust](https://github.com/encointer/pallets/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/encointer/pallets/actions/workflows/build_and_test.yml)
+[![Rust](https://github.com/encointer/pallets/actions/workflows/ci.yml/badge.svg)](https://github.com/encointer/pallets/actions/workflows/ci.yml)
 
 All application-specific pallets for [encointer](https://encointer.org)
 
@@ -50,3 +47,7 @@ pub struct BalanceEntry<BlockNumber> {
 ```
 
 We also apply substrate's standard of serializing with `camelCase`.
+
+### Versioning
+
+We bump crate versions separately and tag the repository with the highest crate version
