@@ -16,7 +16,9 @@
 
 use crate::AccountId;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
+use frame_support::{
+	pallet_prelude::DispatchResultWithPostInfo, sp_tracing::event, traits::OriginTrait,
+};
 use sp_core::{sr25519, Pair};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DispatchError;
@@ -73,6 +75,9 @@ where
 	CommunityIdentifier::new(location, bs).unwrap()
 }
 
+pub fn get_num_events<T: frame_system::Config>() -> usize {
+	frame_system::Pallet::<T>::events().len()
+}
 pub fn events<T: frame_system::Config>() -> Vec<T::Event> {
 	let events = frame_system::Pallet::<T>::events()
 		.into_iter()
@@ -83,11 +88,15 @@ pub fn events<T: frame_system::Config>() -> Vec<T::Event> {
 }
 
 pub fn last_event<T: frame_system::Config>() -> Option<T::Event> {
+	event_at_index::<T>(get_num_events::<T>() - 1)
+}
+
+pub fn event_at_index<T: frame_system::Config>(index: usize) -> Option<T::Event> {
 	let events = frame_system::Pallet::<T>::events();
-	if events.len() < 1 {
+	if events.len() < index {
 		return None
 	}
-	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];
+	let frame_system::EventRecord { event, .. } = &events[index];
 	Some(event.clone())
 }
 

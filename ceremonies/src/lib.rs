@@ -455,10 +455,10 @@ pub mod pallet {
 			};
 			participants_eligible_for_rewards = updated_participants.included;
 			// emit events
-			updated_participants.excluded.iter().map(|p| {
+			updated_participants.excluded.iter().for_each(|p| {
 				let event = match p.reason {
-					ExclusionReason::NoVote => Event::NoRewardBecauseDidNotvote,
-					ExclusionReason::WrongVote => Event::NoRewardBecauseDidNotvoteLikeMajority,
+					ExclusionReason::NoVote => Event::NoRewardBecauseDidNotVote,
+					ExclusionReason::WrongVote => Event::NoRewardBecauseDidNotVoteLikeMajority,
 					ExclusionReason::TooFewIncomingAttestations =>
 						Event::NoRewardBecauseTooFewIncomingAttestations,
 					ExclusionReason::TooFewOutgoingAttestations =>
@@ -469,7 +469,7 @@ pub mod pallet {
 					cindex,
 					meetup_index,
 					meetup_participants[p.index].clone(),
-				))
+				));
 			});
 
 			Self::issue_rewards(
@@ -608,14 +608,14 @@ pub mod pallet {
 		/// the registry for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged(CommunityIdentifier, CeremonyIndexType),
 
-		NoRewardBecauseDidNotvote(
+		NoRewardBecauseDidNotVote(
 			CommunityIdentifier,
 			CeremonyIndexType,
 			MeetupIndexType,
 			T::AccountId,
 		),
 
-		NoRewardBecauseDidNotvoteLikeMajority(
+		NoRewardBecauseDidNotVoteLikeMajority(
 			CommunityIdentifier,
 			CeremonyIndexType,
 			MeetupIndexType,

@@ -8,14 +8,19 @@ pub fn get_updated_participants(
 	let mut updated_participants =
 		UpdatedParticipants { included: participants.clone(), excluded: vec![] };
 	updated_participants.exclude_participants(
-		get_excluded_participants_no_vote(participants, participant_votes),
+		get_excluded_participants_no_vote(&updated_participants.included, participant_votes),
 		ExclusionReason::NoVote,
 	);
 
-	let (n_confirmed, num_votes) = find_majority_vote(participants, participant_votes)?;
+	let (n_confirmed, num_votes) =
+		find_majority_vote(&updated_participants.included, participant_votes)?;
 
 	updated_participants.exclude_participants(
-		get_excluded_participants_wrong_vote(participants, participant_votes, n_confirmed),
+		get_excluded_participants_wrong_vote(
+			&updated_participants.included,
+			participant_votes,
+			n_confirmed,
+		),
 		ExclusionReason::WrongVote,
 	);
 
@@ -24,7 +29,7 @@ pub fn get_updated_participants(
 
 	updated_participants.exclude_participants(
 		get_excluded_participants_outgoing_attestations(
-			participants,
+			&updated_participants.included,
 			participant_attestations,
 			outgoing_attestation_threshold,
 		),
@@ -36,7 +41,7 @@ pub fn get_updated_participants(
 
 	updated_participants.exclude_participants(
 		get_excluded_participants_incoming_attestations(
-			participants,
+			&updated_participants.included,
 			participant_attestations,
 			incoming_attestation_threshold,
 		),

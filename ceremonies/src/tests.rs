@@ -37,7 +37,8 @@ use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
 use test_utils::{
 	helpers::{
-		account_id, assert_dispatch_err, bootstrappers, last_event, register_test_community,
+		account_id, assert_dispatch_err, bootstrappers, event_at_index, get_num_events, last_event,
+		register_test_community,
 	},
 	*,
 };
@@ -735,6 +736,41 @@ fn claim_rewards_works() {
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
 
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 2).into()));
+
+		let num_events = get_num_events::<TestRuntime>();
+		assert_eq!(
+			event_at_index::<TestRuntime>(num_events - 2),
+			Some(
+				Event::NoRewardBecauseTooFewOutgoingAttestations(
+					cid,
+					cindex,
+					1,
+					account_id(&ferdie)
+				)
+				.into()
+			)
+		);
+
+		assert_eq!(
+			event_at_index::<TestRuntime>(num_events - 3),
+			Some(
+				Event::NoRewardBecauseTooFewOutgoingAttestations(cid, cindex, 1, account_id(&eve))
+					.into()
+			)
+		);
+
+		assert_eq!(
+			event_at_index::<TestRuntime>(num_events - 4),
+			Some(
+				Event::NoRewardBecauseDidNotVoteLikeMajority(cid, cindex, 1, account_id(&dave))
+					.into()
+			)
+		);
+
+		assert_eq!(
+			event_at_index::<TestRuntime>(num_events - 5),
+			Some(Event::NoRewardBecauseDidNotVote(cid, cindex, 1, account_id(&charlie)).into())
+		);
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
 		assert_abs_diff_eq!(
