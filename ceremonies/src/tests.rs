@@ -650,56 +650,6 @@ fn attest_claims_with_wrong_location_fails() {
 }
 
 #[test]
-fn ballot_meetup_n_votes_works() {
-	new_test_ext().execute_with(|| {
-		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-		let alice = AccountKeyring::Alice.pair();
-		let bob = AccountKeyring::Bob.pair();
-		let charlie = AccountKeyring::Charlie.pair();
-		let dave = AccountKeyring::Dave.pair();
-		let eve = AccountKeyring::Eve.pair();
-		let ferdie = AccountKeyring::Ferdie.pair();
-		let cindex = EncointerScheduler::current_ceremony_index();
-		register_alice_bob_ferdie(cid);
-		register_charlie_dave_eve(cid);
-
-		run_to_next_phase();
-		// Assigning
-		run_to_next_phase();
-		// Attesting
-		let loc = Location::default();
-		let time = correct_meetup_time(&cid, 1);
-		attest_all(
-			account_id(&alice),
-			&vec![&bob, &charlie, &dave, &eve, &ferdie],
-			cid,
-			cindex,
-			1,
-			loc,
-			time,
-			5,
-		);
-		attest_all(account_id(&ferdie), &vec![&alice], cid, cindex, 1, loc, time, 6);
-		// assert that majority vote was successful
-		assert_eq!(EncointerCeremonies::ballot_meetup_n_votes(&cid, cindex, 1), Some((5, 5)));
-
-		attest_all(account_id(&alice), &vec![&bob], cid, 1, 1, loc, time, 5);
-		attest_all(account_id(&bob), &vec![&alice], cid, 1, 1, loc, time, 5);
-		attest_all(account_id(&alice), &vec![&charlie, &dave], cid, 1, 1, loc, time, 4);
-		attest_all(account_id(&alice), &vec![&eve, &ferdie], cid, 1, 1, loc, time, 6);
-		// votes should be (4, 2), (5, 2), (6, 2)
-		assert!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1) == None);
-
-		attest_all(account_id(&alice), &vec![&bob, &charlie], cid, 1, 1, loc, time, 5);
-		attest_all(account_id(&bob), &vec![&alice], cid, 1, 1, loc, time, 5);
-		attest_all(account_id(&alice), &vec![&dave], cid, 1, 1, loc, time, 4);
-		attest_all(account_id(&alice), &vec![&eve, &ferdie], cid, 1, 1, loc, time, 6);
-		// votes should be (5, 3), (6, 2), (4, 1)
-		assert_eq!(EncointerCeremonies::ballot_meetup_n_votes(&cid, 1, 1), Some((5, 3)));
-	});
-}
-
-#[test]
 fn claim_rewards_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
@@ -826,31 +776,20 @@ fn claim_rewards_works() {
 		);
 
 		// Claiming twice does not work for any of the meetup participants
-		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
-			&account_id(&alice),
-			&cid
-		)
-		.is_err());
-		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
-			&account_id(&bob),
-			&cid
-		)
-		.is_err());
-		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
-			&account_id(&charlie),
-			&cid
-		)
-		.is_err());
-		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
-			&account_id(&dave),
-			&cid
-		)
-		.is_err());
-		assert!(EncointerCeremonies::validate_one_meetup_and_issue_rewards(
-			&account_id(&ferdie),
-			&cid
-		)
-		.is_err());
+		assert!(
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).is_err()
+		);
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&bob)), cid).is_err());
+
+		assert!(
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&charlie)), cid).is_err()
+		);
+
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&dave)), cid).is_err());
+
+		assert!(
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&ferdie)), cid).is_err()
+		);
 	});
 }
 
@@ -865,7 +804,7 @@ fn bootstrapping_works() {
 		let eve = AccountKeyring::Eve.pair();
 		let ferdie = AccountKeyring::Ferdie.pair();
 
-		EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&alice), &cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		assert_eq!(
@@ -1311,8 +1250,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
-				.ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1336,8 +1274,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
-				.ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1362,8 +1299,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::validate_one_meetup_and_issue_rewards(&account_id(&pair), &cid)
-				.ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
