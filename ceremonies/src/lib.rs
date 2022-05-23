@@ -422,103 +422,56 @@ pub mod pallet {
 			let mut participants_eligible_for_rewards: Vec<usize> =
 				(0..meetup_participants.len()).collect();
 
-			// exclude participants that did not vote
-			let mut updated_participants =
-				update_participants_no_vote(&participants_eligible_for_rewards, &participant_votes);
-			participants_eligible_for_rewards = updated_participants.included;
-			updated_participants.excluded.iter().map(|i| {
-				Self::deposit_event(Event::ParticipantExcludedFromRewardsBecauseDidNotvote(
-					cid,
-					cindex,
-					meetup_index,
-					meetup_participants[*i].clone(),
-				))
-			});
+			let outgoing_attestation_threshold_fn = |i| i - 1;
+			let incoming_attestation_threshold_fn = |i| i - 1;
 
-			// find majority vote
-			let (n_confirmed, vote_count) =
-				match find_majority_vote(&participants_eligible_for_rewards, &participant_votes) {
-					Ok((n_confirmed, vote_count)) => (n_confirmed, vote_count),
-					Err(err) => match err {
-						MajorityVoteError::BallotEmpty => {
-							debug!(
-								target: LOG,
-								"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
-							);
-							return Err(<Error<T>>::VotesNotDependable.into())
-						},
-						MajorityVoteError::NoDependableVote => {
-							debug!(
+			let updated_participants = match get_updated_participants(
+				&participants_eligible_for_rewards,
+				&participant_votes,
+				&participant_attestations,
+				outgoing_attestation_threshold_fn,
+				incoming_attestation_threshold_fn,
+			) {
+				Ok(updated_participants) => updated_participants,
+				// handle errors
+				Err(err) => match err {
+					MeetupValidationError::BallotEmpty => {
+						debug!(
+							target: LOG,
+							"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
+						);
+						return Err(<Error<T>>::VotesNotDependable.into())
+					},
+					MeetupValidationError::NoDependableVote => {
+						debug!(
 							target: LOG,
 							"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
 							meetup_index,
 							cid
 						);
-							return Err(<Error<T>>::VotesNotDependable.into())
-						},
+						return Err(<Error<T>>::VotesNotDependable.into())
 					},
+				},
+			};
+			participants_eligible_for_rewards = updated_participants.included;
+			// emit events
+			updated_participants.excluded.iter().map(|p| {
+				let event = match p.reason {
+					ExclusionReason::NoVote => Event::NoRewardBecauseDidNotvote,
+					ExclusionReason::WrongVote => Event::NoRewardBecauseDidNotvoteLikeMajority,
+					ExclusionReason::TooFewIncomingAttestations =>
+						Event::NoRewardBecauseTooFewIncomingAttestations,
+					ExclusionReason::TooFewOutgoingAttestations =>
+						Event::NoRewardBecauseTooFewOutgoingAttestations,
 				};
-			debug!(
-				target: LOG,
-				"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
-			);
-
-			// exclude paricipants that did not vote like majority
-			let mut updated_participants = update_participants_wrong_vote(
-				&participants_eligible_for_rewards,
-				&participant_votes,
-				n_confirmed,
-			);
-			participants_eligible_for_rewards = updated_participants.included;
-			updated_participants.excluded.iter().map(|i| {
-				Self::deposit_event(
-					Event::ParticipantExcludedFromRewardsBecauseDidNotvoteLikeMajority(
-						cid,
-						cindex,
-						meetup_index,
-						meetup_participants[*i].clone(),
-					),
-				)
+				Self::deposit_event(event(
+					cid,
+					cindex,
+					meetup_index,
+					meetup_participants[p.index].clone(),
+				))
 			});
 
-			let incoming_attestation_threshold = (vote_count - 1) as usize;
-			let outgoing_attestation_threshold = (vote_count - 1) as usize;
-
-			// exclude participants that have too few outgoing attestations
-			let mut updated_participants = update_participants_outgoing_attestations(
-				&participants_eligible_for_rewards,
-				&participant_attestations,
-				outgoing_attestation_threshold,
-			);
-			participants_eligible_for_rewards = updated_participants.included;
-			updated_participants.excluded.iter().map(|i| {
-				Self::deposit_event(
-					Event::ParticipantExcludedFromRewardsBecauseTooFewOutgoingAttestations(
-						cid,
-						cindex,
-						meetup_index,
-						meetup_participants[*i].clone(),
-					),
-				)
-			});
-
-			// exclude participants that have too few incoming attestations
-			let mut updated_participants = update_participants_incoming_attestations(
-				&participants_eligible_for_rewards,
-				&participant_attestations,
-				incoming_attestation_threshold,
-			);
-			participants_eligible_for_rewards = updated_participants.included;
-			updated_participants.excluded.iter().map(|i| {
-				Self::deposit_event(
-					Event::ParticipantExcludedFromRewardsBecauseTooFewIncomingAttestations(
-						cid,
-						cindex,
-						meetup_index,
-						meetup_participants[*i].clone(),
-					),
-				)
-			});
 			Self::issue_rewards(
 				cid,
 				cindex,
@@ -655,34 +608,33 @@ pub mod pallet {
 		/// the registry for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged(CommunityIdentifier, CeremonyIndexType),
 
-		// TODO gescheites naming finden, kürzer
-		ParticipantExcludedFromRewardsBecauseDidNotvote(
+		NoRewardBecauseDidNotvote(
 			CommunityIdentifier,
 			CeremonyIndexType,
 			MeetupIndexType,
 			T::AccountId,
 		),
 
-		ParticipantExcludedFromRewardsBecauseDidNotvoteLikeMajority(
+		NoRewardBecauseDidNotvoteLikeMajority(
 			CommunityIdentifier,
 			CeremonyIndexType,
 			MeetupIndexType,
 			T::AccountId,
 		),
 
-		ParticipantExcludedFromRewardsBecauseVoteDoesNotMatchNumberOfAttestations(
+		NoRewardBecauseVoteDoesNotMatchNumberOfAttestations(
 			CommunityIdentifier,
 			CeremonyIndexType,
 			MeetupIndexType,
 			T::AccountId,
 		),
-		ParticipantExcludedFromRewardsBecauseTooFewIncomingAttestations(
+		NoRewardBecauseTooFewIncomingAttestations(
 			CommunityIdentifier,
 			CeremonyIndexType,
 			MeetupIndexType,
 			T::AccountId,
 		),
-		ParticipantExcludedFromRewardsBecauseTooFewOutgoingAttestations(
+		NoRewardBecauseTooFewOutgoingAttestations(
 			CommunityIdentifier,
 			CeremonyIndexType,
 			MeetupIndexType,

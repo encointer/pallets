@@ -1,52 +1,99 @@
-pub fn update_participants_no_vote(
+pub fn get_updated_participants(
 	participants: &Vec<usize>,
 	participant_votes: &Vec<u32>,
-) -> UpdatedParticipants {
-	let mut included_participants: Vec<usize> = vec![];
-	for i in participants {
-		match participant_votes[*i] {
-			v if v > 0 => included_participants.push(*i),
-			_ => continue,
-		}
-	}
-	get_updated_participants(participants, &included_participants)
+	participant_attestations: &Vec<Vec<usize>>,
+	outgoing_attestation_threshold_fn: fn(usize) -> usize,
+	incoming_attestation_threshold_fn: fn(usize) -> usize,
+) -> Result<UpdatedParticipants, MeetupValidationError> {
+	let mut updated_participants =
+		UpdatedParticipants { included: participants.clone(), excluded: vec![] };
+	updated_participants.exclude_participants(
+		get_excluded_participants_no_vote(participants, participant_votes),
+		ExclusionReason::NoVote,
+	);
+
+	let (n_confirmed, num_votes) = find_majority_vote(participants, participant_votes)?;
+
+	updated_participants.exclude_participants(
+		get_excluded_participants_wrong_vote(participants, participant_votes, n_confirmed),
+		ExclusionReason::WrongVote,
+	);
+
+	let outgoing_attestation_threshold =
+		outgoing_attestation_threshold_fn(updated_participants.included.len());
+
+	updated_participants.exclude_participants(
+		get_excluded_participants_outgoing_attestations(
+			participants,
+			participant_attestations,
+			outgoing_attestation_threshold,
+		),
+		ExclusionReason::TooFewOutgoingAttestations,
+	);
+
+	let incoming_attestation_threshold =
+		incoming_attestation_threshold_fn(updated_participants.included.len());
+
+	updated_participants.exclude_participants(
+		get_excluded_participants_incoming_attestations(
+			participants,
+			participant_attestations,
+			incoming_attestation_threshold,
+		),
+		ExclusionReason::TooFewIncomingAttestations,
+	);
+
+	Ok(updated_participants)
 }
 
-pub fn update_participants_wrong_vote(
+fn get_excluded_participants_no_vote(
+	participants: &Vec<usize>,
+	participant_votes: &Vec<u32>,
+) -> Vec<usize> {
+	let mut excluded_participants: Vec<usize> = vec![];
+	for i in participants {
+		match participant_votes[*i] {
+			v if v > 0 => continue,
+			_ => excluded_participants.push(*i),
+		}
+	}
+	excluded_participants
+}
+
+fn get_excluded_participants_wrong_vote(
 	participants: &Vec<usize>,
 	participant_votes: &Vec<u32>,
 	n_confirmed: u32,
-) -> UpdatedParticipants {
-	let mut included_participants: Vec<usize> = vec![];
+) -> Vec<usize> {
+	let mut excluded_participants: Vec<usize> = vec![];
 	for i in participants {
-		if participant_votes[*i] == n_confirmed {
-			included_participants.push(*i)
+		if participant_votes[*i] != n_confirmed {
+			excluded_participants.push(*i)
 		}
 	}
-	get_updated_participants(participants, &included_participants)
+	excluded_participants
 }
 
-pub fn update_participants_outgoing_attestations(
+fn get_excluded_participants_outgoing_attestations(
 	participants: &Vec<usize>,
 	participant_attestations: &Vec<Vec<usize>>,
 	threshold: usize,
-) -> UpdatedParticipants {
-	let mut included_participants: Vec<usize> = vec![];
+) -> Vec<usize> {
+	let mut excluded_participants: Vec<usize> = vec![];
 	for i in participants {
 		if participant_attestations[*i].len() < threshold {
-			continue
+			excluded_participants.push(*i);
 		}
-		included_participants.push(*i);
 	}
-	get_updated_participants(participants, &included_participants)
+	excluded_participants
 }
 
-pub fn update_participants_incoming_attestations(
+fn get_excluded_participants_incoming_attestations(
 	participants: &Vec<usize>,
 	participant_attestations: &Vec<Vec<usize>>,
 	threshold: usize,
-) -> UpdatedParticipants {
-	let mut included_participants: Vec<usize> = vec![];
+) -> Vec<usize> {
+	let mut excluded_participants: Vec<usize> = vec![];
 	for i in participants {
 		let mut num_incoming_attestations = 0;
 		for (j, attestations) in participant_attestations.iter().enumerate() {
@@ -58,17 +105,16 @@ pub fn update_participants_incoming_attestations(
 			}
 		}
 		if num_incoming_attestations < threshold {
-			continue
+			excluded_participants.push(*i);
 		}
-		included_participants.push(*i);
 	}
-	get_updated_participants(participants, &included_participants)
+	excluded_participants
 }
 
-pub fn find_majority_vote(
+fn find_majority_vote(
 	participants: &Vec<usize>,
 	participant_votes: &Vec<u32>,
-) -> Result<(u32, u32), MajorityVoteError> {
+) -> Result<(u32, u32), MeetupValidationError> {
 	let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
 	for i in participants {
 		let this_vote = participant_votes[*i];
@@ -79,39 +125,46 @@ pub fn find_majority_vote(
 	}
 
 	if n_vote_candidates.is_empty() {
-		return Err(MajorityVoteError::BallotEmpty)
+		return Err(MeetupValidationError::BallotEmpty)
 	}
 	// sort by descending vote count
 	n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
 	if n_vote_candidates[0].1 < 3 {
 		//safe; n_vote_candidate not empty checked aboveÏ
-		return Err(MajorityVoteError::NoDependableVote)
+		return Err(MeetupValidationError::NoDependableVote)
 	}
 	let (n_confirmed, vote_count) = n_vote_candidates[0];
 	Ok((n_confirmed, vote_count))
 }
 
-pub enum MajorityVoteError {
+pub enum MeetupValidationError {
 	BallotEmpty,
 	NoDependableVote,
+}
+#[derive(Clone)]
+pub enum ExclusionReason {
+	NoVote,
+	WrongVote,
+	TooFewIncomingAttestations,
+	TooFewOutgoingAttestations,
+}
+
+pub struct ExcludedParticipant {
+	pub index: usize,
+	pub reason: ExclusionReason,
 }
 
 pub struct UpdatedParticipants {
 	pub included: Vec<usize>,
-	pub excluded: Vec<usize>,
+	pub excluded: Vec<ExcludedParticipant>,
 }
 
-fn get_updated_participants(
-	participants: &Vec<usize>,
-	included_participants: &Vec<usize>,
-) -> UpdatedParticipants {
-	let excluded_participants: Vec<usize> = participants
-		.clone()
-		.into_iter()
-		.filter(|i| !included_participants.contains(i))
-		.collect();
-	UpdatedParticipants {
-		included: included_participants.clone(),
-		excluded: excluded_participants.clone(),
+impl UpdatedParticipants {
+	pub fn exclude_participants(&mut self, excluded: Vec<usize>, reason: ExclusionReason) {
+		self.included =
+			self.included.clone().into_iter().filter(|i| !excluded.contains(i)).collect();
+		for i in excluded {
+			self.excluded.push(ExcludedParticipant { index: i, reason: reason.clone() })
+		}
 	}
 }
