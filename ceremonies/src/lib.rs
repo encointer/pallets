@@ -456,20 +456,26 @@ pub mod pallet {
 			participants_eligible_for_rewards = updated_participants.included;
 			// emit events
 			updated_participants.excluded.iter().for_each(|p| {
+				let participant = meetup_participants[p.index].clone();
 				let event = match p.reason {
-					ExclusionReason::NoVote => Event::NoRewardBecauseDidNotVote,
-					ExclusionReason::WrongVote => Event::NoRewardBecauseDidNotVoteLikeMajority,
-					ExclusionReason::TooFewIncomingAttestations =>
-						Event::NoRewardBecauseTooFewIncomingAttestations,
-					ExclusionReason::TooFewOutgoingAttestations =>
-						Event::NoRewardBecauseTooFewOutgoingAttestations,
+					ExclusionReason::NoVote => {
+						debug!(target: LOG, "participant {:?} received no rewards because they did not vote. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
+						Event::NoRewardBecauseDidNotVote
+					},
+					ExclusionReason::WrongVote => {
+						debug!(target: LOG, "participant {:?} received no rewards because they did not vote like the majority. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
+						Event::NoRewardBecauseDidNotVoteLikeMajority
+					},
+					ExclusionReason::TooFewIncomingAttestations => {
+						debug!(target: LOG, "participant {:?} received no rewards because they had too few outgoing attestations. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
+						Event::NoRewardBecauseTooFewIncomingAttestations
+						},
+					ExclusionReason::TooFewOutgoingAttestations => {
+						debug!(target: LOG, "participant {:?} received no rewards because they had too few incoming attestations. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
+						Event::NoRewardBecauseTooFewOutgoingAttestations
+					},
 				};
-				Self::deposit_event(event(
-					cid,
-					cindex,
-					meetup_index,
-					meetup_participants[p.index].clone(),
-				));
+				Self::deposit_event(event(cid, cindex, meetup_index, participant));
 			});
 
 			Self::issue_rewards(
