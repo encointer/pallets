@@ -1,3 +1,5 @@
+mod tests;
+
 pub fn get_updated_participants(
 	participants: &Vec<usize>,
 	participant_votes: &Vec<u32>,
@@ -141,12 +143,12 @@ fn find_majority_vote(
 	let (n_confirmed, vote_count) = n_vote_candidates[0];
 	Ok((n_confirmed, vote_count))
 }
-
+#[derive(PartialEq, Debug)]
 pub enum MeetupValidationError {
 	BallotEmpty,
 	NoDependableVote,
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ExclusionReason {
 	NoVote,
 	WrongVote,
@@ -154,11 +156,13 @@ pub enum ExclusionReason {
 	TooFewOutgoingAttestations,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct ExcludedParticipant {
 	pub index: usize,
 	pub reason: ExclusionReason,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct UpdatedParticipants {
 	pub included: Vec<usize>,
 	pub excluded: Vec<ExcludedParticipant>,
