@@ -88,7 +88,12 @@ fn get_excluded_participants_outgoing_attestations(
 ) -> Vec<usize> {
 	let mut excluded_participants: Vec<usize> = vec![];
 	for i in participants {
-		if participant_attestations[*i].len() < threshold {
+		let relevant_attestations: Vec<usize> = participant_attestations[*i]
+			.clone()
+			.into_iter()
+			.filter(|j| participants.contains(j) && j != i)
+			.collect();
+		if relevant_attestations.len() < threshold {
 			excluded_participants.push(*i);
 		}
 	}

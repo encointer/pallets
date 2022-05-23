@@ -27,7 +27,7 @@ fn get_excluded_participants_wrong_vote_works() {
 fn get_excluded_participants_outgoing_attestations_works() {
 	let participants: Vec<usize> = vec![0, 1, 2, 3, 4];
 	let participant_attestations: Vec<Vec<usize>> =
-		vec![vec![1, 2, 3], vec![3], vec![0, 1, 2], vec![1, 2], vec![0, 1, 2]];
+		vec![vec![1, 2, 3], vec![3], vec![0, 1, 3], vec![1, 2], vec![0, 1, 2]];
 	let excluded_participants: Vec<usize> = vec![1, 3];
 	assert_eq!(
 		get_excluded_participants_outgoing_attestations(
@@ -57,9 +57,9 @@ fn get_excluded_participants_incoming_attestations_works() {
 
 #[test]
 fn find_majority_vote_works() {
-	let participants: Vec<usize> = vec![0, 1, 2, 3, 4, 5];
+	let participants: Vec<usize> = vec![0, 1, 2, 3, 4];
 	let participant_votes: Vec<u32> = vec![1, 1, 2, 3, 1];
-	assert_eq!(find_majority_vote(&participants, &participant_votes), Ok((1u32, 2u32)));
+	assert_eq!(find_majority_vote(&participants, &participant_votes), Ok((1u32, 3u32)));
 }
 
 #[test]
@@ -181,7 +181,7 @@ fn get_updated_participants_works_case_4() {
 	let participants: Vec<usize> = vec![0, 1, 2, 3];
 	let participant_votes: Vec<u32> = vec![3, 3, 3, 3];
 	let participant_attestations: Vec<Vec<usize>> =
-		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![4, 1, 2]];
+		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![1, 2]];
 
 	let updated_participants = UpdatedParticipants {
 		included: vec![1, 2, 3],
@@ -190,9 +190,8 @@ fn get_updated_participants_works_case_4() {
 			reason: ExclusionReason::TooFewIncomingAttestations,
 		}],
 	};
-	let outgoing_attestation_threshold_fn = |i| i - 1;
-	// It works without loosening the requirements on incoming attestations
-	// because no more incoming votes are expected from the malicious user
+	// loosening the threshold for outgoing attestations
+	let outgoing_attestation_threshold_fn = |i| i - 2;
 	let incoming_attestation_threshold_fn = |i| i - 1;
 
 	assert_eq!(
