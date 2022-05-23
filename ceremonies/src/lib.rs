@@ -31,6 +31,7 @@ use encointer_ceremonies_assignment::{
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
 	meetup_index, meetup_location, meetup_time,
 };
+use encointer_meetup_validation::*;
 use encointer_primitives::{
 	balances::BalanceType,
 	ceremonies::*,
@@ -389,11 +390,142 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
-			let (meetup_index, reward_count) =
-				Self::validate_one_meetup_and_issue_rewards(&sender, &cid)?;
+			let participant = &ensure_signed(origin)?;
 
-			Self::deposit_event(Event::RewardsIssued(cid, meetup_index, reward_count));
+			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
+				return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
+			}
+
+			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
+			let meetup_index = Self::get_meetup_index((cid, cindex), participant)
+				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+
+			if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
+				return Err(<Error<T>>::RewardsAlreadyIssued.into())
+			}
+			info!(
+				target: LOG,
+				"validating meetup {:?} for cid {:?} triggered by {:?}",
+				meetup_index,
+				&cid,
+				participant
+			);
+
+			//gather all data
+			let meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index)
+				.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
+			let (participant_votes, participant_attestations) =
+				Self::gather_meetup_validation_data(cid, cindex, meetup_participants.clone());
+
+			// initialize an array of local participant indices that are eligible for the reward
+			// indices will be deleted in the following based on various rules
+			let mut participants_eligible_for_rewards: Vec<usize> =
+				(0..meetup_participants.len()).collect();
+
+			// exclude participants that did not vote
+			let mut updated_participants =
+				update_participants_no_vote(&participants_eligible_for_rewards, &participant_votes);
+			participants_eligible_for_rewards = updated_participants.included;
+			updated_participants.excluded.iter().map(|i| {
+				Self::deposit_event(Event::ParticipantExcludedFromRewardsBecauseDidNotvote(
+					cid,
+					cindex,
+					meetup_index,
+					meetup_participants[*i].clone(),
+				))
+			});
+
+			// find majority vote
+			let (n_confirmed, vote_count) =
+				match find_majority_vote(&participants_eligible_for_rewards, &participant_votes) {
+					Ok((n_confirmed, vote_count)) => (n_confirmed, vote_count),
+					Err(err) => match err {
+						MajorityVoteError::BallotEmpty => {
+							debug!(
+								target: LOG,
+								"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
+							);
+							return Err(<Error<T>>::VotesNotDependable.into())
+						},
+						MajorityVoteError::NoDependableVote => {
+							debug!(
+							target: LOG,
+							"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
+							meetup_index,
+							cid
+						);
+							return Err(<Error<T>>::VotesNotDependable.into())
+						},
+					},
+				};
+			debug!(
+				target: LOG,
+				"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
+			);
+
+			// exclude paricipants that did not vote like majority
+			let mut updated_participants = update_participants_wrong_vote(
+				&participants_eligible_for_rewards,
+				&participant_votes,
+				n_confirmed,
+			);
+			participants_eligible_for_rewards = updated_participants.included;
+			updated_participants.excluded.iter().map(|i| {
+				Self::deposit_event(
+					Event::ParticipantExcludedFromRewardsBecauseDidNotvoteLikeMajority(
+						cid,
+						cindex,
+						meetup_index,
+						meetup_participants[*i].clone(),
+					),
+				)
+			});
+
+			let incoming_attestation_threshold = (vote_count - 1) as usize;
+			let outgoing_attestation_threshold = (vote_count - 1) as usize;
+
+			// exclude participants that have too few outgoing attestations
+			let mut updated_participants = update_participants_outgoing_attestations(
+				&participants_eligible_for_rewards,
+				&participant_attestations,
+				outgoing_attestation_threshold,
+			);
+			participants_eligible_for_rewards = updated_participants.included;
+			updated_participants.excluded.iter().map(|i| {
+				Self::deposit_event(
+					Event::ParticipantExcludedFromRewardsBecauseTooFewOutgoingAttestations(
+						cid,
+						cindex,
+						meetup_index,
+						meetup_participants[*i].clone(),
+					),
+				)
+			});
+
+			// exclude participants that have too few incoming attestations
+			let mut updated_participants = update_participants_incoming_attestations(
+				&participants_eligible_for_rewards,
+				&participant_attestations,
+				incoming_attestation_threshold,
+			);
+			participants_eligible_for_rewards = updated_participants.included;
+			updated_participants.excluded.iter().map(|i| {
+				Self::deposit_event(
+					Event::ParticipantExcludedFromRewardsBecauseTooFewIncomingAttestations(
+						cid,
+						cindex,
+						meetup_index,
+						meetup_participants[*i].clone(),
+					),
+				)
+			});
+			Self::issue_rewards(
+				cid,
+				cindex,
+				meetup_index,
+				meetup_participants,
+				participants_eligible_for_rewards,
+			);
 			Ok(().into())
 		}
 
@@ -522,6 +654,40 @@ pub mod pallet {
 		LocationToleranceUpdated(u32),
 		/// the registry for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged(CommunityIdentifier, CeremonyIndexType),
+
+		// TODO gescheites naming finden, kürzer
+		ParticipantExcludedFromRewardsBecauseDidNotvote(
+			CommunityIdentifier,
+			CeremonyIndexType,
+			MeetupIndexType,
+			T::AccountId,
+		),
+
+		ParticipantExcludedFromRewardsBecauseDidNotvoteLikeMajority(
+			CommunityIdentifier,
+			CeremonyIndexType,
+			MeetupIndexType,
+			T::AccountId,
+		),
+
+		ParticipantExcludedFromRewardsBecauseVoteDoesNotMatchNumberOfAttestations(
+			CommunityIdentifier,
+			CeremonyIndexType,
+			MeetupIndexType,
+			T::AccountId,
+		),
+		ParticipantExcludedFromRewardsBecauseTooFewIncomingAttestations(
+			CommunityIdentifier,
+			CeremonyIndexType,
+			MeetupIndexType,
+			T::AccountId,
+		),
+		ParticipantExcludedFromRewardsBecauseTooFewOutgoingAttestations(
+			CommunityIdentifier,
+			CeremonyIndexType,
+			MeetupIndexType,
+			T::AccountId,
+		),
 	}
 
 	#[pallet::error]
@@ -1657,6 +1823,68 @@ impl<T: Config> Pallet<T> {
 	pub fn nominal_income(cid: &CommunityIdentifier) -> NominalIncome {
 		encointer_communities::NominalIncome::<T>::try_get(cid)
 			.unwrap_or_else(|_| Self::ceremony_reward())
+	}
+
+	fn issue_rewards(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		meetup_idx: MeetupIndexType,
+		meetup_participants: Vec<T::AccountId>,
+		participants_indices: Vec<usize>,
+	) {
+		let reward = Self::nominal_income(&cid);
+		for i in participants_indices.clone() {
+			let participant = &meetup_participants[i];
+			trace!(target: LOG, "participant merits reward: {:?}", participant);
+			if <encointer_balances::Pallet<T>>::issue(cid, participant, reward).is_ok() {
+				<ParticipantReputation<T>>::insert(
+					(&cid, cindex),
+					participant,
+					Reputation::VerifiedUnlinked,
+				);
+			}
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
+		}
+
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, ());
+		info!(target: LOG, "issuing rewards completed");
+
+		Self::deposit_event(Event::RewardsIssued(
+			cid,
+			meetup_idx,
+			participants_indices.len() as u8,
+		));
+	}
+
+	fn gather_meetup_validation_data(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		meetup_participants: Vec<T::AccountId>,
+	) -> (Vec<u32>, Vec<Vec<usize>>) {
+		let mut participant_votes: Vec<u32> = vec![];
+		let mut participant_attestations: Vec<Vec<usize>> = vec![];
+
+		// gather votes and attestations
+		for participant in meetup_participants.iter() {
+			let attestations = match Self::attestation_registry(
+				(&cid, cindex),
+				&Self::attestation_index((cid, cindex), &participant),
+			) {
+				Some(attestees) => attestees,
+				None => vec![],
+			};
+			// convert AccountId to local index
+			let attestation_indices = attestations
+				.into_iter()
+				.map(|p| meetup_participants.iter().position(|s| *s == p))
+				.filter(|i| i.is_some())
+				.map(|i| i.unwrap())
+				.collect();
+
+			participant_attestations.push(attestation_indices);
+			participant_votes.push(Self::meetup_participant_count_vote((cid, cindex), participant));
+		}
+		(participant_votes, participant_attestations)
 	}
 
 	#[cfg(any(test, feature = "runtime-benchmarks"))]

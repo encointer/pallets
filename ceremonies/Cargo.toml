@@ -13,6 +13,7 @@ scale-info = { version = "2.0.1", default-features = false }
 encointer-primitives = { path = "../primitives", default-features = false }
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
 encointer-ceremonies-assignment = { path = "assignment", default-features = false }
+encointer-meetup-validation = { path = "meetup-validation", default-features = false }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 

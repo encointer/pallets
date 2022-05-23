@@ -1,0 +1,24 @@
+[package]
+name = "encointer-meetup-validation"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+
+# local deps
+encointer-primitives = { path = "../../primitives", default-features = false }
+
+# substrate deps
+sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+
+[dev-dependencies]
+sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+
+[features]
+default = ["std"]
+std = [
+    "encointer-primitives/std",
+    "sp-std/std",
+    "sp-runtime/std",
+]
