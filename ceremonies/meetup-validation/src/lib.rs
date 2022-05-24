@@ -26,14 +26,11 @@ pub fn get_updated_participants(
 		ExclusionReason::WrongVote,
 	);
 
-	let outgoing_attestation_threshold =
-		outgoing_attestation_threshold_fn(updated_participants.included.len());
-
 	updated_participants.exclude_participants(
 		get_excluded_participants_outgoing_attestations(
 			&updated_participants.included,
 			participant_attestations,
-			outgoing_attestation_threshold,
+			outgoing_attestation_threshold_fn,
 		),
 		ExclusionReason::TooFewOutgoingAttestations,
 	);
@@ -84,17 +81,23 @@ fn get_excluded_participants_wrong_vote(
 fn get_excluded_participants_outgoing_attestations(
 	participants: &Vec<usize>,
 	participant_attestations: &Vec<Vec<usize>>,
-	threshold: usize,
+	threshold_fn: fn(usize) -> usize,
 ) -> Vec<usize> {
+	let mut relevant_attestations = filter_attestations(participants, participant_attestations);
+
 	let mut excluded_participants: Vec<usize> = vec![];
-	for i in participants {
-		let relevant_attestations: Vec<usize> = participant_attestations[*i]
-			.clone()
-			.into_iter()
-			.filter(|j| participants.contains(j) && j != i)
-			.collect();
-		if relevant_attestations.len() < threshold {
-			excluded_participants.push(*i);
+	let mut included_participants: Vec<usize> = participants.clone();
+
+	let grouped_participants =
+		group_participants_by_num_outgoing_attestations(participants, participant_attestations);
+
+	for (num_attestations, ps) in grouped_participants {
+		if num_attestations < threshold_fn(included_participants.len()) {
+			ps.clone().into_iter().for_each(|p| excluded_participants.push(p));
+
+			// remove the participants from the included participants and the attestation vectors
+			included_participants.retain(|k| !ps.contains(k));
+			filter_attestations(&included_participants, &relevant_attestations);
 		}
 	}
 	excluded_participants
@@ -148,6 +151,44 @@ fn find_majority_vote(
 	let (n_confirmed, vote_count) = n_vote_candidates[0];
 	Ok((n_confirmed, vote_count))
 }
+
+fn filter_attestations(
+	participants: &Vec<usize>,
+	participant_attestations: &Vec<Vec<usize>>,
+) -> Vec<Vec<usize>> {
+	// filter out participants from the attestation vectors that are not in the participants vector anymore.
+	participant_attestations
+		.clone()
+		.iter()
+		.map(|a| a.clone().into_iter().filter(|j| participants.contains(j)).collect())
+		.collect()
+}
+
+fn group_participants_by_num_outgoing_attestations(
+	participants: &Vec<usize>,
+	participant_attestations: &Vec<Vec<usize>>,
+) -> Vec<(usize, Vec<usize>)> {
+	let mut sorted_participants: Vec<usize> = participants.clone();
+
+	// sort ascending by number of attestations
+	sorted_participants.sort_by(|a, b| {
+		(participant_attestations[*a].len() as i32)
+			.cmp(&(participant_attestations[*b].len() as i32))
+	});
+
+	let mut grouped_participants: Vec<(usize, Vec<usize>)> = vec![];
+	for p in sorted_participants {
+		let num_attestations = participant_attestations[p].len();
+		let last = grouped_participants.last_mut();
+		if let Some((_, group)) = last.filter(|(k, _)| k == &num_attestations) {
+			group.push(p);
+		} else {
+			grouped_participants.push((num_attestations, vec![p]));
+		}
+	}
+	grouped_participants
+}
+
 #[derive(PartialEq, Debug)]
 pub enum MeetupValidationError {
 	BallotEmpty,

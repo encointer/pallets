@@ -2,6 +2,27 @@ use super::*;
 use crate::get_excluded_participants_no_vote;
 
 #[test]
+fn group_participants_by_num_outgoing_attestations_works() {
+	let participants: Vec<usize> = vec![0, 1, 2, 3, 4];
+	let participant_attestations: Vec<Vec<usize>> =
+		vec![vec![1, 2, 3], vec![3], vec![0, 1, 3], vec![1, 2], vec![0, 1, 2]];
+	let expected: Vec<(usize, Vec<usize>)> = vec![(1, vec![1]), (2, vec![3]), (3, vec![0, 2, 4])];
+	assert_eq!(
+		group_participants_by_num_outgoing_attestations(&participants, &participant_attestations),
+		expected
+	);
+}
+
+#[test]
+fn filter_attestations_works() {
+	let participants: Vec<usize> = vec![0, 2, 4];
+	let participant_attestations: Vec<Vec<usize>> =
+		vec![vec![2], vec![], vec![0], vec![2], vec![0, 2]];
+	let expected: Vec<Vec<usize>> = vec![vec![2], vec![], vec![0], vec![2], vec![0, 2]];
+	assert_eq!(filter_attestations(&participants, &participant_attestations), expected);
+}
+
+#[test]
 fn get_excluded_participants_no_vote_works() {
 	let participants: Vec<usize> = vec![0, 1, 2, 3, 4];
 	let participant_votes: Vec<u32> = vec![0, 1, 2, 2, 0];
@@ -33,7 +54,7 @@ fn get_excluded_participants_outgoing_attestations_works() {
 		get_excluded_participants_outgoing_attestations(
 			&participants,
 			&participant_attestations,
-			3
+			|n| n - 1
 		),
 		excluded_participants
 	);
