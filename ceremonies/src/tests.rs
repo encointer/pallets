@@ -1097,6 +1097,38 @@ fn endorsing_after_registration_works() {
 	});
 }
 
+#[test]
+fn registering_in_attestation_phase_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		assert!(EncointerBalances::issue(cid, &yran, NominalIncome::from_num(1)).is_ok());
+
+		run_to_next_phase();
+		run_to_next_phase();
+		register(yran.clone(), cid, None);
+
+		assert!(NewbieIndex::<TestRuntime>::contains_key((cid, cindex + 1), &yran));
+	});
+}
+
+#[test]
+fn registering_in_assigning_phase_fails() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		assert!(EncointerBalances::issue(cid, &yran, NominalIncome::from_num(1)).is_ok());
+
+		run_to_next_phase();
+
+		assert_err!(
+			register(yran.clone(), cid, None),
+			Error::<TestRuntime>::RegisteringOrAttestationPhaseRequired,
+		);
+	});
+}
+
 // integration tests ////////////////////////////////
 
 #[rstest(lat_micro, lon_micro, meetup_time_offset,
