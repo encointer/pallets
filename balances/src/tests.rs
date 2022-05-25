@@ -276,6 +276,25 @@ fn set_fee_conversion_factor_works() {
 	});
 }
 
+#[test]
+fn transfer_all_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		let cid = CommunityIdentifier::default();
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
+		assert_ok!(EncointerBalances::transfer_all(Some(alice.clone()).into(), cid, bob.clone()));
+
+		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
+
+		let balance: f64 = EncointerBalances::balance(cid, &bob).lossy_into();
+		assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
+	})
+}
+
 mod impl_fungibles {
 	use super::*;
 	use crate::impl_fungibles::fungible;

@@ -111,6 +111,19 @@ pub mod pallet {
 			Self::deposit_event(Event::FeeConversionFactorUpdated(fee_conversion_factor));
 			Ok(().into())
 		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::transfer_all(), DispatchClass::Normal))]
+		pub fn transfer_all(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			dest: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			let from = ensure_signed(origin)?;
+			let amount = Self::balance(cid, &from);
+			Self::do_transfer(cid, from.clone(), dest, amount)?;
+			Self::remove_account(cid, &from)?;
+			Ok(().into())
+		}
 	}
 
 	#[pallet::genesis_config]
@@ -257,6 +270,13 @@ impl<T: Config> Pallet<T> {
 	/// Create a new account on-chain if it does not exist.
 	fn new_account(who: &T::AccountId) -> DispatchResult {
 		frame_system::Pallet::<T>::inc_sufficients(who);
+		Ok(())
+	}
+
+	/// Remove an account from a community
+	fn remove_account(cid: CommunityIdentifier, who: &T::AccountId) -> DispatchResult {
+		<Balance<T>>::remove(cid, who);
+		frame_system::Pallet::<T>::dec_sufficients(who);
 		Ok(())
 	}
 
