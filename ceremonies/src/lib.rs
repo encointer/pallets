@@ -1490,7 +1490,11 @@ impl<T: Config> Pallet<T> {
 		let (n_confirmed, vote_count) = match Self::ballot_meetup_n_votes(cid, cindex, meetup_index)
 		{
 			Some(nn) => nn,
-			_ => return Err(<Error<T>>::VotesNotDependable.into()),
+			_ => {
+				info!(target: LOG, "marking issuance as completed for failed meetup.");
+				<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
+				return Err(<Error<T>>::VotesNotDependable.into())
+			},
 		};
 		debug!(
 			target: LOG,
