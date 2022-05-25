@@ -63,7 +63,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use std::intrinsics::saturating_sub;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
@@ -423,15 +422,12 @@ pub mod pallet {
 			let mut participants_eligible_for_rewards: Vec<usize> =
 				(0..meetup_participants.len()).collect();
 
-			let outgoing_attestation_threshold_fn = |i| max(i.saturating_sub(1), 1);
-			let incoming_attestation_threshold_fn = |i| max(i.saturating_sub(1), 1);
-
+			let attestation_threshold_fn = |i: usize| max(i.saturating_sub(1), 1);
 			let updated_participants = match get_updated_participants(
 				&participants_eligible_for_rewards,
 				&participant_votes,
 				&participant_attestations,
-				outgoing_attestation_threshold_fn,
-				incoming_attestation_threshold_fn,
+				attestation_threshold_fn,
 			) {
 				Ok(updated_participants) => updated_participants,
 				// handle errors
