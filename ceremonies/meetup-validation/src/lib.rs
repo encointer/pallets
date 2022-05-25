@@ -1,4 +1,3 @@
-mod tests;
 /// This module is about finding which participants get their rewards based on their votes and attestations.
 /// The participant vecs are always vecs of participant ids
 /// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by the participant index
@@ -17,7 +16,7 @@ pub fn get_updated_participants(
 		participant_votes,
 	));
 
-	let (n_confirmed, num_votes) =
+	let (n_confirmed, _num_votes) =
 		find_majority_vote(&updated_participants.included, participant_votes)?;
 
 	updated_participants.exclude_participants(get_excluded_participants_wrong_vote(
@@ -103,7 +102,8 @@ fn get_excluded_participants_num_attestations(
 
 				// remove the participants from the included participants and the attestation vectors
 				participants_to_process.retain(|k| !ps.contains(k));
-				filter_attestations(&participants_to_process, &relevant_attestations);
+				relevant_attestations =
+					filter_attestations(&participants_to_process, &relevant_attestations);
 				continue
 			}
 		} else {
@@ -115,7 +115,8 @@ fn get_excluded_participants_num_attestations(
 
 				// remove the participants from the included participants and the attestation vectors
 				participants_to_process.retain(|k| !ps.contains(k));
-				filter_attestations(&participants_to_process, &relevant_attestations);
+				relevant_attestations =
+					filter_attestations(&participants_to_process, &relevant_attestations);
 				continue
 			}
 		}
@@ -247,3 +248,6 @@ impl UpdatedParticipants {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests;

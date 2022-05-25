@@ -1,5 +1,4 @@
 use super::*;
-use crate::get_excluded_participants_no_vote;
 
 #[test]
 fn group_participants_by_num_attestations_works() {
