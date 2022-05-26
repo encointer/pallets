@@ -59,6 +59,7 @@ pub struct Ceremonies<Client, Block, AccountId, Moment, S> {
 	client: Arc<Client>,
 	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
+	#[allow(unused)]
 	offchain_indexing: bool,
 	_marker: std::marker::PhantomData<(Block, AccountId, Moment)>,
 }
@@ -203,6 +204,7 @@ fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
 	}
 }
 
+#[allow(unused)]
 fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
 	Error {
 		code: ErrorCode::ServerError(OFFCHAIN_INDEXING_DISABLED_ERROR),
