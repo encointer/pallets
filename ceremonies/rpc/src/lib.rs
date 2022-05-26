@@ -147,20 +147,25 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>> {
 		self.deny_unsafe.check_if_safe()?;
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err)
 
-		if !self.offchain_indexing {
-			return Err(offchain_indexing_disabled_error("ceremonies_getReputations"))
-		}
-
-		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
-			self.refresh_reputation_cache(account.clone(), at);
-		}
-
-		let cache_key = &reputation_cache_key(&account);
-		match self.get_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key) {
-			Some(reputation_list) => Ok(reputation_list),
-			None => Err(storage_not_found_error(cache_key)),
-		}
+		// This part was broken, the cache was never marked as dirty: https://github.com/encointer/pallets/issues/220
+		//
+		// if !self.offchain_indexing {
+		// 	return Err(offchain_indexing_disabled_error("ceremonies_getReputations"))
+		// }
+		//
+		// if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
+		// 	self.refresh_reputation_cache(account.clone(), at);
+		// }
+		//
+		// let cache_key = &reputation_cache_key(&account);
+		// match self.get_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key) {
+		// 	Some(reputation_list) => Ok(reputation_list),
+		// 	None => Err(storage_not_found_error(cache_key)),
+		// }
 	}
 
 	fn get_aggregated_account_data(
