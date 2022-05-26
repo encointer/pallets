@@ -188,6 +188,7 @@ const OFFCHAIN_INDEXING_DISABLED_ERROR: i64 = 2;
 const STORAGE_NOT_FOUND_ERROR: i64 = 3;
 
 /// Converts a runtime trap into an RPC error.
+#[allow(unused)]
 fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
 	Error {
 		code: ErrorCode::ServerError(RUNTIME_ERROR),
@@ -196,6 +197,7 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
 	}
 }
 
+#[allow(unused)]
 fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
 	Error {
 		code: ErrorCode::ServerError(STORAGE_NOT_FOUND_ERROR),
