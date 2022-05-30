@@ -33,7 +33,7 @@ fn filter_attestations_works() {
 	let participant_attestations: Vec<Vec<usize>> =
 		vec![vec![2, 3], vec![3, 4], vec![0, 1], vec![2, 1, 3], vec![0, 2, 3]];
 	let expected: Vec<Vec<usize>> = vec![vec![2], vec![4], vec![0], vec![2], vec![0, 2]];
-	assert_eq!(filter_attestations(&participants, &participant_attestations), expected);
+	assert_eq!(filter_attestations(&participants, participant_attestations), expected);
 }
 
 #[test]

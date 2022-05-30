@@ -70,7 +70,8 @@ fn get_excluded_participants_num_attestations(
 	participant_attestations: &Vec<Vec<usize>>,
 	threshold_fn: fn(usize) -> usize,
 ) -> Vec<(usize, ExclusionReason)> {
-	let mut relevant_attestations = filter_attestations(participants, participant_attestations);
+	let mut relevant_attestations =
+		filter_attestations(participants, participant_attestations.clone());
 
 	let mut excluded_participants: Vec<(usize, ExclusionReason)> = vec![];
 	let mut participants_to_process: Vec<usize> = participants.clone();
@@ -115,7 +116,7 @@ fn get_excluded_participants_num_attestations(
 			// remove the participants from the included participants and the attestation vectors
 			participants_to_process.retain(|k| !participants_to_exclude.contains(k));
 			relevant_attestations =
-				filter_attestations(&participants_to_process, &relevant_attestations);
+				filter_attestations(&participants_to_process, relevant_attestations.clone());
 			continue
 		}
 
@@ -153,12 +154,15 @@ fn find_majority_vote(
 
 fn filter_attestations(
 	participants: &Vec<usize>,
-	participant_attestations: &Vec<Vec<usize>>,
+	participant_attestations: Vec<Vec<usize>>,
 ) -> Vec<Vec<usize>> {
 	// filter out participants from the attestation vectors that are not in the participants vector anymore.
 	participant_attestations
-		.iter()
-		.map(|a| a.clone().into_iter().filter(|j| participants.contains(j)).collect())
+		.into_iter()
+		.map(|mut a| {
+			a.retain(|j| participants.contains(j));
+			a
+		})
 		.collect()
 }
 
