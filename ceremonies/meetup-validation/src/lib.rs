@@ -93,32 +93,36 @@ fn get_excluded_participants_num_attestations(
 		let min_num_outgoing_attestations = participants_grouped_by_outgoing_attestations[0].0;
 		let min_num_incoming_attestations = participants_grouped_by_incoming_attestations[0].0;
 
+		let mut maybe_participants_to_exclude_with_reason: Option<(Vec<usize>, ExclusionReason)> =
+			None;
 		if min_num_incoming_attestations < min_num_outgoing_attestations {
 			if min_num_incoming_attestations < threshold_fn(participants_to_process.len()) {
-				let ps = participants_grouped_by_incoming_attestations[0].1.clone();
-				ps.clone().into_iter().for_each(|p| {
-					excluded_participants.push((p, ExclusionReason::TooFewIncomingAttestations))
-				});
-
-				// remove the participants from the included participants and the attestation vectors
-				participants_to_process.retain(|k| !ps.contains(k));
-				relevant_attestations =
-					filter_attestations(&participants_to_process, &relevant_attestations);
-				continue
+				maybe_participants_to_exclude_with_reason = Some((
+					participants_grouped_by_incoming_attestations[0].1.clone(),
+					ExclusionReason::TooFewIncomingAttestations,
+				));
 			}
 		} else {
 			if min_num_outgoing_attestations < threshold_fn(participants_to_process.len()) {
-				let ps = participants_grouped_by_outgoing_attestations[0].1.clone();
-				ps.clone().into_iter().for_each(|p| {
-					excluded_participants.push((p, ExclusionReason::TooFewOutgoingAttestations))
-				});
-
-				// remove the participants from the included participants and the attestation vectors
-				participants_to_process.retain(|k| !ps.contains(k));
-				relevant_attestations =
-					filter_attestations(&participants_to_process, &relevant_attestations);
-				continue
+				maybe_participants_to_exclude_with_reason = Some((
+					participants_grouped_by_outgoing_attestations[0].1.clone(),
+					ExclusionReason::TooFewOutgoingAttestations,
+				));
 			}
+		}
+		if let Some((participants_to_exclude, exclusion_reason)) =
+			maybe_participants_to_exclude_with_reason
+		{
+			participants_to_exclude
+				.clone()
+				.into_iter()
+				.for_each(|p| excluded_participants.push((p, exclusion_reason)));
+
+			// remove the participants from the included participants and the attestation vectors
+			participants_to_process.retain(|k| !participants_to_exclude.contains(k));
+			relevant_attestations =
+				filter_attestations(&participants_to_process, &relevant_attestations);
+			continue
 		}
 
 		// if all participants are above the threshold and therefore no participants were removed, we exit the loop
@@ -215,7 +219,7 @@ pub enum MeetupValidationError {
 	BallotEmpty,
 	NoDependableVote,
 }
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Copy)]
 pub enum ExclusionReason {
 	NoVote,
 	WrongVote,
