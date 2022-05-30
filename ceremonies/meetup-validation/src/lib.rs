@@ -187,31 +187,27 @@ fn group_participants_by_num_incoming_and_outgoing_attestations(
 		})
 		.collect();
 	return (
-		group_participants_by_num_attestations(participants, &num_outgoing_attestations),
-		group_participants_by_num_attestations(participants, &num_incoming_attestations),
+		group_indices_by_value(participants, &num_outgoing_attestations),
+		group_indices_by_value(participants, &num_incoming_attestations),
 	)
 }
 
-fn group_participants_by_num_attestations(
-	participants: &Vec<usize>,
-	num_attestations: &Vec<usize>,
-) -> Vec<(usize, Vec<usize>)> {
-	let mut sorted_participants: Vec<usize> = participants.clone();
-	// sort ascending by number of attestations
-	sorted_participants
-		.sort_by(|a, b| (num_attestations[*a] as i32).cmp(&(num_attestations[*b] as i32)));
+fn group_indices_by_value(indices: &Vec<usize>, values: &Vec<usize>) -> Vec<(usize, Vec<usize>)> {
+	let mut sorted_indices: Vec<usize> = indices.clone();
+	// sort ascending by value
+	sorted_indices.sort_by(|a, b| (values[*a] as i32).cmp(&(values[*b] as i32)));
 
-	let mut grouped_participants: Vec<(usize, Vec<usize>)> = vec![];
-	for p in sorted_participants {
-		let num_attestations = num_attestations[p];
-		let last = grouped_participants.last_mut();
-		if let Some((_, group)) = last.filter(|(k, _)| k == &num_attestations) {
+	let mut grouped_indices: Vec<(usize, Vec<usize>)> = vec![];
+	for p in sorted_indices {
+		let value = values[p];
+		let last = grouped_indices.last_mut();
+		if let Some((_, group)) = last.filter(|(k, _)| k == &value) {
 			group.push(p);
 		} else {
-			grouped_participants.push((num_attestations, vec![p]));
+			grouped_indices.push((value, vec![p]));
 		}
 	}
-	grouped_participants
+	grouped_indices
 }
 #[derive(PartialEq, Debug)]
 pub enum MeetupValidationError {

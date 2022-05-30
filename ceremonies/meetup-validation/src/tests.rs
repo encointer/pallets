@@ -1,11 +1,11 @@
 use super::*;
 
 #[test]
-fn group_participants_by_num_attestations_works() {
+fn group_indices_by_value_works() {
 	let participants: Vec<usize> = vec![0, 1, 2, 3, 4];
 	let num_attestations: Vec<usize> = vec![2, 0, 3, 2, 0];
 	assert_eq!(
-		group_participants_by_num_attestations(&participants, &num_attestations),
+		group_indices_by_value(&participants, &num_attestations),
 		vec![(0, vec![1, 4]), (2, vec![0, 3]), (3, vec![2])]
 	);
 }
