@@ -279,19 +279,26 @@ fn set_fee_conversion_factor_works() {
 #[test]
 fn transfer_all_works() {
 	new_test_ext().execute_with(|| {
-		System::set_block_number(System::block_number() + 1);
+		System::set_block_number(0);
 		System::on_initialize(System::block_number());
 
 		let alice = AccountKeyring::Alice.to_account_id();
 		let bob = AccountKeyring::Bob.to_account_id();
 		let cid = CommunityIdentifier::default();
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
+
 		assert_ok!(EncointerBalances::transfer_all(Some(alice.clone()).into(), cid, bob.clone()));
+
+		System::set_block_number(3);
 
 		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
 
 		let balance: f64 = EncointerBalances::balance(cid, &bob).lossy_into();
-		assert_relative_eq!(balance, 50.0, epsilon = 1.0e-9);
+		let demurrage_factor: f64 =
+			exp::<BalanceType, BalanceType>(Demurrage::from_num(3.0) * -DefaultDemurrage::get())
+				.unwrap()
+				.lossy_into();
+		assert_relative_eq!(balance, 50.0 * demurrage_factor, epsilon = 1.0e-9);
 	})
 }
 
