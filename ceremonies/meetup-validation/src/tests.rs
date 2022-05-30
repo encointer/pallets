@@ -31,8 +31,8 @@ fn group_participants_by_num_incoming_and_outgoing_attestations_works() {
 fn filter_attestations_works() {
 	let participants: Vec<usize> = vec![0, 2, 4];
 	let participant_attestations: Vec<Vec<usize>> =
-		vec![vec![2], vec![], vec![0], vec![2], vec![0, 2]];
-	let expected: Vec<Vec<usize>> = vec![vec![2], vec![], vec![0], vec![2], vec![0, 2]];
+		vec![vec![2, 3], vec![3, 4], vec![0, 1], vec![2, 1, 3], vec![0, 2, 3]];
+	let expected: Vec<Vec<usize>> = vec![vec![2], vec![4], vec![0], vec![2], vec![0, 2]];
 	assert_eq!(filter_attestations(&participants, &participant_attestations), expected);
 }
 
