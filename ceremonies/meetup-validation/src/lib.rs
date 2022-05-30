@@ -163,7 +163,6 @@ fn filter_attestations(
 ) -> Vec<Vec<usize>> {
 	// filter out participants from the attestation vectors that are not in the participants vector anymore.
 	participant_attestations
-		.clone()
 		.iter()
 		.map(|a| a.clone().into_iter().filter(|j| participants.contains(j)).collect())
 		.collect()
