@@ -3,10 +3,17 @@
 /// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by the participant index
 /// ie. participant_votes[i] holds the vote of participant i
 
+type ParticipantIndex = usize;
+type Participants = Vec<ParticipantIndex>;
+type Attestations = Vec<Vec<ParticipantIndex>>;
+// (a, b) : a is the number of attestations
+//			b are the participants that have those number of attestations
+type ParticipantGroup = (usize, Participants);
+
 pub fn get_participant_judgements(
-	participants: &Vec<usize>,
+	participants: &Participants,
 	participant_votes: &Vec<u32>,
-	participant_attestations: &Vec<Vec<usize>>,
+	participant_attestations: &Attestations,
 	attestation_threshold_fn: fn(usize) -> usize,
 ) -> Result<ParticipantJudgements, MeetupValidationError> {
 	let mut participant_judgements =
@@ -35,10 +42,10 @@ pub fn get_participant_judgements(
 }
 
 fn get_excluded_participants_no_vote(
-	participants: &Vec<usize>,
+	participants: &Vec<ParticipantIndex>,
 	participant_votes: &Vec<u32>,
-) -> Vec<(usize, ExclusionReason)> {
-	let mut excluded_participants: Vec<(usize, ExclusionReason)> = vec![];
+) -> Vec<(ParticipantIndex, ExclusionReason)> {
+	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
 	for i in participants {
 		match participant_votes[*i] {
 			v if v > 0 => continue,
@@ -49,11 +56,11 @@ fn get_excluded_participants_no_vote(
 }
 
 fn get_excluded_participants_wrong_vote(
-	participants: &Vec<usize>,
+	participants: &Participants,
 	participant_votes: &Vec<u32>,
 	n_confirmed: u32,
-) -> Vec<(usize, ExclusionReason)> {
-	let mut excluded_participants: Vec<(usize, ExclusionReason)> = vec![];
+) -> Vec<(ParticipantIndex, ExclusionReason)> {
+	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
 	for i in participants {
 		if participant_votes[*i] != n_confirmed {
 			excluded_participants.push((*i, ExclusionReason::WrongVote))
@@ -66,15 +73,15 @@ fn get_excluded_participants_wrong_vote(
 /// We find the participant with the fewest incoming/outgoing attestations
 /// If it if below the threhsold, we exclude the participant
 fn get_excluded_participants_num_attestations(
-	participants: &Vec<usize>,
-	participant_attestations: &Vec<Vec<usize>>,
+	participants: &Participants,
+	participant_attestations: &Attestations,
 	threshold_fn: fn(usize) -> usize,
 ) -> Vec<(usize, ExclusionReason)> {
 	let mut relevant_attestations =
 		filter_attestations(participants, participant_attestations.clone());
 
-	let mut excluded_participants: Vec<(usize, ExclusionReason)> = vec![];
-	let mut participants_to_process: Vec<usize> = participants.clone();
+	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
+	let mut participants_to_process: Vec<ParticipantIndex> = participants.clone();
 
 	while participants_to_process.len() > 0 {
 		let (
@@ -88,7 +95,7 @@ fn get_excluded_participants_num_attestations(
 		let min_num_outgoing_attestations = participants_grouped_by_outgoing_attestations[0].0;
 		let min_num_incoming_attestations = participants_grouped_by_incoming_attestations[0].0;
 
-		let mut maybe_participants_to_exclude_with_reason: Option<(Vec<usize>, ExclusionReason)> =
+		let mut maybe_participants_to_exclude_with_reason: Option<(Participants, ExclusionReason)> =
 			None;
 		if min_num_incoming_attestations < min_num_outgoing_attestations {
 			if min_num_incoming_attestations < threshold_fn(participants_to_process.len()) {
@@ -127,7 +134,7 @@ fn get_excluded_participants_num_attestations(
 }
 
 fn find_majority_vote(
-	participants: &Vec<usize>,
+	participants: &Participants,
 	participant_votes: &Vec<u32>,
 ) -> Result<(u32, u32), MeetupValidationError> {
 	let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
@@ -153,9 +160,9 @@ fn find_majority_vote(
 }
 
 fn filter_attestations(
-	participants: &Vec<usize>,
-	participant_attestations: Vec<Vec<usize>>,
-) -> Vec<Vec<usize>> {
+	participants: &Participants,
+	participant_attestations: Attestations,
+) -> Attestations {
 	// filter out participants from the attestation vectors that are not in the participants vector anymore.
 	participant_attestations
 		.into_iter()
@@ -167,12 +174,12 @@ fn filter_attestations(
 }
 
 fn group_participants_by_num_incoming_and_outgoing_attestations(
-	participants: &Vec<usize>,
-	participant_attestations: &Vec<Vec<usize>>,
-) -> (Vec<(usize, Vec<usize>)>, Vec<(usize, Vec<usize>)>) {
-	let num_outgoing_attestations: Vec<usize> =
+	participants: &Participants,
+	participant_attestations: &Attestations,
+) -> (Vec<ParticipantGroup>, Vec<ParticipantGroup>) {
+	let num_outgoing_attestations: Participants =
 		participant_attestations.iter().map(|a| a.len()).collect();
-	let num_incoming_attestations: Vec<usize> = (0..participant_attestations.len())
+	let num_incoming_attestations: Participants = (0..participant_attestations.len())
 		.into_iter()
 		.map(|p| {
 			participant_attestations
@@ -180,7 +187,7 @@ fn group_participants_by_num_incoming_and_outgoing_attestations(
 				.enumerate()
 				.filter(|(idx, a)| &p != idx && a.contains(&p))
 				.map(|item| item.1.clone())
-				.collect::<Vec<Vec<usize>>>()
+				.collect::<Attestations>()
 				.len()
 		})
 		.collect();
@@ -190,12 +197,12 @@ fn group_participants_by_num_incoming_and_outgoing_attestations(
 	)
 }
 
-fn group_indices_by_value(indices: &Vec<usize>, values: &Vec<usize>) -> Vec<(usize, Vec<usize>)> {
-	let mut sorted_indices: Vec<usize> = indices.clone();
+fn group_indices_by_value(indices: &Participants, values: &Vec<usize>) -> Vec<ParticipantGroup> {
+	let mut sorted_indices: Participants = indices.clone();
 	// sort ascending by value
 	sorted_indices.sort_by(|a, b| (values[*a] as i32).cmp(&(values[*b] as i32)));
 
-	let mut grouped_indices: Vec<(usize, Vec<usize>)> = vec![];
+	let mut grouped_indices: Vec<ParticipantGroup> = vec![];
 	for p in sorted_indices {
 		let value = values[p];
 		let last = grouped_indices.last_mut();
