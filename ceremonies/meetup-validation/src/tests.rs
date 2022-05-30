@@ -103,11 +103,11 @@ fn get_participant_judgements_works_case_0() {
 
 #[test]
 fn get_participant_judgements_works_case_1() {
-	// Scenario: One participant did not vote
+	// Scenario: One participant did not receive any attestations and therefore has a vote of 0
 	validate_participant_judgements(
 		vec![0, 1, 2, 3],
 		vec![0, 3, 3, 3],
-		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2]],
+		vec![vec![1, 2, 3], vec![2, 3], vec![1, 3], vec![1, 2]],
 		ParticipantJudgements {
 			legit: vec![1, 2, 3],
 			excluded: vec![ExcludedParticipant { index: 0, reason: ExclusionReason::NoVote }],

@@ -53,7 +53,7 @@ fn get_excluded_participants_no_vote(
 	for i in participants {
 		match participant_votes[*i] {
 			v if v > 0 => continue,
-			_ => excluded_participants.push((*i, ExclusionReason::Wrong)),
+			_ => excluded_participants.push((*i, ExclusionReason::NoVote)),
 		}
 	}
 	excluded_participants
