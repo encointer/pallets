@@ -38,14 +38,14 @@ fn get_excluded_participants_no_vote(
 	participants: &Vec<usize>,
 	participant_votes: &Vec<u32>,
 ) -> Vec<(usize, ExclusionReason)> {
-	       let mut excluded_participants: Vec<(usize, ExclusionReason)> = vec![];
-	       for i in participants {
+	let mut excluded_participants: Vec<(usize, ExclusionReason)> = vec![];
+	for i in participants {
 		match participant_votes[*i] {
 			v if v > 0 => continue,
 			_ => excluded_participants.push((*i, ExclusionReason::NoVote)),
 		}
 	}
-       excluded_participants
+	excluded_participants
 }
 
 fn get_excluded_participants_wrong_vote(
@@ -53,16 +53,13 @@ fn get_excluded_participants_wrong_vote(
 	participant_votes: &Vec<u32>,
 	n_confirmed: u32,
 ) -> Vec<(usize, ExclusionReason)> {
-	let mut excluded_participants: Vec<usize> = vec![];
+	let mut excluded_participants: Vec<(usize, ExclusionReason)> = vec![];
 	for i in participants {
 		if participant_votes[*i] != n_confirmed {
-			excluded_participants.push(*i)
+			excluded_participants.push((*i, ExclusionReason::WrongVote))
 		}
 	}
 	excluded_participants
-		.into_iter()
-		.map(|p| (p, ExclusionReason::WrongVote))
-		.collect()
 }
 
 /// The algorithm works as follows:
