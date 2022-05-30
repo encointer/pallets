@@ -45,11 +45,15 @@ fn get_excluded_participants_no_vote(
 	participants: &Vec<ParticipantIndex>,
 	participant_votes: &Vec<u32>,
 ) -> Vec<(ParticipantIndex, ExclusionReason)> {
+	// We want to get rid of all participants that did not vote (ie. have a vote of 0 (default storage value) because they did not receive any attestations).
+	// This needs to happen before we compute the majority vote, because otherwise it would be possible to receive a majority vote of 0
+	// in the case where more than half of the participants did not show up.
+
 	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
 	for i in participants {
 		match participant_votes[*i] {
 			v if v > 0 => continue,
-			_ => excluded_participants.push((*i, ExclusionReason::NoVote)),
+			_ => excluded_participants.push((*i, ExclusionReason::Wrong)),
 		}
 	}
 	excluded_participants
