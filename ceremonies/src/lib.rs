@@ -423,13 +423,13 @@ pub mod pallet {
 				(0..meetup_participants.len()).collect();
 
 			let attestation_threshold_fn = |i: usize| max(i.saturating_sub(1), 1);
-			let updated_participants = match get_updated_participants(
+			let participant_judgements = match get_participant_judgements(
 				&participants_eligible_for_rewards,
 				&participant_votes,
 				&participant_attestations,
 				attestation_threshold_fn,
 			) {
-				Ok(updated_participants) => updated_participants,
+				Ok(participant_judgements) => participant_judgements,
 				// handle errors
 				Err(err) => match err {
 					MeetupValidationError::BallotEmpty => {
@@ -450,9 +450,9 @@ pub mod pallet {
 					},
 				},
 			};
-			participants_eligible_for_rewards = updated_participants.included;
+			participants_eligible_for_rewards = participant_judgements.legit;
 			// emit events
-			updated_participants.excluded.iter().for_each(|p| {
+			participant_judgements.excluded.iter().for_each(|p| {
 				let participant = meetup_participants[p.index].clone();
 				let event = match p.reason {
 					ExclusionReason::NoVote => {

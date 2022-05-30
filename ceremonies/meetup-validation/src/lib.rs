@@ -3,35 +3,35 @@
 /// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by the participant index
 /// ie. participant_votes[i] holds the vote of participant i
 
-pub fn get_updated_participants(
+pub fn get_participant_judgements(
 	participants: &Vec<usize>,
 	participant_votes: &Vec<u32>,
 	participant_attestations: &Vec<Vec<usize>>,
 	attestation_threshold_fn: fn(usize) -> usize,
-) -> Result<UpdatedParticipants, MeetupValidationError> {
-	let mut updated_participants =
-		UpdatedParticipants { included: participants.clone(), excluded: vec![] };
-	updated_participants.exclude_participants(get_excluded_participants_no_vote(
-		&updated_participants.included,
+) -> Result<ParticipantJudgements, MeetupValidationError> {
+	let mut participant_judgements =
+		ParticipantJudgements { legit: participants.clone(), excluded: vec![] };
+	participant_judgements.exclude_participants(get_excluded_participants_no_vote(
+		&participant_judgements.legit,
 		participant_votes,
 	));
 
 	let (n_confirmed, _num_votes) =
-		find_majority_vote(&updated_participants.included, participant_votes)?;
+		find_majority_vote(&participant_judgements.legit, participant_votes)?;
 
-	updated_participants.exclude_participants(get_excluded_participants_wrong_vote(
-		&updated_participants.included,
+	participant_judgements.exclude_participants(get_excluded_participants_wrong_vote(
+		&participant_judgements.legit,
 		participant_votes,
 		n_confirmed,
 	));
 
-	updated_participants.exclude_participants(get_excluded_participants_num_attestations(
-		&updated_participants.included,
+	participant_judgements.exclude_participants(get_excluded_participants_num_attestations(
+		&participant_judgements.legit,
 		participant_attestations,
 		attestation_threshold_fn,
 	));
 
-	Ok(updated_participants)
+	Ok(participant_judgements)
 }
 
 fn get_excluded_participants_no_vote(
@@ -229,15 +229,15 @@ pub struct ExcludedParticipant {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct UpdatedParticipants {
-	pub included: Vec<usize>,
+pub struct ParticipantJudgements {
+	pub legit: Vec<usize>,
 	pub excluded: Vec<ExcludedParticipant>,
 }
 
-impl UpdatedParticipants {
+impl ParticipantJudgements {
 	pub fn exclude_participants(&mut self, excluded: Vec<(usize, ExclusionReason)>) {
-		self.included = self
-			.included
+		self.legit = self
+			.legit
 			.clone()
 			.into_iter()
 			.filter(|&i| !excluded.iter().any(|p| p.0 == i))

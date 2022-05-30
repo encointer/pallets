@@ -91,82 +91,82 @@ fn find_majority_vote_works() {
 }
 
 #[test]
-fn get_updated_participants_works_case_0() {
+fn get_participant_judgements_works_case_0() {
 	// Scenario: Everyone attests everyone
 	let participants: Vec<usize> = vec![0, 1, 2];
 	let participant_votes: Vec<u32> = vec![3, 3, 3];
 	let participant_attestations: Vec<Vec<usize>> = vec![vec![1, 2], vec![0, 2], vec![0, 1]];
 
-	let updated_participants =
-		UpdatedParticipants { included: participants.clone(), excluded: vec![] };
+	let participant_judgements =
+		ParticipantJudgements { legit: participants.clone(), excluded: vec![] };
 	let attestation_threshold_fn = |i| i - 1;
 
 	assert_eq!(
-		get_updated_participants(
+		get_participant_judgements(
 			&participants,
 			&participant_votes,
 			&participant_attestations,
 			attestation_threshold_fn,
 		)
 		.unwrap(),
-		updated_participants
+		participant_judgements
 	);
 }
 
 #[test]
-fn get_updated_participants_works_case_1() {
+fn get_participant_judgements_works_case_1() {
 	// Scenario: One participant did not vote
 	let participants: Vec<usize> = vec![0, 1, 2, 3];
 	let participant_votes: Vec<u32> = vec![0, 3, 3, 3];
 	let participant_attestations: Vec<Vec<usize>> =
 		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2]];
 
-	let updated_participants = UpdatedParticipants {
-		included: vec![1, 2, 3],
+	let participant_judgements = ParticipantJudgements {
+		legit: vec![1, 2, 3],
 		excluded: vec![ExcludedParticipant { index: 0, reason: ExclusionReason::NoVote }],
 	};
 	let attestation_threshold_fn = |i| i - 1;
 
 	assert_eq!(
-		get_updated_participants(
+		get_participant_judgements(
 			&participants,
 			&participant_votes,
 			&participant_attestations,
 			attestation_threshold_fn,
 		)
 		.unwrap(),
-		updated_participants
+		participant_judgements
 	);
 }
 
 #[test]
-fn get_updated_participants_works_case_2() {
+fn get_participant_judgements_works_case_2() {
 	// Scenario: One participant did not vote like majority
 	let participants: Vec<usize> = vec![0, 1, 2, 3];
 	let participant_votes: Vec<u32> = vec![1, 3, 3, 3];
 	let participant_attestations: Vec<Vec<usize>> =
 		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2]];
 
-	let updated_participants = UpdatedParticipants {
-		included: vec![1, 2, 3],
+	let participant_judgements = ParticipantJudgements {
+		legit: vec![1, 2, 3],
 		excluded: vec![ExcludedParticipant { index: 0, reason: ExclusionReason::WrongVote }],
 	};
 	let attestation_threshold_fn = |i| i - 1;
 
 	assert_eq!(
-		get_updated_participants(
+		get_participant_judgements(
 			&participants,
 			&participant_votes,
 			&participant_attestations,
 			attestation_threshold_fn,
 		)
 		.unwrap(),
-		updated_participants
+		participant_judgements
 	);
 }
 
 #[test]
-fn get_updated_participants_works_case_3() {
+fn get_participant_judgements_works_case_3() {
 	// Scenario: 5 participants
 	// 0 has a broken phone and can only be attested by 1 and 2 and attests nobody
 	// we expect that everybody except for 0 gets a reward
@@ -175,8 +175,8 @@ fn get_updated_participants_works_case_3() {
 	let participant_attestations: Vec<Vec<usize>> =
 		vec![vec![], vec![0, 2, 3, 4], vec![0, 1, 3, 4], vec![1, 2, 4], vec![1, 2, 3]];
 
-	let updated_participants = UpdatedParticipants {
-		included: vec![1, 2, 3, 4],
+	let participant_judgements = ParticipantJudgements {
+		legit: vec![1, 2, 3, 4],
 		excluded: vec![ExcludedParticipant {
 			index: 0,
 			reason: ExclusionReason::TooFewOutgoingAttestations,
@@ -185,19 +185,19 @@ fn get_updated_participants_works_case_3() {
 	let attestation_threshold_fn = |i| i - 1;
 
 	assert_eq!(
-		get_updated_participants(
+		get_participant_judgements(
 			&participants,
 			&participant_votes,
 			&participant_attestations,
 			attestation_threshold_fn,
 		)
 		.unwrap(),
-		updated_participants
+		participant_judgements
 	);
 }
 
 #[test]
-fn get_updated_participants_works_case_4() {
+fn get_participant_judgements_works_case_4() {
 	// Scenario: 5 participants
 	// 0 has a broken screen and can only be attested by 1 and 2 but attests everybody else
 	// we expect that everybody except for 0 gets a reward
@@ -206,8 +206,8 @@ fn get_updated_participants_works_case_4() {
 	let participant_attestations: Vec<Vec<usize>> =
 		vec![vec![1, 2, 3, 4], vec![0, 2, 3, 4], vec![0, 1, 3, 4], vec![1, 2, 4], vec![1, 2, 3]];
 
-	let updated_participants = UpdatedParticipants {
-		included: vec![1, 2, 3, 4],
+	let participant_judgements = ParticipantJudgements {
+		legit: vec![1, 2, 3, 4],
 		excluded: vec![ExcludedParticipant {
 			index: 0,
 			reason: ExclusionReason::TooFewIncomingAttestations,
@@ -216,13 +216,13 @@ fn get_updated_participants_works_case_4() {
 	let attestation_threshold_fn = |i| i - 1;
 
 	assert_eq!(
-		get_updated_participants(
+		get_participant_judgements(
 			&participants,
 			&participant_votes,
 			&participant_attestations,
 			attestation_threshold_fn,
 		)
 		.unwrap(),
-		updated_participants
+		participant_judgements
 	);
 }
