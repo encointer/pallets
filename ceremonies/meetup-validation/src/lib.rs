@@ -105,19 +105,21 @@ fn get_excluded_participants_num_attestations(
 		let min_num_outgoing_attestations = participants_grouped_by_outgoing_attestations[0].0;
 		let min_num_incoming_attestations = participants_grouped_by_incoming_attestations[0].0;
 
-		let mut maybe_participants_to_exclude_with_reason: Option<(Participants, ExclusionReason)> =
-			None;
+		let mut maybe_participants_to_exclude_with_reason: Option<(
+			&Participants,
+			ExclusionReason,
+		)> = None;
 		if min_num_incoming_attestations < min_num_outgoing_attestations {
 			if min_num_incoming_attestations < threshold_fn(participants_to_process.len()) {
 				maybe_participants_to_exclude_with_reason = Some((
-					participants_grouped_by_incoming_attestations[0].1.clone(),
+					&participants_grouped_by_incoming_attestations[0].1,
 					ExclusionReason::TooFewIncomingAttestations,
 				));
 			}
 		} else {
 			if min_num_outgoing_attestations < threshold_fn(participants_to_process.len()) {
 				maybe_participants_to_exclude_with_reason = Some((
-					participants_grouped_by_outgoing_attestations[0].1.clone(),
+					&participants_grouped_by_outgoing_attestations[0].1,
 					ExclusionReason::TooFewOutgoingAttestations,
 				));
 			}
@@ -126,9 +128,8 @@ fn get_excluded_participants_num_attestations(
 			maybe_participants_to_exclude_with_reason
 		{
 			participants_to_exclude
-				.clone()
-				.into_iter()
-				.for_each(|p| excluded_participants.push((p, exclusion_reason)));
+				.iter()
+				.for_each(|p| excluded_participants.push((*p, exclusion_reason)));
 
 			// remove the participants from the included participants and the attestation vectors
 			participants_to_process.retain(|k| !participants_to_exclude.contains(k));
