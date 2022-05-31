@@ -1682,11 +1682,7 @@ impl<T: Config> Pallet<T> {
 			// convert AccountId to local index
 			let attestation_indices = attestations
 				.into_iter()
-				.map(|p| meetup_participants.iter().position(|s| *s == p))
-			let attestation_indices = attestations
-				.into_iter()
 				.filter_map(|p| meetup_participants.iter().position(|s| *s == p))
-				.collect()
 				.collect();
 
 			participant_attestations.push(attestation_indices);
