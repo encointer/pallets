@@ -86,7 +86,11 @@ fn get_excluded_participants_num_attestations(
 	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
 	let mut participants_to_process: Vec<ParticipantIndex> = participants.clone();
 
-	while participants_to_process.len() > 0 {
+	// we will never loop more than the number of participants,
+	// because either participants are excluded or we break out of the loop
+	let max_iterations = participants_to_process.len();
+
+	for _ in 0..max_iterations {
 		let participants_grouped_by_outgoing_attestations =
 			group_participants_by_num_outgoing_attestations(
 				&participants_to_process,
