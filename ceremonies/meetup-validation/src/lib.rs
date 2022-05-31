@@ -88,13 +88,16 @@ fn get_excluded_participants_num_attestations(
 	let mut participants_to_process: Vec<ParticipantIndex> = participants.clone();
 
 	while participants_to_process.len() > 0 {
-		let (
-			participants_grouped_by_outgoing_attestations,
-			participants_grouped_by_incoming_attestations,
-		) = group_participants_by_num_incoming_and_outgoing_attestations(
-			&participants_to_process,
-			&relevant_attestations,
-		);
+		let participants_grouped_by_outgoing_attestations =
+			group_participants_by_num_outgoing_attestations(
+				&participants_to_process,
+				&relevant_attestations,
+			);
+		let participants_grouped_by_incoming_attestations =
+			group_participants_by_num_incoming_attestations(
+				&participants_to_process,
+				&relevant_attestations,
+			);
 
 		let min_num_outgoing_attestations = participants_grouped_by_outgoing_attestations[0].0;
 		let min_num_incoming_attestations = participants_grouped_by_incoming_attestations[0].0;
@@ -177,12 +180,10 @@ fn filter_attestations(
 		.collect()
 }
 
-fn group_participants_by_num_incoming_and_outgoing_attestations(
+fn group_participants_by_num_incoming_attestations(
 	participants: &Participants,
 	participant_attestations: &Attestations,
-) -> (Vec<ParticipantGroup>, Vec<ParticipantGroup>) {
-	let num_outgoing_attestations: Participants =
-		participant_attestations.iter().map(|a| a.len()).collect();
+) -> Vec<ParticipantGroup> {
 	let num_incoming_attestations: Participants = (0..participant_attestations.len())
 		.into_iter()
 		.map(|p| {
@@ -195,10 +196,18 @@ fn group_participants_by_num_incoming_and_outgoing_attestations(
 				.len()
 		})
 		.collect();
-	return (
-		group_indices_by_value(participants, &num_outgoing_attestations),
-		group_indices_by_value(participants, &num_incoming_attestations),
-	)
+
+	group_indices_by_value(participants, &num_incoming_attestations)
+}
+
+fn group_participants_by_num_outgoing_attestations(
+	participants: &Participants,
+	participant_attestations: &Attestations,
+) -> Vec<ParticipantGroup> {
+	let num_outgoing_attestations: Participants =
+		participant_attestations.iter().map(|a| a.len()).collect();
+
+	group_indices_by_value(participants, &num_outgoing_attestations)
 }
 
 fn group_indices_by_value(indices: &Participants, values: &Vec<usize>) -> Vec<ParticipantGroup> {

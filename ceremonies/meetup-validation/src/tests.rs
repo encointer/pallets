@@ -10,19 +10,26 @@ fn group_indices_by_value_works() {
 	);
 }
 #[test]
-fn group_participants_by_num_incoming_and_outgoing_attestations_works() {
+fn group_participants_by_num_outgoing_attestations_works() {
 	let participants: Vec<usize> = vec![0, 1, 2, 3, 4];
 	let participant_attestations: Vec<Vec<usize>> =
 		vec![vec![1, 2, 3], vec![3], vec![0, 1, 3], vec![1, 2], vec![0, 1, 2]];
-	let expected: (Vec<(usize, Vec<usize>)>, Vec<(usize, Vec<usize>)>) = (
-		vec![(1, vec![1]), (2, vec![3]), (3, vec![0, 2, 4])],
-		vec![(0, vec![4]), (2, vec![0]), (3, vec![2, 3]), (4, vec![1])],
-	);
+	let expected: Vec<(usize, Vec<usize>)> = vec![(1, vec![1]), (2, vec![3]), (3, vec![0, 2, 4])];
 	assert_eq!(
-		group_participants_by_num_incoming_and_outgoing_attestations(
-			&participants,
-			&participant_attestations
-		),
+		group_participants_by_num_outgoing_attestations(&participants, &participant_attestations),
+		expected
+	);
+}
+
+#[test]
+fn group_participants_by_num_incoming_attestations_works() {
+	let participants: Vec<usize> = vec![0, 1, 2, 3, 4];
+	let participant_attestations: Vec<Vec<usize>> =
+		vec![vec![1, 2, 3], vec![3], vec![0, 1, 3], vec![1, 2], vec![0, 1, 2]];
+	let expected: Vec<(usize, Vec<usize>)> =
+		vec![(0, vec![4]), (2, vec![0]), (3, vec![2, 3]), (4, vec![1])];
+	assert_eq!(
+		group_participants_by_num_incoming_attestations(&participants, &participant_attestations),
 		expected
 	);
 }
