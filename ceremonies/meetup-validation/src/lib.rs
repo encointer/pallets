@@ -197,7 +197,7 @@ fn group_participants_by_num_incoming_attestations(
 		})
 		.collect();
 
-	group_indices_by_value(participants, &num_incoming_attestations)
+	group_indices_by_value(participants.clone(), &num_incoming_attestations)
 }
 
 fn group_participants_by_num_outgoing_attestations(
@@ -207,11 +207,11 @@ fn group_participants_by_num_outgoing_attestations(
 	let num_outgoing_attestations: Participants =
 		participant_attestations.iter().map(|a| a.len()).collect();
 
-	group_indices_by_value(participants, &num_outgoing_attestations)
+	group_indices_by_value(participants.clone(), &num_outgoing_attestations)
 }
 
-fn group_indices_by_value(indices: &Participants, values: &Vec<usize>) -> Vec<ParticipantGroup> {
-	let mut sorted_indices: Participants = indices.clone();
+fn group_indices_by_value(indices: Participants, values: &Vec<usize>) -> Vec<ParticipantGroup> {
+	let mut sorted_indices: Participants = indices;
 	// sort ascending by value
 	sorted_indices.sort_by(|a, b| (values[*a] as i32).cmp(&(values[*b] as i32)));
 
