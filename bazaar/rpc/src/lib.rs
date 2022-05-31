@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+	core::{JsonValue, RpcResult},
+	proc_macros::rpc,
+};
 use sc_rpc::DenyUnsafe;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -28,7 +30,7 @@ use encointer_primitives::{
 	communities::CommunityIdentifier,
 };
 
-#[rpc]
+#[rpc(client, server)]
 pub trait BazaarApi<BlockHash, AccountId>
 where
 	AccountId: 'static + Encode + Decode + Send + Sync,
@@ -38,19 +40,19 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
-	) -> Result<Vec<BusinessData>>;
+	) -> RpcResult<Vec<BusinessData>>;
 	#[rpc(name = "encointer_bazaarGetOfferings")]
 	fn get_offerings(
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
-	) -> Result<Vec<OfferingData>>;
+	) -> RpcResult<Vec<OfferingData>>;
 	#[rpc(name = "encointer_bazaarGetOfferingsForBusiness")]
 	fn get_offerings_for_business(
 		&self,
 		bid: BusinessIdentifier<AccountId>,
 		at: Option<BlockHash>,
-	) -> Result<Vec<OfferingData>>;
+	) -> RpcResult<Vec<OfferingData>>;
 }
 
 pub struct Bazaar<Client, Block, AccountId> {
@@ -78,7 +80,7 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<BusinessData>> {
+	) -> RpcResult<Vec<BusinessData>> {
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
@@ -95,7 +97,7 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<OfferingData>> {
+	) -> RpcResult<Vec<OfferingData>> {
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
@@ -113,7 +115,7 @@ where
 		&self,
 		bid: BusinessIdentifier<AccountId>,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<OfferingData>> {
+	) -> RpcResult<Vec<OfferingData>> {
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
