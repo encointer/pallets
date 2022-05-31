@@ -1683,8 +1683,10 @@ impl<T: Config> Pallet<T> {
 			let attestation_indices = attestations
 				.into_iter()
 				.map(|p| meetup_participants.iter().position(|s| *s == p))
-				.filter(|i| i.is_some())
-				.map(|i| i.unwrap())
+			let attestation_indices = attestations
+				.into_iter()
+				.filter_map(|p| meetup_participants.iter().position(|s| *s == p))
+				.collect()
 				.collect();
 
 			participant_attestations.push(attestation_indices);
