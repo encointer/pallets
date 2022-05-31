@@ -83,7 +83,7 @@ fn get_excluded_participants_num_attestations_works() {
 	assert_eq!(
 		get_excluded_participants_num_attestations(
 			&participants,
-			&participant_attestations,
+			participant_attestations,
 			|n| n - 1
 		),
 		excluded_participants

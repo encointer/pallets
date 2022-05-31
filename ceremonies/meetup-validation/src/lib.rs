@@ -34,7 +34,7 @@ pub fn get_participant_judgements(
 
 	participant_judgements.exclude_participants(get_excluded_participants_num_attestations(
 		&participant_judgements.legit,
-		participant_attestations,
+		participant_attestations.clone(),
 		attestation_threshold_fn,
 	));
 
@@ -78,11 +78,10 @@ fn get_excluded_participants_wrong_vote(
 /// If it if below the threhsold, we exclude the participant
 fn get_excluded_participants_num_attestations(
 	participants: &Participants,
-	participant_attestations: &Attestations,
+	participant_attestations: Attestations,
 	threshold_fn: fn(usize) -> usize,
 ) -> Vec<(usize, ExclusionReason)> {
-	let mut relevant_attestations =
-		filter_attestations(participants, participant_attestations.clone());
+	let mut relevant_attestations = filter_attestations(participants, participant_attestations);
 
 	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
 	let mut participants_to_process: Vec<ParticipantIndex> = participants.clone();
