@@ -245,12 +245,7 @@ pub struct ParticipantJudgements {
 
 impl ParticipantJudgements {
 	pub fn exclude_participants(&mut self, excluded: Vec<(usize, ExclusionReason)>) {
-		self.legit = self
-			.legit
-			.clone()
-			.into_iter()
-			.filter(|&i| !excluded.iter().any(|p| p.0 == i))
-			.collect();
+		self.legit.retain(|&i| !excluded.iter().any(|p| p.0 == i));
 		for p in excluded {
 			self.excluded.push(ExcludedParticipant { index: p.0, reason: p.1.clone() })
 		}
