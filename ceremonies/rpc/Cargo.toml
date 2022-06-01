@@ -5,9 +5,10 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
 
 [dependencies]
-jsonrpsee = { version = "0.12.0", features = ["server", "macros"] }
+jsonrpsee = { version = "0.13.1", features = ["server", "macros"] }
 log = "0.4.14"
 parking_lot = "0.12.0"
+thiserror = "1.0.31"
 
 # local deps
 encointer-primitives = { path = "../../primitives" }

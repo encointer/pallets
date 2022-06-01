@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+mod error;
+
 use jsonrpsee::{
 	core::{JsonValue, RpcResult},
 	proc_macros::rpc,
@@ -60,7 +62,7 @@ where
 	) -> RpcResult<AggregatedAccountData<AccountId, Moment>>;
 }
 
-pub struct Ceremonies<Client, Block, AccountId, Moment, S> {
+pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
 	client: Arc<Client>,
 	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
@@ -69,7 +71,7 @@ pub struct Ceremonies<Client, Block, AccountId, Moment, S> {
 	_marker: std::marker::PhantomData<(Block, AccountId, Moment)>,
 }
 
-impl<Client, Block, AccountId, Moment, S> Ceremonies<Client, Block, AccountId, Moment, S>
+impl<Client, Block, AccountId, Moment, S> CeremoniesRpc<Client, Block, AccountId, Moment, S>
 where
 	S: 'static + OffchainStorage,
 	Block: sp_api::BlockT,
@@ -86,7 +88,7 @@ where
 		storage: S,
 		offchain_indexing: bool,
 	) -> Self {
-		Ceremonies {
+		CeremoniesRpc {
 			client,
 			_marker: Default::default(),
 			deny_unsafe,
@@ -136,8 +138,9 @@ where
 	}
 }
 
-impl<Client, Block, AccountId, Moment, S> CeremoniesApi<<Block as BlockT>::Hash, AccountId, Moment>
-	for Ceremonies<Client, Block, AccountId, Moment, S>
+impl<Client, Block, AccountId, Moment, S>
+	CeremoniesApiServer<<Block as BlockT>::Hash, AccountId, Moment>
+	for CeremoniesRpc<Client, Block, AccountId, Moment, S>
 where
 	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Moment: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
@@ -185,37 +188,5 @@ where
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		api.get_aggregated_account_data(&at, cid, &account)
 			.map_err(runtime_error_into_rpc_err)
-	}
-}
-
-const RUNTIME_ERROR: i64 = 1; // Arbitrary number, but substrate uses the same
-const OFFCHAIN_INDEXING_DISABLED_ERROR: i64 = 2;
-const STORAGE_NOT_FOUND_ERROR: i64 = 3;
-
-/// Converts a runtime trap into an RPC error.
-#[allow(unused)]
-fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(RUNTIME_ERROR),
-		message: "Runtime trapped".into(),
-		data: Some(format!("{:?}", err).into()),
-	}
-}
-
-#[allow(unused)]
-fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(STORAGE_NOT_FOUND_ERROR),
-		message: "Offchain storage not found".into(),
-		data: Some(format!("Key {:?}", key).into()),
-	}
-}
-
-#[allow(unused)]
-fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(OFFCHAIN_INDEXING_DISABLED_ERROR),
-		message: "This rpc is not allowed with offchain-indexing disabled".into(),
-		data: Some(format!("call: {:?}", call).into()),
 	}
 }
