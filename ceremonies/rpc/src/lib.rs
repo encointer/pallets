@@ -16,10 +16,8 @@
 
 mod error;
 
-use jsonrpsee::{
-	core::{JsonValue, RpcResult},
-	proc_macros::rpc,
-};
+use crate::error::Error;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use parking_lot::RwLock;
 use sc_rpc::DenyUnsafe;
 use sp_api::{offchain::OffchainStorage, Decode, Encode, ProvideRuntimeApi};
@@ -127,14 +125,15 @@ where
 		&self,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) {
+	) -> RpcResult<()> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let reputations =
-			api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err).unwrap();
+			api.get_reputations(&at, &account).map_err(|e| Error::Runtime(e.into()))?;
 		let cache_key = &reputation_cache_key(&account);
 		self.set_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key, &reputations);
-		self.set_storage(&reputation_cache_dirty_key(&account), &false)
+		self.set_storage(&reputation_cache_dirty_key(&account), &false);
+		Ok(())
 	}
 }
 
@@ -158,7 +157,7 @@ where
 		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err)
+		Ok(api.get_reputations(&at, &account).map_err(|e| Error::Runtime(e.into()))?)
 
 		// This part was broken, the cache was never marked as dirty: https://github.com/encointer/pallets/issues/220
 		//
@@ -186,7 +185,8 @@ where
 		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		api.get_aggregated_account_data(&at, cid, &account)
-			.map_err(runtime_error_into_rpc_err)
+		Ok(api
+			.get_aggregated_account_data(&at, cid, &account)
+			.map_err(|e| Error::Runtime(e.into()))?)
 	}
 }
