@@ -1137,6 +1137,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "encointer-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpsee",
+ "thiserror",
+]
+
+[[package]]
 name = "enum-as-inner"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3319,6 +3327,7 @@ name = "pallet-encointer-bazaar-rpc"
 version = "1.0.0"
 dependencies = [
  "encointer-primitives",
+ "encointer-rpc",
  "jsonrpsee",
  "log",
  "pallet-encointer-bazaar-rpc-runtime-api",
@@ -3374,6 +3383,7 @@ name = "pallet-encointer-ceremonies-rpc"
 version = "1.0.0"
 dependencies = [
  "encointer-primitives",
+ "encointer-rpc",
  "jsonrpsee",
  "log",
  "pallet-encointer-ceremonies-rpc-runtime-api",
@@ -3422,6 +3432,7 @@ name = "pallet-encointer-communities-rpc"
 version = "1.0.0"
 dependencies = [
  "encointer-primitives",
+ "encointer-rpc",
  "jsonrpsee",
  "log",
  "pallet-encointer-communities-rpc-runtime-api",

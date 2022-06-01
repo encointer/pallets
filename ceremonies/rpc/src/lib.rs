@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-mod error;
-
-use crate::error::Error;
+use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use parking_lot::RwLock;
 use sc_rpc::DenyUnsafe;

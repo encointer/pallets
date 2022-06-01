@@ -1,0 +1,8 @@
+[package]
+name = "encointer-rpc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jsonrpsee = { version = "0.13.1" }
+thiserror = "1.0.31"
