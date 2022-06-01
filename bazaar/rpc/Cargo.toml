@@ -2,18 +2,18 @@
 name = "pallet-encointer-bazaar-rpc"
 version = "1.0.0"
 authors = ["encointer.org <alain@encointer.org>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-jsonrpc-core = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive = "18.0.0"
+jsonrpsee = { version = "0.13.1", features = ["server", "macros"] }
 log = "0.4.14"
 parking_lot = "0.12.0"
+thiserror = "1.0.31"
 
 # local deps
-encointer-primitives = { path = "../../primitives" }
 encointer-bazaar-rpc-runtime-api = { package = "pallet-encointer-bazaar-rpc-runtime-api", path = "runtime-api" }
+encointer-primitives = { path = "../../primitives" }
+encointer-rpc = { path = "../../rpc" }
 
 # substrate deps
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }

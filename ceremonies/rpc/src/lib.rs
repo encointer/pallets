@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use encointer_rpc::Error;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use parking_lot::RwLock;
 use sc_rpc::DenyUnsafe;
 use sp_api::{offchain::OffchainStorage, Decode, Encode, ProvideRuntimeApi};
@@ -33,29 +33,32 @@ use encointer_primitives::{
 	scheduler::CeremonyIndexType,
 };
 
-#[rpc]
+#[rpc(client, server)]
 pub trait CeremoniesApi<BlockHash, AccountId, Moment>
 where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	Moment: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "encointer_getReputations")]
+	#[method(name = "encointer_getReputations", blocking)]
 	fn get_reputations(
 		&self,
 		account: AccountId,
 		at: Option<BlockHash>,
-	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>>;
+	) -> RpcResult<Vec<(CeremonyIndexType, CommunityReputation)>>;
 
-	#[rpc(name = "encointer_getAggregatedAccountData")]
+	// For rpc calls that need a while block should help the rpc server to
+	// spawn it with `tokio.spawn_blocking` to keep the rpc server responsive
+	// for calls that take longer. (not 100% sure if I understand correctly.)
+	#[method(name = "encointer_getAggregatedAccountData", blocking)]
 	fn get_aggregated_account_data(
 		&self,
 		cid: CommunityIdentifier,
 		account: AccountId,
 		at: Option<BlockHash>,
-	) -> Result<AggregatedAccountData<AccountId, Moment>>;
+	) -> RpcResult<AggregatedAccountData<AccountId, Moment>>;
 }
 
-pub struct Ceremonies<Client, Block, AccountId, Moment, S> {
+pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
 	client: Arc<Client>,
 	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
@@ -64,7 +67,7 @@ pub struct Ceremonies<Client, Block, AccountId, Moment, S> {
 	_marker: std::marker::PhantomData<(Block, AccountId, Moment)>,
 }
 
-impl<Client, Block, AccountId, Moment, S> Ceremonies<Client, Block, AccountId, Moment, S>
+impl<Client, Block, AccountId, Moment, S> CeremoniesRpc<Client, Block, AccountId, Moment, S>
 where
 	S: 'static + OffchainStorage,
 	Block: sp_api::BlockT,
@@ -81,7 +84,7 @@ where
 		storage: S,
 		offchain_indexing: bool,
 	) -> Self {
-		Ceremonies {
+		CeremoniesRpc {
 			client,
 			_marker: Default::default(),
 			deny_unsafe,
@@ -120,19 +123,21 @@ where
 		&self,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) {
+	) -> RpcResult<()> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let reputations =
-			api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err).unwrap();
+			api.get_reputations(&at, &account).map_err(|e| Error::Runtime(e.into()))?;
 		let cache_key = &reputation_cache_key(&account);
 		self.set_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key, &reputations);
-		self.set_storage(&reputation_cache_dirty_key(&account), &false)
+		self.set_storage(&reputation_cache_dirty_key(&account), &false);
+		Ok(())
 	}
 }
 
-impl<Client, Block, AccountId, Moment, S> CeremoniesApi<<Block as BlockT>::Hash, AccountId, Moment>
-	for Ceremonies<Client, Block, AccountId, Moment, S>
+impl<Client, Block, AccountId, Moment, S>
+	CeremoniesApiServer<<Block as BlockT>::Hash, AccountId, Moment>
+	for CeremoniesRpc<Client, Block, AccountId, Moment, S>
 where
 	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Moment: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
@@ -146,11 +151,11 @@ where
 		&self,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>> {
+	) -> RpcResult<Vec<(CeremonyIndexType, CommunityReputation)>> {
 		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		api.get_reputations(&at, &account).map_err(runtime_error_into_rpc_err)
+		Ok(api.get_reputations(&at, &account).map_err(|e| Error::Runtime(e.into()))?)
 
 		// This part was broken, the cache was never marked as dirty: https://github.com/encointer/pallets/issues/220
 		//
@@ -174,43 +179,12 @@ where
 		cid: CommunityIdentifier,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<AggregatedAccountData<AccountId, Moment>> {
+	) -> RpcResult<AggregatedAccountData<AccountId, Moment>> {
 		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		api.get_aggregated_account_data(&at, cid, &account)
-			.map_err(runtime_error_into_rpc_err)
-	}
-}
-
-const RUNTIME_ERROR: i64 = 1; // Arbitrary number, but substrate uses the same
-const OFFCHAIN_INDEXING_DISABLED_ERROR: i64 = 2;
-const STORAGE_NOT_FOUND_ERROR: i64 = 3;
-
-/// Converts a runtime trap into an RPC error.
-#[allow(unused)]
-fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(RUNTIME_ERROR),
-		message: "Runtime trapped".into(),
-		data: Some(format!("{:?}", err).into()),
-	}
-}
-
-#[allow(unused)]
-fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(STORAGE_NOT_FOUND_ERROR),
-		message: "Offchain storage not found".into(),
-		data: Some(format!("Key {:?}", key).into()),
-	}
-}
-
-#[allow(unused)]
-fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(OFFCHAIN_INDEXING_DISABLED_ERROR),
-		message: "This rpc is not allowed with offchain-indexing disabled".into(),
-		data: Some(format!("call: {:?}", call).into()),
+		Ok(api
+			.get_aggregated_account_data(&at, cid, &account)
+			.map_err(|e| Error::Runtime(e.into()))?)
 	}
 }
