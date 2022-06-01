@@ -337,7 +337,7 @@ mod impl_fungibles {
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
 
 			assert!(
-				EncointerBalances::can_deposit(wrong_cid, &alice, 10) ==
+				EncointerBalances::can_deposit(wrong_cid, &alice, 10, true) ==
 					DepositConsequence::UnknownAsset
 			);
 
@@ -356,7 +356,8 @@ mod impl_fungibles {
 				EncointerBalances::can_deposit(
 					cid,
 					&ferdie,
-					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64)))
+					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
+					true
 				) == DepositConsequence::Overflow
 			);
 
@@ -384,13 +385,18 @@ mod impl_fungibles {
 				EncointerBalances::can_deposit(
 					cid,
 					&alice,
-					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64)))
+					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
+					true
 				) == DepositConsequence::Overflow
 			);
 
 			assert!(
-				EncointerBalances::can_deposit(cid, &alice, fungible(BalanceType::from_num(1))) ==
-					DepositConsequence::Success
+				EncointerBalances::can_deposit(
+					cid,
+					&alice,
+					fungible(BalanceType::from_num(1)),
+					true
+				) == DepositConsequence::Success
 			);
 		})
 	}

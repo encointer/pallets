@@ -23,14 +23,11 @@ use sp_runtime::DispatchError;
 
 use approx::assert_abs_diff_eq;
 use encointer_primitives::{
-	ceremonies::ParticipantType::Bootstrapper,
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
-	fixed::transcendental::exp,
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::{
 	assert_err, assert_ok,
-	dispatch::RawOrigin,
 	traits::{OnFinalize, OnInitialize},
 };
 use itertools::Itertools;
