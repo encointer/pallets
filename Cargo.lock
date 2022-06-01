@@ -3561,9 +3561,7 @@ name = "pallet-encointer-ceremonies-rpc"
 version = "1.0.0"
 dependencies = [
  "encointer-primitives",
- "jsonrpc-core",
- "jsonrpc-core-client",
- "jsonrpc-derive",
+ "jsonrpsee 0.12.0",
  "log",
  "pallet-encointer-ceremonies-rpc-runtime-api",
  "parking_lot 0.12.0",

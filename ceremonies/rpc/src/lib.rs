@@ -14,8 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{
+	core::{JsonValue, RpcResult},
+	proc_macros::rpc,
+};
 use parking_lot::RwLock;
 use sc_rpc::DenyUnsafe;
 use sp_api::{offchain::OffchainStorage, Decode, Encode, ProvideRuntimeApi};
@@ -33,26 +35,29 @@ use encointer_primitives::{
 	scheduler::CeremonyIndexType,
 };
 
-#[rpc]
+#[rpc(client, server)]
 pub trait CeremoniesApi<BlockHash, AccountId, Moment>
 where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	Moment: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "encointer_getReputations")]
+	#[method(name = "encointer_getReputations", blocking)]
 	fn get_reputations(
 		&self,
 		account: AccountId,
 		at: Option<BlockHash>,
-	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>>;
+	) -> RpcResult<Vec<(CeremonyIndexType, CommunityReputation)>>;
 
-	#[rpc(name = "encointer_getAggregatedAccountData")]
+	// For rpc calls that need a while block should help the rpc server to
+	// spawn it with `tokio.spawn_blocking` to keep the rpc server responsive
+	// for calls that take longer. (not 100% sure if I understand correctly.)
+	#[method(name = "encointer_getAggregatedAccountData", blocking)]
 	fn get_aggregated_account_data(
 		&self,
 		cid: CommunityIdentifier,
 		account: AccountId,
 		at: Option<BlockHash>,
-	) -> Result<AggregatedAccountData<AccountId, Moment>>;
+	) -> RpcResult<AggregatedAccountData<AccountId, Moment>>;
 }
 
 pub struct Ceremonies<Client, Block, AccountId, Moment, S> {
@@ -146,7 +151,7 @@ where
 		&self,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<(CeremonyIndexType, CommunityReputation)>> {
+	) -> RpcResult<Vec<(CeremonyIndexType, CommunityReputation)>> {
 		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
@@ -174,7 +179,7 @@ where
 		cid: CommunityIdentifier,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<AggregatedAccountData<AccountId, Moment>> {
+	) -> RpcResult<AggregatedAccountData<AccountId, Moment>> {
 		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
