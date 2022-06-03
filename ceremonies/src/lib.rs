@@ -105,9 +105,11 @@ pub mod pallet {
 			proof: Option<ProofOfAttendance<T::Signature, T::AccountId>>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
+			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
 			ensure!(
-				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
-				Error::<T>::RegisteringPhaseRequired
+				vec![CeremonyPhaseType::Registering, CeremonyPhaseType::Attesting]
+					.contains(&current_phase),
+				Error::<T>::RegisteringOrAttestationPhaseRequired
 			);
 
 			ensure!(
@@ -115,7 +117,11 @@ pub mod pallet {
 				Error::<T>::InexistentCommunity
 			);
 
-			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+
+			if current_phase == CeremonyPhaseType::Attesting {
+				cindex += 1
+			};
 
 			if Self::is_registered(cid, cindex, &sender) {
 				return Err(<Error<T>>::ParticipantAlreadyRegistered.into())
@@ -538,6 +544,8 @@ pub mod pallet {
 		RegisteringPhaseRequired,
 		/// the action can only be performed during ATTESTING phase
 		AttestationPhaseRequired,
+		/// the action can only be performed during REGISTERING or ATTESTING phase
+		RegisteringOrAttestationPhaseRequired,
 		/// CommunityIdentifier not found
 		InexistentCommunity,
 		/// proof is outdated
