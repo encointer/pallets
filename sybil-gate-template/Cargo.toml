@@ -2,7 +2,7 @@
 name = "pallet-encointer-sybil-gate-template"
 version = "0.8.0"
 authors = ["encointer.org <alain@encointer.org>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 log = { version = "0.4.14", default-features = false }

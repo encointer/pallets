@@ -15,6 +15,7 @@ members = [
     'personhood-oracle',
     'primitives',
     'primitives/core',
+    'rpc',
     'scheduler',
     'sybil-gate-template',
     'test-utils'

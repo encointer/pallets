@@ -17,8 +17,8 @@
 #[cfg(test)]
 mod tests;
 
-use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use encointer_rpc::Error;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use sp_api::{Decode, Encode, HeaderT, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -35,31 +35,31 @@ use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 
 const CIDS_KEY: &[u8; 4] = b"cids";
 
-#[rpc]
+#[rpc(client, server)]
 pub trait CommunitiesApi<BlockHash, AccountId, BlockNumber>
 where
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	BlockNumber: 'static + Encode + Decode + Send + Sync,
 {
-	#[rpc(name = "encointer_getAllCommunities")]
-	fn communities_get_all(&self, at: Option<BlockHash>) -> Result<Vec<CidName>>;
+	#[method(name = "encointer_getAllCommunities")]
+	fn communities_get_all(&self, at: Option<BlockHash>) -> RpcResult<Vec<CidName>>;
 
-	#[rpc(name = "encointer_getLocations")]
+	#[method(name = "encointer_getLocations")]
 	fn communities_get_locations(
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
-	) -> Result<Vec<Location>>;
+	) -> RpcResult<Vec<Location>>;
 
-	#[rpc(name = "encointer_getAllBalances")]
+	#[method(name = "encointer_getAllBalances")]
 	fn communities_get_all_balances(
 		&self,
 		account: AccountId,
 		at: Option<BlockHash>,
-	) -> Result<Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>>;
+	) -> RpcResult<Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>>;
 }
 
-pub struct Communities<Client, Block, S> {
+pub struct CommunitiesRpc<Client, Block, S> {
 	client: Arc<Client>,
 	storage: Arc<RwLock<S>>,
 	offchain_indexing: bool,
@@ -67,7 +67,7 @@ pub struct Communities<Client, Block, S> {
 	deny_unsafe: DenyUnsafe,
 }
 
-impl<C, Block, S> Communities<C, Block, S>
+impl<C, Block, S> CommunitiesRpc<C, Block, S>
 where
 	S: 'static + OffchainStorage,
 {
@@ -78,7 +78,7 @@ where
 		offchain_indexing: bool,
 		deny_unsafe: DenyUnsafe,
 	) -> Self {
-		Communities {
+		CommunitiesRpc {
 			client,
 			storage: Arc::new(RwLock::new(storage)),
 			offchain_indexing,
@@ -119,7 +119,7 @@ macro_rules! refresh_cache {
 		log::info!("refreshing cache.....");
 		let api = $self.client.runtime_api();
 		let at = BlockId::hash($at.unwrap_or_else(|| $self.client.info().best_hash));
-		let cids = api.get_cids(&at).map_err(runtime_error_into_rpc_err).unwrap();
+		let cids = api.get_cids(&at).map_err(|e| Error::Runtime(e.into()))?;
 		let mut cid_names: Vec<CidName> = vec![];
 
 		cids.iter().for_each(|cid| {
@@ -131,12 +131,12 @@ macro_rules! refresh_cache {
 
 		$self.set_storage(CIDS_KEY, &cid_names);
 
-		cids.iter().for_each(|cid| {
+		for cid in cids.iter() {
 			let cache_key = &(CIDS_KEY, cid).encode()[..];
-			let loc = api.get_locations(&at, &cid).map_err(runtime_error_into_rpc_err).unwrap();
+			let loc = api.get_locations(&at, &cid).map_err(|e| Error::Runtime(e.into()))?;
 
 			$self.set_storage(cache_key, &loc);
-		});
+		}
 		$self.set_storage(CACHE_DIRTY_KEY, &false);
 	};
 }
@@ -144,8 +144,8 @@ macro_rules! refresh_cache {
 type BlockNumberFor<B> = <<B as BlockT>::Header as HeaderT>::Number;
 
 impl<C, Block, S, AccountId>
-	CommunitiesApi<<Block as BlockT>::Hash, AccountId, BlockNumberFor<Block>>
-	for Communities<C, Block, S>
+	CommunitiesApiServer<<Block as BlockT>::Hash, AccountId, BlockNumberFor<Block>>
+	for CommunitiesRpc<C, Block, S>
 where
 	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Block: BlockT,
@@ -153,9 +153,9 @@ where
 	C::Api: CommunitiesRuntimeApi<Block, AccountId, BlockNumberFor<Block>>,
 	S: 'static + OffchainStorage,
 {
-	fn communities_get_all(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<CidName>> {
+	fn communities_get_all(&self, at: Option<<Block as BlockT>::Hash>) -> RpcResult<Vec<CidName>> {
 		if !self.offchain_indexing {
-			return Err(offchain_indexing_disabled_error("communities_getAll"))
+			return Err(Error::OffchainIndexingDisabled("communities_getAll".to_string()).into())
 		}
 
 		if self.cache_dirty() {
@@ -167,7 +167,7 @@ where
 				log::info!("Using cached community list: {:?}", cids);
 				Ok(cids)
 			},
-			None => Err(storage_not_found_error(CIDS_KEY)),
+			None => Err(Error::OffchainStorageNotFound(format!("{:?}", CIDS_KEY)).into()),
 		}
 	}
 
@@ -175,9 +175,9 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<Location>> {
+	) -> RpcResult<Vec<Location>> {
 		if !self.offchain_indexing {
-			return Err(offchain_indexing_disabled_error("communities_getAll"))
+			return Err(Error::OffchainIndexingDisabled("communities_getAll".to_string()).into())
 		}
 
 		if self.cache_dirty() {
@@ -190,7 +190,7 @@ where
 				log::info!("Using cached location list with len {}", loc.len());
 				Ok(loc)
 			},
-			None => Err(storage_not_found_error(cache_key)),
+			None => Err(Error::OffchainStorageNotFound(format!("{:?}", cache_key)).into()),
 		}
 	}
 
@@ -198,41 +198,12 @@ where
 		&self,
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<Block>>)>> {
+	) -> RpcResult<Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<Block>>)>> {
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		return Ok(api.get_all_balances(&at, &account).map_err(runtime_error_into_rpc_err)?)
-	}
-}
-
-const RUNTIME_ERROR: i64 = 1; // Arbitrary number, but substrate uses the same
-const OFFCHAIN_INDEXING_DISABLED_ERROR: i64 = 2;
-const STORAGE_NOT_FOUND_ERROR: i64 = 3;
-
-/// Converts a runtime trap into an RPC error.
-fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(RUNTIME_ERROR),
-		message: "Runtime trapped".into(),
-		data: Some(format!("{:?}", err).into()),
-	}
-}
-
-fn storage_not_found_error(key: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(STORAGE_NOT_FOUND_ERROR),
-		message: "Offchain storage not found".into(),
-		data: Some(format!("Key {:?}", key).into()),
-	}
-}
-
-fn offchain_indexing_disabled_error(call: impl std::fmt::Debug) -> Error {
-	Error {
-		code: ErrorCode::ServerError(OFFCHAIN_INDEXING_DISABLED_ERROR),
-		message: "This rpc is not allowed with offchain-indexing disabled".into(),
-		data: Some(format!("call: {:?}", call).into()),
+		Ok(api.get_all_balances(&at, &account).map_err(|e| Error::Runtime(e.into()))?)
 	}
 }
 

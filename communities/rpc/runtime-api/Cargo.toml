@@ -2,7 +2,7 @@
 name = "pallet-encointer-communities-rpc-runtime-api"
 version = "1.0.0"
 authors = ["encointer.org <alain@encointer.org>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 # local deps

@@ -74,7 +74,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// a division by zero occured
+		/// a division by zero occurred
 		DivisionByZero,
 	}
 

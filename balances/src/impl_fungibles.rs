@@ -80,6 +80,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		asset: Self::AssetId,
 		who: &T::AccountId,
 		amount: Self::Balance,
+		_mint: bool,
 	) -> DepositConsequence {
 		if !<TotalIssuance<T>>::contains_key(asset) {
 			return DepositConsequence::UnknownAsset
