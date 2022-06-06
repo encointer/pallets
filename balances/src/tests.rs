@@ -24,7 +24,7 @@ use encointer_primitives::{
 	fixed::{traits::LossyInto, transcendental::exp},
 };
 use frame_support::{
-	assert_noop, assert_ok,
+	assert_err, assert_noop, assert_ok,
 	traits::{
 		tokens::{
 			fungibles::{Inspect, InspectMetadata, Unbalanced},
@@ -287,7 +287,7 @@ fn transfer_all_works() {
 		let cid = CommunityIdentifier::default();
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
 
-		assert_ok!(EncointerBalances::transfer_all(Some(alice.clone()).into(), cid, bob.clone()));
+		assert_ok!(EncointerBalances::transfer_all(Some(alice.clone()).into(), bob.clone(), cid));
 
 		System::set_block_number(3);
 
@@ -299,6 +299,32 @@ fn transfer_all_works() {
 				.unwrap()
 				.lossy_into();
 		assert_relative_eq!(balance, 50.0 * demurrage_factor, epsilon = 1.0e-9);
+	})
+}
+
+#[test]
+fn remove_account_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(0);
+		System::on_initialize(System::block_number());
+
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		let cid = CommunityIdentifier::default();
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
+
+		assert_err!(
+			EncointerBalances::remove_account(cid, &alice,),
+			Error::<TestRuntime>::ExistentialDeposit
+		);
+		assert_ok!(EncointerBalances::transfer(
+			Some(alice.clone()).into(),˝
+			bob.clone(),
+			cid,
+			BalanceType::from_num(50)
+		));
+		EncointerBalances::remove_account(cid, &alice);
+		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
 	})
 }
 

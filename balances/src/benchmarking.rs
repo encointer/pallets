@@ -25,7 +25,7 @@ benchmarks! {
 		let bob: T::AccountId = account("bob", 2, 2);
 
 		Pallet::<T>::issue(cid, &alice, BalanceType::from_num(12i32)).ok();
-	}: _(RawOrigin::Signed(alice.clone()), cid,  bob.clone())
+	}: _(RawOrigin::Signed(alice.clone()), bob.clone(), cid)
 	verify{
 		assert!(!Balance::<T>::contains_key(cid, alice));
 		let balance_bob: f64 = Pallet::<T>::balance(cid, &bob).lossy_into();
