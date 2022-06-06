@@ -323,7 +323,7 @@ fn remove_account_works() {
 			cid,
 			BalanceType::from_num(50)
 		));
-		EncointerBalances::remove_account(cid, &alice);
+		EncointerBalances::remove_account(cid, &alice).ok();
 		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
 	})
 }
