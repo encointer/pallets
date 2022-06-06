@@ -328,6 +328,38 @@ fn remove_account_works() {
 	})
 }
 
+#[test]
+fn transfer_removes_account_if_source_below_existential_deposit() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(0);
+		System::on_initialize(System::block_number());
+
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		let cid = CommunityIdentifier::default();
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
+
+		assert_ok!(EncointerBalances::transfer(
+			Some(alice.clone()).into(),
+			bob.clone(),
+			cid,
+			BalanceType::from_num(20)
+		));
+
+		assert!(Balance::<TestRuntime>::contains_key(cid, alice.clone()));
+		let balance: f64 = EncointerBalances::balance(cid, &alice).lossy_into();
+		assert_eq!(balance, 30.0);
+
+		assert_ok!(EncointerBalances::transfer(
+			Some(alice.clone()).into(),
+			bob.clone(),
+			cid,
+			BalanceType::from_num(30)
+		));
+		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
+	})
+}
+
 mod impl_fungibles {
 	use super::*;
 	use crate::impl_fungibles::fungible;

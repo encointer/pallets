@@ -299,7 +299,7 @@ impl<T: Config> Pallet<T> {
 		ensure!(Balance::<T>::contains_key(cid, &source), Error::<T>::NoAccount);
 
 		let mut entry_from = Self::balance_entry_updated(cid, &source);
-		// FIXME: delete account if it falls below existential deposit
+
 		ensure!(entry_from.principal >= amount, Error::<T>::BalanceTooLow);
 
 		if source == dest {
@@ -321,7 +321,13 @@ impl<T: Config> Pallet<T> {
 		<Balance<T>>::insert(cid, &source, entry_from);
 		<Balance<T>>::insert(cid, &dest, entry_to);
 
-		Self::deposit_event(Event::Transferred(cid, source, dest, amount));
+		Self::deposit_event(Event::Transferred(cid, source.clone(), dest, amount));
+
+		// remove account if it falls beloe existential deposit
+		entry_from = Self::balance_entry_updated(cid, &source);
+		if entry_from.principal < T::ExistentialDeposit::get() {
+			Self::remove_account(cid, &source)?;
+		}
 
 		Ok(amount)
 	}
