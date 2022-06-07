@@ -454,25 +454,13 @@ pub mod pallet {
 			// emit events
 			participant_judgements.excluded.iter().for_each(|p| {
 				let participant = meetup_participants[p.index].clone();
-				let event = match p.reason {
-					ExclusionReason::NoVote => {
-						debug!(target: LOG, "participant {:?} received no rewards because they did not vote. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
-						Event::NoRewardBecauseDidNotVote
-					},
-					ExclusionReason::WrongVote => {
-						debug!(target: LOG, "participant {:?} received no rewards because they did not vote like the majority. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
-						Event::NoRewardBecauseDidNotVoteLikeMajority
-					},
-					ExclusionReason::TooFewIncomingAttestations => {
-						debug!(target: LOG, "participant {:?} received no rewards because they had too few outgoing attestations. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
-						Event::NoRewardBecauseTooFewIncomingAttestations
-						},
-					ExclusionReason::TooFewOutgoingAttestations => {
-						debug!(target: LOG, "participant {:?} received no rewards because they had too few incoming attestations. meetup_index: {:?}, cid: {:?} cindex: {:?}", participant, meetup_index, cid, cindex);
-						Event::NoRewardBecauseTooFewOutgoingAttestations
-					},
-				};
-				Self::deposit_event(event(cid, cindex, meetup_index, participant));
+				Self::deposit_event(Event::NoReward {
+					cid,
+					cindex,
+					meetup_index,
+					account: participant,
+					reason: p.reason,
+				});
 			});
 
 			Self::issue_rewards(
@@ -611,38 +599,13 @@ pub mod pallet {
 		/// the registry for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged(CommunityIdentifier, CeremonyIndexType),
 
-		NoRewardBecauseDidNotVote(
-			CommunityIdentifier,
-			CeremonyIndexType,
-			MeetupIndexType,
-			T::AccountId,
-		),
-
-		NoRewardBecauseDidNotVoteLikeMajority(
-			CommunityIdentifier,
-			CeremonyIndexType,
-			MeetupIndexType,
-			T::AccountId,
-		),
-
-		NoRewardBecauseVoteDoesNotMatchNumberOfAttestations(
-			CommunityIdentifier,
-			CeremonyIndexType,
-			MeetupIndexType,
-			T::AccountId,
-		),
-		NoRewardBecauseTooFewIncomingAttestations(
-			CommunityIdentifier,
-			CeremonyIndexType,
-			MeetupIndexType,
-			T::AccountId,
-		),
-		NoRewardBecauseTooFewOutgoingAttestations(
-			CommunityIdentifier,
-			CeremonyIndexType,
-			MeetupIndexType,
-			T::AccountId,
-		),
+		NoReward {
+			cid: CommunityIdentifier,
+			cindex: CeremonyIndexType,
+			meetup_index: MeetupIndexType,
+			account: T::AccountId,
+			reason: ExclusionReason,
+		},
 	}
 
 	#[pallet::error]

@@ -741,12 +741,13 @@ fn claim_rewards_works() {
 		assert_eq!(
 			event_at_index::<TestRuntime>(num_events - 2),
 			Some(
-				Event::NoRewardBecauseTooFewOutgoingAttestations(
+				Event::NoReward {
 					cid,
 					cindex,
-					1,
-					account_id(&ferdie)
-				)
+					meetup_index: 1,
+					account: account_id(&ferdie),
+					reason: ExclusionReason::TooFewOutgoingAttestations,
+				}
 				.into()
 			)
 		);
@@ -754,22 +755,43 @@ fn claim_rewards_works() {
 		assert_eq!(
 			event_at_index::<TestRuntime>(num_events - 3),
 			Some(
-				Event::NoRewardBecauseTooFewOutgoingAttestations(cid, cindex, 1, account_id(&eve))
-					.into()
+				Event::NoReward {
+					cid,
+					cindex,
+					meetup_index: 1,
+					account: account_id(&eve),
+					reason: ExclusionReason::TooFewOutgoingAttestations,
+				}
+				.into()
 			)
 		);
 
 		assert_eq!(
 			event_at_index::<TestRuntime>(num_events - 4),
 			Some(
-				Event::NoRewardBecauseDidNotVoteLikeMajority(cid, cindex, 1, account_id(&dave))
-					.into()
+				Event::NoReward {
+					cid,
+					cindex,
+					meetup_index: 1,
+					account: account_id(&dave),
+					reason: ExclusionReason::WrongVote,
+				}
+				.into()
 			)
 		);
 
 		assert_eq!(
 			event_at_index::<TestRuntime>(num_events - 5),
-			Some(Event::NoRewardBecauseDidNotVote(cid, cindex, 1, account_id(&charlie)).into())
+			Some(
+				Event::NoReward {
+					cid,
+					cindex,
+					meetup_index: 1,
+					account: account_id(&charlie),
+					reason: ExclusionReason::NoVote,
+				}
+				.into()
+			)
 		);
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();

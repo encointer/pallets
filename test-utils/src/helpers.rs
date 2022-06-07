@@ -16,9 +16,7 @@
 
 use crate::AccountId;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use frame_support::{
-	pallet_prelude::DispatchResultWithPostInfo, sp_tracing::event, traits::OriginTrait,
-};
+use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
 use sp_core::{sr25519, Pair};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DispatchError;

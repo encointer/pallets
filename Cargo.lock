@@ -1117,6 +1117,8 @@ name = "encointer-meetup-validation"
 version = "1.0.0"
 dependencies = [
  "encointer-primitives",
+ "parity-scale-codec",
+ "scale-info",
  "sp-core",
  "sp-runtime",
  "sp-std",

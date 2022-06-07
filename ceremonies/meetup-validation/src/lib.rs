@@ -1,3 +1,6 @@
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
+
 /// This module is about finding which participants get their rewards based on their votes and attestations.
 /// The participant vecs are always vecs of participant ids
 /// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by the participant index
@@ -236,7 +239,7 @@ pub enum MeetupValidationError {
 	BallotEmpty,
 	NoDependableVote,
 }
-#[derive(Clone, PartialEq, Debug, Copy)]
+#[derive(Clone, PartialEq, Debug, Copy, Encode, Decode, TypeInfo)]
 pub enum ExclusionReason {
 	NoVote,
 	WrongVote,
