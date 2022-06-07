@@ -93,12 +93,12 @@ fn get_excluded_participants_num_attestations(
 	for _ in 0..max_iterations {
 		let participants_grouped_by_outgoing_attestations =
 			group_participants_by_num_outgoing_attestations(
-				&participants_to_process,
+				participants_to_process.clone(),
 				&relevant_attestations,
 			);
 		let participants_grouped_by_incoming_attestations =
 			group_participants_by_num_incoming_attestations(
-				&participants_to_process,
+				participants_to_process.clone(),
 				&relevant_attestations,
 			);
 
@@ -185,7 +185,7 @@ fn filter_attestations(
 }
 
 fn group_participants_by_num_incoming_attestations(
-	participants: &Participants,
+	participants: Participants,
 	participant_attestations: &Attestations,
 ) -> Vec<ParticipantGroup> {
 	let num_incoming_attestations: Participants = (0..participant_attestations.len())
@@ -201,17 +201,17 @@ fn group_participants_by_num_incoming_attestations(
 		})
 		.collect();
 
-	group_indices_by_value(participants.clone(), &num_incoming_attestations)
+	group_indices_by_value(participants, &num_incoming_attestations)
 }
 
 fn group_participants_by_num_outgoing_attestations(
-	participants: &Participants,
+	participants: Participants,
 	participant_attestations: &Attestations,
 ) -> Vec<ParticipantGroup> {
 	let num_outgoing_attestations: Participants =
 		participant_attestations.iter().map(|a| a.len()).collect();
 
-	group_indices_by_value(participants.clone(), &num_outgoing_attestations)
+	group_indices_by_value(participants, &num_outgoing_attestations)
 }
 
 fn group_indices_by_value(indices: Participants, values: &Vec<usize>) -> Vec<ParticipantGroup> {
@@ -260,7 +260,7 @@ impl ParticipantJudgements {
 	pub fn exclude_participants(&mut self, excluded: Vec<(usize, ExclusionReason)>) {
 		self.legit.retain(|&i| !excluded.iter().any(|p| p.0 == i));
 		for p in excluded {
-			self.excluded.push(ExcludedParticipant { index: p.0, reason: p.1.clone() })
+			self.excluded.push(ExcludedParticipant { index: p.0, reason: p.1 })
 		}
 	}
 }

@@ -1639,8 +1639,8 @@ impl<T: Config> Pallet<T> {
 		participants_indices: Vec<usize>,
 	) {
 		let reward = Self::nominal_income(&cid);
-		for i in participants_indices.clone() {
-			let participant = &meetup_participants[i];
+		for i in &participants_indices {
+			let participant = &meetup_participants[*i];
 			trace!(target: LOG, "participant merits reward: {:?}", participant);
 			if <encointer_balances::Pallet<T>>::issue(cid, participant, reward).is_ok() {
 				<ParticipantReputation<T>>::insert(

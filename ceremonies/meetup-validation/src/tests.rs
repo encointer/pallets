@@ -16,7 +16,7 @@ fn group_participants_by_num_outgoing_attestations_works() {
 		vec![vec![1, 2, 3], vec![3], vec![0, 1, 3], vec![1, 2], vec![0, 1, 2]];
 	let expected: Vec<ParticipantGroup> = vec![(1, vec![1]), (2, vec![3]), (3, vec![0, 2, 4])];
 	assert_eq!(
-		group_participants_by_num_outgoing_attestations(&participants, &participant_attestations),
+		group_participants_by_num_outgoing_attestations(participants, &participant_attestations),
 		expected
 	);
 }
@@ -29,7 +29,7 @@ fn group_participants_by_num_incoming_attestations_works() {
 	let expected: Vec<ParticipantGroup> =
 		vec![(0, vec![4]), (2, vec![0]), (3, vec![2, 3]), (4, vec![1])];
 	assert_eq!(
-		group_participants_by_num_incoming_attestations(&participants, &participant_attestations),
+		group_participants_by_num_incoming_attestations(participants, &participant_attestations),
 		expected
 	);
 }
