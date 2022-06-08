@@ -274,6 +274,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Remove an account from a community
 	fn remove_account(cid: CommunityIdentifier, who: &T::AccountId) -> DispatchResult {
+		ensure!(Balance::<T>::contains_key(cid, &who), Error::<T>::NoAccount);
 		ensure!(
 			Self::balance(cid, who) < T::ExistentialDeposit::get(),
 			Error::<T>::ExistentialDeposit

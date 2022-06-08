@@ -317,6 +317,9 @@ fn remove_account_works() {
 			EncointerBalances::remove_account(cid, &alice,),
 			Error::<TestRuntime>::ExistentialDeposit
 		);
+
+		assert_err!(EncointerBalances::remove_account(cid, &bob), Error::<TestRuntime>::NoAccount);
+
 		assert_ok!(EncointerBalances::transfer(
 			Some(alice.clone()).into(),
 			bob.clone(),
