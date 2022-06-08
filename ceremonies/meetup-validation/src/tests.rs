@@ -5,7 +5,7 @@ fn group_indices_by_value_works() {
 	let participants: Participants = vec![0, 1, 2, 3, 4];
 	let num_attestations: Vec<usize> = vec![2, 0, 3, 2, 0];
 	assert_eq!(
-		group_indices_by_value(participants, &num_attestations),
+		group_indices_by_value(participants, &num_attestations).unwrap(),
 		vec![(0, vec![1, 4]), (2, vec![0, 3]), (3, vec![2])]
 	);
 }
@@ -16,7 +16,8 @@ fn group_participants_by_num_outgoing_attestations_works() {
 		vec![vec![1, 2, 3], vec![3], vec![0, 1, 3], vec![1, 2], vec![0, 1, 2]];
 	let expected: Vec<ParticipantGroup> = vec![(1, vec![1]), (2, vec![3]), (3, vec![0, 2, 4])];
 	assert_eq!(
-		group_participants_by_num_outgoing_attestations(participants, &participant_attestations),
+		group_participants_by_num_outgoing_attestations(participants, &participant_attestations)
+			.unwrap(),
 		expected
 	);
 }
@@ -29,7 +30,8 @@ fn group_participants_by_num_incoming_attestations_works() {
 	let expected: Vec<ParticipantGroup> =
 		vec![(0, vec![4]), (2, vec![0]), (3, vec![2, 3]), (4, vec![1])];
 	assert_eq!(
-		group_participants_by_num_incoming_attestations(participants, &participant_attestations),
+		group_participants_by_num_incoming_attestations(participants, &participant_attestations)
+			.unwrap(),
 		expected
 	);
 }
@@ -50,6 +52,7 @@ fn get_excluded_participants_no_vote_works() {
 	let excluded_participants: Participants = vec![0, 4];
 	assert_eq!(
 		get_excluded_participants_no_vote(&participants, &participant_votes)
+			.unwrap()
 			.iter()
 			.map(|p| p.0)
 			.collect::<Participants>(),
@@ -64,6 +67,7 @@ fn get_excluded_participants_wrong_vote_works() {
 	let excluded_participants: Participants = vec![0, 1, 4];
 	assert_eq!(
 		get_excluded_participants_wrong_vote(&participants, &participant_votes, 2)
+			.unwrap()
 			.iter()
 			.map(|p| p.0)
 			.collect::<Participants>(),
@@ -85,7 +89,8 @@ fn get_excluded_participants_num_attestations_works() {
 			&participants,
 			participant_attestations,
 			|n| n - 1
-		),
+		)
+		.unwrap(),
 		excluded_participants
 	);
 }

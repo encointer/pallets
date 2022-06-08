@@ -448,6 +448,13 @@ pub mod pallet {
 						);
 						return Err(<Error<T>>::VotesNotDependable.into())
 					},
+					MeetupValidationError::IndexOutOfBounds => {
+						debug!(
+							target: LOG,
+							"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
+						);
+						return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
+					},
 				},
 			};
 			participants_eligible_for_rewards = participant_judgements.legit;
@@ -674,6 +681,8 @@ pub mod pallet {
 		WrongPhaseForUnregistering,
 		/// Error while finding meetup participants
 		GetMeetupParticipantsError,
+		// index out of bounds while validating the meetup
+		MeetupValidationIndexOutOfBounds,
 	}
 
 	#[pallet::storage]
