@@ -121,7 +121,6 @@ pub mod pallet {
 			let from = ensure_signed(origin)?;
 			let amount = Self::balance(cid, &from);
 			Self::do_transfer(cid, from.clone(), dest, amount)?;
-			Self::remove_account(cid, &from)?;
 			Ok(().into())
 		}
 	}
