@@ -94,6 +94,11 @@ fn get_excluded_participants_num_attestations(
 	let max_iterations = participants_to_process.len();
 
 	for _ in 0..max_iterations {
+		// if all participants were excluded, exit the loop
+		if participants_to_process.len() == 0 {
+			break
+		};
+
 		let participants_grouped_by_outgoing_attestations =
 			group_participants_by_num_outgoing_attestations(
 				participants_to_process.clone(),
@@ -223,6 +228,9 @@ fn group_indices_by_value(
 	indices: Participants,
 	values: &Vec<usize>,
 ) -> Result<Vec<ParticipantGroup>, MeetupValidationError> {
+	if indices.len() > values.len() {
+		return Err(MeetupValidationError::IndexOutOfBounds)
+	}
 	let mut sorted_indices: Participants = indices;
 	// sort ascending by value
 	sorted_indices.sort_by(|a, b| (values[*a] as i32).cmp(&(values[*b] as i32)));
@@ -291,3 +299,6 @@ impl ParticipantJudgements {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod meetup_scenario_tests;
