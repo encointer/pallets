@@ -228,9 +228,14 @@ fn group_indices_by_value(
 	indices: Participants,
 	values: &Vec<usize>,
 ) -> Result<Vec<ParticipantGroup>, MeetupValidationError> {
-	if indices.len() > values.len() {
-		return Err(MeetupValidationError::IndexOutOfBounds)
+	match indices.iter().max() {
+		Some(max) =>
+			if max >= &values.len() {
+				return Err(MeetupValidationError::IndexOutOfBounds)
+			},
+		None => (),
 	}
+
 	let mut sorted_indices: Participants = indices;
 	// sort ascending by value
 	sorted_indices.sort_by(|a, b| (values[*a] as i32).cmp(&(values[*b] as i32)));
