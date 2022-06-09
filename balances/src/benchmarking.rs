@@ -18,6 +18,19 @@ benchmarks! {
 		let balance_bob: f64 = Pallet::<T>::balance(cid, &bob).lossy_into();
 		assert_abs_diff_eq!(balance_bob, 10f64, epsilon= 0.0001);
 	}
+
+	transfer_all {
+		let cid = CommunityIdentifier::default();
+		let alice: T::AccountId = account("alice", 1, 1);
+		let bob: T::AccountId = account("bob", 2, 2);
+
+		Pallet::<T>::issue(cid, &alice, BalanceType::from_num(12i32)).ok();
+	}: _(RawOrigin::Signed(alice.clone()), bob.clone(), cid)
+	verify{
+		assert!(!Balance::<T>::contains_key(cid, alice));
+		let balance_bob: f64 = Pallet::<T>::balance(cid, &bob).lossy_into();
+		assert_abs_diff_eq!(balance_bob, 12f64, epsilon= 0.0001);
+	}
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::TestRuntime);
