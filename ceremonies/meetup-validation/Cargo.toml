@@ -24,4 +24,6 @@ std = [
   "encointer-primitives/std",
   "sp-std/std",
   "sp-runtime/std",
+  "codec/std",
+  "scale-info/std",
 ]
