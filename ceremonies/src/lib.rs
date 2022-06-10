@@ -31,6 +31,7 @@ use encointer_ceremonies_assignment::{
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
 	meetup_index, meetup_location, meetup_time,
 };
+use encointer_meetup_validation::*;
 use encointer_primitives::{
 	balances::BalanceType,
 	ceremonies::*,
@@ -389,11 +390,96 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
-			let (meetup_index, reward_count) =
-				Self::validate_one_meetup_and_issue_rewards(&sender, &cid)?;
+			let participant = &ensure_signed(origin)?;
 
-			Self::deposit_event(Event::RewardsIssued(cid, meetup_index, reward_count));
+			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
+				return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
+			}
+
+			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
+			let meetup_index = Self::get_meetup_index((cid, cindex), participant)
+				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+
+			if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
+				return Err(<Error<T>>::RewardsAlreadyIssued.into())
+			}
+			info!(
+				target: LOG,
+				"validating meetup {:?} for cid {:?} triggered by {:?}",
+				meetup_index,
+				&cid,
+				participant
+			);
+
+			//gather all data
+			let meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index)
+				.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
+			let (participant_votes, participant_attestations) =
+				Self::gather_meetup_validation_data(cid, cindex, meetup_participants.clone());
+
+			// initialize an array of local participant indices that are eligible for the reward
+			// indices will be deleted in the following based on various rules
+			let mut participants_eligible_for_rewards: Vec<usize> =
+				(0..meetup_participants.len()).collect();
+
+			let attestation_threshold_fn = |i: usize| max(i.saturating_sub(1), 1);
+			let participant_judgements = match get_participant_judgements(
+				&participants_eligible_for_rewards,
+				&participant_votes,
+				&participant_attestations,
+				attestation_threshold_fn,
+			) {
+				Ok(participant_judgements) => participant_judgements,
+				// handle errors
+				Err(err) => match err {
+					MeetupValidationError::BallotEmpty => {
+						debug!(
+							target: LOG,
+							"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
+						);
+						return Err(<Error<T>>::VotesNotDependable.into())
+					},
+					MeetupValidationError::NoDependableVote => {
+						debug!(
+							target: LOG,
+							"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
+							meetup_index,
+							cid
+						);
+						return Err(<Error<T>>::VotesNotDependable.into())
+					},
+					MeetupValidationError::IndexOutOfBounds => {
+						debug!(
+							target: LOG,
+							"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
+						);
+						return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
+					},
+				},
+			};
+			participants_eligible_for_rewards = participant_judgements.legit;
+			// emit events
+			for p in participant_judgements.excluded {
+				let participant = meetup_participants
+					.get(p.index)
+					.ok_or(Error::<T>::MeetupValidationIndexOutOfBounds)?
+					.clone();
+				Self::deposit_event(Event::NoReward {
+					cid,
+					cindex,
+					meetup_index,
+					account: participant,
+					reason: p.reason,
+				});
+			}
+
+			Self::issue_rewards(
+				cid,
+				cindex,
+				meetup_index,
+				meetup_participants,
+				participants_eligible_for_rewards,
+			);
 			Ok(().into())
 		}
 
@@ -522,6 +608,14 @@ pub mod pallet {
 		LocationToleranceUpdated(u32),
 		/// the registry for given ceremony index and community has been purged
 		CommunityCeremonyHistoryPurged(CommunityIdentifier, CeremonyIndexType),
+
+		NoReward {
+			cid: CommunityIdentifier,
+			cindex: CeremonyIndexType,
+			meetup_index: MeetupIndexType,
+			account: T::AccountId,
+			reason: ExclusionReason,
+		},
 	}
 
 	#[pallet::error]
@@ -590,6 +684,8 @@ pub mod pallet {
 		WrongPhaseForUnregistering,
 		/// Error while finding meetup participants
 		GetMeetupParticipantsError,
+		// index out of bounds while validating the meetup
+		MeetupValidationIndexOutOfBounds,
 	}
 
 	#[pallet::storage]
@@ -1474,155 +1570,6 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn validate_one_meetup_and_issue_rewards(
-		participant: &T::AccountId,
-		cid: &CommunityIdentifier,
-	) -> Result<(MeetupIndexType, u8), Error<T>> {
-		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
-			return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
-		}
-
-		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
-		let reward = Self::nominal_income(cid);
-		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)
-			.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
-
-		if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
-			return Err(<Error<T>>::RewardsAlreadyIssued.into())
-		}
-		info!(
-			target: LOG,
-			"validating meetup {:?} for cid {:?} triggered by {:?}", meetup_index, cid, participant
-		);
-		// first, evaluate votes on how many participants showed up
-		let (n_confirmed, vote_count) = match Self::ballot_meetup_n_votes(cid, cindex, meetup_index)
-		{
-			Some(nn) => nn,
-			_ => return Err(<Error<T>>::VotesNotDependable.into()),
-		};
-		debug!(
-			target: LOG,
-			"  ballot confirms {:?} participants with {:?} votes", n_confirmed, vote_count
-		);
-		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index)
-			.ok_or(<Error<T>>::GetMeetupParticipantsError.into())?;
-		let mut reward_count = 0;
-		for participant in &meetup_participants {
-			if Self::meetup_participant_count_vote((cid, cindex), &participant) != n_confirmed {
-				debug!(
-					target: LOG,
-					"skipped participant because of wrong participant count vote: {:?}",
-					participant
-				);
-				continue
-			}
-
-			match Self::attestation_registry(
-				(cid, cindex),
-				&Self::attestation_index((*cid, cindex), &participant),
-			) {
-				Some(attestees) =>
-					if attestees.len() < (vote_count - 1) as usize {
-						debug!(
-							target: LOG,
-							"skipped participant because didn't testify for honest peers: {:?}",
-							participant
-						);
-						continue
-					},
-				None => continue,
-			};
-
-			let mut was_attested_count = 0u32;
-			for other_participant in &meetup_participants {
-				if other_participant == participant {
-					continue
-				}
-				if let Some(attestees_from_other) = Self::attestation_registry(
-					(cid, cindex),
-					&Self::attestation_index((cid, cindex), &other_participant),
-				) {
-					if attestees_from_other.contains(&participant) {
-						was_attested_count += 1; // <= number of meetup participants
-					}
-				}
-			}
-
-			if was_attested_count < (vote_count - 1) {
-				debug!(
-					"skipped participant because of too few attestations ({}): {:?}",
-					was_attested_count, participant
-				);
-				continue
-			}
-
-			trace!(target: LOG, "participant merits reward: {:?}", participant);
-			if <encointer_balances::Pallet<T>>::issue(*cid, &participant, reward).is_ok() {
-				<ParticipantReputation<T>>::insert(
-					(cid, cindex),
-					&participant,
-					Reputation::VerifiedUnlinked,
-				);
-			}
-			reward_count += 1;
-			sp_io::offchain_index::set(&reputation_cache_dirty_key(&participant), &true.encode());
-		}
-
-		<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
-		info!(target: LOG, "issuing rewards completed");
-		Ok((meetup_index, reward_count))
-	}
-
-	/// count all votes for a meetup
-	/// returns an option for (N, n) where N is the confirmed number of participants and
-	/// n is the number of votes confirming N
-	fn ballot_meetup_n_votes(
-		cid: &CommunityIdentifier,
-		cindex: CeremonyIndexType,
-		meetup_idx: MeetupIndexType,
-	) -> Option<(u32, u32)> {
-		let meetup_participants;
-		if let Some(mp) = Self::get_meetup_participants((*cid, cindex), meetup_idx) {
-			meetup_participants = mp;
-		} else {
-			debug!(
-				target: LOG,
-				"error computing meetup participants for meetup {:?}, cid: {:?}", meetup_idx, cid
-			);
-			return None
-		}
-
-		// first element is n, second the count of votes for n
-		let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
-		for p in meetup_participants {
-			let this_vote = match Self::meetup_participant_count_vote((cid, cindex), &p) {
-				n if n > 0 => n,
-				_ => continue,
-			};
-			match n_vote_candidates.iter().position(|&(n, _c)| n == this_vote) {
-				Some(idx) => n_vote_candidates[idx].1 += 1, //safe; <= number of candidates
-				_ => n_vote_candidates.insert(0, (this_vote, 1)),
-			};
-		}
-		if n_vote_candidates.is_empty() {
-			debug!(target: LOG, "ballot empty for meetup {:?}, cid: {:?}", meetup_idx, cid);
-			return None
-		}
-		// sort by descending vote count
-		n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
-		if n_vote_candidates[0].1 < 3 {
-			//safe; n_vote_candidate not empty checked above
-			debug!(
-				target: LOG,
-				"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
-				meetup_idx,
-				cid
-			);
-			return None
-		}
-		Some(n_vote_candidates[0])
-	}
-
 	pub fn get_meetup_location(
 		cc: CommunityCeremony,
 		meetup_idx: MeetupIndexType,
@@ -1657,6 +1604,69 @@ impl<T: Config> Pallet<T> {
 	pub fn nominal_income(cid: &CommunityIdentifier) -> NominalIncome {
 		encointer_communities::NominalIncome::<T>::try_get(cid)
 			.unwrap_or_else(|_| Self::ceremony_reward())
+	}
+
+	fn issue_rewards(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		meetup_idx: MeetupIndexType,
+		meetup_participants: Vec<T::AccountId>,
+		participants_indices: Vec<usize>,
+	) -> Result<(), Error<T>> {
+		let reward = Self::nominal_income(&cid);
+		for i in &participants_indices {
+			let participant = &meetup_participants
+				.get(*i)
+				.ok_or(Error::<T>::MeetupValidationIndexOutOfBounds)?;
+			trace!(target: LOG, "participant merits reward: {:?}", participant);
+			if <encointer_balances::Pallet<T>>::issue(cid, participant, reward).is_ok() {
+				<ParticipantReputation<T>>::insert(
+					(&cid, cindex),
+					participant,
+					Reputation::VerifiedUnlinked,
+				);
+			}
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
+		}
+
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, ());
+		info!(target: LOG, "issuing rewards completed");
+
+		Self::deposit_event(Event::RewardsIssued(
+			cid,
+			meetup_idx,
+			participants_indices.len() as u8,
+		));
+		Ok(())
+	}
+
+	fn gather_meetup_validation_data(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		meetup_participants: Vec<T::AccountId>,
+	) -> (Vec<u32>, Vec<Vec<usize>>) {
+		let mut participant_votes: Vec<u32> = vec![];
+		let mut participant_attestations: Vec<Vec<usize>> = vec![];
+
+		// gather votes and attestations
+		for participant in meetup_participants.iter() {
+			let attestations = match Self::attestation_registry(
+				(&cid, cindex),
+				&Self::attestation_index((cid, cindex), &participant),
+			) {
+				Some(attestees) => attestees,
+				None => vec![],
+			};
+			// convert AccountId to local index
+			let attestation_indices = attestations
+				.into_iter()
+				.filter_map(|p| meetup_participants.iter().position(|s| *s == p))
+				.collect();
+
+			participant_attestations.push(attestation_indices);
+			participant_votes.push(Self::meetup_participant_count_vote((cid, cindex), participant));
+		}
+		(participant_votes, participant_attestations)
 	}
 
 	#[cfg(any(test, feature = "runtime-benchmarks"))]
