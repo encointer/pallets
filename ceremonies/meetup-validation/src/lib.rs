@@ -173,7 +173,6 @@ fn find_majority_vote(
 	// sort by descending vote count
 	n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
 	if n_vote_candidates.get_or_err(0)?.1 < 3 {
-		//safe; n_vote_candidate not empty checked aboveÏ
 		return Err(MeetupValidationError::NoDependableVote)
 	}
 	let (n_confirmed, vote_count) = n_vote_candidates.get_or_err(0)?;
