@@ -162,7 +162,7 @@ fn find_majority_vote(
 	for i in participants {
 		let this_vote = participant_votes.get_or_err(*i)?;
 		match n_vote_candidates.iter().position(|&(n, _c)| n == *this_vote) {
-			Some(idx) => n_vote_candidates[idx].1 += 1, //safe; <= number of candidates
+			Some(idx) => n_vote_candidates[idx].1 = n_vote_candidates.get_or_err(idx)?.1 + 1,
 			_ => n_vote_candidates.insert(0, (*this_vote, 1)),
 		};
 	}
