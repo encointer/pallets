@@ -459,8 +459,11 @@ pub mod pallet {
 			};
 			participants_eligible_for_rewards = participant_judgements.legit;
 			// emit events
-			participant_judgements.excluded.iter().for_each(|p| {
-				let participant = meetup_participants[p.index].clone();
+			for p in participant_judgements.excluded {
+				let participant = meetup_participants
+					.get(p.index)
+					.ok_or(Error::<T>::MeetupValidationIndexOutOfBounds)?
+					.clone();
 				Self::deposit_event(Event::NoReward {
 					cid,
 					cindex,
@@ -468,7 +471,7 @@ pub mod pallet {
 					account: participant,
 					reason: p.reason,
 				});
-			});
+			}
 
 			Self::issue_rewards(
 				cid,
@@ -1609,10 +1612,12 @@ impl<T: Config> Pallet<T> {
 		meetup_idx: MeetupIndexType,
 		meetup_participants: Vec<T::AccountId>,
 		participants_indices: Vec<usize>,
-	) {
+	) -> Result<(), Error<T>> {
 		let reward = Self::nominal_income(&cid);
 		for i in &participants_indices {
-			let participant = &meetup_participants[*i];
+			let participant = &meetup_participants
+				.get(*i)
+				.ok_or(Error::<T>::MeetupValidationIndexOutOfBounds)?;
 			trace!(target: LOG, "participant merits reward: {:?}", participant);
 			if <encointer_balances::Pallet<T>>::issue(cid, participant, reward).is_ok() {
 				<ParticipantReputation<T>>::insert(
@@ -1632,6 +1637,7 @@ impl<T: Config> Pallet<T> {
 			meetup_idx,
 			participants_indices.len() as u8,
 		));
+		Ok(())
 	}
 
 	fn gather_meetup_validation_data(

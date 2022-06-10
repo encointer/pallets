@@ -263,7 +263,7 @@ impl<T> GetOrErr for Vec<T> {
 	type Item = T;
 	type Error = MeetupValidationError;
 	fn get_or_err(&self, i: usize) -> Result<&Self::Item, Self::Error> {
-		self.get(i).ok_or_else(|| Self::Error::IndexOutOfBounds)
+		self.get(i).ok_or(Self::Error::IndexOutOfBounds)
 	}
 }
 
