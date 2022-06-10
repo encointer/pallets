@@ -96,7 +96,7 @@ fn get_excluded_participants_num_attestations(
 	for _ in 0..max_iterations {
 		// if all participants were excluded, exit the loop
 		if participants_to_process.len() == 0 {
-			break
+			return Ok(excluded_participants)
 		};
 
 		let participants_grouped_by_outgoing_attestations =
@@ -146,10 +146,10 @@ fn get_excluded_participants_num_attestations(
 			relevant_attestations =
 				filter_attestations(&participants_to_process, relevant_attestations.clone());
 			continue
+		} else {
+			// if all participants are above the threshold and therefore no participants were removed, we exit the loop
+			break
 		}
-
-		// if all participants are above the threshold and therefore no participants were removed, we exit the loop
-		break
 	}
 	Ok(excluded_participants)
 }
