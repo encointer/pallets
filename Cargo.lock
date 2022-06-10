@@ -1120,6 +1120,7 @@ dependencies = [
  "parity-scale-codec",
  "rstest",
  "scale-info",
+ "serde",
  "sp-core",
  "sp-runtime",
  "sp-std",

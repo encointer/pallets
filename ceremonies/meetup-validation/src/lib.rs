@@ -1,5 +1,6 @@
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_runtime::serde::{Deserialize, Serialize};
 
 /// This module is about finding which participants get their rewards based on their votes and attestations.
 /// The participant vecs are always vecs of participant ids
@@ -266,13 +267,39 @@ impl<T> GetOrErr for Vec<T> {
 	}
 }
 
-#[derive(Clone, PartialEq, Debug, Copy, Encode, Decode, TypeInfo)]
+#[derive(
+	Encode,
+	Decode,
+	Clone,
+	Copy,
+	PartialEq,
+	Eq,
+	Debug,
+	TypeInfo,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
 pub enum MeetupValidationError {
 	BallotEmpty,
 	NoDependableVote,
 	IndexOutOfBounds,
 }
-#[derive(Clone, PartialEq, Debug, Copy, Encode, Decode, TypeInfo)]
+#[derive(
+	Encode,
+	Decode,
+	Clone,
+	Copy,
+	PartialEq,
+	Eq,
+	Debug,
+	TypeInfo,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+)]
+#[serde(rename_all = "camelCase")]
 pub enum ExclusionReason {
 	NoVote,
 	WrongVote,
@@ -280,13 +307,14 @@ pub enum ExclusionReason {
 	TooFewOutgoingAttestations,
 }
 
-#[derive(Clone, PartialEq, Debug, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExcludedParticipant {
 	pub index: usize,
 	pub reason: ExclusionReason,
 }
-
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ParticipantJudgements {
 	pub legit: Vec<usize>,
 	pub excluded: Vec<ExcludedParticipant>,
