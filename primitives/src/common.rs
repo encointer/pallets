@@ -18,6 +18,8 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 
+use sp_arithmetic::traits::BaseArithmetic;
+
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
@@ -79,4 +81,28 @@ pub enum IpfsValidationError {
 	/// Invalid length supplied. Should be 46. Is: \[length\]
 	InvalidLength(u8),
 	InvalidBase58(Bs58Error),
+}
+
+pub trait AbsDiff<T> {
+	fn abs_diff(&self, other: T) -> T;
+}
+
+impl<T: BaseArithmetic + Copy> AbsDiff<T> for T {
+	fn abs_diff(&self, other: T) -> T {
+		if *self > other {
+			return *self - other
+		} else {
+			return other - *self
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	#[test]
+	fn abs_diff_works() {
+		assert_eq!(12u64.abs_diff(10u64), 2u64);
+		assert_eq!(10u64.abs_diff(13u64), 3u64);
+		assert_eq!(10u64.abs_diff(10u64), 0u64);
+	}
 }

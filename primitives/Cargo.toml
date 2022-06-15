@@ -1,55 +1,57 @@
 [package]
-name = "encointer-primitives"
-version = "1.1.0"
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
+name = "encointer-primitives"
+version = "1.1.0"
 
 [dependencies]
-bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
-concat-arrays = { version = "0.1.2", default-features = false }
+bs58 = {version = "0.4.0", default-features = false, features = ["alloc"]}
+codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"]}
+concat-arrays = {version = "0.1.2", default-features = false}
 crc = "2.1.0"
-geohash = { tag = "v0.13.0", git = "https://github.com/encointer/geohash" }
-log = { version = "0.4.14", default-features = false }
-scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
-serde = { version = "1.0.136", optional = true, default-features = false, features = ["derive","alloc"] }
+geohash = {tag = "v0.13.0", git = "https://github.com/encointer/geohash"}
+log = {version = "0.4.14", default-features = false}
+scale-info = {version = "2.0.1", default-features = false, features = ["derive"]}
+serde = {version = "1.0.136", optional = true, default-features = false, features = ["derive", "alloc"]}
 
 # local deps
-ep-core = { path = "core", default-features = false }
+ep-core = {path = "core", default-features = false}
 
 # substrate deps
-sp-core = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
-sp-io = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
-sp-std = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-arithmetic = {version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master"}
+sp-core = {version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master"}
+sp-io = {version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master"}
+sp-runtime = {version = "6.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master"}
+sp-std = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master"}
 
 # polkadot deps
-xcm = { optional = true, default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master" }
+xcm = {optional = true, default-features = false, git = "https://github.com/paritytech/polkadot", branch = "master"}
 
 [dev-dependencies]
 approx = "0.5.1"
 rstest = "0.12.0"
 serde_json = "1.0.79"
-test-utils = { path = "../test-utils" }
+test-utils = {path = "../test-utils"}
 
 [features]
 default = ["std", "serde_derive"]
-sybil = ["xcm"]
-serde_derive = [
-    "ep-core/serde_derive",
-    "serde",
-]
 full_crypto = [
-    "sp-core/full_crypto"
+  "sp-core/full_crypto",
+]
+serde_derive = [
+  "ep-core/serde_derive",
+  "serde",
 ]
 std = [
-    "bs58/std",
-    "codec/std",
-    "ep-core/std",
-    "scale-info/std",
-    "serde/std",
-    "sp-core/std",
-    "sp-core/full_crypto",
-    "sp-std/std",
-    "sp-runtime/std",
+  "bs58/std",
+  "codec/std",
+  "ep-core/std",
+  "scale-info/std",
+  "serde/std",
+  "sp-arithmetic/std",
+  "sp-core/std",
+  "sp-core/full_crypto",
+  "sp-std/std",
+  "sp-runtime/std",
 ]
+sybil = ["xcm"]
