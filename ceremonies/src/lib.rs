@@ -170,6 +170,57 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::weight((<T as Config>::WeightInfo::attest_attendees(), DispatchClass::Normal, Pays::Yes))]
+		pub fn attest_attendees(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			number_of_participants_vote: u32,
+			attestations: Vec<T::AccountId>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			ensure!(
+				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Attesting,
+				Error::<T>::AttestationPhaseRequired
+			);
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
+
+			let (cindex, meetup_index, meetup_participants, _meetup_location, _meetup_time) =
+				Self::gather_meetup_data(&cid, &sender)?;
+
+			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
+			ensure!(
+				attestations.len() <= meetup_participants.len() - 1,
+				Error::<T>::TooManyAttestations
+			);
+
+			debug!(
+				target: LOG,
+				"{:?} attempts to submit {:?} attestations",
+				sender,
+				attestations.len()
+			);
+
+			<MeetupParticipantCountVote<T>>::insert(
+				(cid, cindex),
+				&sender,
+				&number_of_participants_vote,
+			);
+
+			Self::add_attestations_to_registry(
+				sender,
+				&cid,
+				cindex,
+				meetup_index,
+				&meetup_participants,
+				&attestations,
+			)?;
+
+			Ok(().into())
+		}
+
 		#[pallet::weight((<T as Config>::WeightInfo::attest_claims(), DispatchClass::Normal, Pays::Yes))]
 		pub fn attest_claims(
 			origin: OriginFor<T>,
@@ -652,6 +703,8 @@ pub mod pallet {
 		AttendanceUnverifiedOrAlreadyUsed,
 		/// origin not part of this meetup
 		OriginNotParticipant,
+		/// can't have more attestations than other meetup participants
+		TooManyAttestations,
 		/// can't have more claims than other meetup participants
 		TooManyClaims,
 		/// bootstrapper has run out of newbie tickets
@@ -686,6 +739,8 @@ pub mod pallet {
 		GetMeetupParticipantsError,
 		// index out of bounds while validating the meetup
 		MeetupValidationIndexOutOfBounds,
+		// Attestations beyond time tolerance
+		AttestationsBeyondTimeTolerance,
 	}
 
 	#[pallet::storage]
@@ -1669,6 +1724,79 @@ impl<T: Config> Pallet<T> {
 		(participant_votes, participant_attestations)
 	}
 
+	fn gather_meetup_data(
+		cid: &CommunityIdentifier,
+		participant: &T::AccountId,
+	) -> Result<
+		(CeremonyIndexType, MeetupIndexType, Vec<T::AccountId>, Location, T::Moment),
+		Error<T>,
+	> {
+		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+
+		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)
+			.ok_or(Error::<T>::ParticipantIsNotRegistered)?;
+		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index)
+			.ok_or(Error::<T>::GetMeetupParticipantsError)?;
+
+		let meetup_location = Self::get_meetup_location((*cid, cindex), meetup_index)
+			.ok_or(Error::<T>::MeetupLocationNotFound)?;
+
+		let meetup_time =
+			Self::get_meetup_time(meetup_location).ok_or(Error::<T>::MeetupTimeCalculationError)?;
+
+		Ok((cindex, meetup_index, meetup_participants, meetup_location, meetup_time))
+	}
+
+	fn add_attestations_to_registry(
+		participant: T::AccountId,
+		cid: &CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		meetup_index: MeetupIndexType,
+		meetup_participants: &[T::AccountId],
+		attestations: &[T::AccountId],
+	) -> Result<(), Error<T>> {
+		let mut verified_attestees = vec![];
+		for attestee in attestations.iter() {
+			if attestee == &participant {
+				warn!(target: LOG, "ignoring attestation for self: {:?}", attestee);
+				continue
+			};
+			if !meetup_participants.contains(attestee) {
+				warn!(
+					target: LOG,
+					"ignoring attestation that isn't a meetup participant: {:?}", attestee
+				);
+				continue
+			};
+			verified_attestees.insert(0, attestee.clone());
+		}
+
+		if verified_attestees.is_empty() {
+			return Err(<Error<T>>::NoValidClaims.into())
+		}
+
+		let count = <AttestationCount<T>>::get((cid, cindex));
+		let mut idx = count.checked_add(1).ok_or(Error::<T>::CheckedMath)?;
+
+		if <AttestationIndex<T>>::contains_key((cid, cindex), &participant) {
+			// update previously registered set
+			idx = <AttestationIndex<T>>::get((cid, cindex), &participant);
+		} else {
+			// add new set of attestees
+			<AttestationCount<T>>::insert((cid, cindex), idx);
+		}
+		<AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestees);
+		<AttestationIndex<T>>::insert((cid, cindex), &participant, &idx);
+		let verified_count = verified_attestees.len() as u32;
+		debug!(target: LOG, "successfully registered {} attestations", verified_count);
+		Self::deposit_event(Event::AttestationsRegistered(
+			*cid,
+			meetup_index,
+			verified_count,
+			participant,
+		));
+		Ok(())
+	}
 	#[cfg(any(test, feature = "runtime-benchmarks"))]
 	// only to be used by tests
 	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {

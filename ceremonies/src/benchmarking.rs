@@ -257,6 +257,33 @@ benchmarks! {
 		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 1);
 	}
 
+	attest_attendees {
+		let cid = create_community::<T>();
+
+		let attestor = generate_pair();
+		let attestor_account = account_id::<T>(&attestor);
+
+		assert_ok!(Pallet::<T>::register_participant(
+			RawOrigin::Signed(attestor_account.clone()).into(),
+			cid,
+			Some(fake_last_attendance_and_get_proof::<T>(&attestor, cid)))
+		);
+
+		let attestees =  register_users::<T>(cid, 2, 7).into_iter().map(|u| account_id::<T>(&u)).collect();
+
+		next_phase::<T>();
+		next_phase::<T>();
+
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let mindex = 1;
+
+	}: _(RawOrigin::Signed(attestor_account.clone()), cid, 3, attestees)
+	verify {
+		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 1);
+		assert_eq!(MeetupParticipantCountVote::<T>::get((cid, cindex), &attestor_account), 3);
+	}
+
+
 	endorse_newcomer {
 		let cid = create_community::<T>();
 		let alice: T::AccountId = account("alice", 1, 1);

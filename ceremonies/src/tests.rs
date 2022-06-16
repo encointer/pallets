@@ -2119,3 +2119,97 @@ fn get_aggregated_account_data_works() {
 		assert!(meetup_registry.iter().all(|item| expected_meetup_registry.contains(item)));
 	});
 }
+
+#[test]
+fn attest_attendees_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		run_to_next_phase();
+		run_to_next_phase();
+		// Attesting
+		assert_eq!(
+			EncointerCeremonies::get_meetup_index((cid, cindex), &account_id(&alice)).unwrap(),
+			1
+		);
+
+		EncointerCeremonies::attest_attendees(
+			Origin::signed(account_id(&alice)),
+			cid,
+			3,
+			vec![account_id(&alice), account_id(&ferdie)],
+		)
+		.unwrap();
+
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::AttestationsRegistered(cid, 1, 1, alice.public().into()).into())
+		);
+
+		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 1);
+		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), &account_id(&alice)), 1);
+		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &1).unwrap();
+		// attestation for self is ignored
+		assert!(wit_vec.len() == 1);
+		assert!(wit_vec.contains(&account_id(&ferdie)));
+
+		EncointerCeremonies::attest_attendees(
+			Origin::signed(account_id(&bob)),
+			cid,
+			4,
+			vec![account_id(&alice), account_id(&ferdie)],
+		)
+		.unwrap();
+
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::AttestationsRegistered(cid, 1, 2, bob.public().into()).into())
+		);
+
+		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
+		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), &account_id(&bob)), 2);
+		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &2).unwrap();
+		assert!(wit_vec.len() == 2);
+		assert!(wit_vec.contains(&account_id(&alice)));
+		assert!(wit_vec.contains(&account_id(&ferdie)));
+
+		assert_eq!(
+			EncointerCeremonies::meetup_participant_count_vote((cid, cindex), account_id(&alice)),
+			3
+		);
+		assert_eq!(
+			EncointerCeremonies::meetup_participant_count_vote((cid, cindex), account_id(&bob)),
+			4
+		);
+		// TEST: re-registering must overwrite previous entry
+		EncointerCeremonies::attest_attendees(
+			Origin::signed(account_id(&alice)),
+			cid,
+			3,
+			vec![account_id(&bob), account_id(&ferdie)],
+		)
+		.unwrap();
+		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
+
+		// someone who is not meetup participant will be skipped
+		EncointerCeremonies::attest_attendees(
+			Origin::signed(account_id(&ferdie)),
+			cid,
+			4,
+			vec![account_id(&bob), account_id(&eve)],
+		)
+		.unwrap();
+
+		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 3);
+		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), &account_id(&ferdie)), 3);
+		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), &3).unwrap();
+		assert!(wit_vec.len() == 1);
+		assert!(wit_vec.contains(&account_id(&bob)));
+	});
+}

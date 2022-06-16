@@ -1,6 +1,8 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
+use sp_std::{vec, vec::Vec};
 
 /// This module is about finding which participants get their rewards based on their votes and attestations.
 /// The participant vecs are always vecs of participant ids
