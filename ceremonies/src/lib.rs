@@ -473,7 +473,8 @@ pub mod pallet {
 			let mut participants_eligible_for_rewards: Vec<usize> =
 				(0..meetup_participants.len()).collect();
 
-			let attestation_threshold_fn = |i: usize| max(i.saturating_sub(1), 1);
+			let attestation_threshold_fn =
+				|i: usize| max(if i > 5 { i.saturating_sub(2) } else { i.saturating_sub(1) }, 1);
 			let participant_judgements = match get_participant_judgements(
 				&participants_eligible_for_rewards,
 				&participant_votes,
@@ -530,7 +531,7 @@ pub mod pallet {
 				meetup_index,
 				meetup_participants,
 				participants_eligible_for_rewards,
-			);
+			)?;
 			Ok(().into())
 		}
 
