@@ -170,7 +170,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::attest_attendees(), DispatchClass::Normal, Pays::Yes))]
 		pub fn attest_attendees(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
