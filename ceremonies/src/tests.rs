@@ -2121,7 +2121,7 @@ fn get_aggregated_account_data_works() {
 }
 
 #[test]
-fn submit_attestations_works() {
+fn attest_attendees_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
@@ -2138,24 +2138,11 @@ fn submit_attestations_works() {
 			EncointerCeremonies::get_meetup_index((cid, cindex), &account_id(&alice)).unwrap(),
 			1
 		);
-		let time = correct_meetup_time(&cid, 1);
-
-		assert_err!(
-			EncointerCeremonies::attest_attendees(
-				Origin::signed(account_id(&alice)),
-				cid,
-				3,
-				time + 100000000,
-				vec![account_id(&alice), account_id(&ferdie)],
-			),
-			Error::<TestRuntime>::AttestationsBeyondTimeTolerance,
-		);
 
 		EncointerCeremonies::attest_attendees(
 			Origin::signed(account_id(&alice)),
 			cid,
 			3,
-			time,
 			vec![account_id(&alice), account_id(&ferdie)],
 		)
 		.unwrap();
@@ -2176,7 +2163,6 @@ fn submit_attestations_works() {
 			Origin::signed(account_id(&bob)),
 			cid,
 			4,
-			time,
 			vec![account_id(&alice), account_id(&ferdie)],
 		)
 		.unwrap();
@@ -2206,7 +2192,6 @@ fn submit_attestations_works() {
 			Origin::signed(account_id(&alice)),
 			cid,
 			3,
-			time,
 			vec![account_id(&bob), account_id(&ferdie)],
 		)
 		.unwrap();
@@ -2217,7 +2202,6 @@ fn submit_attestations_works() {
 			Origin::signed(account_id(&ferdie)),
 			cid,
 			4,
-			time,
 			vec![account_id(&bob), account_id(&eve)],
 		)
 		.unwrap();

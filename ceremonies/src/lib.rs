@@ -35,7 +35,6 @@ use encointer_meetup_validation::*;
 use encointer_primitives::{
 	balances::BalanceType,
 	ceremonies::*,
-	common::AbsDiff,
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -176,7 +175,6 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			number_of_participants_vote: u32,
-			timestamp: T::Moment,
 			attestations: Vec<T::AccountId>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
@@ -189,7 +187,7 @@ pub mod pallet {
 				Error::<T>::InexistentCommunity
 			);
 
-			let (cindex, meetup_index, meetup_participants, _meetup_location, meetup_time) =
+			let (cindex, meetup_index, meetup_participants, _meetup_location, _meetup_time) =
 				Self::gather_meetup_data(&cid, &sender)?;
 
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
@@ -197,11 +195,6 @@ pub mod pallet {
 				attestations.len() <= meetup_participants.len() - 1,
 				Error::<T>::TooManyAttestations
 			);
-
-			if meetup_time.abs_diff(timestamp) > Self::time_tolerance() {
-				warn!(target: LOG, "ignoring attestations beyond time tolerance: {:?}", timestamp);
-				return Err(Error::<T>::AttestationsBeyondTimeTolerance.into())
-			};
 
 			debug!(
 				target: LOG,
