@@ -1760,7 +1760,7 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		meetup_index: MeetupIndexType,
 		meetup_participants: &Vec<T::AccountId>,
-		attestations: &Vec<T::AccountId>,
+		attestations: &[T::AccountId],
 	) -> Result<(), Error<T>> {
 		let mut verified_attestees = vec![];
 		for attestee in attestations.iter() {
