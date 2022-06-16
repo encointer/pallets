@@ -275,11 +275,9 @@ benchmarks! {
 		next_phase::<T>();
 
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		let loc = test_location();
-		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
 		let mindex = 1;
 
-	}: _(RawOrigin::Signed(attestor_account.clone()), cid, 3, time, attestees)
+	}: _(RawOrigin::Signed(attestor_account.clone()), cid, 3, attestees)
 	verify {
 		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 1);
 		assert_eq!(MeetupParticipantCountVote::<T>::get((cid, cindex), &attestor_account), 3);
