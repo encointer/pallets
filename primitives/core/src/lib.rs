@@ -17,6 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod bs58_verify;
+pub mod math;
 pub mod random_number_generator;
 pub mod random_permutation;
 
@@ -26,5 +27,6 @@ pub mod serde;
 pub use fixed;
 
 pub use bs58_verify::*;
+pub use math::*;
 pub use random_number_generator::*;
 pub use random_permutation::*;
