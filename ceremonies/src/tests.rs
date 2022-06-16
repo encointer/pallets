@@ -924,6 +924,59 @@ fn claim_rewards_works_with_one_missing_attestation() {
 }
 
 #[test]
+fn claim_rewards_fails_with_two_missing_attestations() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let loc = Location::default();
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+		let time = correct_meetup_time(&cid, 1);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![&alice, &bob, &charlie, &dave, &eve, &ferdie];
+
+		for p in all_participants.clone().into_iter() {
+			let mut attestees = all_participants.clone();
+			// remove self
+			let i = attestees.iter().position(|&a| account_id(a) == account_id(p)).unwrap();
+			attestees.remove(i);
+			// remove two more participants
+			attestees.remove(i % 5);
+			attestees.remove(i % 4);
+			attest_all(account_id(&p), &attestees, cid, cindex, 1, loc, time, 6);
+		}
+
+		run_to_next_phase();
+		// Registering
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+
+		// nobody receives their reward
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 0).into()));
+	});
+}
+
+#[test]
 fn bootstrapping_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
