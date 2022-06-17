@@ -99,7 +99,14 @@ fn get_excluded_participants_num_attestations_works() {
 fn find_majority_vote_works() {
 	let participants: Participants = vec![0, 1, 2, 3, 4];
 	let participant_votes: Vec<u32> = vec![1, 1, 2, 3, 1];
-	assert_eq!(find_majority_vote(&participants, &participant_votes), Ok((1u32, 3u32)));
+	assert_eq!(find_majority_vote(&participants, &participant_votes), Ok((1u32, 3u32, false)));
+}
+
+#[test]
+fn find_majority_vote_works_with_unanimous_vote() {
+	let participants: Participants = vec![0, 1, 2, 3, 4];
+	let participant_votes: Vec<u32> = vec![1, 1, 1, 1, 1];
+	assert_eq!(find_majority_vote(&participants, &participant_votes), Ok((1u32, 5u32, true)));
 }
 
 #[test]
@@ -109,7 +116,11 @@ fn get_participant_judgements_works_case_0() {
 		vec![0, 1, 2],
 		vec![3, 3, 3],
 		vec![vec![1, 2], vec![0, 2], vec![0, 1]],
-		ParticipantJudgements { legit: vec![0, 1, 2], excluded: vec![] },
+		ParticipantJudgements {
+			legit: vec![0, 1, 2],
+			excluded: vec![],
+			early_rewards_possible: true,
+		},
 	);
 }
 
@@ -123,6 +134,7 @@ fn get_participant_judgements_works_case_1() {
 		ParticipantJudgements {
 			legit: vec![1, 2, 3],
 			excluded: vec![ExcludedParticipant { index: 0, reason: ExclusionReason::NoVote }],
+			early_rewards_possible: true,
 		},
 	);
 }
@@ -137,6 +149,7 @@ fn get_participant_judgements_works_case_2() {
 		ParticipantJudgements {
 			legit: vec![1, 2, 3],
 			excluded: vec![ExcludedParticipant { index: 0, reason: ExclusionReason::WrongVote }],
+			early_rewards_possible: false,
 		},
 	);
 }
@@ -156,6 +169,7 @@ fn get_participant_judgements_works_case_3() {
 				index: 0,
 				reason: ExclusionReason::TooFewOutgoingAttestations,
 			}],
+			early_rewards_possible: false,
 		},
 	);
 }
@@ -175,6 +189,7 @@ fn get_participant_judgements_works_case_4() {
 				index: 0,
 				reason: ExclusionReason::TooFewIncomingAttestations,
 			}],
+			early_rewards_possible: false,
 		},
 	);
 }
@@ -196,5 +211,162 @@ fn validate_participant_judgements(
 		)
 		.unwrap(),
 		participant_judgements
+	);
+}
+
+#[test]
+fn vote_yields_majority_works() {
+	assert_eq!(vote_yields_majority(5, 3), true);
+	assert_eq!(vote_yields_majority(5, 2), false);
+	assert_eq!(vote_yields_majority(4, 2), false);
+}
+
+#[test]
+fn num_attestations_matches_vote_works() {
+	assert_eq!(
+		num_attestations_matches_vote(
+			&vec![0, 1, 2, 3],
+			&vec![
+				vec![1, 2, 3],
+				vec![0, 2, 3],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+			4
+		),
+		true
+	);
+
+	assert_eq!(
+		num_attestations_matches_vote(
+			&vec![0, 1, 2, 3],
+			&vec![vec![1, 2, 3], vec![0, 2], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+			4
+		),
+		false
+	);
+}
+
+#[test]
+fn attestation_graph_is_fully_connected_works() {
+	assert_eq!(
+		attestation_graph_is_fully_connected(
+			vec![0, 1, 2, 3],
+			vec![
+				vec![1, 2, 3],
+				vec![0, 2, 3],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+		),
+		true
+	);
+
+	assert_eq!(
+		attestation_graph_is_fully_connected(
+			vec![0, 1, 2, 3],
+			vec![
+				vec![1, 2, 3],
+				vec![0, 2, 4],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+		),
+		false
+	);
+}
+
+#[test]
+fn early_rewards_possible_works() {
+	assert_eq!(
+		early_rewards_possible(
+			&vec![0, 1, 2, 3],
+			&vec![
+				vec![1, 2, 3],
+				vec![0, 2, 3],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+			5,
+			4,
+			true
+		),
+		true
+	);
+
+	// vote not unanimous
+	assert_eq!(
+		early_rewards_possible(
+			&vec![0, 1, 2, 3],
+			&vec![
+				vec![1, 2, 3],
+				vec![0, 2, 3],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+			5,
+			4,
+			false
+		),
+		false
+	);
+
+	// vote is not majority
+	assert_eq!(
+		early_rewards_possible(
+			&vec![0, 1, 2, 3],
+			&vec![
+				vec![1, 2, 3],
+				vec![0, 2, 3],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+			5,
+			2,
+			true
+		),
+		false
+	);
+
+	// attestations do not match vote
+	assert_eq!(
+		early_rewards_possible(
+			&vec![0, 1, 2, 3],
+			&vec![
+				vec![1, 2, 3],
+				vec![0, 2, 3, 4],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+			5,
+			4,
+			true
+		),
+		false
+	);
+
+	// attestation graph is not fully connected
+	assert_eq!(
+		early_rewards_possible(
+			&vec![0, 1, 2, 3],
+			&vec![
+				vec![1, 2, 3],
+				vec![0, 2, 4],
+				vec![0, 1, 3],
+				vec![0, 1, 2],
+				vec![0, 1, 2, 3, 4, 5]
+			],
+			5,
+			4,
+			true
+		),
+		false
 	);
 }

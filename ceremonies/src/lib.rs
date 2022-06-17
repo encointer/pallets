@@ -443,11 +443,17 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let participant = &ensure_signed(origin)?;
 
-			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
+			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
+			if ![CeremonyPhaseType::Registering, CeremonyPhaseType::Attesting]
+				.contains(&current_phase)
+			{
 				return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
 			}
 
-			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
+			let cindex_offset = if current_phase == CeremonyPhaseType::Registering { 1 } else { 0 };
+
+			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - cindex_offset; //safe; cindex comes from within
+
 			let meetup_index = Self::get_meetup_index((cid, cindex), participant)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
 
@@ -509,6 +515,15 @@ pub mod pallet {
 					},
 				},
 			};
+			if current_phase == CeremonyPhaseType::Attesting &&
+				!participant_judgements.early_rewards_possible
+			{
+				debug!(
+					target: LOG,
+					"early rewards not possible for meetup {:?}, cid: {:?}", meetup_index, cid
+				);
+				return Err(<Error<T>>::EarlyRewardsNotPossible.into())
+			}
 			participants_eligible_for_rewards = participant_judgements.legit;
 			// emit events
 			for p in participant_judgements.excluded {
@@ -742,6 +757,8 @@ pub mod pallet {
 		MeetupValidationIndexOutOfBounds,
 		// Attestations beyond time tolerance
 		AttestationsBeyondTimeTolerance,
+		// Not possible to pay rewards in attestations phase
+		EarlyRewardsNotPossible,
 	}
 
 	#[pallet::storage]
