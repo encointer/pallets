@@ -759,7 +759,7 @@ fn claim_rewards_works() {
 
 		let num_events = get_num_events::<TestRuntime>();
 		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 2),
+			event_at_index::<TestRuntime>(num_events - 4),
 			Some(
 				Event::NoReward {
 					cid,
@@ -773,7 +773,7 @@ fn claim_rewards_works() {
 		);
 
 		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 3),
+			event_at_index::<TestRuntime>(num_events - 5),
 			Some(
 				Event::NoReward {
 					cid,
@@ -787,7 +787,7 @@ fn claim_rewards_works() {
 		);
 
 		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 4),
+			event_at_index::<TestRuntime>(num_events - 6),
 			Some(
 				Event::NoReward {
 					cid,
@@ -801,7 +801,7 @@ fn claim_rewards_works() {
 		);
 
 		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 5),
+			event_at_index::<TestRuntime>(num_events - 7),
 			Some(
 				Event::NoReward {
 					cid,
