@@ -98,6 +98,17 @@ pub fn event_at_index<T: frame_system::Config>(index: usize) -> Option<T::Event>
 	Some(event.clone())
 }
 
+pub fn event_deposited<T: frame_system::Config>(desired_event: T::Event) -> bool {
+	let events = frame_system::Pallet::<T>::events();
+	for eventrec in events.iter() {
+		let frame_system::EventRecord { event, .. } = eventrec;
+		if *event == desired_event {
+			return true
+		}
+	}
+	return false
+}
+
 pub fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: DispatchError) {
 	assert_eq!(actual.unwrap_err().error, expected)
 }

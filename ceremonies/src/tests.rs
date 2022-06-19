@@ -22,6 +22,7 @@ use mock::{
 use sp_runtime::DispatchError;
 
 use approx::assert_abs_diff_eq;
+use encointer_balances::Event as BalancesEvent;
 use encointer_primitives::{
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -37,8 +38,8 @@ use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
 use test_utils::{
 	helpers::{
-		account_id, assert_dispatch_err, bootstrappers, event_at_index, get_num_events, last_event,
-		register_test_community,
+		account_id, assert_dispatch_err, bootstrappers, event_at_index, event_deposited,
+		get_num_events, last_event, register_test_community,
 	},
 	*,
 };
@@ -329,13 +330,9 @@ fn registering_participant_works() {
 
 		assert_ok!(register(alice.clone(), cid, None));
 
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(
-				Event::ParticipantRegistered(cid, ParticipantType::Bootstrapper, alice.clone())
-					.into()
-			)
-		);
+		assert!(event_deposited::<TestRuntime>(
+			Event::ParticipantRegistered(cid, ParticipantType::Bootstrapper, alice.clone()).into()
+		));
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 1);
 		assert_ok!(register(bob.clone(), cid, None));
@@ -755,64 +752,71 @@ fn claim_rewards_works() {
 		// Registering
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
 
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 2).into()));
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 2).into()));
 
 		let num_events = get_num_events::<TestRuntime>();
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 4),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&ferdie),
-					reason: ExclusionReason::TooFewOutgoingAttestations,
-				}
-				.into()
-			)
-		);
 
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 5),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&eve),
-					reason: ExclusionReason::TooFewOutgoingAttestations,
-				}
-				.into()
+		assert!(event_deposited::<TestRuntime>(
+			BalancesEvent::Issued(
+				cid,
+				account_id(&alice),
+				EncointerCeremonies::ceremony_reward().lossy_into()
 			)
-		);
+			.into()
+		));
 
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 6),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&dave),
-					reason: ExclusionReason::WrongVote,
-				}
-				.into()
+		assert!(event_deposited::<TestRuntime>(
+			BalancesEvent::Issued(
+				cid,
+				account_id(&bob),
+				EncointerCeremonies::ceremony_reward().lossy_into()
 			)
-		);
+			.into()
+		));
 
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 7),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&charlie),
-					reason: ExclusionReason::NoVote,
-				}
-				.into()
-			)
-		);
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&ferdie),
+				reason: ExclusionReason::TooFewOutgoingAttestations,
+			}
+			.into()
+		));
+
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&eve),
+				reason: ExclusionReason::TooFewOutgoingAttestations,
+			}
+			.into()
+		));
+
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&dave),
+				reason: ExclusionReason::WrongVote,
+			}
+			.into()
+		));
+
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&charlie),
+				reason: ExclusionReason::NoVote,
+			}
+			.into()
+		));
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
 		assert_abs_diff_eq!(
@@ -919,7 +923,7 @@ fn claim_rewards_works_with_one_missing_attestation() {
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
 
 		// everybody should receive their reward
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
 	});
 }
 
@@ -972,7 +976,7 @@ fn claim_rewards_fails_with_two_missing_attestations() {
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
 
 		// nobody receives their reward
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 0).into()));
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 0).into()));
 	});
 }
 
