@@ -30,7 +30,7 @@ use frame_support::{
 			fungibles::{Inspect, InspectMetadata, Unbalanced},
 			DepositConsequence, WithdrawConsequence,
 		},
-		OnInitialize, OnFinalize
+		OnFinalize, OnInitialize,
 	},
 };
 use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
@@ -55,10 +55,7 @@ fn issue_should_work() {
 
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(
-				Event::Issued(cid, alice.clone(), BalanceType::from_num(50.1))
-					.into()
-			)
+			Some(Event::Issued(cid, alice.clone(), BalanceType::from_num(50.1)).into())
 		);
 	});
 }
@@ -136,7 +133,7 @@ fn transfer_should_create_new_account() {
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50u128)));
 
 		frame_system::Pallet::<TestRuntime>::reset_events();
-		
+
 		assert_ok!(EncointerBalances::transfer(
 			Some(alice.clone()).into(),
 			zoltan.clone(),
