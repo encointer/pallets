@@ -164,6 +164,8 @@ pub mod pallet {
 		Endowed { cid: CommunityIdentifier, who: T::AccountId, balance: BalanceType },
 		/// Token transfer success `[community_id, from, to, amount]`
 		Transferred(CommunityIdentifier, T::AccountId, T::AccountId, BalanceType),
+		/// Token issuance success `[community_id, beneficiary, amount]`
+		Issued(CommunityIdentifier, T::AccountId, BalanceType),
 		/// fee conversion factor updated successfully
 		FeeConversionFactorUpdated(FeeConversionFactorType),
 	}
@@ -347,6 +349,7 @@ impl<T: Config> Pallet<T> {
 		entry_tot.principal += amount;
 		<TotalIssuance<T>>::insert(community_id, entry_tot);
 		<Balance<T>>::insert(community_id, who, entry_who);
+		Self::deposit_event(Event::Issued(community_id, who.clone(), amount));
 		debug!(target: LOG, "issue {:?} for {:?}", amount, who);
 		Ok(())
 	}
