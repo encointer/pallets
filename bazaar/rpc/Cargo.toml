@@ -16,8 +16,8 @@ encointer-primitives = {path = "../../primitives"}
 encointer-rpc = {path = "../../rpc"}
 
 # substrate deps
-sc-rpc = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master"}
-sc-rpc-api = {version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master"}
-sp-api = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master"}
-sp-blockchain = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master"}
-sp-runtime = {version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master"}
+sc-rpc = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24" }
+sc-rpc-api = {version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24" }
+sp-api = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24" }
+sp-blockchain = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24" }
+sp-runtime = {version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24" }
