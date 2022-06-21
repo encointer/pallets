@@ -4,5 +4,5 @@ name = "encointer-rpc"
 version = "0.1.0"
 
 [dependencies]
-jsonrpsee = {version = "0.14.0"}
+jsonrpsee = {version = "0.13.1"}
 thiserror = "1.0.31"
