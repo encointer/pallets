@@ -487,30 +487,38 @@ pub mod pallet {
 			) {
 				Ok(participant_judgements) => participant_judgements,
 				// handle errors
-				Err(err) => match err {
-					MeetupValidationError::BallotEmpty => {
-						debug!(
-							target: LOG,
-							"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
-						);
-						return Err(<Error<T>>::VotesNotDependable.into())
-					},
-					MeetupValidationError::NoDependableVote => {
-						debug!(
+				Err(err) => {
+					// only mark issuance as complete in registering phase
+					// because in attesting phase there could be a failing early payout attempt
+					if current_phase == CeremonyPhaseType::Registering {
+						info!(target: LOG, "marking issuance as completed for failed meetup.");
+						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
+					}
+					match err {
+						MeetupValidationError::BallotEmpty => {
+							debug!(
+								target: LOG,
+								"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
+							);
+							return Err(<Error<T>>::VotesNotDependable.into())
+						},
+						MeetupValidationError::NoDependableVote => {
+							debug!(
 							target: LOG,
 							"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
 							meetup_index,
 							cid
 						);
-						return Err(<Error<T>>::VotesNotDependable.into())
-					},
-					MeetupValidationError::IndexOutOfBounds => {
-						debug!(
-							target: LOG,
-							"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
-						);
-						return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
-					},
+							return Err(<Error<T>>::VotesNotDependable.into())
+						},
+						MeetupValidationError::IndexOutOfBounds => {
+							debug!(
+								target: LOG,
+								"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
+							);
+							return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
+						},
+					}
 				},
 			};
 			if current_phase == CeremonyPhaseType::Attesting &&

@@ -981,6 +981,68 @@ fn claim_rewards_fails_with_two_missing_attestations() {
 }
 
 #[test]
+fn claim_rewards_error_results_in_meetup_marked_as_completed() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let loc = Location::default();
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+		let time = correct_meetup_time(&cid, 1);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![&alice, &bob, &charlie, &dave, &eve, &ferdie];
+
+		for (i, p) in all_participants.clone().into_iter().enumerate() {
+			let mut attestees = all_participants.clone();
+			// remove self
+			attestees.retain(|&a| account_id(a) != account_id(p));
+			// this will lead to an error beacuse there is no depandable vote
+			EncointerCeremonies::attest_attendees(
+				Origin::signed(account_id(&p)),
+				cid,
+				i as u32,
+				attestees.into_iter().map(|pa| account_id(&pa)).collect(),
+			)
+			.unwrap();
+		}
+
+		assert!(
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).is_err()
+		);
+		// nothing happens in attesting phase
+		assert!(!IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
+		run_to_next_phase();
+		// Registering
+		assert!(
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).is_err()
+		);
+		// in registering, the meetup is marked as completed
+		assert!(IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
+	});
+}
+
+#[test]
 fn early_rewards_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
