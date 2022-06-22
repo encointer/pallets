@@ -22,14 +22,17 @@ pub fn get_participant_judgements(
 	participant_attestations: &Attestations,
 	attestation_threshold_fn: fn(usize) -> usize,
 ) -> Result<ParticipantJudgements, MeetupValidationError> {
-	let mut participant_judgements =
-		ParticipantJudgements { legit: participants.clone(), excluded: vec![] };
+	let mut participant_judgements = ParticipantJudgements {
+		legit: participants.clone(),
+		excluded: vec![],
+		early_rewards_possible: false,
+	};
 	participant_judgements.exclude_participants(get_excluded_participants_no_vote(
 		&participant_judgements.legit,
 		participant_votes,
 	)?);
 
-	let (n_confirmed, _num_votes) =
+	let (n_confirmed, _num_votes, vote_is_unanimous) =
 		find_majority_vote(&participant_judgements.legit, participant_votes)?;
 
 	participant_judgements.exclude_participants(get_excluded_participants_wrong_vote(
@@ -38,13 +41,81 @@ pub fn get_participant_judgements(
 		n_confirmed,
 	)?);
 
+	// this check has to be made before we exclude participants based on attestations
+	let early_rewards_possible = early_rewards_possible(
+		participant_judgements.legit.clone(),
+		participant_attestations.clone(),
+		participants.len(),
+		n_confirmed,
+		vote_is_unanimous,
+	);
+
 	participant_judgements.exclude_participants(get_excluded_participants_num_attestations(
 		&participant_judgements.legit,
 		participant_attestations.clone(),
 		attestation_threshold_fn,
 	)?);
 
+	participant_judgements.early_rewards_possible = early_rewards_possible;
 	Ok(participant_judgements)
+}
+
+fn vote_yields_majority(num_participants: usize, n_confirmed: u32) -> bool {
+	n_confirmed as f64 > (num_participants as f64) / 2.0
+}
+
+fn num_attestations_matches_vote(
+	legit_participants: &Participants,
+	participant_attestations: &Attestations,
+	n_confirmed: u32,
+) -> bool {
+	participant_attestations
+		.into_iter()
+		.enumerate()
+		.map(|(i, v)| !(legit_participants.contains(&i)) || v.len() == (n_confirmed - 1) as usize)
+		.all(|item| item)
+}
+
+fn attestation_graph_is_fully_connected(
+	legit_participants: Participants,
+	participant_attestations: Attestations,
+) -> bool {
+	for (i, mut attestations) in participant_attestations.into_iter().enumerate() {
+		// only consider participants present in the meetup
+		if !legit_participants.contains(&i) {
+			continue
+		}
+		attestations.sort();
+		let mut expected_attestations = legit_participants.clone();
+		// remove self
+		expected_attestations.retain(|&p| p != i);
+		expected_attestations.sort();
+
+		if attestations != expected_attestations {
+			return false
+		}
+	}
+	true
+}
+
+fn early_rewards_possible(
+	legit_participants: Participants,
+	participant_attestations: Attestations,
+	num_total_participants: usize,
+	n_confirmed: u32,
+	vote_is_unanimous: bool,
+) -> bool {
+	if vote_is_unanimous &&
+		vote_yields_majority(num_total_participants, n_confirmed) &&
+		num_attestations_matches_vote(
+			&legit_participants,
+			&participant_attestations,
+			n_confirmed,
+		) && attestation_graph_is_fully_connected(legit_participants, participant_attestations)
+	{
+		return true
+	}
+	false
 }
 
 fn get_excluded_participants_no_vote(
@@ -160,7 +231,7 @@ fn get_excluded_participants_num_attestations(
 fn find_majority_vote(
 	participants: &Participants,
 	participant_votes: &Vec<u32>,
-) -> Result<(u32, u32), MeetupValidationError> {
+) -> Result<(u32, u32, bool), MeetupValidationError> {
 	let mut n_vote_candidates: Vec<(u32, u32)> = vec![];
 	for i in participants {
 		let this_vote = participant_votes.get_or_err(*i)?;
@@ -179,7 +250,8 @@ fn find_majority_vote(
 		return Err(MeetupValidationError::NoDependableVote)
 	}
 	let (n_confirmed, vote_count) = n_vote_candidates.get_or_err(0)?;
-	Ok((*n_confirmed, *vote_count))
+	let vote_is_unanimous = n_vote_candidates.len() == 1;
+	Ok((*n_confirmed, *vote_count, vote_is_unanimous))
 }
 
 fn filter_attestations(
@@ -320,6 +392,7 @@ pub struct ExcludedParticipant {
 pub struct ParticipantJudgements {
 	pub legit: Vec<usize>,
 	pub excluded: Vec<ExcludedParticipant>,
+	pub early_rewards_possible: bool,
 }
 
 impl ParticipantJudgements {
