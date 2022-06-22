@@ -283,8 +283,8 @@ fn attestation_graph_is_fully_connected_works() {
 fn early_rewards_possible_works() {
 	assert_eq!(
 		early_rewards_possible(
-			&vec![0, 1, 2, 3],
-			&vec![
+			vec![0, 1, 2, 3],
+			vec![
 				vec![1, 2, 3],
 				vec![0, 2, 3],
 				vec![0, 1, 3],
@@ -301,8 +301,8 @@ fn early_rewards_possible_works() {
 	// vote not unanimous
 	assert_eq!(
 		early_rewards_possible(
-			&vec![0, 1, 2, 3],
-			&vec![
+			vec![0, 1, 2, 3],
+			vec![
 				vec![1, 2, 3],
 				vec![0, 2, 3],
 				vec![0, 1, 3],
@@ -319,8 +319,8 @@ fn early_rewards_possible_works() {
 	// vote is not majority
 	assert_eq!(
 		early_rewards_possible(
-			&vec![0, 1, 2, 3],
-			&vec![
+			vec![0, 1, 2, 3],
+			vec![
 				vec![1, 2, 3],
 				vec![0, 2, 3],
 				vec![0, 1, 3],
@@ -337,8 +337,8 @@ fn early_rewards_possible_works() {
 	// attestations do not match vote
 	assert_eq!(
 		early_rewards_possible(
-			&vec![0, 1, 2, 3],
-			&vec![
+			vec![0, 1, 2, 3],
+			vec![
 				vec![1, 2, 3],
 				vec![0, 2, 3, 4],
 				vec![0, 1, 3],
@@ -355,8 +355,8 @@ fn early_rewards_possible_works() {
 	// attestation graph is not fully connected
 	assert_eq!(
 		early_rewards_possible(
-			&vec![0, 1, 2, 3],
-			&vec![
+			vec![0, 1, 2, 3],
+			vec![
 				vec![1, 2, 3],
 				vec![0, 2, 4],
 				vec![0, 1, 3],

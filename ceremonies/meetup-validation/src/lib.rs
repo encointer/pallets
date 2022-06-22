@@ -43,8 +43,8 @@ pub fn get_participant_judgements(
 
 	// this check has to be made before we exclude participants based on attestations
 	let early_rewards_possible = early_rewards_possible(
-		&participant_judgements.legit,
-		&participant_attestations,
+		participant_judgements.legit.clone(),
+		participant_attestations.clone(),
 		participants.len(),
 		n_confirmed,
 		vote_is_unanimous,
@@ -99,19 +99,20 @@ fn attestation_graph_is_fully_connected(
 }
 
 fn early_rewards_possible(
-	legit_participants: &Participants,
-	participant_attestations: &Attestations,
+	legit_participants: Participants,
+	participant_attestations: Attestations,
 	num_total_participants: usize,
 	n_confirmed: u32,
 	vote_is_unanimous: bool,
 ) -> bool {
 	if vote_is_unanimous &&
 		vote_yields_majority(num_total_participants, n_confirmed) &&
-		num_attestations_matches_vote(legit_participants, participant_attestations, n_confirmed) &&
-		attestation_graph_is_fully_connected(
-			legit_participants.clone(),
-			participant_attestations.clone(),
-		) {
+		num_attestations_matches_vote(
+			&legit_participants,
+			&participant_attestations,
+			n_confirmed,
+		) && attestation_graph_is_fully_connected(legit_participants, participant_attestations)
+	{
 		return true
 	}
 	false
