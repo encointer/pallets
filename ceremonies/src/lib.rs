@@ -444,15 +444,13 @@ pub mod pallet {
 			let participant = &ensure_signed(origin)?;
 
 			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
-			if ![CeremonyPhaseType::Registering, CeremonyPhaseType::Attesting]
-				.contains(&current_phase)
-			{
-				return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+			match current_phase {
+				CeremonyPhaseType::Registering => cindex = cindex - 1,
+				CeremonyPhaseType::Attesting => (),
+				CeremonyPhaseType::Assigning =>
+					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into()),
 			}
-
-			let cindex_offset = if current_phase == CeremonyPhaseType::Registering { 1 } else { 0 };
-
-			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - cindex_offset; //safe; cindex comes from within
 
 			let meetup_index = Self::get_meetup_index((cid, cindex), participant)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
