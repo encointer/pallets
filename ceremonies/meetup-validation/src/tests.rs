@@ -297,8 +297,9 @@ fn early_rewards_possible_works() {
 		),
 		true
 	);
-
-	// vote not unanimous
+}
+#[test]
+fn early_rewards_possible_works_unanimous_vote() {
 	assert_eq!(
 		early_rewards_possible(
 			vec![0, 1, 2, 3],
@@ -315,8 +316,9 @@ fn early_rewards_possible_works() {
 		),
 		false
 	);
-
-	// vote is not majority
+}
+#[test]
+fn early_rewards_possible_works_vote_is_not_majority() {
 	assert_eq!(
 		early_rewards_possible(
 			vec![0, 1, 2, 3],
@@ -333,8 +335,9 @@ fn early_rewards_possible_works() {
 		),
 		false
 	);
-
-	// attestations do not match vote
+}
+#[test]
+fn early_rewards_possible_works_attesttations_do_not_match_vote() {
 	assert_eq!(
 		early_rewards_possible(
 			vec![0, 1, 2, 3],
@@ -351,8 +354,9 @@ fn early_rewards_possible_works() {
 		),
 		false
 	);
-
-	// attestation graph is not fully connected
+}
+#[test]
+fn early_rewards_possible_works_attestation_graph_is_not_fully_connected() {
 	assert_eq!(
 		early_rewards_possible(
 			vec![0, 1, 2, 3],
