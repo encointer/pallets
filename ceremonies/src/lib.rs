@@ -1446,9 +1446,11 @@ impl<T: Config> Pallet<T> {
 	fn purge_community(cid: CommunityIdentifier) {
 		let current = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		let reputation_lifetime = Self::reputation_lifetime();
-		for cindex in max(current - reputation_lifetime, 0)..current {
+
+		for cindex in max(current.saturating_sub(reputation_lifetime), 0)..current {
 			if cindex > reputation_lifetime {
-				Self::purge_registry(cindex - reputation_lifetime - 1);
+				let purge_index = current.saturating_sub(reputation_lifetime).saturating_sub(1);
+				Self::purge_registry(purge_index);
 			}
 		}
 		<encointer_communities::Pallet<T>>::remove_community(cid);
@@ -1837,12 +1839,14 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			CeremonyPhaseType::Attesting => {},
 			CeremonyPhaseType::Registering => {
 				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+				let last_index = cindex.saturating_sub(1);
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
 				if cindex > Self::reputation_lifetime() {
-					Self::purge_registry(cindex - Self::reputation_lifetime() - 1);
+					let purge_index = last_index.saturating_sub(Self::reputation_lifetime());
+					Self::purge_registry(purge_index);
 				}
 				let inactives = Self::get_inactive_communities(
-					<encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1,
+					last_index,
 					Self::inactivity_timeout(),
 					<encointer_communities::Pallet<T>>::community_identifiers(),
 				);
