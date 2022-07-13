@@ -1777,17 +1777,8 @@ fn purge_inactive_communities_works() {
 		// without any rewards being claimed
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 1);
 
-		// issued rewards will cause inactivity counter to go to 0 after two cycles
-		IssuedRewards::<TestRuntime>::insert(
-			(cid, EncointerScheduler::current_ceremony_index()),
-			0,
-			(),
-		);
-
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
-
+		// Assigning
 		assert_eq!(
 			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
 			Some(Event::InactivityCounterUpdated(cid, 2).into())
@@ -1798,6 +1789,12 @@ fn purge_inactive_communities_works() {
 		);
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 2);
 
+		// issued rewards will cause inactivity counter to go to 0 in the next cycle
+		IssuedRewards::<TestRuntime>::insert(
+			(cid, EncointerScheduler::current_ceremony_index()),
+			0,
+			(),
+		);
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
@@ -1811,7 +1808,6 @@ fn purge_inactive_communities_works() {
 			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
 		);
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 0);
-
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
@@ -1837,17 +1833,8 @@ fn purge_inactive_communities_works() {
 		assert!(
 			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
 		);
+		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community will be purged
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 3);
-
-		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
-
-		assert!(
-			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
-		// now the inactivity counter is 4 = inactivity_timeout + 1, so the community will be purged after the next cycle
-		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 4);
 
 		run_to_next_phase();
 		run_to_next_phase();

@@ -1838,6 +1838,15 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::Assigning => {
+				let inactives = Self::update_inactivity_counters(
+					<encointer_scheduler::Pallet<T>>::current_ceremony_index().saturating_sub(1),
+					Self::inactivity_timeout(),
+					<encointer_communities::Pallet<T>>::community_identifiers(),
+				);
+				for inactive in inactives {
+					Self::purge_community(inactive);
+				}
+
 				Self::generate_all_meetup_assignment_params();
 			},
 			CeremonyPhaseType::Attesting => {},
@@ -1848,16 +1857,6 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 					Self::purge_registry(
 						cindex.saturating_sub(Self::reputation_lifetime()).saturating_sub(1),
 					);
-				}
-				let inactives = Self::update_inactivity_counters(
-					// check inactivity with delay, such that rewards can be claimed before the inactivity check happens
-					<encointer_scheduler::Pallet<T>>::current_ceremony_index().saturating_sub(2),
-					// compensate for the delay
-					Self::inactivity_timeout().saturating_add(1),
-					<encointer_communities::Pallet<T>>::community_identifiers(),
-				);
-				for inactive in inactives {
-					Self::purge_community(inactive);
 				}
 			},
 		}
