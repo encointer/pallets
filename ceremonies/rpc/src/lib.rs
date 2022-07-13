@@ -18,7 +18,10 @@ use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use parking_lot::RwLock;
 use sc_rpc::DenyUnsafe;
-use sp_api::{offchain::OffchainStorage, Decode, Encode, ProvideRuntimeApi};
+use sp_api::{
+	offchain::{OffchainStorage, STORAGE_PREFIX},
+	Decode, Encode, ProvideRuntimeApi,
+};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
@@ -26,7 +29,7 @@ use std::sync::Arc;
 use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 use encointer_primitives::{
 	ceremonies::{
-		consts::STORAGE_PREFIX, reputation_cache_dirty_key, reputation_cache_key,
+		consts::REPUTATION_CACHE_DIRTY_KEY, reputation_cache_dirty_key, reputation_cache_key,
 		AggregatedAccountData, CommunityReputation,
 	},
 	communities::CommunityIdentifier,
@@ -154,24 +157,22 @@ where
 	) -> RpcResult<Vec<(CeremonyIndexType, CommunityReputation)>> {
 		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		Ok(api.get_reputations(&at, &account).map_err(|e| Error::Runtime(e.into()))?)
 
-		// This part was broken, the cache was never marked as dirty: https://github.com/encointer/pallets/issues/220
-		//
-		// if !self.offchain_indexing {
-		// 	return Err(offchain_indexing_disabled_error("ceremonies_getReputations"))
-		// }
-		//
-		// if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
-		// 	self.refresh_reputation_cache(account.clone(), at);
-		// }
-		//
-		// let cache_key = &reputation_cache_key(&account);
-		// match self.get_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key) {
-		// 	Some(reputation_list) => Ok(reputation_list),
-		// 	None => Err(storage_not_found_error(cache_key)),
-		// }
+		if !self.offchain_indexing {
+			return Err(
+				Error::OffchainIndexingDisabled("ceremonies_getReputations".to_string()).into()
+			)
+		}
+
+		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
+			self.refresh_reputation_cache(account.clone(), at);
+		}
+
+		let cache_key = &reputation_cache_key(&account);
+		match self.get_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key) {
+			Some(reputation_list) => Ok(reputation_list),
+			None => Err(Error::OffchainStorageNotFound(format!("{:?}", cache_key)).into()),
+		}
 	}
 
 	fn get_aggregated_account_data(

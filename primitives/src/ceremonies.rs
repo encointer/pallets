@@ -280,7 +280,6 @@ pub struct AssignmentParams {
 pub mod consts {
 	/// Dirty bit key for reputation offchain storage
 	pub const REPUTATION_CACHE_DIRTY_KEY: &[u8] = b"reputation_cache_dirty";
-	pub const STORAGE_PREFIX: &[u8] = b"ceremonies_storage";
 	pub const STORAGE_REPUTATION_KEY: &[u8; 10] = b"reputation";
 }
 
