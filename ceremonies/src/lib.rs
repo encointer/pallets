@@ -1447,11 +1447,8 @@ impl<T: Config> Pallet<T> {
 		let current = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		let reputation_lifetime = Self::reputation_lifetime();
 
-		for cindex in max(current.saturating_sub(reputation_lifetime), 0)..current {
-			if cindex > reputation_lifetime {
-				let purge_index = current.saturating_sub(reputation_lifetime).saturating_sub(1);
-				Self::purge_registry(purge_index);
-			}
+		for cindex in current.saturating_sub(reputation_lifetime)..=current {
+			Self::purge_community_ceremony_internal((cid, cindex));
 		}
 		<encointer_communities::Pallet<T>>::remove_community(cid);
 	}
