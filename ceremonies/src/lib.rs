@@ -1248,33 +1248,33 @@ impl<T: Config> Pallet<T> {
 
 		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
 		<BootstrapperIndex<T>>::remove_prefix(cc, None);
-		<BootstrapperCount<T>>::insert(cc, 0);
+		<BootstrapperCount<T>>::remove(cc);
 
 		<ReputableRegistry<T>>::remove_prefix(cc, None);
 		<ReputableIndex<T>>::remove_prefix(cc, None);
-		<ReputableCount<T>>::insert(cc, 0);
+		<ReputableCount<T>>::remove(cc);
 
 		<EndorseeRegistry<T>>::remove_prefix(cc, None);
 		<EndorseeIndex<T>>::remove_prefix(cc, None);
-		<EndorseeCount<T>>::insert(cc, 0);
+		<EndorseeCount<T>>::remove(cc);
 
 		<NewbieRegistry<T>>::remove_prefix(cc, None);
 		<NewbieIndex<T>>::remove_prefix(cc, None);
-		<NewbieCount<T>>::insert(cc, 0);
+		<NewbieCount<T>>::remove(cc);
 
-		<AssignmentCounts<T>>::insert(cc, AssignmentCount::default());
+		<AssignmentCounts<T>>::remove(cc);
 
 		Assignments::<T>::remove(cc);
 
 		<ParticipantReputation<T>>::remove_prefix(cc, None);
 
 		<Endorsees<T>>::remove_prefix(cc, None);
-		<EndorseesCount<T>>::insert(cc, 0);
-		<MeetupCount<T>>::insert(cc, 0);
+		<EndorseesCount<T>>::remove(cc);
+		<MeetupCount<T>>::remove(cc);
 
 		<AttestationRegistry<T>>::remove_prefix(cc, None);
 		<AttestationIndex<T>>::remove_prefix(cc, None);
-		<AttestationCount<T>>::insert(cc, 0);
+		<AttestationCount<T>>::remove(cc);
 
 		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
 		<IssuedRewards<T>>::remove_prefix(cc, None);
@@ -1450,6 +1450,9 @@ impl<T: Config> Pallet<T> {
 		for cindex in current.saturating_sub(reputation_lifetime)..=current {
 			Self::purge_community_ceremony_internal((cid, cindex));
 		}
+
+		<InactivityCounters<T>>::remove(cid);
+
 		<encointer_communities::Pallet<T>>::remove_community(cid);
 	}
 
