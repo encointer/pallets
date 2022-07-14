@@ -1665,7 +1665,7 @@ fn grow_population_and_removing_community_works() {
 		assert_eq!(proof_count, 13);
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
 
-		// no we remove the community
+		// now we remove the community
 		EncointerCeremonies::purge_community(cid);
 
 		let reputation_lifetime = EncointerCeremonies::reputation_lifetime();
