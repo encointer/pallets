@@ -45,13 +45,13 @@ use frame_support::{
 	ensure,
 	sp_std::cmp::min,
 	traits::{Get, Randomness},
+	weights::Pays,
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 use sp_std::{cmp::max, prelude::*, vec};
-
 // Logger target
 const LOG: &str = "encointer";
 
@@ -440,6 +440,7 @@ pub mod pallet {
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
+			maybe_meetup_index: Option<MeetupIndexType>,
 		) -> DispatchResultWithPostInfo {
 			let participant = &ensure_signed(origin)?;
 
@@ -452,8 +453,11 @@ pub mod pallet {
 					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into()),
 			}
 
-			let meetup_index = Self::get_meetup_index((cid, cindex), participant)
-				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+			let meetup_index = match maybe_meetup_index {
+				Some(index) => index,
+				None => Self::get_meetup_index((cid, cindex), participant)
+					.ok_or(<Error<T>>::ParticipantIsNotRegistered)?,
+			};
 
 			if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
 				return Err(<Error<T>>::RewardsAlreadyIssued.into())
@@ -553,7 +557,7 @@ pub mod pallet {
 				meetup_participants,
 				participants_eligible_for_rewards,
 			)?;
-			Ok(().into())
+			Ok(Pays::No.into())
 		}
 
 		#[pallet::weight((<T as Config>::WeightInfo::set_inactivity_timeout(), DispatchClass::Normal, Pays::Yes))]

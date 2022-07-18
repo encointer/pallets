@@ -750,7 +750,7 @@ fn claim_rewards_works() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 2).into()));
 
@@ -858,20 +858,23 @@ fn claim_rewards_works() {
 		);
 
 		// Claiming twice does not work for any of the meetup participants
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).is_err()
-		);
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&bob)), cid).is_err());
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
+			.is_err());
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&bob)), cid, None)
+			.is_err());
 
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&charlie)), cid).is_err()
-		);
+		assert!(EncointerCeremonies::claim_rewards(
+			Origin::signed(account_id(&charlie)),
+			cid,
+			None
+		)
+		.is_err());
 
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&dave)), cid).is_err());
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&dave)), cid, None)
+			.is_err());
 
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&ferdie)), cid).is_err()
-		);
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&ferdie)), cid, None)
+			.is_err());
 	});
 }
 
@@ -920,7 +923,7 @@ fn claim_rewards_works_with_one_missing_attestation() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
@@ -973,7 +976,7 @@ fn claim_rewards_fails_with_two_missing_attestations() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 
 		// nobody receives their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 0).into()));
@@ -1027,18 +1030,71 @@ fn claim_rewards_error_results_in_meetup_marked_as_completed() {
 			.unwrap();
 		}
 
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).is_err()
-		);
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
+			.is_err());
 		// nothing happens in attesting phase
 		assert!(!IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		run_to_next_phase();
 		// Registering
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).is_err()
-		);
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
+			.is_err());
 		// in registering, the meetup is marked as completed
 		assert!(IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
+	});
+}
+
+#[test]
+fn claim_rewards_can_be_called_by_non_participant() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+
+		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let loc = Location::default();
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+		let time = correct_meetup_time(&cid, 1);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![&alice, &bob, &charlie, &dave, &eve, &ferdie];
+
+		for p in all_participants.clone().into_iter() {
+			let mut attestees = all_participants.clone();
+			// remove self
+			let i = attestees.iter().position(|&a| account_id(a) == account_id(p)).unwrap();
+			attestees.remove(i);
+			// remove one more participant
+			attestees.remove(i % 5);
+			attest_all(account_id(&p), &attestees, cid, cindex, 1, loc, time, 6);
+		}
+
+		run_to_next_phase();
+		// Registering
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&yran)), cid, Some(1)).ok();
+
+		// everybody should receive their reward
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
 	});
 }
 
@@ -1084,7 +1140,7 @@ fn early_rewards_works() {
 		}
 
 		// Still attesting phase
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
@@ -1136,7 +1192,7 @@ fn early_rewards_does_not_work_with_one_missing_attestation() {
 
 		// Still attesting phase
 		assert_err!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid),
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None),
 			Error::<TestRuntime>::EarlyRewardsNotPossible
 		);
 	});
@@ -1153,7 +1209,7 @@ fn bootstrapping_works() {
 		let eve = AccountKeyring::Eve.pair();
 		let ferdie = AccountKeyring::Ferdie.pair();
 
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		assert_eq!(
@@ -1606,7 +1662,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1630,7 +1686,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1655,7 +1711,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
