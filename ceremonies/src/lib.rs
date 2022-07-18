@@ -693,6 +693,9 @@ pub mod pallet {
 			account: T::AccountId,
 			reason: ExclusionReason,
 		},
+
+		/// The inactivity counter of a community has been increased
+		InactivityCounterUpdated(CommunityIdentifier, u32),
 	}
 
 	#[pallet::error]
@@ -1426,7 +1429,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	fn get_inactive_communities(
+	fn update_inactivity_counters(
 		cindex: u32,
 		inactivity_timeout: u32,
 		cids: Vec<CommunityIdentifier>,
@@ -1435,12 +1438,15 @@ impl<T: Config> Pallet<T> {
 		for cid in cids {
 			if <IssuedRewards<T>>::iter_prefix_values((cid, cindex)).next().is_some() {
 				<InactivityCounters<T>>::insert(cid, 0);
+				Self::deposit_event(Event::InactivityCounterUpdated(cid, 0));
 			} else {
 				let current = Self::inactivity_counters(cid).unwrap_or(0);
 				if current >= inactivity_timeout {
 					inactives.push(cid.clone());
 				} else {
-					<InactivityCounters<T>>::insert(cid, current + 1);
+					let new_counter = current + 1;
+					<InactivityCounters<T>>::insert(cid, new_counter);
+					Self::deposit_event(Event::InactivityCounterUpdated(cid, new_counter));
 				}
 			}
 		}
@@ -1836,6 +1842,15 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::Assigning => {
+				let inactives = Self::update_inactivity_counters(
+					<encointer_scheduler::Pallet<T>>::current_ceremony_index().saturating_sub(1),
+					Self::inactivity_timeout(),
+					<encointer_communities::Pallet<T>>::community_identifiers(),
+				);
+				for inactive in inactives {
+					Self::purge_community(inactive);
+				}
+
 				Self::generate_all_meetup_assignment_params();
 			},
 			CeremonyPhaseType::Attesting => {},
@@ -1843,15 +1858,9 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
 				if cindex > Self::reputation_lifetime() {
-					Self::purge_registry(cindex - Self::reputation_lifetime() - 1);
-				}
-				let inactives = Self::get_inactive_communities(
-					<encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1,
-					Self::inactivity_timeout(),
-					<encointer_communities::Pallet<T>>::community_identifiers(),
-				);
-				for inactive in inactives {
-					Self::purge_community(inactive);
+					Self::purge_registry(
+						cindex.saturating_sub(Self::reputation_lifetime()).saturating_sub(1),
+					);
 				}
 			},
 		}
