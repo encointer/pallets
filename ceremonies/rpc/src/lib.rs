@@ -29,8 +29,8 @@ use std::sync::Arc;
 use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 use encointer_primitives::{
 	ceremonies::{
-		consts::REPUTATION_CACHE_DIRTY_KEY, reputation_cache_dirty_key, reputation_cache_key,
-		AggregatedAccountData, CommunityReputation,
+		reputation_cache_dirty_key, reputation_cache_key, AggregatedAccountData, CeremonyInfo,
+		CommunityReputation, ReputationCacheValue,
 	},
 	communities::CommunityIdentifier,
 	scheduler::CeremonyIndexType,
@@ -122,17 +122,23 @@ where
 		self.storage.write().set(STORAGE_PREFIX, key, &val.encode());
 	}
 
+	pub fn resolve_at(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
+		BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash))
+	}
 	pub fn refresh_reputation_cache(
 		&self,
 		account: AccountId,
+		ceremony_info: CeremonyInfo,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<()> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		let reputations =
+		let at = self.resolve_at(at);
+		let reputation =
 			api.get_reputations(&at, &account).map_err(|e| Error::Runtime(e.into()))?;
 		let cache_key = &reputation_cache_key(&account);
-		self.set_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key, &reputations);
+
+		let reputation_cache_value = ReputationCacheValue { ceremony_info, reputation };
+		self.set_storage::<ReputationCacheValue>(cache_key, &reputation_cache_value);
 		self.set_storage(&reputation_cache_dirty_key(&account), &false);
 		Ok(())
 	}
@@ -164,13 +170,33 @@ where
 			)
 		}
 
-		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
-			self.refresh_reputation_cache(account.clone(), at);
+		let cache_key = &reputation_cache_key(&account);
+		let mut refresh_cache = false;
+
+		let ceremony_info = api
+			.get_ceremony_info(&(self.resolve_at(at)))
+			.map_err(|e| Error::Runtime(e.into()))?;
+		match self.get_storage::<ReputationCacheValue>(cache_key) {
+			Some(reputation_cache_value) => {
+				if ceremony_info != reputation_cache_value.ceremony_info {
+					refresh_cache = true;
+					log::info!("ceremony_info mismatch, refreshing cache");
+				}
+			},
+			None => (),
+		};
+
+		if !refresh_cache && self.cache_dirty(&reputation_cache_dirty_key(&account)) {
+			refresh_cache = true;
+			log::info!("cache dirty, refreshing cache");
 		}
 
-		let cache_key = &reputation_cache_key(&account);
-		match self.get_storage::<Vec<(CeremonyIndexType, CommunityReputation)>>(cache_key) {
-			Some(reputation_list) => Ok(reputation_list),
+		if refresh_cache {
+			self.refresh_reputation_cache(account.clone(), ceremony_info, at);
+		}
+
+		match self.get_storage::<ReputationCacheValue>(cache_key) {
+			Some(reputation_cache_value) => Ok(reputation_cache_value.reputation),
 			None => Err(Error::OffchainStorageNotFound(format!("{:?}", cache_key)).into()),
 		}
 	}

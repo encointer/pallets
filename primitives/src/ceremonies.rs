@@ -320,6 +320,24 @@ pub struct AggregatedAccountData<AccountId, Moment> {
 	pub personal: Option<AggregatedAccountDataPersonal<AccountId, Moment>>,
 }
 
+#[derive(
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct CeremonyInfo {
+	pub ceremony_phase: CeremonyPhaseType,
+	pub ceremony_index: CeremonyIndexType,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct ReputationCacheValue {
+	pub ceremony_info: CeremonyInfo,
+	pub reputation: Vec<(CeremonyIndexType, CommunityReputation)>,
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

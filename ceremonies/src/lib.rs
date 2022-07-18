@@ -1162,6 +1162,13 @@ impl<T: Config> Pallet<T> {
 		aggregated_account_data
 	}
 
+	pub fn get_ceremony_info() -> CeremonyInfo {
+		CeremonyInfo {
+			ceremony_phase: <encointer_scheduler::Pallet<T>>::current_phase(),
+			ceremony_index: <encointer_scheduler::Pallet<T>>::current_ceremony_index(),
+		}
+	}
+
 	fn register(
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,
