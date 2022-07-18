@@ -1513,6 +1513,13 @@ fn ceremony_index_and_purging_registry_works() {
 		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1).unwrap(), alice);
 
 		for _ in 0..reputation_lifetime {
+			// issue some rewards such that the inactivity counter is not increased
+			IssuedRewards::<TestRuntime>::insert(
+				(cid, EncointerScheduler::current_ceremony_index()),
+				0,
+				(),
+			);
+
 			run_to_next_phase();
 			run_to_next_phase();
 			run_to_next_phase();
@@ -1715,7 +1722,7 @@ fn get_assignment_params_works() {
 }
 
 #[test]
-fn get_inactive_communities_works() {
+fn update_inactivity_counters_works() {
 	new_test_ext().execute_with(|| {
 		let cid0 = CommunityIdentifier::default();
 		let cid1 = CommunityIdentifier::new(
@@ -1731,27 +1738,111 @@ fn get_inactive_communities_works() {
 
 		let timeout = 1;
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![]
 		);
 
 		cindex += 1;
 		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, ());
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![]
 		);
 
 		cindex += 1;
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![cid1]
 		);
 
 		cindex += 1;
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![cid0, cid1]
+		);
+	});
+}
+
+#[test]
+fn purge_inactive_communities_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = perform_bootstrapping_ceremony(None, 1);
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+
+		// inactivity counter is 1, beacuse of a full ceremony cycle in the bootstrapping ceremony
+		// without any rewards being claimed
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 1);
+
+		run_to_next_phase();
+		// Assigning
+		assert_eq!(
+			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
+			Some(Event::InactivityCounterUpdated(cid, 2).into())
+		);
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 2);
+
+		// issued rewards will cause inactivity counter to go to 0 in the next cycle
+		IssuedRewards::<TestRuntime>::insert(
+			(cid, EncointerScheduler::current_ceremony_index()),
+			0,
+			(),
+		);
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_eq!(
+			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
+			Some(Event::InactivityCounterUpdated(cid, 0).into())
+		);
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 0);
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 1);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 2);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community will be purged
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 3);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		// here community gets purged
+		assert!(
+			!<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
 		);
 	});
 }
