@@ -130,7 +130,7 @@ where
 		account: AccountId,
 		ceremony_info: CeremonyInfo,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> RpcResult<()> {
+	) -> RpcResult<ReputationCacheValue> {
 		let api = self.client.runtime_api();
 		let at = self.resolve_at(at);
 		let reputation =
@@ -138,9 +138,9 @@ where
 		let cache_key = &reputation_cache_key(&account);
 
 		let reputation_cache_value = ReputationCacheValue { ceremony_info, reputation };
-		self.set_storage::<ReputationCacheValue>(cache_key, &reputation_cache_value);
+		self.set_storage(cache_key, &reputation_cache_value);
 		self.set_storage(&reputation_cache_dirty_key(&account), &false);
-		Ok(())
+		Ok(reputation_cache_value)
 	}
 }
 
@@ -171,34 +171,21 @@ where
 		}
 
 		let cache_key = &reputation_cache_key(&account);
-		let mut refresh_cache = false;
-
 		let ceremony_info = api
 			.get_ceremony_info(&(self.resolve_at(at)))
 			.map_err(|e| Error::Runtime(e.into()))?;
-		match self.get_storage::<ReputationCacheValue>(cache_key) {
-			Some(reputation_cache_value) => {
-				if ceremony_info != reputation_cache_value.ceremony_info {
-					refresh_cache = true;
-					log::info!("ceremony_info mismatch, refreshing cache");
-				}
-			},
-			None => (),
+
+		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
+			return Ok(self.refresh_reputation_cache(account.clone(), ceremony_info, at)?.reputation)
+		}
+
+		if let Some(reputation_cache_value) = self.get_storage::<ReputationCacheValue>(cache_key) {
+			if ceremony_info == reputation_cache_value.ceremony_info {
+				return Ok(reputation_cache_value.reputation)
+			}
 		};
 
-		if !refresh_cache && self.cache_dirty(&reputation_cache_dirty_key(&account)) {
-			refresh_cache = true;
-			log::info!("cache dirty, refreshing cache");
-		}
-
-		if refresh_cache {
-			self.refresh_reputation_cache(account.clone(), ceremony_info, at);
-		}
-
-		match self.get_storage::<ReputationCacheValue>(cache_key) {
-			Some(reputation_cache_value) => Ok(reputation_cache_value.reputation),
-			None => Err(Error::OffchainStorageNotFound(format!("{:?}", cache_key)).into()),
-		}
+		Ok(self.refresh_reputation_cache(account.clone(), ceremony_info, at)?.reputation)
 	}
 
 	fn get_aggregated_account_data(

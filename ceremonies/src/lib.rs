@@ -175,7 +175,7 @@ pub mod pallet {
 			));
 
 			// invalidate reputation cache
-			sp_io::offchain_index::set(&reputation_cache_dirty_key(sender), &true.encode());
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
 
 			Ok(().into())
 		}
