@@ -171,11 +171,7 @@ pub mod pallet {
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
 
 			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
-			Self::deposit_event(Event::ParticipantRegistered(
-				cid,
-				participant_type,
-				sender,
-			));
+			Self::deposit_event(Event::ParticipantRegistered(cid, participant_type, sender));
 
 			Ok(().into())
 		}
