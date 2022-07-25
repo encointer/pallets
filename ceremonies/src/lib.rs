@@ -167,15 +167,15 @@ pub mod pallet {
 
 			let participant_type = Self::register(cid, cindex, &sender, proof.is_some())?;
 
+			// invalidate reputation cache
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
+
 			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
 			Self::deposit_event(Event::ParticipantRegistered(
 				cid,
 				participant_type,
-				sender.clone(),
+				sender,
 			));
-
-			// invalidate reputation cache
-			sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
 
 			Ok(().into())
 		}
