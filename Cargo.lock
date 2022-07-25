@@ -1093,7 +1093,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-ceremonies-assignment"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "encointer-primitives",
  "sp-core",
@@ -1103,7 +1103,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-meetup-validation"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -1117,7 +1117,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "approx",
  "bs58",
@@ -1167,7 +1167,7 @@ checksum = "68b91989ae21441195d7d9b9993a2f9295c7e1a8c96255d8b729accddc124797"
 
 [[package]]
 name = "ep-core"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -3310,7 +3310,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -3376,7 +3376,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -3405,7 +3405,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -3423,7 +3423,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -3433,7 +3433,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -3454,7 +3454,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -3473,7 +3473,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "encointer-primitives",
  "sp-api",
@@ -5945,7 +5945,7 @@ dependencies = [
 
 [[package]]
 name = "test-utils"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",

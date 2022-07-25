@@ -2,7 +2,7 @@
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
 name = "pallet-encointer-ceremonies"
-version = "1.1.0"
+version = "1.2.0"
 
 [dependencies]
 codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}

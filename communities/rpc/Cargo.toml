@@ -2,7 +2,7 @@
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
 name = "pallet-encointer-communities-rpc"
-version = "1.0.0"
+version = "1.2.0"
 
 [dependencies]
 jsonrpsee = {version = "0.14.0", features = ["server", "macros"]}
