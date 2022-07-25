@@ -334,7 +334,7 @@ benchmarks! {
 		next_phase::<T>();
 		assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
 
-	}: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid)
+	}: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid, None)
 	verify {
 		assert_eq!(last_event::<T>(), Some(Event::RewardsIssued(cid, 1, 10).into()));
 		assert!(IssuedRewards::<T>::contains_key((cid, cindex), mindex));

@@ -1,5 +1,6 @@
 use super::*;
 use rstest::*;
+use sp_std::cmp::max;
 #[rstest(
 	meetup_size,
 	num_attendees,
@@ -138,10 +139,13 @@ fn attendee_is_not_attested_by_n_others(meetup_size: usize, num_attendees: usize
 	case(8, 7, 1),
 	case(8, 5, 3),
 	case(3, 3, 0),
-    // exact half
+    // 50 / 50 meetup split
     case(12, 12, 6),
-    case(16, 16, 8),
-    case(16, 10, 5),
+    case(14, 14, 7),
+    case(12, 12, 6),
+    case(10, 10, 5),
+    case(8, 8, 4),
+    case(6, 6, 3),
 )]
 fn adversary_holds_n_assignee_keys_and_self_attests(
 	meetup_size: usize,
@@ -265,4 +269,106 @@ fn n_attendees_vote_plus_one_and_attest_absent_assignee(
 		.legit,
 		expected
 	);
+}
+
+#[rstest(
+	meetup_size,
+	n,
+	honest_participants_receive_rewards,
+	case(13, 6, true),
+	case(11, 5, true),
+	case(10, 4, true),
+	case(9, 4, true),
+	case(8, 3, true),
+	case(7, 3, true),
+	// if attacker controls half or more, he wins
+	case(13, 7, false),
+	case(11, 6, false),
+	case(10, 5, false),
+	case(9, 5, false),
+	case(8, 4, false),
+	case(7, 4, false),
+)]
+fn adversary_holds_n_assignee_keys_and_self_attests_and_votes_like_honest_participants(
+	meetup_size: usize,
+	n: usize,
+	honest_participants_receive_rewards: bool,
+) {
+	let participants: Participants = (0..meetup_size).collect();
+	let num_attackers = n;
+	let num_honest_participants = meetup_size - n;
+	let participant_votes = vec![num_honest_participants as u32; meetup_size];
+
+	let mut participant_attestations: Attestations = vec![];
+
+	for i in 0..num_attackers {
+		participant_attestations.push((0..num_attackers).filter(|&j| j != i).collect());
+	}
+	for i in num_attackers..meetup_size {
+		participant_attestations.push((num_attackers..meetup_size).filter(|&j| j != i).collect());
+	}
+
+	let legit_participants = get_participant_judgements(
+		&participants,
+		&participant_votes,
+		&participant_attestations,
+		|i: usize| max(if i > 5 { i.saturating_sub(2) } else { i.saturating_sub(1) }, 1),
+	)
+	.unwrap()
+	.legit;
+	for i in num_attackers..meetup_size {
+		assert!(legit_participants.contains(&i) == honest_participants_receive_rewards);
+	}
+}
+
+#[rstest(
+	meetup_size,
+	n,
+	case(15, 4),
+	case(15, 5),
+	case(15, 7),
+	case(13, 6),
+	case(10, 4),
+	case(9, 4),
+	case(8, 3),
+	case(7, 3)
+)]
+fn n_honest_participants_dont_have_internet_and_n_attackers_try_to_provoke_early_payout(
+	meetup_size: usize,
+	n: usize,
+) {
+	let participants: Participants = (0..meetup_size).collect();
+	let num_attackers = n;
+	let num_honest_participants = meetup_size - n;
+	// attackers vote like honest participants
+	let mut participant_votes = vec![num_honest_participants as u32; meetup_size - n];
+
+	// n participants do not have internet
+	participant_votes.append(&mut vec![0 as u32; n]);
+
+	let mut participant_attestations: Attestations = vec![];
+
+	for i in 0..num_attackers {
+		// push enough attestations such that number of attestations matches vote
+		participant_attestations.push((0..num_honest_participants).filter(|&j| j != i).collect());
+	}
+	for i in num_attackers..(meetup_size - n) {
+		participant_attestations.push((num_attackers..meetup_size).filter(|&j| j != i).collect());
+	}
+
+	// n participants do not have internet
+	for _i in (meetup_size - n)..meetup_size {
+		participant_attestations.push(vec![]);
+	}
+
+	let early_rewards_possible = get_participant_judgements(
+		&participants,
+		&participant_votes,
+		&participant_attestations,
+		|i: usize| max(if i > 5 { i.saturating_sub(2) } else { i.saturating_sub(1) }, 1),
+	)
+	.unwrap()
+	.early_rewards_possible;
+
+	assert!(!early_rewards_possible);
 }
