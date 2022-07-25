@@ -45,13 +45,13 @@ use frame_support::{
 	ensure,
 	sp_std::cmp::min,
 	traits::{Get, Randomness},
+	weights::Pays,
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 use sp_std::{cmp::max, prelude::*, vec};
-
 // Logger target
 const LOG: &str = "encointer";
 
@@ -440,6 +440,7 @@ pub mod pallet {
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
+			maybe_meetup_index: Option<MeetupIndexType>,
 		) -> DispatchResultWithPostInfo {
 			let participant = &ensure_signed(origin)?;
 
@@ -452,8 +453,11 @@ pub mod pallet {
 					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into()),
 			}
 
-			let meetup_index = Self::get_meetup_index((cid, cindex), participant)
-				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+			let meetup_index = match maybe_meetup_index {
+				Some(index) => index,
+				None => Self::get_meetup_index((cid, cindex), participant)
+					.ok_or(<Error<T>>::ParticipantIsNotRegistered)?,
+			};
 
 			if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
 				return Err(<Error<T>>::RewardsAlreadyIssued.into())
@@ -553,7 +557,7 @@ pub mod pallet {
 				meetup_participants,
 				participants_eligible_for_rewards,
 			)?;
-			Ok(().into())
+			Ok(Pays::No.into())
 		}
 
 		#[pallet::weight((<T as Config>::WeightInfo::set_inactivity_timeout(), DispatchClass::Normal, Pays::Yes))]
@@ -689,6 +693,9 @@ pub mod pallet {
 			account: T::AccountId,
 			reason: ExclusionReason,
 		},
+
+		/// The inactivity counter of a community has been increased
+		InactivityCounterUpdated(CommunityIdentifier, u32),
 	}
 
 	#[pallet::error]
@@ -1422,7 +1429,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	fn get_inactive_communities(
+	fn update_inactivity_counters(
 		cindex: u32,
 		inactivity_timeout: u32,
 		cids: Vec<CommunityIdentifier>,
@@ -1431,12 +1438,15 @@ impl<T: Config> Pallet<T> {
 		for cid in cids {
 			if <IssuedRewards<T>>::iter_prefix_values((cid, cindex)).next().is_some() {
 				<InactivityCounters<T>>::insert(cid, 0);
+				Self::deposit_event(Event::InactivityCounterUpdated(cid, 0));
 			} else {
 				let current = Self::inactivity_counters(cid).unwrap_or(0);
 				if current >= inactivity_timeout {
 					inactives.push(cid.clone());
 				} else {
-					<InactivityCounters<T>>::insert(cid, current + 1);
+					let new_counter = current + 1;
+					<InactivityCounters<T>>::insert(cid, new_counter);
+					Self::deposit_event(Event::InactivityCounterUpdated(cid, new_counter));
 				}
 			}
 		}
@@ -1834,24 +1844,25 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::Assigning => {
-				Self::generate_all_meetup_assignment_params();
-			},
-			CeremonyPhaseType::Attesting => {},
-			CeremonyPhaseType::Registering => {
-				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
-				let last_index = cindex.saturating_sub(1);
-				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
-				if cindex > Self::reputation_lifetime() {
-					let purge_index = last_index.saturating_sub(Self::reputation_lifetime());
-					Self::purge_registry(purge_index);
-				}
-				let inactives = Self::get_inactive_communities(
-					last_index,
+				let inactives = Self::update_inactivity_counters(
+					<encointer_scheduler::Pallet<T>>::current_ceremony_index().saturating_sub(1),
 					Self::inactivity_timeout(),
 					<encointer_communities::Pallet<T>>::community_identifiers(),
 				);
 				for inactive in inactives {
 					Self::purge_community(inactive);
+				}
+
+				Self::generate_all_meetup_assignment_params();
+			},
+			CeremonyPhaseType::Attesting => {},
+			CeremonyPhaseType::Registering => {
+				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
+				if cindex > Self::reputation_lifetime() {
+					Self::purge_registry(
+						cindex.saturating_sub(Self::reputation_lifetime()).saturating_sub(1),
+					);
 				}
 			},
 		}
