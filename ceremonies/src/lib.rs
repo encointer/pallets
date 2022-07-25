@@ -1255,33 +1255,33 @@ impl<T: Config> Pallet<T> {
 
 		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
 		<BootstrapperIndex<T>>::remove_prefix(cc, None);
-		<BootstrapperCount<T>>::insert(cc, 0);
+		<BootstrapperCount<T>>::remove(cc);
 
 		<ReputableRegistry<T>>::remove_prefix(cc, None);
 		<ReputableIndex<T>>::remove_prefix(cc, None);
-		<ReputableCount<T>>::insert(cc, 0);
+		<ReputableCount<T>>::remove(cc);
 
 		<EndorseeRegistry<T>>::remove_prefix(cc, None);
 		<EndorseeIndex<T>>::remove_prefix(cc, None);
-		<EndorseeCount<T>>::insert(cc, 0);
+		<EndorseeCount<T>>::remove(cc);
 
 		<NewbieRegistry<T>>::remove_prefix(cc, None);
 		<NewbieIndex<T>>::remove_prefix(cc, None);
-		<NewbieCount<T>>::insert(cc, 0);
+		<NewbieCount<T>>::remove(cc);
 
-		<AssignmentCounts<T>>::insert(cc, AssignmentCount::default());
+		<AssignmentCounts<T>>::remove(cc);
 
 		Assignments::<T>::remove(cc);
 
 		<ParticipantReputation<T>>::remove_prefix(cc, None);
 
 		<Endorsees<T>>::remove_prefix(cc, None);
-		<EndorseesCount<T>>::insert(cc, 0);
-		<MeetupCount<T>>::insert(cc, 0);
+		<EndorseesCount<T>>::remove(cc);
+		<MeetupCount<T>>::remove(cc);
 
 		<AttestationRegistry<T>>::remove_prefix(cc, None);
 		<AttestationIndex<T>>::remove_prefix(cc, None);
-		<AttestationCount<T>>::insert(cc, 0);
+		<AttestationCount<T>>::remove(cc);
 
 		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
 		<IssuedRewards<T>>::remove_prefix(cc, None);
@@ -1456,11 +1456,13 @@ impl<T: Config> Pallet<T> {
 	fn purge_community(cid: CommunityIdentifier) {
 		let current = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		let reputation_lifetime = Self::reputation_lifetime();
-		for cindex in max(current - reputation_lifetime, 0)..current {
-			if cindex > reputation_lifetime {
-				Self::purge_registry(cindex - reputation_lifetime - 1);
-			}
+
+		for cindex in current.saturating_sub(reputation_lifetime)..=current {
+			Self::purge_community_ceremony_internal((cid, cindex));
 		}
+
+		<InactivityCounters<T>>::remove(cid);
+
 		<encointer_communities::Pallet<T>>::remove_community(cid);
 	}
 

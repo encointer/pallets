@@ -1626,7 +1626,7 @@ fn after_inactive_cycle_forbid_non_bootstrapper_registration() {
 }
 
 #[test]
-fn grow_population_works() {
+fn grow_population_and_removing_community_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 3);
 		let mut participants = bootstrappers();
@@ -1727,6 +1727,62 @@ fn grow_population_works() {
 		// Assigning
 		assert_eq!(proof_count, 13);
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
+
+		// now we remove the community
+		EncointerCeremonies::purge_community(cid);
+
+		let reputation_lifetime = EncointerCeremonies::reputation_lifetime();
+		let current_cindex =
+			EncointerScheduler::current_ceremony_index().saturating_sub(reputation_lifetime);
+
+		// only sanity check. Community removal is better tested in the communities pallet.
+		assert_eq!(EncointerCommunities::community_identifiers().contains(&cid), false);
+
+		for cindex in current_cindex.saturating_sub(reputation_lifetime)..=current_cindex {
+			assert_eq!(
+				BootstrapperRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
+			assert_eq!(BootstrapperIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(BootstrapperCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(ReputableRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(ReputableIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(ReputableCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(EndorseeRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(EndorseeIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(EndorseeCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(NewbieRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(NewbieIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(NewbieCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(AssignmentCounts::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert_eq!(Assignments::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(
+				ParticipantReputation::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
+
+			assert_eq!(Endorsees::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(EndorseesCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert_eq!(MeetupCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(AttestationRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(AttestationIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(AttestationCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(
+				MeetupParticipantCountVote::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
+
+			assert_eq!(IssuedRewards::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+
+			assert_eq!(InactivityCounters::<TestRuntime>::contains_key(cid), false);
+		}
 	});
 }
 
