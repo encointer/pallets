@@ -280,15 +280,14 @@ pub struct AssignmentParams {
 pub mod consts {
 	/// Dirty bit key for reputation offchain storage
 	pub const REPUTATION_CACHE_DIRTY_KEY: &[u8] = b"reputation_cache_dirty";
-	pub const STORAGE_PREFIX: &[u8] = b"ceremonies_storage";
 	pub const STORAGE_REPUTATION_KEY: &[u8; 10] = b"reputation";
 }
 
-pub fn reputation_cache_key<Account: Encode>(account: Account) -> Vec<u8> {
+pub fn reputation_cache_key<Account: Encode>(account: &Account) -> Vec<u8> {
 	(consts::STORAGE_REPUTATION_KEY, account).encode()
 }
 
-pub fn reputation_cache_dirty_key<Account: Encode>(account: Account) -> Vec<u8> {
+pub fn reputation_cache_dirty_key<Account: Encode>(account: &Account) -> Vec<u8> {
 	(consts::REPUTATION_CACHE_DIRTY_KEY, account).encode()
 }
 
@@ -319,6 +318,24 @@ pub struct AggregatedAccountDataGlobal {
 pub struct AggregatedAccountData<AccountId, Moment> {
 	pub global: AggregatedAccountDataGlobal,
 	pub personal: Option<AggregatedAccountDataPersonal<AccountId, Moment>>,
+}
+
+#[derive(
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct CeremonyInfo {
+	pub ceremony_phase: CeremonyPhaseType,
+	pub ceremony_index: CeremonyIndexType,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct ReputationCacheValue {
+	pub ceremony_info: CeremonyInfo,
+	pub reputation: Vec<(CeremonyIndexType, CommunityReputation)>,
 }
 
 #[cfg(test)]

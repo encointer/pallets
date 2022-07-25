@@ -34,7 +34,10 @@ use encointer_ceremonies_assignment::{
 use encointer_meetup_validation::*;
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::*,
+	ceremonies::{
+		consts::{REPUTATION_CACHE_DIRTY_KEY, STORAGE_REPUTATION_KEY},
+		*,
+	},
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -45,13 +48,13 @@ use frame_support::{
 	ensure,
 	sp_std::cmp::min,
 	traits::{Get, Randomness},
+	weights::Pays,
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 use sp_std::{cmp::max, prelude::*, vec};
-
 // Logger target
 const LOG: &str = "encointer";
 
@@ -163,6 +166,9 @@ pub mod pallet {
 			};
 
 			let participant_type = Self::register(cid, cindex, &sender, proof.is_some())?;
+
+			// invalidate reputation cache
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
 
 			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
 			Self::deposit_event(Event::ParticipantRegistered(cid, participant_type, sender));
@@ -440,16 +446,24 @@ pub mod pallet {
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
+			maybe_meetup_index: Option<MeetupIndexType>,
 		) -> DispatchResultWithPostInfo {
 			let participant = &ensure_signed(origin)?;
 
-			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
-				return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
+			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+			match current_phase {
+				CeremonyPhaseType::Registering => cindex = cindex - 1,
+				CeremonyPhaseType::Attesting => (),
+				CeremonyPhaseType::Assigning =>
+					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into()),
 			}
 
-			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1; //safe; cindex comes from within
-			let meetup_index = Self::get_meetup_index((cid, cindex), participant)
-				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+			let meetup_index = match maybe_meetup_index {
+				Some(index) => index,
+				None => Self::get_meetup_index((cid, cindex), participant)
+					.ok_or(<Error<T>>::ParticipantIsNotRegistered)?,
+			};
 
 			if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
 				return Err(<Error<T>>::RewardsAlreadyIssued.into())
@@ -483,32 +497,49 @@ pub mod pallet {
 			) {
 				Ok(participant_judgements) => participant_judgements,
 				// handle errors
-				Err(err) => match err {
-					MeetupValidationError::BallotEmpty => {
-						debug!(
-							target: LOG,
-							"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
-						);
-						return Err(<Error<T>>::VotesNotDependable.into())
-					},
-					MeetupValidationError::NoDependableVote => {
-						debug!(
+				Err(err) => {
+					// only mark issuance as complete in registering phase
+					// because in attesting phase there could be a failing early payout attempt
+					if current_phase == CeremonyPhaseType::Registering {
+						info!(target: LOG, "marking issuance as completed for failed meetup.");
+						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
+					}
+					match err {
+						MeetupValidationError::BallotEmpty => {
+							debug!(
+								target: LOG,
+								"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
+							);
+							return Err(<Error<T>>::VotesNotDependable.into())
+						},
+						MeetupValidationError::NoDependableVote => {
+							debug!(
 							target: LOG,
 							"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
 							meetup_index,
 							cid
 						);
-						return Err(<Error<T>>::VotesNotDependable.into())
-					},
-					MeetupValidationError::IndexOutOfBounds => {
-						debug!(
-							target: LOG,
-							"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
-						);
-						return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
-					},
+							return Err(<Error<T>>::VotesNotDependable.into())
+						},
+						MeetupValidationError::IndexOutOfBounds => {
+							debug!(
+								target: LOG,
+								"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
+							);
+							return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
+						},
+					}
 				},
 			};
+			if current_phase == CeremonyPhaseType::Attesting &&
+				!participant_judgements.early_rewards_possible
+			{
+				debug!(
+					target: LOG,
+					"early rewards not possible for meetup {:?}, cid: {:?}", meetup_index, cid
+				);
+				return Err(<Error<T>>::EarlyRewardsNotPossible.into())
+			}
 			participants_eligible_for_rewards = participant_judgements.legit;
 			// emit events
 			for p in participant_judgements.excluded {
@@ -532,7 +563,7 @@ pub mod pallet {
 				meetup_participants,
 				participants_eligible_for_rewards,
 			)?;
-			Ok(().into())
+			Ok(Pays::No.into())
 		}
 
 		#[pallet::weight((<T as Config>::WeightInfo::set_inactivity_timeout(), DispatchClass::Normal, Pays::Yes))]
@@ -668,6 +699,9 @@ pub mod pallet {
 			account: T::AccountId,
 			reason: ExclusionReason,
 		},
+
+		/// The inactivity counter of a community has been increased
+		InactivityCounterUpdated(CommunityIdentifier, u32),
 	}
 
 	#[pallet::error]
@@ -742,6 +776,8 @@ pub mod pallet {
 		MeetupValidationIndexOutOfBounds,
 		// Attestations beyond time tolerance
 		AttestationsBeyondTimeTolerance,
+		// Not possible to pay rewards in attestations phase
+		EarlyRewardsNotPossible,
 	}
 
 	#[pallet::storage]
@@ -1129,6 +1165,13 @@ impl<T: Config> Pallet<T> {
 		aggregated_account_data
 	}
 
+	pub fn get_ceremony_info() -> CeremonyInfo {
+		CeremonyInfo {
+			ceremony_phase: <encointer_scheduler::Pallet<T>>::current_phase(),
+			ceremony_index: <encointer_scheduler::Pallet<T>>::current_ceremony_index(),
+		}
+	}
+
 	fn register(
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,
@@ -1225,33 +1268,33 @@ impl<T: Config> Pallet<T> {
 
 		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
 		<BootstrapperIndex<T>>::remove_prefix(cc, None);
-		<BootstrapperCount<T>>::insert(cc, 0);
+		<BootstrapperCount<T>>::remove(cc);
 
 		<ReputableRegistry<T>>::remove_prefix(cc, None);
 		<ReputableIndex<T>>::remove_prefix(cc, None);
-		<ReputableCount<T>>::insert(cc, 0);
+		<ReputableCount<T>>::remove(cc);
 
 		<EndorseeRegistry<T>>::remove_prefix(cc, None);
 		<EndorseeIndex<T>>::remove_prefix(cc, None);
-		<EndorseeCount<T>>::insert(cc, 0);
+		<EndorseeCount<T>>::remove(cc);
 
 		<NewbieRegistry<T>>::remove_prefix(cc, None);
 		<NewbieIndex<T>>::remove_prefix(cc, None);
-		<NewbieCount<T>>::insert(cc, 0);
+		<NewbieCount<T>>::remove(cc);
 
-		<AssignmentCounts<T>>::insert(cc, AssignmentCount::default());
+		<AssignmentCounts<T>>::remove(cc);
 
 		Assignments::<T>::remove(cc);
 
 		<ParticipantReputation<T>>::remove_prefix(cc, None);
 
 		<Endorsees<T>>::remove_prefix(cc, None);
-		<EndorseesCount<T>>::insert(cc, 0);
-		<MeetupCount<T>>::insert(cc, 0);
+		<EndorseesCount<T>>::remove(cc);
+		<MeetupCount<T>>::remove(cc);
 
 		<AttestationRegistry<T>>::remove_prefix(cc, None);
 		<AttestationIndex<T>>::remove_prefix(cc, None);
-		<AttestationCount<T>>::insert(cc, 0);
+		<AttestationCount<T>>::remove(cc);
 
 		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
 		<IssuedRewards<T>>::remove_prefix(cc, None);
@@ -1399,7 +1442,7 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	fn get_inactive_communities(
+	fn update_inactivity_counters(
 		cindex: u32,
 		inactivity_timeout: u32,
 		cids: Vec<CommunityIdentifier>,
@@ -1408,12 +1451,15 @@ impl<T: Config> Pallet<T> {
 		for cid in cids {
 			if <IssuedRewards<T>>::iter_prefix_values((cid, cindex)).next().is_some() {
 				<InactivityCounters<T>>::insert(cid, 0);
+				Self::deposit_event(Event::InactivityCounterUpdated(cid, 0));
 			} else {
 				let current = Self::inactivity_counters(cid).unwrap_or(0);
 				if current >= inactivity_timeout {
 					inactives.push(cid.clone());
 				} else {
-					<InactivityCounters<T>>::insert(cid, current + 1);
+					let new_counter = current + 1;
+					<InactivityCounters<T>>::insert(cid, new_counter);
+					Self::deposit_event(Event::InactivityCounterUpdated(cid, new_counter));
 				}
 			}
 		}
@@ -1423,11 +1469,13 @@ impl<T: Config> Pallet<T> {
 	fn purge_community(cid: CommunityIdentifier) {
 		let current = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		let reputation_lifetime = Self::reputation_lifetime();
-		for cindex in max(current - reputation_lifetime, 0)..current {
-			if cindex > reputation_lifetime {
-				Self::purge_registry(cindex - reputation_lifetime - 1);
-			}
+
+		for cindex in current.saturating_sub(reputation_lifetime)..=current {
+			Self::purge_community_ceremony_internal((cid, cindex));
 		}
+
+		<InactivityCounters<T>>::remove(cid);
+
 		<encointer_communities::Pallet<T>>::remove_community(cid);
 	}
 
@@ -1809,6 +1857,15 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::Assigning => {
+				let inactives = Self::update_inactivity_counters(
+					<encointer_scheduler::Pallet<T>>::current_ceremony_index().saturating_sub(1),
+					Self::inactivity_timeout(),
+					<encointer_communities::Pallet<T>>::community_identifiers(),
+				);
+				for inactive in inactives {
+					Self::purge_community(inactive);
+				}
+
 				Self::generate_all_meetup_assignment_params();
 			},
 			CeremonyPhaseType::Attesting => {},
@@ -1816,15 +1873,9 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
 				if cindex > Self::reputation_lifetime() {
-					Self::purge_registry(cindex - Self::reputation_lifetime() - 1);
-				}
-				let inactives = Self::get_inactive_communities(
-					<encointer_scheduler::Pallet<T>>::current_ceremony_index() - 1,
-					Self::inactivity_timeout(),
-					<encointer_communities::Pallet<T>>::community_identifiers(),
-				);
-				for inactive in inactives {
-					Self::purge_community(inactive);
+					Self::purge_registry(
+						cindex.saturating_sub(Self::reputation_lifetime()).saturating_sub(1),
+					);
 				}
 			},
 		}

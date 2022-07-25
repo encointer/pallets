@@ -22,7 +22,7 @@
 use sp_std::vec::Vec;
 
 use encointer_primitives::{
-	ceremonies::{AggregatedAccountData, CeremonyIndexType, CommunityReputation},
+	ceremonies::{AggregatedAccountData, CeremonyIndexType, CeremonyInfo, CommunityReputation},
 	communities::CommunityIdentifier,
 };
 use sp_api::{Decode, Encode};
@@ -35,5 +35,6 @@ sp_api::decl_runtime_apis! {
 	{
 		fn get_reputations(account: &AccountId) -> Vec<(CeremonyIndexType, CommunityReputation)>;
 		fn get_aggregated_account_data(cid:CommunityIdentifier, account: &AccountId) -> AggregatedAccountData<AccountId, Moment>;
+		fn get_ceremony_info() -> CeremonyInfo;
 	}
 }

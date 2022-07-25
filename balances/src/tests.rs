@@ -30,7 +30,7 @@ use frame_support::{
 			fungibles::{Inspect, InspectMetadata, Unbalanced},
 			DepositConsequence, WithdrawConsequence,
 		},
-		OnInitialize,
+		OnFinalize, OnInitialize,
 	},
 };
 use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
@@ -44,11 +44,19 @@ use test_utils::{
 #[test]
 fn issue_should_work() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+
 		let cid = CommunityIdentifier::default();
 		let alice = AccountKeyring::Alice.to_account_id();
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
 		assert_eq!(EncointerBalances::balance(cid, &alice), BalanceType::from_num(50.1));
 		assert_eq!(EncointerBalances::total_issuance(cid), BalanceType::from_num(50.1));
+
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::Issued(cid, alice.clone(), BalanceType::from_num(50.1)).into())
+		);
 	});
 }
 
@@ -123,6 +131,9 @@ fn transfer_should_create_new_account() {
 		let amount = BalanceType::from_num(9.999);
 
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50u128)));
+
+		frame_system::Pallet::<TestRuntime>::reset_events();
+
 		assert_ok!(EncointerBalances::transfer(
 			Some(alice.clone()).into(),
 			zoltan.clone(),

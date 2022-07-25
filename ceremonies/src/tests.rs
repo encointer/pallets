@@ -22,6 +22,7 @@ use mock::{
 use sp_runtime::DispatchError;
 
 use approx::assert_abs_diff_eq;
+use encointer_balances::Event as BalancesEvent;
 use encointer_primitives::{
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -37,8 +38,8 @@ use sp_runtime::traits::BlakeTwo256;
 use std::ops::Rem;
 use test_utils::{
 	helpers::{
-		account_id, assert_dispatch_err, bootstrappers, event_at_index, get_num_events, last_event,
-		register_test_community,
+		account_id, assert_dispatch_err, bootstrappers, event_at_index, event_deposited,
+		get_num_events, last_event, register_test_community,
 	},
 	*,
 };
@@ -329,13 +330,9 @@ fn registering_participant_works() {
 
 		assert_ok!(register(alice.clone(), cid, None));
 
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(
-				Event::ParticipantRegistered(cid, ParticipantType::Bootstrapper, alice.clone())
-					.into()
-			)
-		);
+		assert!(event_deposited::<TestRuntime>(
+			Event::ParticipantRegistered(cid, ParticipantType::Bootstrapper, alice.clone()).into()
+		));
 
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 1);
 		assert_ok!(register(bob.clone(), cid, None));
@@ -753,66 +750,73 @@ fn claim_rewards_works() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 2).into()));
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 2).into()));
 
 		let num_events = get_num_events::<TestRuntime>();
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 2),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&ferdie),
-					reason: ExclusionReason::TooFewOutgoingAttestations,
-				}
-				.into()
-			)
-		);
 
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 3),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&eve),
-					reason: ExclusionReason::TooFewOutgoingAttestations,
-				}
-				.into()
+		assert!(event_deposited::<TestRuntime>(
+			BalancesEvent::Issued(
+				cid,
+				account_id(&alice),
+				EncointerCeremonies::ceremony_reward().lossy_into()
 			)
-		);
+			.into()
+		));
 
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 4),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&dave),
-					reason: ExclusionReason::WrongVote,
-				}
-				.into()
+		assert!(event_deposited::<TestRuntime>(
+			BalancesEvent::Issued(
+				cid,
+				account_id(&bob),
+				EncointerCeremonies::ceremony_reward().lossy_into()
 			)
-		);
+			.into()
+		));
 
-		assert_eq!(
-			event_at_index::<TestRuntime>(num_events - 5),
-			Some(
-				Event::NoReward {
-					cid,
-					cindex,
-					meetup_index: 1,
-					account: account_id(&charlie),
-					reason: ExclusionReason::NoVote,
-				}
-				.into()
-			)
-		);
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&ferdie),
+				reason: ExclusionReason::TooFewOutgoingAttestations,
+			}
+			.into()
+		));
+
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&eve),
+				reason: ExclusionReason::TooFewOutgoingAttestations,
+			}
+			.into()
+		));
+
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&dave),
+				reason: ExclusionReason::WrongVote,
+			}
+			.into()
+		));
+
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: account_id(&charlie),
+				reason: ExclusionReason::NoVote,
+			}
+			.into()
+		));
 
 		let result: f64 = EncointerBalances::balance(cid, &account_id(&alice)).lossy_into();
 		assert_abs_diff_eq!(
@@ -854,20 +858,23 @@ fn claim_rewards_works() {
 		);
 
 		// Claiming twice does not work for any of the meetup participants
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).is_err()
-		);
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&bob)), cid).is_err());
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
+			.is_err());
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&bob)), cid, None)
+			.is_err());
 
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&charlie)), cid).is_err()
-		);
+		assert!(EncointerCeremonies::claim_rewards(
+			Origin::signed(account_id(&charlie)),
+			cid,
+			None
+		)
+		.is_err());
 
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&dave)), cid).is_err());
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&dave)), cid, None)
+			.is_err());
 
-		assert!(
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&ferdie)), cid).is_err()
-		);
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&ferdie)), cid, None)
+			.is_err());
 	});
 }
 
@@ -916,10 +923,10 @@ fn claim_rewards_works_with_one_missing_attestation() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 
 		// everybody should receive their reward
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
 	});
 }
 
@@ -969,10 +976,225 @@ fn claim_rewards_fails_with_two_missing_attestations() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 
 		// nobody receives their reward
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 0).into()));
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 0).into()));
+	});
+}
+
+#[test]
+fn claim_rewards_error_results_in_meetup_marked_as_completed() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let loc = Location::default();
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+		let time = correct_meetup_time(&cid, 1);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![&alice, &bob, &charlie, &dave, &eve, &ferdie];
+
+		for (i, p) in all_participants.clone().into_iter().enumerate() {
+			let mut attestees = all_participants.clone();
+			// remove self
+			attestees.retain(|&a| account_id(a) != account_id(p));
+			// this will lead to an error beacuse there is no depandable vote
+			EncointerCeremonies::attest_attendees(
+				Origin::signed(account_id(&p)),
+				cid,
+				i as u32,
+				attestees.into_iter().map(|pa| account_id(&pa)).collect(),
+			)
+			.unwrap();
+		}
+
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
+			.is_err());
+		// nothing happens in attesting phase
+		assert!(!IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
+		run_to_next_phase();
+		// Registering
+		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
+			.is_err());
+		// in registering, the meetup is marked as completed
+		assert!(IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
+	});
+}
+
+#[test]
+fn claim_rewards_can_be_called_by_non_participant() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+
+		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let loc = Location::default();
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+		let time = correct_meetup_time(&cid, 1);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![&alice, &bob, &charlie, &dave, &eve, &ferdie];
+
+		for p in all_participants.clone().into_iter() {
+			let mut attestees = all_participants.clone();
+			// remove self
+			let i = attestees.iter().position(|&a| account_id(a) == account_id(p)).unwrap();
+			attestees.remove(i);
+			// remove one more participant
+			attestees.remove(i % 5);
+			attest_all(account_id(&p), &attestees, cid, cindex, 1, loc, time, 6);
+		}
+
+		run_to_next_phase();
+		// Registering
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&yran)), cid, Some(1)).ok();
+
+		// everybody should receive their reward
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
+	});
+}
+
+#[test]
+fn early_rewards_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let loc = Location::default();
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+		let time = correct_meetup_time(&cid, 1);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![&alice, &bob, &charlie, &dave, &eve, &ferdie];
+
+		for p in all_participants.clone().into_iter() {
+			let mut attestees = all_participants.clone();
+			// remove self
+			attestees.retain(|&a| account_id(a) != account_id(p));
+
+			attest_all(account_id(&p), &attestees, cid, cindex, 1, loc, time, 6);
+		}
+
+		// Still attesting phase
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
+
+		// everybody should receive their reward
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
+	})
+}
+
+#[test]
+fn early_rewards_does_not_work_with_one_missing_attestation() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let loc = Location::default();
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+		let time = correct_meetup_time(&cid, 1);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![&alice, &bob, &charlie, &dave, &eve, &ferdie];
+
+		for p in all_participants.clone().into_iter() {
+			let mut attestees = all_participants.clone();
+			// remove self
+			let i = attestees.iter().position(|&a| account_id(a) == account_id(p)).unwrap();
+			attestees.remove(i);
+			// remove one more participant
+			attestees.remove(i % 5);
+			attest_all(account_id(&p), &attestees, cid, cindex, 1, loc, time, 6);
+		}
+
+		// Still attesting phase
+		assert_err!(
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None),
+			Error::<TestRuntime>::EarlyRewardsNotPossible
+		);
 	});
 }
 
@@ -987,7 +1209,7 @@ fn bootstrapping_works() {
 		let eve = AccountKeyring::Eve.pair();
 		let ferdie = AccountKeyring::Ferdie.pair();
 
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		assert_eq!(
@@ -1347,6 +1569,13 @@ fn ceremony_index_and_purging_registry_works() {
 		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), &1).unwrap(), alice);
 
 		for _ in 0..reputation_lifetime {
+			// issue some rewards such that the inactivity counter is not increased
+			IssuedRewards::<TestRuntime>::insert(
+				(cid, EncointerScheduler::current_ceremony_index()),
+				0,
+				(),
+			);
+
 			run_to_next_phase();
 			run_to_next_phase();
 			run_to_next_phase();
@@ -1397,7 +1626,7 @@ fn after_inactive_cycle_forbid_non_bootstrapper_registration() {
 }
 
 #[test]
-fn grow_population_works() {
+fn grow_population_and_removing_community_works() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 3);
 		let mut participants = bootstrappers();
@@ -1433,7 +1662,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1457,7 +1686,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1482,7 +1711,7 @@ fn grow_population_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid).ok();
+			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1498,6 +1727,62 @@ fn grow_population_works() {
 		// Assigning
 		assert_eq!(proof_count, 13);
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
+
+		// now we remove the community
+		EncointerCeremonies::purge_community(cid);
+
+		let reputation_lifetime = EncointerCeremonies::reputation_lifetime();
+		let current_cindex =
+			EncointerScheduler::current_ceremony_index().saturating_sub(reputation_lifetime);
+
+		// only sanity check. Community removal is better tested in the communities pallet.
+		assert_eq!(EncointerCommunities::community_identifiers().contains(&cid), false);
+
+		for cindex in current_cindex.saturating_sub(reputation_lifetime)..=current_cindex {
+			assert_eq!(
+				BootstrapperRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
+			assert_eq!(BootstrapperIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(BootstrapperCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(ReputableRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(ReputableIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(ReputableCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(EndorseeRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(EndorseeIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(EndorseeCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(NewbieRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(NewbieIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(NewbieCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(AssignmentCounts::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert_eq!(Assignments::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(
+				ParticipantReputation::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
+
+			assert_eq!(Endorsees::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(EndorseesCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert_eq!(MeetupCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(AttestationRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(AttestationIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+			assert_eq!(AttestationCount::<TestRuntime>::contains_key((cid, cindex)), false);
+
+			assert_eq!(
+				MeetupParticipantCountVote::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
+
+			assert_eq!(IssuedRewards::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+
+			assert_eq!(InactivityCounters::<TestRuntime>::contains_key(cid), false);
+		}
 	});
 }
 
@@ -1549,7 +1834,7 @@ fn get_assignment_params_works() {
 }
 
 #[test]
-fn get_inactive_communities_works() {
+fn update_inactivity_counters_works() {
 	new_test_ext().execute_with(|| {
 		let cid0 = CommunityIdentifier::default();
 		let cid1 = CommunityIdentifier::new(
@@ -1565,27 +1850,111 @@ fn get_inactive_communities_works() {
 
 		let timeout = 1;
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![]
 		);
 
 		cindex += 1;
 		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, ());
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![]
 		);
 
 		cindex += 1;
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![cid1]
 		);
 
 		cindex += 1;
 		assert_eq!(
-			EncointerCeremonies::get_inactive_communities(cindex, timeout, vec![cid0, cid1]),
+			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![cid0, cid1]
+		);
+	});
+}
+
+#[test]
+fn purge_inactive_communities_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = perform_bootstrapping_ceremony(None, 1);
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+
+		// inactivity counter is 1, beacuse of a full ceremony cycle in the bootstrapping ceremony
+		// without any rewards being claimed
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 1);
+
+		run_to_next_phase();
+		// Assigning
+		assert_eq!(
+			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
+			Some(Event::InactivityCounterUpdated(cid, 2).into())
+		);
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 2);
+
+		// issued rewards will cause inactivity counter to go to 0 in the next cycle
+		IssuedRewards::<TestRuntime>::insert(
+			(cid, EncointerScheduler::current_ceremony_index()),
+			0,
+			(),
+		);
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_eq!(
+			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
+			Some(Event::InactivityCounterUpdated(cid, 0).into())
+		);
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 0);
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 1);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 2);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert!(
+			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
+		);
+		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community will be purged
+		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 3);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		// here community gets purged
+		assert!(
+			!<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
 		);
 	});
 }
