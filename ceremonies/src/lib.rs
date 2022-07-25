@@ -34,7 +34,10 @@ use encointer_ceremonies_assignment::{
 use encointer_meetup_validation::*;
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::*,
+	ceremonies::{
+		consts::{REPUTATION_CACHE_DIRTY_KEY, STORAGE_REPUTATION_KEY},
+		*,
+	},
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -163,6 +166,9 @@ pub mod pallet {
 			};
 
 			let participant_type = Self::register(cid, cindex, &sender, proof.is_some())?;
+
+			// invalidate reputation cache
+			sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
 
 			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
 			Self::deposit_event(Event::ParticipantRegistered(cid, participant_type, sender));
@@ -1157,6 +1163,13 @@ impl<T: Config> Pallet<T> {
 			personal: aggregated_account_data_personal,
 		};
 		aggregated_account_data
+	}
+
+	pub fn get_ceremony_info() -> CeremonyInfo {
+		CeremonyInfo {
+			ceremony_phase: <encointer_scheduler::Pallet<T>>::current_phase(),
+			ceremony_index: <encointer_scheduler::Pallet<T>>::current_ceremony_index(),
+		}
 	}
 
 	fn register(
