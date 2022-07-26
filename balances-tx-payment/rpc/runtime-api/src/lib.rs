@@ -27,12 +27,27 @@ use encointer_primitives::{
 };
 use sp_api::{Decode, Encode};
 
+/// Error type of this RPC api.
+#[derive(Encode, Decode, Clone, PartialEq, Debug)]
+pub enum Error {
+	/// The call to runtime failed.
+	RuntimeError,
+}
+
+impl From<Error> for i32 {
+	fn from(e: Error) -> i32 {
+		match e {
+			Error::RuntimeError => 1,
+		}
+	}
+}
+
 sp_api::decl_runtime_apis! {
 	pub trait BalancesTxPaymentApi<Balance, AssetId, AssetBalance> where
 		Balance: Encode + Decode,
 		AssetId: Encode + Decode,
 		AssetBalance: Encode + Decode,
 	{
-		fn balance_to_asset_balance(balance:Balance, asset_id:AssetId) -> AssetBalance;
+		fn balance_to_asset_balance(balance:Balance, asset_id:AssetId) -> Result<AssetBalance, Error>;
 	}
 }

@@ -15,41 +15,27 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Codec;
-use encointer_balances_tx_payment_rpc_runtime_api::BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi;
+use encointer_balances_tx_payment_rpc_runtime_api::{
+	BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi, Error,
+};
 //use encointer_rpc::Error;
 use jsonrpsee::{
-	core::{async_trait, Error as JsonRpseeError, RpcResult},
+	core::{Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 	types::error::{CallError, ErrorCode, ErrorObject},
 };
 pub use pallet_transaction_payment::RuntimeDispatchInfo;
 use pallet_transaction_payment::{FeeDetails, InclusionFee};
 use pallet_transaction_payment_rpc::TransactionPaymentApiServer;
-use parking_lot::RwLock;
-use sc_rpc::DenyUnsafe;
-use sp_api::{offchain::OffchainStorage, Decode, Encode, ProvideRuntimeApi};
+use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::Bytes;
+use sp_core::{Bytes};
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, MaybeDisplay},
 };
 use std::sync::Arc;
-use sp_core::U256;
-/// Error type of this RPC api.
-pub enum Error {
-	/// The call to runtime failed.
-	RuntimeError,
-}
-
-impl From<Error> for i32 {
-	fn from(e: Error) -> i32 {
-		match e {
-			Error::RuntimeError => 1,
-		}
-	}
-}
 
 #[rpc(client, server)]
 pub trait BalancesTxPaymentApi<BlockHash, AssetId>
@@ -85,7 +71,6 @@ impl<C, P, Q, R, S> BalancesTxPaymentRpc<C, P, Q, R, S> {
 	}
 }
 
-
 impl<C, P, Block, AssetId, Balance, AssetBalance>
 	BalancesTxPaymentApiServer<<Block as BlockT>::Hash, AssetId>
 	for BalancesTxPaymentRpc<C, P, Block, Balance, AssetBalance>
@@ -105,14 +90,8 @@ where
 	P: TransactionPaymentApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>,
 	C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + Send + Sync + 'static,
 	C::Api: BalancesTxPaymentApiRuntimeApi<Block, Balance, AssetId, AssetBalance>,
-	Balance: Codec
-		+ MaybeDisplay
-		+ Copy
-		+ TryInto<NumberOrHex>
-		+ Send
-		+ Sync
-		+ 'static
-		+ From<u128>
+	Balance:
+		Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + Send + Sync + 'static + From<u128>,
 {
 	fn query_asset_fee_details(
 		&self,
@@ -139,22 +118,44 @@ where
 		Ok(FeeDetails {
 			inclusion_fee: if let Some(inclusion_fee) = balance_fee_details.inclusion_fee {
 				let base_fee = api
-					.balance_to_asset_balance(&at, inclusion_fee.base_fee.into_u256().as_u128().into(), asset_id)
+					.balance_to_asset_balance(
+						&at,
+						inclusion_fee.base_fee.into_u256().as_u128().into(),
+						asset_id,
+					)
 					.map_err(|e| {
 						CallError::Custom(ErrorObject::owned(
 							Error::RuntimeError.into(),
 							"Unable to query balance conversion.",
 							Some(e.to_string()),
 						))
+					})?
+					.map_err(|_e| {
+						CallError::Custom(ErrorObject::owned(
+							Error::RuntimeError.into(),
+							"Unable to query balance conversion.",
+							Some("Unable to query balance conversion."),
+						))
 					})?;
 
 				let len_fee = api
-					.balance_to_asset_balance(&at, inclusion_fee.len_fee.into_u256().as_u128().into(), asset_id)
+					.balance_to_asset_balance(
+						&at,
+						inclusion_fee.len_fee.into_u256().as_u128().into(),
+						asset_id,
+					)
 					.map_err(|e| {
 						CallError::Custom(ErrorObject::owned(
 							Error::RuntimeError.into(),
 							"Unable to query fee details.",
 							Some(e.to_string()),
+						))
+					})?
+					.map_err(|_e| {
+						CallError::Custom(ErrorObject::owned(
+							Error::RuntimeError.into(),
+							"Unable to query balance conversion.",
+							Some("Unable to query balance conversion."),
 						))
 					})?;
 
@@ -169,6 +170,13 @@ where
 							Error::RuntimeError.into(),
 							"Unable to query fee details.",
 							Some(e.to_string()),
+						))
+					})?
+					.map_err(|_e| {
+						CallError::Custom(ErrorObject::owned(
+							Error::RuntimeError.into(),
+							"Unable to query balance conversion.",
+							Some("Unable to query balance conversion."),
 						))
 					})?;
 
