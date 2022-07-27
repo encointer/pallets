@@ -29,7 +29,7 @@ use pallet_transaction_payment::{FeeDetails, InclusionFee};
 use pallet_transaction_payment_rpc::TransactionPaymentApiServer;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_core::{Bytes};
+use sp_core::Bytes;
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::{
 	generic::BlockId,
