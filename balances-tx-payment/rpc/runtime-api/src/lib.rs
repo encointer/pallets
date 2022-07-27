@@ -20,11 +20,6 @@
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
-
-use encointer_primitives::{
-	ceremonies::{AggregatedAccountData, CeremonyIndexType, CommunityReputation},
-	communities::CommunityIdentifier,
-};
 use sp_api::{Decode, Encode};
 
 /// Error type of this RPC api.
