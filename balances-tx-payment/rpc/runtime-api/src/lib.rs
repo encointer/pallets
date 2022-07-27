@@ -18,9 +18,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use sp_api::{Decode, Encode};
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
-use sp_api::{Decode, Encode};
 
 /// Error type of this RPC api.
 #[derive(Encode, Decode, Clone, PartialEq, Debug)]
