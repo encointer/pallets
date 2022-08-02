@@ -21,7 +21,7 @@
 use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{
 	ord_parameter_types, parameter_types,
-	traits::{EnsureOneOf, Get},
+	traits::{EitherOfDiverse, Get},
 };
 use frame_system::{EnsureRoot, EnsureSignedBy};
 use polkadot_parachain::primitives::Sibling;
@@ -269,4 +269,4 @@ ord_parameter_types! {
 }
 
 /// Test origin for the pallet's `EnsureOrigin` associated type.
-pub type EnsureAlice = EnsureOneOf<EnsureSignedBy<Alice, AccountId32>, EnsureRoot<AccountId32>>;
+pub type EnsureAlice = EitherOfDiverse<EnsureSignedBy<Alice, AccountId32>, EnsureRoot<AccountId32>>;
