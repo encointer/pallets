@@ -16,7 +16,6 @@
 
 use bs58;
 use codec::{Decode, Encode, MaxEncodedLen};
-use concat_arrays::concat_arrays;
 use crc::{Crc, CRC_32_CKSUM};
 use ep_core::fixed::types::I64F64;
 use geohash::GeoHash as GeohashGeneric;
@@ -148,7 +147,9 @@ impl CommunityIdentifier {
 	}
 
 	pub fn as_array(self) -> [u8; 9] {
-		concat_arrays!(self.geohash, self.digest)
+		let mut arr: [u8; 9] = Default::default();
+    	arr.copy_from_slice(&self.geohash.iter().cloned().chain(self.digest.iter().cloned()).collect::<Vec<u8>>()[..]);
+		arr
 	}
 }
 
