@@ -29,8 +29,7 @@ use frame_support::{
 		tokens::{
 			fungibles::{Inspect, InspectMetadata, Unbalanced},
 			DepositConsequence, WithdrawConsequence,
-		},
-		OnFinalize, OnInitialize,
+		},OnInitialize,
 	},
 };
 use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
