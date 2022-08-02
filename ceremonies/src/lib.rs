@@ -60,6 +60,7 @@ const LOG: &str = "encointer";
 pub use pallet::*;
 pub use weights::WeightInfo;
 
+#[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;

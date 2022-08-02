@@ -48,6 +48,7 @@ const LOG: &str = "encointer";
 
 pub use pallet::*;
 
+#[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
