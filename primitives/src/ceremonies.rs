@@ -87,6 +87,7 @@ pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
 }
 
 impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Moment> {
+	#[allow(clippy::too_many_arguments)]
 	pub fn new_signed(
 		claimant_public: AccountId,
 		ceremony_index: CeremonyIndexType,
