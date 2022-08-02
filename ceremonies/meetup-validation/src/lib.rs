@@ -277,7 +277,6 @@ fn group_participants_by_num_incoming_attestations(
 				.iter()
 				.enumerate()
 				.filter(|(idx, a)| &p != idx && a.contains(&p))
-				.map(|item| item.1.clone())
 				.count()
 		})
 		.collect();

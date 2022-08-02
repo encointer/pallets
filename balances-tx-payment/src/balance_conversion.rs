@@ -43,7 +43,7 @@ pub fn apply_fee_conversion_factor(
 	reward: u128,
 	fee_conversion_factor: u128,
 ) -> u128 {
-	return balance
+	balance
 		.saturating_mul(reward)
 		.saturating_mul(fee_conversion_factor as u128)
 		.checked_div(ONE_KILO_KSM) // <- unit discrepancy: balance [pKSM] vs. fee_conversion_factor [KKSM]

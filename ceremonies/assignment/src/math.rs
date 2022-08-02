@@ -74,13 +74,13 @@ pub fn get_greatest_common_denominator(a: u64, b: u64) -> u64 {
 
 	if a == b {
 		return a
-	};
+	}
 
 	if a > b {
 		return get_greatest_common_denominator(a.checked_sub(b).expect("a > b; qed"), b)
 	}
 
-	return get_greatest_common_denominator(a, b.checked_sub(a).expect("b <= a; qed"))
+	get_greatest_common_denominator(a, b.checked_sub(a).expect("b <= a; qed"))
 }
 
 pub fn find_prime_below(mut n: u64) -> u64 {

@@ -35,7 +35,6 @@ use encointer_meetup_validation::*;
 use encointer_primitives::{
 	balances::BalanceType,
 	ceremonies::{
-		consts::{REPUTATION_CACHE_DIRTY_KEY, STORAGE_REPUTATION_KEY},
 		*,
 	},
 	communities::{CommunityIdentifier, Location, NominalIncome},
@@ -137,7 +136,7 @@ pub mod pallet {
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
 				ensure!(
 					p.ceremony_index >=
-						cindex.checked_sub(Self::reputation_lifetime()).unwrap_or(0),
+						cindex.saturating_sub(Self::reputation_lifetime()),
 					Error::<T>::ProofOutdated
 				);
 				ensure!(
@@ -198,7 +197,7 @@ pub mod pallet {
 
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			ensure!(
-				attestations.len() <= meetup_participants.len() - 1,
+				attestations.len() < meetup_participants.len(),
 				Error::<T>::TooManyAttestations
 			);
 
@@ -453,7 +452,7 @@ pub mod pallet {
 			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
 			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			match current_phase {
-				CeremonyPhaseType::Registering => cindex = cindex - 1,
+				CeremonyPhaseType::Registering => cindex -= 1,
 				CeremonyPhaseType::Attesting => (),
 				CeremonyPhaseType::Assigning =>
 					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into()),
@@ -1099,7 +1098,7 @@ impl<T: Config> Pallet<T> {
 	pub fn get_reputations(
 		account: &T::AccountId,
 	) -> Vec<(CeremonyIndexType, CommunityReputation)> {
-		return ParticipantReputation::<T>::iter()
+		ParticipantReputation::<T>::iter()
 			.filter(|t| &t.1 == account)
 			.map(|t| (t.0 .1, CommunityReputation::new(t.0 .0, t.2)))
 			.collect()
@@ -1158,11 +1157,10 @@ impl<T: Config> Pallet<T> {
 		} else {
 			aggregated_account_data_personal = None;
 		}
-		let aggregated_account_data = AggregatedAccountData::<T::AccountId, T::Moment> {
+		AggregatedAccountData::<T::AccountId, T::Moment> {
 			global: aggregated_account_data_global,
 			personal: aggregated_account_data_personal,
-		};
-		aggregated_account_data
+		}
 	}
 
 	pub fn get_ceremony_info() -> CeremonyInfo {
@@ -1179,7 +1177,7 @@ impl<T: Config> Pallet<T> {
 		is_reputable: bool,
 	) -> Result<ParticipantType, Error<T>> {
 		let participant_type =
-			if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(&sender) {
+			if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(sender) {
 				let participant_index = <BootstrapperCount<T>>::get((cid, cindex))
 					.checked_add(1)
 					.ok_or(Error::<T>::RegistryOverflow)?;
@@ -1187,7 +1185,7 @@ impl<T: Config> Pallet<T> {
 				<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
 				<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Bootstrapper
-			} else if !(<encointer_balances::Pallet<T>>::total_issuance(cid) > 0) {
+			} else if <encointer_balances::Pallet<T>>::total_issuance(cid) <= 0 {
 				return Err(Error::<T>::OnlyBootstrappers)
 			} else if is_reputable {
 				let participant_index = <ReputableCount<T>>::get((cid, cindex))
@@ -1224,7 +1222,7 @@ impl<T: Config> Pallet<T> {
 		participant: &T::AccountId,
 	) -> Result<(), Error<T>> {
 		if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
-			return Err(<Error<T>>::WrongPhaseForUnregistering.into())
+			return Err(<Error<T>>::WrongPhaseForUnregistering)
 		}
 
 		let participant_count = <NewbieCount<T>>::get((cid, cindex));
@@ -1391,7 +1389,7 @@ impl<T: Config> Pallet<T> {
 			"Number of locations for cid {:?} is {:?}", community_ceremony.0, num_locations
 		);
 		if num_locations == 0 {
-			return Err(<Error<T>>::NoLocationsAvailable.into())
+			return Err(<Error<T>>::NoLocationsAvailable)
 		}
 
 		let num_registered_bootstrappers = Self::bootstrapper_count(community_ceremony);
@@ -1455,7 +1453,7 @@ impl<T: Config> Pallet<T> {
 			} else {
 				let current = Self::inactivity_counters(cid).unwrap_or(0);
 				if current >= inactivity_timeout {
-					inactives.push(cid.clone());
+					inactives.push(cid);
 				} else {
 					let new_counter = current + 1;
 					<InactivityCounters<T>>::insert(cid, new_counter);
@@ -1463,7 +1461,7 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 		}
-		return inactives
+		inactives
 	}
 
 	fn purge_community(cid: CommunityIdentifier) {
@@ -1821,7 +1819,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if verified_attestees.is_empty() {
-			return Err(<Error<T>>::NoValidClaims.into())
+			return Err(<Error<T>>::NoValidClaims)
 		}
 
 		let count = <AttestationCount<T>>::get((cid, cindex));

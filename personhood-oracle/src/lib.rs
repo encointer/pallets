@@ -172,7 +172,7 @@ impl<T: Config> Pallet<T> {
 				);
 				continue
 			}
-			if Self::verify_proof_of_attendance(&proof).is_ok() {
+			if Self::verify_proof_of_attendance(proof).is_ok() {
 				c_index_min = min(proof.ceremony_index, c_index_min);
 				n_attested += 1;
 				attested.push(proof.hash())
@@ -203,7 +203,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		ensure!(
 			proof.attendee_signature.verify(
-				&(proof.prover_public.clone(), proof.ceremony_index.clone()).encode()[..],
+				&(proof.prover_public.clone(), proof.ceremony_index).encode()[..],
 				&proof.attendee_public,
 			),
 			Error::<T>::BadSignature

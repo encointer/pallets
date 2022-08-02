@@ -113,7 +113,7 @@ pub mod pallet {
 			match cids_in_bucket.binary_search(&cid) {
 				Ok(_) => (),
 				Err(index) => {
-					cids_in_bucket.insert(index, cid.clone());
+					cids_in_bucket.insert(index, cid);
 					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids_in_bucket);
 				},
 			}
@@ -127,8 +127,12 @@ pub mod pallet {
 			<Bootstrappers<T>>::insert(&cid, &bootstrappers);
 			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
 
-			demurrage.map(|d| <encointer_balances::Pallet<T>>::set_demurrage(&cid, d));
-			nominal_income.map(|i| <NominalIncome<T>>::insert(&cid, i));
+			if let Some(d) = demurrage {
+				<encointer_balances::Pallet<T>>::set_demurrage(&cid, d)
+			}
+			if let Some(i) = nominal_income {
+				<NominalIncome<T>>::insert(&cid, i)
+			}
 
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
@@ -173,7 +177,7 @@ pub mod pallet {
 			match cids.binary_search(&cid) {
 				Ok(_) => (),
 				Err(index) => {
-					cids.insert(index, cid.clone());
+					cids.insert(index, cid);
 					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
 				},
 			}
@@ -441,24 +445,18 @@ impl<T: Config> Pallet<T> {
 		//remove location from locations(cid,geohash)
 		let mut locations = Self::locations(&cid, &geo_hash);
 		let mut locations_len = 0;
-		match locations.binary_search(&location) {
-			Ok(index) => {
-				locations.remove(index);
-				locations_len = locations.len();
-				<Locations<T>>::insert(&cid, &geo_hash, locations);
-			},
-			Err(_) => (),
+		if let Ok(index) = locations.binary_search(&location) {
+			locations.remove(index);
+			locations_len = locations.len();
+			<Locations<T>>::insert(&cid, &geo_hash, locations);
 		}
 		// if the list from above is now empty (community has no more locations in this bucket)
 		// remove cid from cids_by_geohash(geohash)
 		if locations_len == 0 {
 			let mut cids = Self::cids_by_geohash(&geo_hash);
-			match cids.binary_search(&cid) {
-				Ok(index) => {
-					cids.remove(index);
-					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
-				},
-				Err(_) => (),
+			if let Ok(index) = cids.binary_search(&cid) {
+				cids.remove(index);
+				<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
 			}
 		}
 		sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
@@ -493,17 +491,17 @@ impl<T: Config> Pallet<T> {
 
 	fn solar_trip_time(from: &Location, to: &Location) -> u32 {
 		// FIXME: replace by fixpoint implementation within runtime.
-		let d = Pallet::<T>::haversine_distance(&from, &to); //orthodromic distance bewteen points [m]
+		let d = Pallet::<T>::haversine_distance(from, to); //orthodromic distance bewteen points [m]
 
 		// FIXME: this will not panic, but make sure!
 		let dt = (from.lon - to.lon) * 240; //time, the sun-high needs to travel between locations [s]
 		let tflight = d / Self::max_speed_mps(); // time required to travel between locations at MaxSpeedMps [s]
 		let dt: u32 = i64::lossy_from(dt.abs()).saturated_into();
-		tflight.checked_sub(dt).unwrap_or(0)
+		tflight.saturating_sub(dt)
 	}
 
 	fn ensure_cid_exists(cid: &CommunityIdentifier) -> DispatchResult {
-		match Self::community_identifiers().contains(&cid) {
+		match Self::community_identifiers().contains(cid) {
 			true => Ok(()),
 			false => Err(<Error<T>>::CommunityInexistent)?,
 		}
@@ -693,7 +691,7 @@ impl<T: Config> Pallet<T> {
 				));
 			}
 		}
-		return balances
+		balances
 	}
 }
 

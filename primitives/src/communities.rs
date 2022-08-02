@@ -243,7 +243,7 @@ impl CommunityMetadata {
 	pub fn validate(&self) -> Result<(), CommunityMetadataError> {
 		validate_ascii(self.name.as_bytes_or_noop())
 			.map_err(CommunityMetadataError::InvalidAscii)?;
-		validate_ascii(&self.symbol.as_bytes_or_noop())
+		validate_ascii(self.symbol.as_bytes_or_noop())
 			.map_err(CommunityMetadataError::InvalidAscii)?;
 		validate_ipfs_cid(&self.assets).map_err(CommunityMetadataError::InvalidIpfsCid)?;
 
