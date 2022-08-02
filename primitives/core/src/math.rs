@@ -6,9 +6,9 @@ pub trait AbsDiff<T> {
 impl<T: BaseArithmetic + Copy> AbsDiff<T> for T {
 	fn abs_diff(&self, other: T) -> T {
 		if *self > other {
-			return *self - other
+			*self - other
 		} else {
-			return other - *self
+			other - *self
 		}
 	}
 }

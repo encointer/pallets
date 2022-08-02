@@ -70,7 +70,7 @@ fn num_attestations_matches_vote(
 	n_confirmed: u32,
 ) -> bool {
 	participant_attestations
-		.into_iter()
+		.iter()
 		.enumerate()
 		.map(|(i, v)| !(legit_participants.contains(&i)) || v.len() == (n_confirmed - 1) as usize)
 		.all(|item| item)
@@ -169,7 +169,7 @@ fn get_excluded_participants_num_attestations(
 
 	for _ in 0..max_iterations {
 		// if all participants were excluded, exit the loop
-		if participants_to_process.len() == 0 {
+		if participants_to_process.is_empty() {
 			return Ok(excluded_participants)
 		};
 
@@ -200,13 +200,11 @@ fn get_excluded_participants_num_attestations(
 					ExclusionReason::TooFewIncomingAttestations,
 				));
 			}
-		} else {
-			if min_num_outgoing_attestations < threshold_fn(participants_to_process.len()) {
-				maybe_participants_to_exclude_with_reason = Some((
-					&participants_grouped_by_outgoing_attestations.get_or_err(0)?.1,
-					ExclusionReason::TooFewOutgoingAttestations,
-				));
-			}
+		} else if min_num_outgoing_attestations < threshold_fn(participants_to_process.len()) {
+			maybe_participants_to_exclude_with_reason = Some((
+				&participants_grouped_by_outgoing_attestations.get_or_err(0)?.1,
+				ExclusionReason::TooFewOutgoingAttestations,
+			));
 		}
 		if let Some((participants_to_exclude, exclusion_reason)) =
 			maybe_participants_to_exclude_with_reason
@@ -276,12 +274,11 @@ fn group_participants_by_num_incoming_attestations(
 		.into_iter()
 		.map(|p| {
 			participant_attestations
-				.into_iter()
+				.iter()
 				.enumerate()
 				.filter(|(idx, a)| &p != idx && a.contains(&p))
 				.map(|item| item.1.clone())
-				.collect::<Attestations>()
-				.len()
+				.count()
 		})
 		.collect();
 

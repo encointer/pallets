@@ -64,7 +64,7 @@ pub fn is_prime(n: u64) -> bool {
 			break
 		}
 	}
-	return true
+	true
 }
 
 pub fn get_greatest_common_denominator(a: u64, b: u64) -> u64 {

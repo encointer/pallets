@@ -112,10 +112,10 @@ where
 	}
 
 	pub fn get_storage<V: Decode>(&self, key: &[u8]) -> Option<V> {
-		match self.storage.read().get(STORAGE_PREFIX, key) {
-			Some(v) => Some(Decode::decode(&mut v.as_slice()).unwrap()),
-			None => None,
-		}
+		self.storage
+			.read()
+			.get(STORAGE_PREFIX, key)
+			.map(|v| Decode::decode(&mut v.as_slice()).unwrap())
 	}
 
 	pub fn set_storage<V: Encode>(&self, key: &[u8], val: &V) {
@@ -176,7 +176,7 @@ where
 			.map_err(|e| Error::Runtime(e.into()))?;
 
 		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
-			return Ok(self.refresh_reputation_cache(account.clone(), ceremony_info, at)?.reputation)
+			return Ok(self.refresh_reputation_cache(account, ceremony_info, at)?.reputation)
 		}
 
 		if let Some(reputation_cache_value) = self.get_storage::<ReputationCacheValue>(cache_key) {
@@ -185,7 +185,7 @@ where
 			}
 		};
 
-		Ok(self.refresh_reputation_cache(account.clone(), ceremony_info, at)?.reputation)
+		Ok(self.refresh_reputation_cache(account, ceremony_info, at)?.reputation)
 	}
 
 	fn get_aggregated_account_data(

@@ -103,10 +103,10 @@ where
 	}
 
 	pub fn get_storage<V: Decode>(&self, key: &[u8]) -> Option<V> {
-		match self.storage.read().get(STORAGE_PREFIX, key) {
-			Some(v) => Some(Decode::decode(&mut v.as_slice()).unwrap()),
-			None => None,
-		}
+		self.storage
+			.read()
+			.get(STORAGE_PREFIX, key)
+			.map(|v| Decode::decode(&mut v.as_slice()).unwrap())
 	}
 
 	pub fn set_storage<V: Encode>(&self, key: &[u8], val: &V) {

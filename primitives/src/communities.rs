@@ -138,7 +138,7 @@ impl FromStr for CommunityIdentifier {
 		let mut geohash: [u8; 5] = [0u8; 5];
 		let mut digest: [u8; 4] = [0u8; 4];
 
-		geohash.clone_from_slice(&cid[..5].as_bytes());
+		geohash.clone_from_slice(cid[..5].as_bytes());
 		digest.clone_from_slice(&bs58::decode(&cid[5..]).into_vec().map_err(decorate_bs58_err)?);
 
 		Ok(Self { geohash, digest })
@@ -241,11 +241,11 @@ impl CommunityMetadata {
 	/// Only ascii characters are allowed because the character set is sufficient. Furthermore,
 	/// they strictly encode to one byte, which allows length checks.
 	pub fn validate(&self) -> Result<(), CommunityMetadataError> {
-		validate_ascii(&self.name.as_bytes_or_noop())
-			.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+		validate_ascii(self.name.as_bytes_or_noop())
+			.map_err(CommunityMetadataError::InvalidAscii)?;
 		validate_ascii(&self.symbol.as_bytes_or_noop())
-			.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
-		validate_ipfs_cid(&self.assets).map_err(|e| CommunityMetadataError::InvalidIpfsCid(e))?;
+			.map_err(CommunityMetadataError::InvalidAscii)?;
+		validate_ipfs_cid(&self.assets).map_err(CommunityMetadataError::InvalidIpfsCid)?;
 
 		if self.name.len() > 20 {
 			return Err(CommunityMetadataError::TooManyCharactersInName(self.name.len() as u8))
@@ -258,8 +258,7 @@ impl CommunityMetadata {
 		}
 
 		if let Some(u) = &self.url {
-			validate_ascii(u.as_bytes_or_noop())
-				.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+			validate_ascii(u.as_bytes_or_noop()).map_err(CommunityMetadataError::InvalidAscii)?;
 			if u.len() >= 20 {
 				return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8))
 			}

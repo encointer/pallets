@@ -120,7 +120,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 			let amount = Self::balance(cid, &from);
-			Self::do_transfer(cid, from.clone(), dest, amount)?;
+			Self::do_transfer(cid, from, dest, amount)?;
 			Ok(().into())
 		}
 	}

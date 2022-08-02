@@ -103,8 +103,7 @@ pub mod pallet {
 
 			// Get this pallet's runtime configuration specific module index.
 			let sender_pallet_sybil_gate_index = <T as frame_system::Config>::PalletInfo::index::<Self>()
-				.map(|i| i.checked_into::<u8>())
-				.flatten()
+				.and_then(|i| i.checked_into::<u8>())
 				.ok_or("[EncointerSybilGate]: PalletIndex does not fix into u8. Consider giving it a smaller index.")?;
 
 			// Get the weight of the response dynamically
@@ -170,8 +169,8 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
 
-			let account = <PendingRequests<T>>::take(&request_hash)
-				.ok_or_else(|| <Error<T>>::UnexpectedResponse)?;
+			let account =
+				<PendingRequests<T>>::take(&request_hash).ok_or(<Error<T>>::UnexpectedResponse)?;
 
 			debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
 

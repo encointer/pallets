@@ -47,7 +47,7 @@ pub struct BusinessData {
 
 impl BusinessData {
 	pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
-		return BusinessData { url, last_oid }
+		BusinessData { url, last_oid }
 	}
 }
 
@@ -62,6 +62,6 @@ pub struct OfferingData {
 
 impl OfferingData {
 	pub fn new(url: PalletString) -> OfferingData {
-		return OfferingData { url }
+		OfferingData { url }
 	}
 }
