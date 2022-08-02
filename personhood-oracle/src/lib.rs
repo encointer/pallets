@@ -121,7 +121,7 @@ pub mod pallet {
 				Err(e) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentFailure(
 					request_hash,
 					para_id,
-					e,
+					Box::new(e),
 				)),
 			}
 
@@ -137,7 +137,7 @@ pub mod pallet {
 		/// Successfully sent PersonhoodUniquenessRating response [request_hash, parachain]
 		PersonhoodUniquenessRatingSentSuccess(H256, u32),
 		/// Failed to send PersonhoodUniquenessRating response [request_hash, parachain]
-		PersonhoodUniquenessRatingSentFailure(H256, u32, XcmError),
+		PersonhoodUniquenessRatingSentFailure(H256, u32, Box<XcmError>),
 	}
 
 	#[pallet::error]
