@@ -116,6 +116,7 @@ pub mod pallet {
 			);
 
 			BusinessRegistry::<T>::remove(cid, &sender);
+			#[allow(deprecated)]
 			OfferingRegistry::<T>::remove_prefix(
 				BusinessIdentifier::new(cid, sender.clone()),
 				None,

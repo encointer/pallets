@@ -380,6 +380,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn purge_balances(cid: CommunityIdentifier) {
+		#[allow(deprecated)]
 		<Balance<T>>::remove_prefix(cid, None);
 	}
 }

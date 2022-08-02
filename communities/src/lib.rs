@@ -464,6 +464,7 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
+		#[allow(deprecated)]
 		<Locations<T>>::remove_prefix(cid, None);
 
 		Bootstrappers::<T>::remove(cid);
