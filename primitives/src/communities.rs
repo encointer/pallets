@@ -49,7 +49,6 @@ pub type NominalIncome = I64F64;
 pub type MinSolarTripTimeType = u32;
 pub type MaxSpeedMpsType = u32;
 
-
 #[derive(
 	Encode,
 	Decode,
@@ -67,7 +66,7 @@ pub type MaxSpeedMpsType = u32;
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum RangeError {
 	LessThanZero,
-	LessThanOrEqualZero
+	LessThanOrEqualZero,
 }
 
 /// Ensure that the demurrage is in a sane range.
@@ -148,7 +147,14 @@ impl CommunityIdentifier {
 
 	pub fn as_array(self) -> [u8; 9] {
 		let mut arr: [u8; 9] = Default::default();
-    	arr.copy_from_slice(&self.geohash.iter().cloned().chain(self.digest.iter().cloned()).collect::<Vec<u8>>()[..]);
+		arr.copy_from_slice(
+			&self
+				.geohash
+				.iter()
+				.cloned()
+				.chain(self.digest.iter().cloned())
+				.collect::<Vec<u8>>()[..],
+		);
 		arr
 	}
 }
@@ -363,7 +369,7 @@ mod tests {
 		common::IpfsValidationError,
 		communities::{
 			validate_demurrage, validate_nominal_income, CommunityIdentifier, CommunityMetadata,
-			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, RangeError
+			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, RangeError,
 		},
 	};
 	use sp_std::str::FromStr;
@@ -376,7 +382,10 @@ mod tests {
 
 	#[test]
 	fn nominal_income_smaller_0_fails() {
-		assert_eq!(validate_nominal_income(&NominalIncome::from_num(-1)), Err(RangeError::LessThanOrEqualZero));
+		assert_eq!(
+			validate_nominal_income(&NominalIncome::from_num(-1)),
+			Err(RangeError::LessThanOrEqualZero)
+		);
 	}
 
 	#[test]

@@ -34,9 +34,7 @@ use encointer_ceremonies_assignment::{
 use encointer_meetup_validation::*;
 use encointer_primitives::{
 	balances::BalanceType,
-	ceremonies::{
-		*,
-	},
+	ceremonies::*,
 	communities::{CommunityIdentifier, Location, NominalIncome},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 	RandomNumberGenerator,
@@ -136,8 +134,7 @@ pub mod pallet {
 				ensure!(sender == p.prover_public, Error::<T>::WrongProofSubject);
 				ensure!(p.ceremony_index < cindex, Error::<T>::ProofAcausal);
 				ensure!(
-					p.ceremony_index >=
-						cindex.saturating_sub(Self::reputation_lifetime()),
+					p.ceremony_index >= cindex.saturating_sub(Self::reputation_lifetime()),
 					Error::<T>::ProofOutdated
 				);
 				ensure!(
@@ -1775,10 +1772,7 @@ impl<T: Config> Pallet<T> {
 	fn gather_meetup_data(
 		cid: &CommunityIdentifier,
 		participant: &T::AccountId,
-	) -> Result<
-		(CeremonyIndexType, MeetupIndexType, Vec<T::AccountId>, Location, T::Moment),
-		Error<T>,
-	> {
+	) -> Result<MeetupData<T::AccountId, T::Moment>, Error<T>> {
 		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 
 		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)

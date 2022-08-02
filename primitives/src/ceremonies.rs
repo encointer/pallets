@@ -33,6 +33,8 @@ pub type InactivityTimeoutType = u32;
 pub type EndorsementTicketsPerBootstrapperType = u8;
 pub type ReputationLifetimeType = u32;
 pub type MeetupTimeOffsetType = i32;
+pub type MeetupData<AccountId, Moment> =
+	(CeremonyIndexType, MeetupIndexType, Vec<AccountId>, Location, Moment);
 
 use crate::scheduler::CeremonyPhaseType;
 #[cfg(not(feature = "std"))]
