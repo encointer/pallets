@@ -1657,7 +1657,7 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		return Some(result)
+		Some(result)
 	}
 
 	fn verify_attendee_signature(

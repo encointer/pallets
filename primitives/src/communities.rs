@@ -50,20 +50,41 @@ pub type NominalIncome = I64F64;
 pub type MinSolarTripTimeType = u32;
 pub type MaxSpeedMpsType = u32;
 
+
+#[derive(
+	Encode,
+	Decode,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum RangeError {
+	LessThanZero,
+	LessThanOrEqualZero
+}
+
 /// Ensure that the demurrage is in a sane range.
 /// Must be positive for demuragge to decrease balances
 /// zero is legit as it effectively disables demurrage
-pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), ()> {
+pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	if demurrage < &Demurrage::from_num(0) {
-		return Err(())
+		return Err(RangeError::LessThanZero)
 	}
 	Ok(())
 }
 
 /// Ensure that the nominal is in a sane range.
-pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()> {
+pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), RangeError> {
 	if nominal_income <= &NominalIncome::from_num(0) {
-		return Err(())
+		return Err(RangeError::LessThanOrEqualZero)
 	}
 	Ok(())
 }
@@ -341,7 +362,7 @@ mod tests {
 		common::IpfsValidationError,
 		communities::{
 			validate_demurrage, validate_nominal_income, CommunityIdentifier, CommunityMetadata,
-			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome,
+			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, RangeError
 		},
 	};
 	use sp_std::str::FromStr;
@@ -349,12 +370,12 @@ mod tests {
 
 	#[test]
 	fn demurrage_smaller_0_fails() {
-		assert_eq!(validate_demurrage(&Demurrage::from_num(-1)), Err(()));
+		assert_eq!(validate_demurrage(&Demurrage::from_num(-1)), Err(RangeError::LessThanZero));
 	}
 
 	#[test]
 	fn nominal_income_smaller_0_fails() {
-		assert_eq!(validate_nominal_income(&NominalIncome::from_num(-1)), Err(()));
+		assert_eq!(validate_nominal_income(&NominalIncome::from_num(-1)), Err(RangeError::LessThanOrEqualZero));
 	}
 
 	#[test]
