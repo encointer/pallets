@@ -1256,33 +1256,26 @@ impl<T: Config> Pallet<T> {
 			<NewbieIndex<T>>::contains_key((cid, cindex), &sender)
 	}
 
+	#[allow(deprecated)]
 	fn purge_community_ceremony_internal(cc: CommunityCeremony) {
 		let cid = cc.1;
 		let cindex = cc.0;
 
 		info!(target: LOG, "purging ceremony index {} history for {:?}", cindex, cid);
 
-		#[allow(deprecated)]
 		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
-		#[allow(deprecated)]
 		<BootstrapperIndex<T>>::remove_prefix(cc, None);
 		<BootstrapperCount<T>>::remove(cc);
 
-		#[allow(deprecated)]
 		<ReputableRegistry<T>>::remove_prefix(cc, None);
-		#[allow(deprecated)]
 		<ReputableIndex<T>>::remove_prefix(cc, None);
 		<ReputableCount<T>>::remove(cc);
 
-		#[allow(deprecated)]
 		<EndorseeRegistry<T>>::remove_prefix(cc, None);
-		#[allow(deprecated)]
 		<EndorseeIndex<T>>::remove_prefix(cc, None);
 		<EndorseeCount<T>>::remove(cc);
 
-		#[allow(deprecated)]
 		<NewbieRegistry<T>>::remove_prefix(cc, None);
-		#[allow(deprecated)]
 		<NewbieIndex<T>>::remove_prefix(cc, None);
 		<NewbieCount<T>>::remove(cc);
 
@@ -1290,23 +1283,17 @@ impl<T: Config> Pallet<T> {
 
 		Assignments::<T>::remove(cc);
 
-		#[allow(deprecated)]
 		<ParticipantReputation<T>>::remove_prefix(cc, None);
 
-		#[allow(deprecated)]
 		<Endorsees<T>>::remove_prefix(cc, None);
 		<EndorseesCount<T>>::remove(cc);
 		<MeetupCount<T>>::remove(cc);
 
-		#[allow(deprecated)]
 		<AttestationRegistry<T>>::remove_prefix(cc, None);
-		#[allow(deprecated)]
 		<AttestationIndex<T>>::remove_prefix(cc, None);
 		<AttestationCount<T>>::remove(cc);
 
-		#[allow(deprecated)]
 		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
-		#[allow(deprecated)]
 		<IssuedRewards<T>>::remove_prefix(cc, None);
 
 		Self::deposit_event(Event::CommunityCeremonyHistoryPurged(cindex, cid));
