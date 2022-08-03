@@ -18,7 +18,6 @@ use codec::Codec;
 use encointer_balances_tx_payment_rpc_runtime_api::{
 	BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi, Error,
 };
-//use encointer_rpc::Error;
 use jsonrpsee::{
 	core::{Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
