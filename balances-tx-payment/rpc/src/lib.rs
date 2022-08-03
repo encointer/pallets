@@ -53,20 +53,12 @@ where
 pub struct BalancesTxPaymentRpc<C, P, Q, R, S> {
 	client: Arc<C>,
 	transaction_payment: P,
-	_marker: std::marker::PhantomData<Q>,
-	_marker2: std::marker::PhantomData<R>,
-	_marker3: std::marker::PhantomData<S>,
+	_marker: std::marker::PhantomData<(Q, R, S)>,
 }
 
 impl<C, P, Q, R, S> BalancesTxPaymentRpc<C, P, Q, R, S> {
 	pub fn new(client: Arc<C>, transaction_payment: P) -> Self {
-		BalancesTxPaymentRpc {
-			client,
-			transaction_payment,
-			_marker: Default::default(),
-			_marker2: Default::default(),
-			_marker3: Default::default(),
-		}
+		BalancesTxPaymentRpc { client, transaction_payment, _marker: Default::default() }
 	}
 }
 
