@@ -425,6 +425,7 @@ pub mod pallet {
 	}
 
 	#[cfg(feature = "std")]
+	#[allow(clippy::derivable_impls)]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
 			Self { min_solar_trip_time_s: Default::default(), max_speed_mps: Default::default() }

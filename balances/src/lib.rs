@@ -144,6 +144,7 @@ pub mod pallet {
 	}
 
 	#[cfg(feature = "std")]
+	#[allow(clippy::derivable_impls)]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
 			Self { fee_conversion_factor: Default::default() }
