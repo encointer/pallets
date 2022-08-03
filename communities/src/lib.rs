@@ -419,10 +419,16 @@ pub mod pallet {
 	pub(super) type MaxSpeedMps<T: Config> = StorageValue<_, MaxSpeedMpsType, ValueQuery>;
 
 	#[pallet::genesis_config]
-	#[derive(Default)]
 	pub struct GenesisConfig {
 		pub min_solar_trip_time_s: MinSolarTripTimeType,
 		pub max_speed_mps: MaxSpeedMpsType,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { min_solar_trip_time_s: Default::default(), max_speed_mps: Default::default() }
+		}
 	}
 
 	#[pallet::genesis_build]

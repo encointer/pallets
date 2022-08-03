@@ -126,7 +126,6 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
-	#[derive(Default)]
 	pub struct GenesisConfig {
 		/// Example parameter tuning for the fee-conversion
 		///
@@ -142,6 +141,13 @@ pub mod pallet {
 		///
 		/// FCF = 0.01 / (20 * 5*10^-12 [KKSM]) = 0.01 / (20 * 5 * 10e-12) = 100_000
 		pub fee_conversion_factor: FeeConversionFactorType,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { fee_conversion_factor: Default::default() }
+		}
 	}
 
 	#[pallet::genesis_build]
