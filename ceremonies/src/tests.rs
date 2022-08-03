@@ -734,8 +734,6 @@ fn claim_rewards_works() {
 
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 2).into()));
 
-		let _num_events = get_num_events::<TestRuntime>();
-
 		assert!(event_deposited::<TestRuntime>(
 			BalancesEvent::Issued(
 				cid,
@@ -978,7 +976,6 @@ fn claim_rewards_error_results_in_meetup_marked_as_completed() {
 		register_alice_bob_ferdie(cid);
 		register_charlie_dave_eve(cid);
 
-		let _loc = Location::default();
 		Assignments::<TestRuntime>::insert(
 			(cid, cindex),
 			Assignment {
@@ -988,7 +985,6 @@ fn claim_rewards_error_results_in_meetup_marked_as_completed() {
 				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
 			},
 		);
-		let _time = correct_meetup_time(&cid, 1);
 
 		run_to_next_phase();
 		// Assigning
@@ -1428,7 +1424,7 @@ fn registering_in_attestation_phase_works() {
 
 		run_to_next_phase();
 		run_to_next_phase();
-		register(yran.clone(), cid, None).ok();
+		register(yran.clone(), cid, None).unwrap();
 
 		assert!(NewbieIndex::<TestRuntime>::contains_key((cid, cindex + 1), &yran));
 	});
