@@ -30,5 +30,5 @@ fn caching_works() {
 	communities.set_storage(CIDS_KEY, &cid_names);
 	communities.set_storage(CACHE_DIRTY_KEY, &false);
 	assert!(!communities.cache_dirty());
-	assert_eq!(communities.get_storage(CIDS_KEY), Some(cid_names));
+	assert_eq!(communities.get_storage(CIDS_KEY).unwrap(), Some(cid_names));
 }
