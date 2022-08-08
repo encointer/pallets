@@ -276,11 +276,9 @@ impl<T: Config> Pallet<T> {
 			if Self::resync_and_set_next_phase_timestamp(next).is_err() {
 				warn!(target: LOG, "resync ceremony phase failed");
 			};
-		} else if Self::next_phase_timestamp() < now {
-			if Self::progress_phase().is_err() {
-				warn!(target: LOG, "progress ceremony phase failed");
-			};
-		}
+		} else if Self::next_phase_timestamp() < now && Self::progress_phase().is_err() {
+			warn!(target: LOG, "progress ceremony phase failed");
+		};
 	}
 }
 

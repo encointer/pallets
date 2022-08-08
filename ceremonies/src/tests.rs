@@ -294,26 +294,6 @@ fn fully_attest_meetup(
 	}
 }
 
-fn make_reputable_and_get_proof(
-	p: &sr25519::Pair,
-	cid: CommunityIdentifier,
-	cindex: CeremonyIndexType,
-) -> TestProofOfAttendance {
-	EncointerBalances::issue(cid, &account_id(p), NominalIncome::from_num(1));
-	EncointerCeremonies::fake_reputation(
-		(cid, cindex - 1),
-		&account_id(&p),
-		Reputation::VerifiedUnlinked,
-	);
-	let proof = prove_attendance(account_id(p), cid, cindex - 1, p);
-	proof
-}
-
-fn register_as_reputable(p: &sr25519::Pair, cid: CommunityIdentifier, cindex: CeremonyIndexType) {
-	let proof = make_reputable_and_get_proof(p, cid, cindex);
-	register(account_id(p), cid, Some(proof));
-}
-
 // unit tests ////////////////////////////////////////
 
 #[test]
@@ -754,8 +734,6 @@ fn claim_rewards_works() {
 
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 2).into()));
 
-		let num_events = get_num_events::<TestRuntime>();
-
 		assert!(event_deposited::<TestRuntime>(
 			BalancesEvent::Issued(
 				cid,
@@ -998,7 +976,6 @@ fn claim_rewards_error_results_in_meetup_marked_as_completed() {
 		register_alice_bob_ferdie(cid);
 		register_charlie_dave_eve(cid);
 
-		let loc = Location::default();
 		Assignments::<TestRuntime>::insert(
 			(cid, cindex),
 			Assignment {
@@ -1008,7 +985,6 @@ fn claim_rewards_error_results_in_meetup_marked_as_completed() {
 				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
 			},
 		);
-		let time = correct_meetup_time(&cid, 1);
 
 		run_to_next_phase();
 		// Assigning
@@ -1448,7 +1424,7 @@ fn registering_in_attestation_phase_works() {
 
 		run_to_next_phase();
 		run_to_next_phase();
-		register(yran.clone(), cid, None);
+		register(yran.clone(), cid, None).unwrap();
 
 		assert!(NewbieIndex::<TestRuntime>::contains_key((cid, cindex + 1), &yran));
 	});

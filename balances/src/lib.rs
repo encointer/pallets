@@ -120,7 +120,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 			let amount = Self::balance(cid, &from);
-			Self::do_transfer(cid, from.clone(), dest, amount)?;
+			Self::do_transfer(cid, from, dest, amount)?;
 			Ok(().into())
 		}
 	}
@@ -144,6 +144,7 @@ pub mod pallet {
 	}
 
 	#[cfg(feature = "std")]
+	#[allow(clippy::derivable_impls)]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
 			Self { fee_conversion_factor: Default::default() }
@@ -386,6 +387,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn purge_balances(cid: CommunityIdentifier) {
+		#[allow(deprecated)]
 		<Balance<T>>::remove_prefix(cid, None);
 	}
 }

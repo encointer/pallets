@@ -16,7 +16,6 @@
 
 use bs58;
 use codec::{Decode, Encode, MaxEncodedLen};
-use concat_arrays::concat_arrays;
 use crc::{Crc, CRC_32_CKSUM};
 use ep_core::fixed::types::I64F64;
 use geohash::GeoHash as GeohashGeneric;
@@ -50,20 +49,40 @@ pub type NominalIncome = I64F64;
 pub type MinSolarTripTimeType = u32;
 pub type MaxSpeedMpsType = u32;
 
+#[derive(
+	Encode,
+	Decode,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum RangeError {
+	LessThanZero,
+	LessThanOrEqualZero,
+}
+
 /// Ensure that the demurrage is in a sane range.
 /// Must be positive for demuragge to decrease balances
 /// zero is legit as it effectively disables demurrage
-pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), ()> {
+pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	if demurrage < &Demurrage::from_num(0) {
-		return Err(())
+		return Err(RangeError::LessThanZero)
 	}
 	Ok(())
 }
 
 /// Ensure that the nominal is in a sane range.
-pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), ()> {
+pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), RangeError> {
 	if nominal_income <= &NominalIncome::from_num(0) {
-		return Err(())
+		return Err(RangeError::LessThanOrEqualZero)
 	}
 	Ok(())
 }
@@ -127,7 +146,16 @@ impl CommunityIdentifier {
 	}
 
 	pub fn as_array(self) -> [u8; 9] {
-		concat_arrays!(self.geohash, self.digest)
+		let mut arr: [u8; 9] = Default::default();
+		arr.copy_from_slice(
+			&self
+				.geohash
+				.iter()
+				.cloned()
+				.chain(self.digest.iter().cloned())
+				.collect::<Vec<u8>>()[..],
+		);
+		arr
 	}
 }
 
@@ -138,7 +166,7 @@ impl FromStr for CommunityIdentifier {
 		let mut geohash: [u8; 5] = [0u8; 5];
 		let mut digest: [u8; 4] = [0u8; 4];
 
-		geohash.clone_from_slice(&cid[..5].as_bytes());
+		geohash.clone_from_slice(cid[..5].as_bytes());
 		digest.clone_from_slice(&bs58::decode(&cid[5..]).into_vec().map_err(decorate_bs58_err)?);
 
 		Ok(Self { geohash, digest })
@@ -241,11 +269,11 @@ impl CommunityMetadata {
 	/// Only ascii characters are allowed because the character set is sufficient. Furthermore,
 	/// they strictly encode to one byte, which allows length checks.
 	pub fn validate(&self) -> Result<(), CommunityMetadataError> {
-		validate_ascii(&self.name.as_bytes_or_noop())
-			.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
-		validate_ascii(&self.symbol.as_bytes_or_noop())
-			.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
-		validate_ipfs_cid(&self.assets).map_err(|e| CommunityMetadataError::InvalidIpfsCid(e))?;
+		validate_ascii(self.name.as_bytes_or_noop())
+			.map_err(CommunityMetadataError::InvalidAscii)?;
+		validate_ascii(self.symbol.as_bytes_or_noop())
+			.map_err(CommunityMetadataError::InvalidAscii)?;
+		validate_ipfs_cid(&self.assets).map_err(CommunityMetadataError::InvalidIpfsCid)?;
 
 		if self.name.len() > 20 {
 			return Err(CommunityMetadataError::TooManyCharactersInName(self.name.len() as u8))
@@ -258,8 +286,7 @@ impl CommunityMetadata {
 		}
 
 		if let Some(u) = &self.url {
-			validate_ascii(u.as_bytes_or_noop())
-				.map_err(|e| CommunityMetadataError::InvalidAscii(e))?;
+			validate_ascii(u.as_bytes_or_noop()).map_err(CommunityMetadataError::InvalidAscii)?;
 			if u.len() >= 20 {
 				return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8))
 			}
@@ -342,7 +369,7 @@ mod tests {
 		common::IpfsValidationError,
 		communities::{
 			validate_demurrage, validate_nominal_income, CommunityIdentifier, CommunityMetadata,
-			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome,
+			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, RangeError,
 		},
 	};
 	use sp_std::str::FromStr;
@@ -350,12 +377,15 @@ mod tests {
 
 	#[test]
 	fn demurrage_smaller_0_fails() {
-		assert_eq!(validate_demurrage(&Demurrage::from_num(-1)), Err(()));
+		assert_eq!(validate_demurrage(&Demurrage::from_num(-1)), Err(RangeError::LessThanZero));
 	}
 
 	#[test]
 	fn nominal_income_smaller_0_fails() {
-		assert_eq!(validate_nominal_income(&NominalIncome::from_num(-1)), Err(()));
+		assert_eq!(
+			validate_nominal_income(&NominalIncome::from_num(-1)),
+			Err(RangeError::LessThanOrEqualZero)
+		);
 	}
 
 	#[test]

@@ -27,7 +27,7 @@ jobs:
         check: [ cargo build --release,
                  cargo test --all --features runtime-benchmarks,
                  cargo fmt --all -- --check,
-          #                 cargo clippy -- -D warnings Todo: #59
+                 cargo clippy -- -D warnings
         ]
     steps:
       - uses: actions/checkout@v2

@@ -84,7 +84,7 @@ pub struct CallMetadata {
 
 impl CallMetadata {
 	pub fn new(pallet_index: u8, call_index: u8, require_weight_at_most: u64) -> Self {
-		return Self { pallet_index, call_index, require_weight_at_most }
+		Self { pallet_index, call_index, require_weight_at_most }
 	}
 
 	pub fn weight(&self) -> u64 {
@@ -97,7 +97,7 @@ impl CallMetadata {
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum SybilResponse {
-	Faucet = 1,
+	Faucet = 1_isize,
 }
 
 impl Default for SybilResponse {
@@ -159,7 +159,7 @@ impl PersonhoodUniquenessRating {
 	}
 
 	pub fn as_ratio<F: Fixed>(&self) -> F {
-		return F::from_num(self.attested)
+		F::from_num(self.attested)
 			.checked_div(F::from_num(self.last_n_ceremonies))
 			.unwrap_or_default()
 	}
