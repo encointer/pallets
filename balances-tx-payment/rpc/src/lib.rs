@@ -25,7 +25,7 @@ use jsonrpsee::{
 };
 pub use pallet_transaction_payment::RuntimeDispatchInfo;
 use pallet_transaction_payment::{FeeDetails, InclusionFee};
-use pallet_transaction_payment_rpc::TransactionPaymentApiServer;
+use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
@@ -50,21 +50,20 @@ where
 	) -> RpcResult<FeeDetails<NumberOrHex>>;
 }
 
-pub struct BalancesTxPaymentRpc<C, P, Q, R, S> {
+pub struct BalancesTxPaymentRpc<C, Q, R, S> {
 	client: Arc<C>,
-	transaction_payment: P,
 	_marker: std::marker::PhantomData<(Q, R, S)>,
 }
 
-impl<C, P, Q, R, S> BalancesTxPaymentRpc<C, P, Q, R, S> {
-	pub fn new(client: Arc<C>, transaction_payment: P) -> Self {
-		BalancesTxPaymentRpc { client, transaction_payment, _marker: Default::default() }
+impl<C, Q, R, S> BalancesTxPaymentRpc<C, Q, R, S> {
+	pub fn new(client: Arc<C>) -> Self {
+		BalancesTxPaymentRpc { client, _marker: Default::default() }
 	}
 }
 
-impl<C, P, Block, AssetId, Balance, AssetBalance>
+impl<C, Block, AssetId, Balance, AssetBalance>
 	BalancesTxPaymentApiServer<<Block as BlockT>::Hash, AssetId>
-	for BalancesTxPaymentRpc<C, P, Block, Balance, AssetBalance>
+	for BalancesTxPaymentRpc<C, Block, Balance, AssetBalance>
 where
 	AssetId: 'static + Clone + Copy + Encode + Decode + Send + Sync + PartialEq,
 	AssetBalance: 'static
@@ -78,9 +77,9 @@ where
 		+ MaybeDisplay
 		+ Copy,
 	Block: BlockT,
-	P: TransactionPaymentApiServer<<Block as BlockT>::Hash, RuntimeDispatchInfo<Balance>>,
 	C: ProvideRuntimeApi<Block> + HeaderBackend<Block> + Send + Sync + 'static,
 	C::Api: BalancesTxPaymentApiRuntimeApi<Block, Balance, AssetId, AssetBalance>,
+	C::Api: TransactionPaymentRuntimeApi<Block, Balance>,
 	Balance:
 		Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + Send + Sync + 'static + From<u128>,
 {
@@ -91,10 +90,24 @@ where
 		at: Option<Block::Hash>,
 	) -> RpcResult<FeeDetails<NumberOrHex>> {
 		let api = self.client.runtime_api();
-
-		let balance_fee_details = self.transaction_payment.query_fee_details(encoded_xt, at)?;
-
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+		let encoded_len = encoded_xt.len() as u32;
+
+		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| {
+			CallError::Custom(ErrorObject::owned(
+				Error::DecodeError.into(),
+				"Unable to query fee details.",
+				Some(format!("{:?}", e)),
+			))
+		})?;
+		let fee_details = api.query_fee_details(&at, uxt, encoded_len).map_err(|e| {
+			CallError::Custom(ErrorObject::owned(
+				Error::RuntimeError.into(),
+				"Unable to query fee details.",
+				Some(e.to_string()),
+			))
+		})?;
 
 		let try_into_rpc_balance = |value: AssetBalance| {
 			value.try_into().map_err(|_| {
@@ -107,13 +120,9 @@ where
 		};
 
 		Ok(FeeDetails {
-			inclusion_fee: if let Some(inclusion_fee) = balance_fee_details.inclusion_fee {
+			inclusion_fee: if let Some(inclusion_fee) = fee_details.inclusion_fee {
 				let base_fee = api
-					.balance_to_asset_balance(
-						&at,
-						inclusion_fee.base_fee.into_u256().as_u128().into(),
-						asset_id,
-					)
+					.balance_to_asset_balance(&at, inclusion_fee.base_fee, asset_id)
 					.map_err(|e| {
 						CallError::Custom(ErrorObject::owned(
 							Error::RuntimeError.into(),
@@ -130,11 +139,7 @@ where
 					})?;
 
 				let len_fee = api
-					.balance_to_asset_balance(
-						&at,
-						inclusion_fee.len_fee.into_u256().as_u128().into(),
-						asset_id,
-					)
+					.balance_to_asset_balance(&at, inclusion_fee.len_fee, asset_id)
 					.map_err(|e| {
 						CallError::Custom(ErrorObject::owned(
 							Error::RuntimeError.into(),
@@ -151,11 +156,7 @@ where
 					})?;
 
 				let adjusted_weight_fee = api
-					.balance_to_asset_balance(
-						&at,
-						inclusion_fee.adjusted_weight_fee.into_u256().as_u128().into(),
-						asset_id,
-					)
+					.balance_to_asset_balance(&at, inclusion_fee.adjusted_weight_fee, asset_id)
 					.map_err(|e| {
 						CallError::Custom(ErrorObject::owned(
 							Error::RuntimeError.into(),

@@ -27,12 +27,15 @@ use sp_std::vec::Vec;
 pub enum Error {
 	/// The call to runtime failed.
 	RuntimeError,
+	/// Decode Error
+	DecodeError,
 }
 
 impl From<Error> for i32 {
 	fn from(e: Error) -> i32 {
 		match e {
 			Error::RuntimeError => 1,
+			Error::DecodeError => 2,
 		}
 	}
 }
