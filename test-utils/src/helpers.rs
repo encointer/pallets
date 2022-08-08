@@ -53,7 +53,7 @@ where
 	<Runtime as frame_system::Config>::Origin: OriginTrait<AccountId = AccountId>,
 {
 	let bs: Vec<AccountId> = custom_bootstrappers
-		.unwrap_or_else(|| bootstrappers())
+		.unwrap_or_else(bootstrappers)
 		.into_iter()
 		.map(|b| account_id(&b))
 		.collect();
@@ -63,7 +63,7 @@ where
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };
 	encointer_communities::Pallet::<Runtime>::new_community(
 		Runtime::Origin::signed(prime.clone()),
-		location.clone(),
+		location,
 		bs.clone(),
 		Default::default(),
 		None,
@@ -106,7 +106,7 @@ pub fn event_deposited<T: frame_system::Config>(desired_event: T::Event) -> bool
 			return true
 		}
 	}
-	return false
+	false
 }
 
 pub fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: DispatchError) {
@@ -115,5 +115,5 @@ pub fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: Dispatc
 
 pub fn almost_eq(a: u128, b: u128, delta: u128) -> bool {
 	let diff = if a > b { a - b } else { b - a };
-	return diff < delta
+	diff < delta
 }

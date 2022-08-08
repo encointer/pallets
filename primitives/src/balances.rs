@@ -44,7 +44,7 @@ pub type Demurrage = I64F64;
 pub type FeeConversionFactorType = u128;
 
 #[derive(
-	Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, TypeInfo, MaxEncodedLen,
+	Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]

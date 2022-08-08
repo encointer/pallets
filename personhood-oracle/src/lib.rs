@@ -121,7 +121,7 @@ pub mod pallet {
 				Err(e) => Self::deposit_event(Event::PersonhoodUniquenessRatingSentFailure(
 					request_hash,
 					para_id,
-					e,
+					Box::new(e),
 				)),
 			}
 
@@ -137,7 +137,7 @@ pub mod pallet {
 		/// Successfully sent PersonhoodUniquenessRating response [request_hash, parachain]
 		PersonhoodUniquenessRatingSentSuccess(H256, u32),
 		/// Failed to send PersonhoodUniquenessRating response [request_hash, parachain]
-		PersonhoodUniquenessRatingSentFailure(H256, u32, XcmError),
+		PersonhoodUniquenessRatingSentFailure(H256, u32, Box<XcmError>),
 	}
 
 	#[pallet::error]
@@ -172,7 +172,7 @@ impl<T: Config> Pallet<T> {
 				);
 				continue
 			}
-			if Self::verify_proof_of_attendance(&proof).is_ok() {
+			if Self::verify_proof_of_attendance(proof).is_ok() {
 				c_index_min = min(proof.ceremony_index, c_index_min);
 				n_attested += 1;
 				attested.push(proof.hash())
@@ -203,7 +203,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		ensure!(
 			proof.attendee_signature.verify(
-				&(proof.prover_public.clone(), proof.ceremony_index.clone()).encode()[..],
+				&(proof.prover_public.clone(), proof.ceremony_index).encode()[..],
 				&proof.attendee_public,
 			),
 			Error::<T>::BadSignature

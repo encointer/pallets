@@ -33,6 +33,8 @@ pub type InactivityTimeoutType = u32;
 pub type EndorsementTicketsPerBootstrapperType = u8;
 pub type ReputationLifetimeType = u32;
 pub type MeetupTimeOffsetType = i32;
+pub type MeetupData<AccountId, Moment> =
+	(CeremonyIndexType, MeetupIndexType, Vec<AccountId>, Location, Moment);
 
 use crate::scheduler::CeremonyPhaseType;
 #[cfg(not(feature = "std"))]
@@ -87,6 +89,7 @@ pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
 }
 
 impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Moment> {
+	#[allow(clippy::too_many_arguments)]
 	pub fn new_signed(
 		claimant_public: AccountId,
 		ceremony_index: CeremonyIndexType,

@@ -47,7 +47,7 @@ impl<T> RandomPermutation for Vec<T> {
 		let mut input = self;
 
 		if input.is_empty() {
-			return None
+			None
 		} else {
 			let size = input.len();
 			let mut r = Vec::with_capacity(size);
@@ -56,8 +56,8 @@ impl<T> RandomPermutation for Vec<T> {
 				// swap remove is O(1)
 				r.push(input.swap_remove(random.pick_usize(size - i)));
 			}
-			return Some(r)
-		};
+			Some(r)
+		}
 	}
 }
 

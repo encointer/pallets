@@ -55,7 +55,7 @@ pub fn generate_assignment_function_params<Hashing: Hash>(
 			skip_count += 1; // safe; skip_count <= 200;
 		}
 	}
-	return AssignmentParams { m: m as u64, s1: s1 as u64, s2: s2 as u64 }
+	AssignmentParams { m: m as u64, s1: s1 as u64, s2: s2 as u64 }
 }
 
 // Todo add documentation to this function.
@@ -96,12 +96,11 @@ pub fn assignment_fn_inverse(
 	assignment_count: u64,
 	participant_count: u64,
 ) -> Option<Vec<ParticipantIndexType>> {
-	if assignment_count <= 0 {
+	if assignment_count == 0 {
 		return Some(vec![])
 	}
 
-	let mut max_index =
-		assignment_params.m.checked_sub(meetup_index).unwrap_or(0) / assignment_count;
+	let mut max_index = assignment_params.m.saturating_sub(meetup_index) / assignment_count;
 	let mut result: Vec<ParticipantIndexType> = Vec::with_capacity(max_index as usize);
 	// ceil
 	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(assignment_count as i64) != 0 {
@@ -146,7 +145,7 @@ fn t3(
 		.checked_mul(t2)?
 		.checked_rem_euclid(params.m as i64)?;
 
-	return Some(t3 as u64)
+	Some(t3 as u64)
 }
 
 pub fn meetup_index(

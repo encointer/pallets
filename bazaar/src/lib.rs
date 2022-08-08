@@ -116,6 +116,7 @@ pub mod pallet {
 			);
 
 			BusinessRegistry::<T>::remove(cid, &sender);
+			#[allow(deprecated)]
 			OfferingRegistry::<T>::remove_prefix(
 				BusinessIdentifier::new(cid, sender.clone()),
 				None,
@@ -141,7 +142,7 @@ pub mod pallet {
 			);
 
 			let oid = BusinessRegistry::<T>::get(cid, &sender).last_oid;
-			BusinessRegistry::<T>::mutate(cid, &sender, |b| b.last_oid = b.last_oid + 1);
+			BusinessRegistry::<T>::mutate(cid, &sender, |b| b.last_oid += 1);
 			OfferingRegistry::<T>::insert(
 				BusinessIdentifier::new(cid, sender.clone()),
 				oid,
@@ -257,11 +258,11 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	pub fn get_businesses(cid: &CommunityIdentifier) -> Vec<(T::AccountId, BusinessData)> {
-		return BusinessRegistry::<T>::iter_prefix(cid).collect()
+		BusinessRegistry::<T>::iter_prefix(cid).collect()
 	}
 
 	pub fn get_offerings(bid: &BusinessIdentifier<T::AccountId>) -> Vec<OfferingData> {
-		return OfferingRegistry::<T>::iter_prefix_values(bid).collect()
+		OfferingRegistry::<T>::iter_prefix_values(bid).collect()
 	}
 }
 

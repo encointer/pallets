@@ -102,11 +102,13 @@ where
 		}
 	}
 
-	pub fn get_storage<V: Decode>(&self, key: &[u8]) -> Option<V> {
-		match self.storage.read().get(STORAGE_PREFIX, key) {
-			Some(v) => Some(Decode::decode(&mut v.as_slice()).unwrap()),
-			None => None,
-		}
+	pub fn get_storage<V: Decode>(&self, key: &[u8]) -> RpcResult<Option<V>> {
+		self.storage
+			.read()
+			.get(STORAGE_PREFIX, key)
+			.map(|v| Decode::decode(&mut v.as_slice()))
+			.transpose()
+			.map_err(|e| Error::OffchainStorageDecodeError(e.to_string()).into())
 	}
 
 	pub fn set_storage<V: Encode>(&self, key: &[u8], val: &V) {
@@ -122,12 +124,12 @@ macro_rules! refresh_cache {
 		let cids = api.get_cids(&at).map_err(|e| Error::Runtime(e.into()))?;
 		let mut cid_names: Vec<CidName> = vec![];
 
-		cids.iter().for_each(|cid| {
-			$self.get_storage(&cid.as_array()).map_or_else(
+		for cid in cids.iter() {
+			$self.get_storage(&cid.as_array())?.map_or_else(
 				|| warn_storage_inconsistency(cid),
 				|name| cid_names.push(CidName::new(*cid, name)),
 			)
-		});
+		}
 
 		$self.set_storage(CIDS_KEY, &cid_names);
 
@@ -162,7 +164,7 @@ where
 			refresh_cache!(self, at);
 		}
 
-		match self.get_storage(CIDS_KEY) {
+		match self.get_storage(CIDS_KEY)? {
 			Some(cids) => {
 				log::info!("Using cached community list: {:?}", cids);
 				Ok(cids)
@@ -185,7 +187,7 @@ where
 		}
 
 		let cache_key = &(CIDS_KEY, cid).encode()[..];
-		match self.get_storage::<Vec<Location>>(cache_key) {
+		match self.get_storage::<Vec<Location>>(cache_key)? {
 			Some(loc) => {
 				log::info!("Using cached location list with len {}", loc.len());
 				Ok(loc)

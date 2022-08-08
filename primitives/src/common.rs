@@ -70,7 +70,7 @@ pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
 	if cid.len() != MAX_HASH_SIZE {
 		return Err(IpfsValidationError::InvalidLength(cid.len() as u8))
 	}
-	Bs58verify::verify(&cid.as_bytes_or_noop()).map_err(|e| IpfsValidationError::InvalidBase58(e))
+	Bs58verify::verify(cid.as_bytes_or_noop()).map_err(IpfsValidationError::InvalidBase58)
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
