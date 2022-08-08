@@ -111,11 +111,13 @@ where
 		}
 	}
 
-	pub fn get_storage<V: Decode>(&self, key: &[u8]) -> Option<V> {
+	pub fn get_storage<V: Decode>(&self, key: &[u8]) -> RpcResult<Option<V>> {
 		self.storage
 			.read()
 			.get(STORAGE_PREFIX, key)
-			.map(|v| Decode::decode(&mut v.as_slice()).unwrap())
+			.map(|v| Decode::decode(&mut v.as_slice()))
+			.transpose()
+			.map_err(|e| Error::OffchainStorageDecodeError(e.to_string()).into())
 	}
 
 	pub fn set_storage<V: Encode>(&self, key: &[u8], val: &V) {
@@ -179,7 +181,7 @@ where
 			return Ok(self.refresh_reputation_cache(account, ceremony_info, at)?.reputation)
 		}
 
-		if let Some(reputation_cache_value) = self.get_storage::<ReputationCacheValue>(cache_key) {
+		if let Some(reputation_cache_value) = self.get_storage::<ReputationCacheValue>(cache_key)? {
 			if ceremony_info == reputation_cache_value.ceremony_info {
 				return Ok(reputation_cache_value.reputation)
 			}
