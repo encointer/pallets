@@ -23,7 +23,7 @@ use sp_api::{Decode, Encode};
 use sp_std::vec::Vec;
 
 /// Error type of this RPC api.
-#[derive(Encode, Decode, Clone, PartialEq, Debug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
 pub enum Error {
 	/// The call to runtime failed.
 	RuntimeError,
