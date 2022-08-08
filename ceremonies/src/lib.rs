@@ -429,7 +429,7 @@ pub mod pallet {
 			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 
 			if <NewbieIndex<T>>::contains_key((cid, cindex), &newbie) {
-				Self::unregister_newbie(cid, cindex, &newbie)?;
+				Self::unregister_participant(cid, cindex, &newbie)?;
 				Self::register(cid, cindex, &newbie, false)?;
 			}
 
@@ -1214,7 +1214,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// removes a participant from the registry maintaining continuous indices
-	fn unregister_newbie(
+	fn unregister_participant(
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,
 		participant: &T::AccountId,
@@ -1223,26 +1223,88 @@ impl<T: Config> Pallet<T> {
 			return Err(<Error<T>>::WrongPhaseForUnregistering)
 		}
 
-		let participant_count = <NewbieCount<T>>::get((cid, cindex));
-
-		if !<NewbieIndex<T>>::contains_key((cid, cindex), &participant) || participant_count < 1 {
-			return Ok(())
+		if let Some(participant_type) = Self::get_participant_type((cid, cindex), participant) {
+			match participant_type {
+				ParticipantType::Bootstrapper => {
+					Self::_unregister::<
+						BootstrapperIndex<T>,
+						BootstrapperRegistry<T>,
+						BootstrapperCount<T>,
+					>(cid, cindex, participant);
+				},
+				ParticipantType::Reputable => {
+					Self::_unregister::<ReputableIndex<T>, ReputableRegistry<T>, ReputableCount<T>>(
+						cid,
+						cindex,
+						participant,
+					);
+				},
+				ParticipantType::Endorsee => {
+					Self::_unregister::<EndorseeIndex<T>, EndorseeRegistry<T>, EndorseeCount<T>>(
+						cid,
+						cindex,
+						participant,
+					);
+				},
+				ParticipantType::Newbie => {
+					Self::_unregister::<NewbieIndex<T>, NewbieRegistry<T>, NewbieCount<T>>(
+						cid,
+						cindex,
+						participant,
+					);
+				},
+			}
+		} else {
+			return Err(<Error<T>>::ParticipantIsNotRegistered)
 		}
 
-		let participant_index = <NewbieIndex<T>>::get((cid, cindex), &participant);
-
-		let last_participant = <NewbieRegistry<T>>::get((cid, cindex), &participant_count)
-			.expect("Indices are continuous, thus index participant_count is Some; qed");
-
-		<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &last_participant);
-		<NewbieIndex<T>>::insert((cid, cindex), &last_participant, &participant_index);
-
-		<NewbieRegistry<T>>::remove((cid, cindex), &participant_count);
-		<NewbieIndex<T>>::remove((cid, cindex), &participant);
-
-		<NewbieCount<T>>::insert((cid, cindex), participant_count.saturating_sub(1));
-
 		Ok(())
+	}
+
+	fn _unregister<Index, Registry, Count>(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		participant: &T::AccountId,
+	) where
+		Index:
+			frame_support::StorageDoubleMap<CommunityCeremony, T::AccountId, ParticipantIndexType>,
+		Registry:
+			frame_support::StorageDoubleMap<CommunityCeremony, ParticipantIndexType, T::AccountId>,
+		Count: frame_support::StorageMap<CommunityCeremony, ParticipantIndexType>,
+		ParticipantIndexType:
+			From<<Count as frame_support::StorageMap<(CommunityIdentifier, u32), u64>>::Query>,
+		ParticipantIndexType: From<
+			<Index as frame_support::StorageDoubleMap<
+				CommunityCeremony,
+				T::AccountId,
+				ParticipantIndexType,
+			>>::Query,
+		>,
+		Option<T::AccountId>: From<
+			<Registry as frame_support::StorageDoubleMap<
+				CommunityCeremony,
+				ParticipantIndexType,
+				T::AccountId,
+			>>::Query,
+		>,
+	{
+		let participant_count: ParticipantIndexType = Count::get((cid, cindex)).into();
+
+		let participant_index: ParticipantIndexType =
+			Index::get((cid, cindex), &participant).into();
+
+		let maybe_last_participant: Option<T::AccountId> =
+			Registry::get((cid, cindex), participant_count).into();
+
+		if let Some(last_participant) = maybe_last_participant {
+			Registry::insert((cid, cindex), participant_index, &last_participant);
+			Index::insert((cid, cindex), last_participant, participant_index);
+
+			Registry::remove((cid, cindex), participant_count);
+			Index::remove((cid, cindex), &participant);
+
+			Count::insert((cid, cindex), participant_count.saturating_sub(1));
+		}
 	}
 
 	fn is_registered(
