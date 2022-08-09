@@ -18,6 +18,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use core::fmt;
 use sp_api::{Decode, Encode};
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
@@ -29,6 +30,16 @@ pub enum Error {
 	RuntimeError,
 	/// Decode Error
 	DecodeError,
+}
+
+impl fmt::Display for Error {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let msg = match self {
+			Error::RuntimeError => "Runtime Error",
+			Error::DecodeError => "Decode Error",
+		};
+		write!(f, "{}", msg)
+	}
 }
 
 impl From<Error> for i32 {

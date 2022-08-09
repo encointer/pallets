@@ -15,6 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use codec::Codec;
+use core::fmt::Display;
 use encointer_balances_tx_payment_rpc_runtime_api::{
 	BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi, Error,
 };
@@ -124,52 +125,28 @@ where
 				let base_fee = api
 					.balance_to_asset_balance(&at, inclusion_fee.base_fee, asset_id)
 					.map_err(|e| {
-						CallError::Custom(ErrorObject::owned(
-							Error::RuntimeError.into(),
-							"Unable to query balance conversion.",
-							Some(e.to_string()),
-						))
+						runtime_api_error_into_rpc_error(e, "Unable to query fee details")
 					})?
-					.map_err(|_e| {
-						CallError::Custom(ErrorObject::owned(
-							Error::RuntimeError.into(),
-							"Unable to query balance conversion.",
-							Some("Unable to query balance conversion."),
-						))
+					.map_err(|e| {
+						runtime_api_error_into_rpc_error(e, "Unable to query balance conversion.")
 					})?;
 
 				let len_fee = api
 					.balance_to_asset_balance(&at, inclusion_fee.len_fee, asset_id)
 					.map_err(|e| {
-						CallError::Custom(ErrorObject::owned(
-							Error::RuntimeError.into(),
-							"Unable to query fee details.",
-							Some(e.to_string()),
-						))
+						runtime_api_error_into_rpc_error(e, "Unable to query fee details")
 					})?
-					.map_err(|_e| {
-						CallError::Custom(ErrorObject::owned(
-							Error::RuntimeError.into(),
-							"Unable to query balance conversion.",
-							Some("Unable to query balance conversion."),
-						))
+					.map_err(|e| {
+						runtime_api_error_into_rpc_error(e, "Unable to query balance conversion.")
 					})?;
 
 				let adjusted_weight_fee = api
 					.balance_to_asset_balance(&at, inclusion_fee.adjusted_weight_fee, asset_id)
 					.map_err(|e| {
-						CallError::Custom(ErrorObject::owned(
-							Error::RuntimeError.into(),
-							"Unable to query fee details.",
-							Some(e.to_string()),
-						))
+						runtime_api_error_into_rpc_error(e, "Unable to query fee details")
 					})?
-					.map_err(|_e| {
-						CallError::Custom(ErrorObject::owned(
-							Error::RuntimeError.into(),
-							"Unable to query balance conversion.",
-							Some("Unable to query balance conversion."),
-						))
+					.map_err(|e| {
+						runtime_api_error_into_rpc_error(e, "Unable to query balance conversion.")
 					})?;
 
 				Some(InclusionFee {
@@ -183,4 +160,8 @@ where
 			tip: Default::default(),
 		})
 	}
+}
+
+fn runtime_api_error_into_rpc_error<E: Display>(e: E, msg: &str) -> CallError {
+	CallError::Custom(ErrorObject::owned(Error::RuntimeError.into(), msg, Some(e.to_string())))
 }
