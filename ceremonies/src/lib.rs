@@ -194,11 +194,67 @@ pub mod pallet {
 
 			if let Some(participant_type) = Self::get_participant_type((cid, cindex), &sender) {
 				if participant_type == ParticipantType::Newbie {
-					Self::unregister_participant(cid, cindex, &sender)?;
+					Self::remove_participant_from_registry(cid, cindex, &sender)?;
 					Self::register_participant(origin, cid, Some(proof))?;
 				} else {
 					return Err(<Error<T>>::MustBeNewbieToUpgradeRegistration.into())
 				}
+			} else {
+				return Err(<Error<T>>::ParticipantIsNotRegistered.into())
+			}
+			Ok(().into())
+		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::register_participant(), DispatchClass::Normal, Pays::Yes))]
+		pub fn unregister_participant(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			maybe_reputation_community_ceremony: Option<CommunityCeremony>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
+			ensure!(
+				vec![CeremonyPhaseType::Registering, CeremonyPhaseType::Attesting]
+					.contains(&current_phase),
+				Error::<T>::RegisteringOrAttestationPhaseRequired
+			);
+
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
+
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+
+			if current_phase == CeremonyPhaseType::Attesting {
+				cindex += 1
+			};
+
+			if let Some(participant_type) = Self::get_participant_type((cid, cindex), &sender) {
+				if participant_type == ParticipantType::Reputable {
+					if let Some(cc) = maybe_reputation_community_ceremony {
+						ensure!(
+							cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
+							Error::<T>::ProofOutdated
+						);
+
+						ensure!(
+							Self::participant_reputation(&cc, &sender) ==
+								Reputation::VerifiedLinked,
+							Error::<T>::ReputationMustBeLinked
+						);
+
+						<ParticipantReputation<T>>::insert(
+							&cc,
+							&sender,
+							Reputation::VerifiedUnlinked,
+						);
+						<ParticipantReputation<T>>::remove((cid, cindex), &sender);
+					} else {
+						return Err(<Error<T>>::ReputationCommunityCeremonyRequired.into())
+					}
+				}
+				Self::remove_participant_from_registry(cid, cindex, &sender)?;
 			} else {
 				return Err(<Error<T>>::ParticipantIsNotRegistered.into())
 			}
@@ -461,7 +517,7 @@ pub mod pallet {
 			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 
 			if <NewbieIndex<T>>::contains_key((cid, cindex), &newbie) {
-				Self::unregister_participant(cid, cindex, &newbie)?;
+				Self::remove_participant_from_registry(cid, cindex, &newbie)?;
 				Self::register(cid, cindex, &newbie, false)?;
 			}
 
@@ -809,6 +865,10 @@ pub mod pallet {
 		EarlyRewardsNotPossible,
 		// Only newbies can upgrade their registration
 		MustBeNewbieToUpgradeRegistration,
+		// To unregister as a reputable you need to provide a provide a community ceremony where you have a linked reputation
+		ReputationCommunityCeremonyRequired,
+		// In order to unregister a reputable, the provided reputation must be linked
+		ReputationMustBeLinked,
 	}
 
 	#[pallet::storage]
@@ -1248,7 +1308,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// removes a participant from the registry maintaining continuous indices
-	fn unregister_participant(
+	fn remove_participant_from_registry(
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,
 		participant: &T::AccountId,

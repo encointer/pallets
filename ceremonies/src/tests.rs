@@ -2232,19 +2232,19 @@ fn generate_meetup_assignment_params_is_random() {
 }
 
 #[test]
-fn unregistering_participant_fails_in_wrong_phase() {
+fn remove_participant_from_registry_fails_in_wrong_phase() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
 		run_to_next_phase();
-		assert!(EncointerCeremonies::unregister_participant(cid, cindex, &alice).is_err());
+		assert!(EncointerCeremonies::remove_participant_from_registry(cid, cindex, &alice).is_err());
 	});
 }
 
 #[test]
-fn unregistering_participant_works() {
+fn remove_participant_from_registry_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -2276,7 +2276,7 @@ fn unregistering_participant_works() {
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &charlie), 3);
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &eve), 4);
 
-		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &bob));
+		assert_ok!(EncointerCeremonies::remove_participant_from_registry(cid, cindex, &bob));
 
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 3);
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 1).unwrap(), alice);
@@ -2289,7 +2289,7 @@ fn unregistering_participant_works() {
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &charlie), 3);
 		assert_eq!(EncointerCeremonies::newbie_index((cid, cindex), &bob), 0);
 
-		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &charlie));
+		assert_ok!(EncointerCeremonies::remove_participant_from_registry(cid, cindex, &charlie));
 
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 2);
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 1).unwrap(), alice);
@@ -2305,7 +2305,7 @@ fn unregistering_participant_works() {
 }
 
 #[test]
-fn unregistering_participant_works_for_all_participant_types() {
+fn remove_participant_from_registry_works_for_all_participant_types() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -2339,10 +2339,14 @@ fn unregistering_participant_works_for_all_participant_types() {
 			bootstrapper
 		);
 
-		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &newbie));
-		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &reputable));
-		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &endorsee));
-		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &bootstrapper));
+		assert_ok!(EncointerCeremonies::remove_participant_from_registry(cid, cindex, &newbie));
+		assert_ok!(EncointerCeremonies::remove_participant_from_registry(cid, cindex, &reputable));
+		assert_ok!(EncointerCeremonies::remove_participant_from_registry(cid, cindex, &endorsee));
+		assert_ok!(EncointerCeremonies::remove_participant_from_registry(
+			cid,
+			cindex,
+			&bootstrapper
+		));
 
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 0);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 0);
@@ -2352,7 +2356,7 @@ fn unregistering_participant_works_for_all_participant_types() {
 }
 
 #[test]
-fn unregistering_participant_with_no_participants_fails() {
+fn remove_participant_from_registry_with_no_participants_fails() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -2363,7 +2367,7 @@ fn unregistering_participant_with_no_participants_fails() {
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
 
-		assert!(EncointerCeremonies::unregister_participant(cid, cindex, &alice).is_err());
+		assert!(EncointerCeremonies::remove_participant_from_registry(cid, cindex, &alice).is_err());
 	});
 }
 
@@ -2430,6 +2434,119 @@ fn upgrade_fails_if_not_registered_or_not_newbie() {
 			),
 			Error::<TestRuntime>::MustBeNewbieToUpgradeRegistration
 		);
+	})
+}
+
+#[test]
+fn unregister_participant_works_with_reputables() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
+		assert_ok!(register(alice.clone(), cid, Some(proof)));
+		assert_eq!(EncointerCeremonies::reputable_registry((cid, cindex), 1).unwrap(), alice);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 1);
+		assert_eq!(
+			EncointerCeremonies::participant_reputation((cid, cindex), &alice),
+			Reputation::UnverifiedReputable
+		);
+		assert_eq!(
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), &alice),
+			Reputation::VerifiedLinked
+		);
+
+		assert_ok!(EncointerCeremonies::unregister_participant(
+			Origin::signed(alice.clone()),
+			cid,
+			Some((cid, cindex - 1))
+		));
+
+		assert!(!ParticipantReputation::<TestRuntime>::contains_key((cid, cindex), &alice));
+		assert_eq!(
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), &alice),
+			Reputation::VerifiedUnlinked
+		);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 0);
+	})
+}
+
+#[test]
+fn unregister_participant_fails_with_reputables_and_wrong_reputation() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
+		assert_ok!(register(alice.clone(), cid, Some(proof)));
+		assert_eq!(EncointerCeremonies::reputable_registry((cid, cindex), 1).unwrap(), alice);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 1);
+		assert_eq!(
+			EncointerCeremonies::participant_reputation((cid, cindex), &alice),
+			Reputation::UnverifiedReputable
+		);
+		assert_eq!(
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), &alice),
+			Reputation::VerifiedLinked
+		);
+
+		assert_err!(
+			EncointerCeremonies::unregister_participant(Origin::signed(alice.clone()), cid, None),
+			Error::<TestRuntime>::ReputationCommunityCeremonyRequired,
+		);
+
+		EncointerCeremonies::fake_reputation(
+			(cid, cindex - 1),
+			&alice,
+			Reputation::VerifiedUnlinked,
+		);
+
+		assert_err!(
+			EncointerCeremonies::unregister_participant(
+				Origin::signed(alice.clone()),
+				cid,
+				Some((cid, cindex - 1))
+			),
+			Error::<TestRuntime>::ReputationMustBeLinked,
+		);
+	})
+}
+
+#[test]
+fn unregister_participant_works_with_newbies() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let alice = account_id(&AccountKeyring::Alice.pair());
+		assert_ok!(register(alice.clone(), cid, None));
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 1).unwrap(), alice);
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 1);
+
+		assert_ok!(EncointerCeremonies::unregister_participant(
+			Origin::signed(alice.clone()),
+			cid,
+			Some((cid, cindex - 1))
+		));
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 0);
 	})
 }
 
