@@ -65,8 +65,10 @@ pub mod pallet {
 	{
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// Required origin for adding or updating a community (though can always be Root).
+		/// Required origin for updating a community (though can always be Root).
 		type CommunityMaster: EnsureOrigin<Self::Origin>;
+		/// Origin for non destructive actions like adding a community or location
+		type TrustableForNonDestructiveAction: EnsureOrigin<Self::Origin>;
 
 		type WeightInfo: WeightInfo;
 	}
@@ -75,7 +77,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Add a new community.
 		///
-		/// May only be called from `T::CommunityMaster`.
+		/// May only be called from `T::TrustableForNonDestructiveAction`.
 		#[pallet::weight((<T as Config>::WeightInfo::new_community(), DispatchClass::Normal, Pays::Yes))]
 		pub fn new_community(
 			origin: OriginFor<T>,
@@ -85,7 +87,7 @@ pub mod pallet {
 			demurrage: Option<Demurrage>,
 			nominal_income: Option<NominalIncomeType>,
 		) -> DispatchResultWithPostInfo {
-			T::CommunityMaster::ensure_origin(origin)?;
+			T::TrustableForNonDestructiveAction::ensure_origin(origin)?;
 			Self::validate_bootstrappers(&bootstrappers)?;
 			community_metadata
 				.validate()
@@ -144,7 +146,7 @@ pub mod pallet {
 
 		/// Add a new meetup `location` to the community with `cid`.
 		///
-		/// May only be called from `T::CommunityMaster`.
+		/// May only be called from `T::TrustableForNonDestructiveAction`.
 		///
 		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
 		#[pallet::weight((<T as Config>::WeightInfo::add_location(), DispatchClass::Normal, Pays::Yes))]
@@ -153,7 +155,7 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			location: Location,
 		) -> DispatchResultWithPostInfo {
-			T::CommunityMaster::ensure_origin(origin)?;
+			T::TrustableForNonDestructiveAction::ensure_origin(origin)?;
 
 			ensure!(
 				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
