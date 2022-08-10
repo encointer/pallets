@@ -173,7 +173,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((<T as Config>::WeightInfo::register_participant(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::upgrade_registration(), DispatchClass::Normal, Pays::Yes))]
 		pub fn upgrade_registration(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -205,7 +205,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((<T as Config>::WeightInfo::register_participant(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::unregister_participant(), DispatchClass::Normal, Pays::Yes))]
 		pub fn unregister_participant(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,

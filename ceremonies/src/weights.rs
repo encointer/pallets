@@ -21,7 +21,7 @@ limitations under the License.
 //! * SSD
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2022-06-15, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! DATE: 2022-08-10, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -51,6 +51,8 @@ use sp_std::marker::PhantomData;
 /// Weight functions needed for pallet_encointer_ceremonies.
 pub trait WeightInfo {
 	fn register_participant() -> Weight;
+	fn upgrade_registration() -> Weight;
+	fn unregister_participant() -> Weight;
 	fn attest_claims() -> Weight;
 	fn attest_attendees() -> Weight;
 	fn endorse_newcomer() -> Weight;
@@ -68,103 +70,123 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn register_participant() -> Weight {
-		(493_000_000 as Weight)
+		(187_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(13 as Weight))
 			.saturating_add(T::DbWeight::get().writes(5 as Weight))
 	}
+	fn upgrade_registration() -> Weight {
+		(247_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(15 as Weight))
+			.saturating_add(T::DbWeight::get().writes(8 as Weight))
+	}
+	fn unregister_participant() -> Weight {
+		(91_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(9 as Weight))
+			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+	}
 	fn attest_claims() -> Weight {
-		(3_141_000_000 as Weight)
+		(1_438_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(27 as Weight))
 			.saturating_add(T::DbWeight::get().writes(12 as Weight))
 	}
 	fn attest_attendees() -> Weight {
-		(617_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(26 as Weight))
+		(265_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(25 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	fn endorse_newcomer() -> Weight {
-		(445_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(14 as Weight))
+		(170_000_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(17 as Weight))
 			.saturating_add(T::DbWeight::get().writes(9 as Weight))
 	}
 	fn claim_rewards() -> Weight {
-		(1_787_000_000 as Weight)
+		(816_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(62 as Weight))
 			.saturating_add(T::DbWeight::get().writes(22 as Weight))
 	}
 	fn set_inactivity_timeout() -> Weight {
-		(72_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_meetup_time_offset() -> Weight {
-		(83_000_000 as Weight)
+		(33_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_reputation_lifetime() -> Weight {
-		(72_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight {
-		(78_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_time_tolerance() -> Weight {
-		(76_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn set_location_tolerance() -> Weight {
-		(73_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn purge_community_ceremony() -> Weight {
-		(374_000_000 as Weight).saturating_add(T::DbWeight::get().writes(12 as Weight))
+		(139_000_000 as Weight).saturating_add(T::DbWeight::get().writes(12 as Weight))
 	}
 }
 
 // For tests
 impl WeightInfo for () {
 	fn register_participant() -> Weight {
-		(493_000_000 as Weight)
+		(187_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(13 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
 	}
+	fn upgrade_registration() -> Weight {
+		(247_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(15 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(8 as Weight))
+	}
+	fn unregister_participant() -> Weight {
+		(91_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(9 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
+	}
 	fn attest_claims() -> Weight {
-		(3_141_000_000 as Weight)
+		(1_438_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(27 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(12 as Weight))
 	}
 	fn attest_attendees() -> Weight {
-		(617_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(26 as Weight))
+		(265_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(25 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	fn endorse_newcomer() -> Weight {
-		(445_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(14 as Weight))
+		(170_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(17 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(9 as Weight))
 	}
 	fn claim_rewards() -> Weight {
-		(1_787_000_000 as Weight)
+		(816_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(62 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(22 as Weight))
 	}
 	fn set_inactivity_timeout() -> Weight {
-		(72_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_meetup_time_offset() -> Weight {
-		(83_000_000 as Weight)
+		(33_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_reputation_lifetime() -> Weight {
-		(72_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight {
-		(78_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_time_tolerance() -> Weight {
-		(76_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_location_tolerance() -> Weight {
-		(73_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		(29_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn purge_community_ceremony() -> Weight {
-		(374_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(12 as Weight))
+		(139_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(12 as Weight))
 	}
 }

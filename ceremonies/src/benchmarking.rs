@@ -227,6 +227,60 @@ benchmarks! {
 		);
 	}
 
+	upgrade_registration {
+		let cid = create_community::<T>();
+
+		let zoran = generate_pair();
+		let zoran_account= account_id::<T>(&zoran);
+		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+
+		assert_ok!(Pallet::<T>::register_participant(
+			RawOrigin::Signed(zoran_account.clone()).into(),
+			cid,
+			None
+		));
+
+		assert_eq!(NewbieCount::<T>::get((cid, cindex)), 1);
+	}: _(RawOrigin::Signed(zoran_account.clone()), cid, proof)
+	verify {
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
+		assert_eq!(NewbieCount::<T>::get((cid, cindex)), 0);
+		assert_eq!(
+			Pallet::<T>::participant_reputation((cid, cindex - 1), zoran_account),
+			Reputation::VerifiedLinked
+		);
+	}
+
+	unregister_participant {
+		let cid = create_community::<T>();
+
+		let zoran = generate_pair();
+		let zoran_account= account_id::<T>(&zoran);
+		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+
+		assert_ok!(Pallet::<T>::register_participant(
+			RawOrigin::Signed(zoran_account.clone()).into(),
+			cid,
+			Some(proof)
+		));
+
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
+		assert_eq!(
+			Pallet::<T>::participant_reputation((cid, cindex - 1), &zoran_account),
+			Reputation::VerifiedLinked
+		);
+	}: _(RawOrigin::Signed(zoran_account.clone()), cid, Some((cid, cindex - 1)))
+	verify {
+		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
+		assert_eq!(
+			Pallet::<T>::participant_reputation((cid, cindex - 1), zoran_account),
+			Reputation::VerifiedUnlinked
+		);
+	}
+
+
 	attest_claims {
 		let cid = create_community::<T>();
 
