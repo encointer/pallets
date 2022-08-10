@@ -173,6 +173,38 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::weight((<T as Config>::WeightInfo::register_participant(), DispatchClass::Normal, Pays::Yes))]
+		pub fn upgrade_registration(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			proof: ProofOfAttendance<T::Signature, T::AccountId>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin.clone())?;
+			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
+
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+
+			if current_phase == CeremonyPhaseType::Attesting {
+				cindex += 1
+			};
+
+			if let Some(participant_type) = Self::get_participant_type((cid, cindex), &sender) {
+				if participant_type == ParticipantType::Newbie {
+					Self::unregister_participant(cid, cindex, &sender)?;
+					Self::register_participant(origin, cid, Some(proof))?;
+				} else {
+					return Err(<Error<T>>::MustBeNewbieToUpgradeRegistration.into())
+				}
+			} else {
+				return Err(<Error<T>>::ParticipantIsNotRegistered.into())
+			}
+			Ok(().into())
+		}
+
 		#[pallet::weight((<T as Config>::WeightInfo::attest_attendees(), DispatchClass::Normal, Pays::Yes))]
 		pub fn attest_attendees(
 			origin: OriginFor<T>,
@@ -775,6 +807,8 @@ pub mod pallet {
 		AttestationsBeyondTimeTolerance,
 		// Not possible to pay rewards in attestations phase
 		EarlyRewardsNotPossible,
+		// Only newbies can upgrade their registration
+		MustBeNewbieToUpgradeRegistration,
 	}
 
 	#[pallet::storage]

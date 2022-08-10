@@ -124,6 +124,21 @@ fn get_proof(
 	}
 }
 
+fn make_reputable_and_get_proof(
+	p: &sr25519::Pair,
+	cid: CommunityIdentifier,
+	cindex: CeremonyIndexType,
+) -> TestProofOfAttendance {
+	EncointerBalances::issue(cid, &account_id(p), NominalIncome::from_num(1)).unwrap();
+	EncointerCeremonies::fake_reputation(
+		(cid, cindex),
+		&account_id(&p),
+		Reputation::VerifiedUnlinked,
+	);
+	let proof = prove_attendance(account_id(p), cid, cindex, p);
+	proof
+}
+
 /// generate a proof of attendance based on previous reputation
 fn prove_attendance(
 	prover: AccountId,
@@ -2289,7 +2304,6 @@ fn unregistering_participant_works() {
 	});
 }
 
-
 #[test]
 fn unregistering_participant_works_for_all_participant_types() {
 	new_test_ext().execute_with(|| {
@@ -2320,7 +2334,10 @@ fn unregistering_participant_works_for_all_participant_types() {
 		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 1).unwrap(), newbie);
 		assert_eq!(EncointerCeremonies::reputable_registry((cid, cindex), 1).unwrap(), reputable);
 		assert_eq!(EncointerCeremonies::endorsee_registry((cid, cindex), 1).unwrap(), endorsee);
-		assert_eq!(EncointerCeremonies::bootstrapper_registry((cid, cindex), 1).unwrap(), bootstrapper);
+		assert_eq!(
+			EncointerCeremonies::bootstrapper_registry((cid, cindex), 1).unwrap(),
+			bootstrapper
+		);
 
 		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &newbie));
 		assert_ok!(EncointerCeremonies::unregister_participant(cid, cindex, &reputable));
@@ -2333,7 +2350,6 @@ fn unregistering_participant_works_for_all_participant_types() {
 		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 0);
 	});
 }
-
 
 #[test]
 fn unregistering_participant_with_no_participants_fails() {
@@ -2349,6 +2365,72 @@ fn unregistering_participant_with_no_participants_fails() {
 
 		assert!(EncointerCeremonies::unregister_participant(cid, cindex, &alice).is_err());
 	});
+}
+
+#[test]
+fn upgrade_registration_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &alice, false));
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 1);
+		assert_eq!(EncointerCeremonies::newbie_registry((cid, cindex), 1).unwrap(), alice);
+
+		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
+		assert_ok!(EncointerCeremonies::upgrade_registration(
+			Origin::signed(alice.clone()),
+			cid,
+			proof
+		));
+
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 0);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 1);
+		assert_eq!(EncointerCeremonies::reputable_registry((cid, cindex), 1).unwrap(), alice);
+	});
+}
+
+#[test]
+fn upgrade_fails_if_not_registered_or_not_newbie() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
+		assert_err!(
+			EncointerCeremonies::upgrade_registration(
+				Origin::signed(alice.clone()),
+				cid,
+				proof.clone()
+			),
+			Error::<TestRuntime>::ParticipantIsNotRegistered
+		);
+
+		assert_ok!(EncointerCeremonies::register(cid, cindex, &bootstrapper, false));
+		assert_err!(
+			EncointerCeremonies::upgrade_registration(
+				Origin::signed(bootstrapper.clone()),
+				cid,
+				proof
+			),
+			Error::<TestRuntime>::MustBeNewbieToUpgradeRegistration
+		);
+	})
 }
 
 #[test]
