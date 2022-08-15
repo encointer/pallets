@@ -42,3 +42,4 @@ pub fn remove_participant_from_registry<Index, Registry, Count, AccountId>(
 		Count::insert((cid, cindex), participant_count.saturating_sub(1));
 	}
 }
+
