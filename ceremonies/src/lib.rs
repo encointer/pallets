@@ -230,34 +230,28 @@ pub mod pallet {
 				cindex += 1
 			};
 
-			if let Some(participant_type) = Self::get_participant_type((cid, cindex), &sender) {
-				if participant_type == ParticipantType::Reputable {
-					if let Some(cc) = maybe_reputation_community_ceremony {
-						ensure!(
-							cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
-							Error::<T>::ProofOutdated
-						);
+			let participant_type = Self::get_participant_type((cid, cindex), &sender)
+				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+			if participant_type == ParticipantType::Reputable {
+				if let Some(cc) = maybe_reputation_community_ceremony {
+					ensure!(
+						cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
+						Error::<T>::ProofOutdated
+					);
 
-						ensure!(
-							Self::participant_reputation(&cc, &sender) ==
-								Reputation::VerifiedLinked,
-							Error::<T>::ReputationMustBeLinked
-						);
+					ensure!(
+						Self::participant_reputation(&cc, &sender) == Reputation::VerifiedLinked,
+						Error::<T>::ReputationMustBeLinked
+					);
 
-						<ParticipantReputation<T>>::insert(
-							&cc,
-							&sender,
-							Reputation::VerifiedUnlinked,
-						);
-						<ParticipantReputation<T>>::remove((cid, cindex), &sender);
-					} else {
-						return Err(<Error<T>>::ReputationCommunityCeremonyRequired.into())
-					}
+					<ParticipantReputation<T>>::insert(&cc, &sender, Reputation::VerifiedUnlinked);
+					<ParticipantReputation<T>>::remove((cid, cindex), &sender);
+				} else {
+					return Err(<Error<T>>::ReputationCommunityCeremonyRequired.into())
 				}
-				Self::remove_participant_from_registry(cid, cindex, &sender)?;
-			} else {
-				return Err(<Error<T>>::ParticipantIsNotRegistered.into())
 			}
+			Self::remove_participant_from_registry(cid, cindex, &sender)?;
+
 			Ok(().into())
 		}
 
@@ -1317,39 +1311,37 @@ impl<T: Config> Pallet<T> {
 			return Err(<Error<T>>::WrongPhaseForUnregistering)
 		}
 
-		if let Some(participant_type) = Self::get_participant_type((cid, cindex), participant) {
-			match participant_type {
-				ParticipantType::Bootstrapper => {
-					Self::_unregister::<
-						BootstrapperIndex<T>,
-						BootstrapperRegistry<T>,
-						BootstrapperCount<T>,
-					>(cid, cindex, participant);
-				},
-				ParticipantType::Reputable => {
-					Self::_unregister::<ReputableIndex<T>, ReputableRegistry<T>, ReputableCount<T>>(
-						cid,
-						cindex,
-						participant,
-					);
-				},
-				ParticipantType::Endorsee => {
-					Self::_unregister::<EndorseeIndex<T>, EndorseeRegistry<T>, EndorseeCount<T>>(
-						cid,
-						cindex,
-						participant,
-					);
-				},
-				ParticipantType::Newbie => {
-					Self::_unregister::<NewbieIndex<T>, NewbieRegistry<T>, NewbieCount<T>>(
-						cid,
-						cindex,
-						participant,
-					);
-				},
-			}
-		} else {
-			return Err(<Error<T>>::ParticipantIsNotRegistered)
+		let participant_type = Self::get_participant_type((cid, cindex), participant)
+			.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+		match participant_type {
+			ParticipantType::Bootstrapper => {
+				Self::_unregister::<
+					BootstrapperIndex<T>,
+					BootstrapperRegistry<T>,
+					BootstrapperCount<T>,
+				>(cid, cindex, participant);
+			},
+			ParticipantType::Reputable => {
+				Self::_unregister::<ReputableIndex<T>, ReputableRegistry<T>, ReputableCount<T>>(
+					cid,
+					cindex,
+					participant,
+				);
+			},
+			ParticipantType::Endorsee => {
+				Self::_unregister::<EndorseeIndex<T>, EndorseeRegistry<T>, EndorseeCount<T>>(
+					cid,
+					cindex,
+					participant,
+				);
+			},
+			ParticipantType::Newbie => {
+				Self::_unregister::<NewbieIndex<T>, NewbieRegistry<T>, NewbieCount<T>>(
+					cid,
+					cindex,
+					participant,
+				);
+			},
 		}
 
 		Ok(())
