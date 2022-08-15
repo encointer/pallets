@@ -197,15 +197,13 @@ pub mod pallet {
 				cindex += 1
 			};
 
-			if let Some(participant_type) = Self::get_participant_type((cid, cindex), &sender) {
-				if participant_type == ParticipantType::Newbie {
-					Self::remove_participant_from_registry(cid, cindex, &sender)?;
-					Self::register_participant(origin, cid, Some(proof))?;
-				} else {
-					return Err(<Error<T>>::MustBeNewbieToUpgradeRegistration.into())
-				}
+			let participant_type = Self::get_participant_type((cid, cindex), &sender)
+				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+			if participant_type == ParticipantType::Newbie {
+				Self::remove_participant_from_registry(cid, cindex, &sender)?;
+				Self::register_participant(origin, cid, Some(proof))?;
 			} else {
-				return Err(<Error<T>>::ParticipantIsNotRegistered.into())
+				return Err(<Error<T>>::MustBeNewbieToUpgradeRegistration.into())
 			}
 			Ok(().into())
 		}
@@ -237,22 +235,20 @@ pub mod pallet {
 			let participant_type = Self::get_participant_type((cid, cindex), &sender)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
 			if participant_type == ParticipantType::Reputable {
-				if let Some(cc) = maybe_reputation_community_ceremony {
-					ensure!(
-						cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
-						Error::<T>::ProofOutdated
-					);
+				let cc = maybe_reputation_community_ceremony
+					.ok_or(<Error<T>>::ReputationCommunityCeremonyRequired)?;
+				ensure!(
+					cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
+					Error::<T>::ProofOutdated
+				);
 
-					ensure!(
-						Self::participant_reputation(&cc, &sender) == Reputation::VerifiedLinked,
-						Error::<T>::ReputationMustBeLinked
-					);
+				ensure!(
+					Self::participant_reputation(&cc, &sender) == Reputation::VerifiedLinked,
+					Error::<T>::ReputationMustBeLinked
+				);
 
-					<ParticipantReputation<T>>::insert(&cc, &sender, Reputation::VerifiedUnlinked);
-					<ParticipantReputation<T>>::remove((cid, cindex), &sender);
-				} else {
-					return Err(<Error<T>>::ReputationCommunityCeremonyRequired.into())
-				}
+				<ParticipantReputation<T>>::insert(&cc, &sender, Reputation::VerifiedUnlinked);
+				<ParticipantReputation<T>>::remove((cid, cindex), &sender);
 			}
 			Self::remove_participant_from_registry(cid, cindex, &sender)?;
 
