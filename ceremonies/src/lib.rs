@@ -110,8 +110,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
 			ensure!(
-				vec![CeremonyPhaseType::Registering, CeremonyPhaseType::Attesting]
-					.contains(&current_phase),
+				CeremonyPhaseType::is_registering_or_attesting(&current_phase),
 				Error::<T>::RegisteringOrAttestationPhaseRequired
 			);
 
@@ -187,6 +186,11 @@ pub mod pallet {
 				Error::<T>::InexistentCommunity
 			);
 
+			ensure!(
+				CeremonyPhaseType::is_registering_or_attesting(&current_phase),
+				Error::<T>::RegisteringOrAttestationPhaseRequired
+			);
+
 			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 
 			if current_phase == CeremonyPhaseType::Attesting {
@@ -215,8 +219,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
 			ensure!(
-				vec![CeremonyPhaseType::Registering, CeremonyPhaseType::Attesting]
-					.contains(&current_phase),
+				CeremonyPhaseType::is_registering_or_attesting(&current_phase),
 				Error::<T>::RegisteringOrAttestationPhaseRequired
 			);
 

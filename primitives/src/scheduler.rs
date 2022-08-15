@@ -35,3 +35,9 @@ impl Default for CeremonyPhaseType {
 		CeremonyPhaseType::Registering
 	}
 }
+
+impl CeremonyPhaseType {
+	pub fn is_registering_or_attesting(phase: &CeremonyPhaseType) -> bool {
+		phase != &CeremonyPhaseType::Assigning
+	}
+}
