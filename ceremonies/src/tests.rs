@@ -15,12 +15,6 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use mock::{
-	master, new_test_ext, EncointerBalances, EncointerCeremonies, EncointerCommunities,
-	EncointerScheduler, Origin, System, TestClaim, TestProofOfAttendance, TestRuntime, Timestamp,
-};
-use sp_runtime::DispatchError;
-
 use approx::assert_abs_diff_eq;
 use encointer_balances::Event as BalancesEvent;
 use encointer_primitives::{
@@ -32,10 +26,14 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize},
 };
 use itertools::Itertools;
+use mock::{
+	master, new_test_ext, EncointerBalances, EncointerCeremonies, EncointerCommunities,
+	EncointerScheduler, Origin, System, TestClaim, TestProofOfAttendance, TestRuntime, Timestamp,
+};
 use rstest::*;
 use sp_core::{sr25519, Pair, H256, U256};
-use sp_runtime::traits::BlakeTwo256;
-use std::ops::Rem;
+use sp_runtime::{traits::BlakeTwo256, DispatchError};
+use std::{ops::Rem, str::FromStr};
 use test_utils::{
 	helpers::{
 		account_id, assert_dispatch_err, bootstrappers, event_at_index, event_deposited,
@@ -2415,7 +2413,7 @@ fn upgrade_registration_works() {
 }
 
 #[test]
-fn upgrade_fails_if_not_registered_or_not_newbie() {
+fn upgrade_registration_fails_if_not_registered_or_not_newbie() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -2445,6 +2443,59 @@ fn upgrade_fails_if_not_registered_or_not_newbie() {
 				proof
 			),
 			Error::<TestRuntime>::MustBeNewbieToUpgradeRegistration
+		);
+	})
+}
+
+#[test]
+fn upgrade_registration_fails_in_wrong_phase() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
+
+		run_to_next_phase();
+		assert_err!(
+			EncointerCeremonies::upgrade_registration(
+				Origin::signed(alice.clone()),
+				cid,
+				proof.clone()
+			),
+			Error::<TestRuntime>::RegisteringOrAttestationPhaseRequired
+		);
+	})
+}
+
+#[test]
+fn upgrade_registration_fails_with_inexistent_community() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
+
+		assert_err!(
+			EncointerCeremonies::upgrade_registration(
+				Origin::signed(alice.clone()),
+				CommunityIdentifier::from_str("aaaaabbbbb").unwrap(),
+				proof.clone()
+			),
+			Error::<TestRuntime>::InexistentCommunity
 		);
 	})
 }
@@ -2559,6 +2610,55 @@ fn unregister_participant_works_with_newbies() {
 			Some((cid, cindex - 1))
 		));
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 0);
+	})
+}
+
+#[test]
+fn unregister_participant_fails_in_wrong_phase() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		run_to_next_phase();
+		assert_err!(
+			EncointerCeremonies::unregister_participant(
+				Origin::signed(alice.clone()),
+				cid,
+				Some((cid, cindex - 1))
+			),
+			Error::<TestRuntime>::RegisteringOrAttestationPhaseRequired
+		);
+	})
+}
+
+#[test]
+fn unregister_participant_fails_with_inexistent_community() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, ());
+		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
+		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
+
+		let a = AccountKeyring::Alice.pair();
+		let alice = account_id(&a);
+
+		assert_err!(
+			EncointerCeremonies::unregister_participant(
+				Origin::signed(alice.clone()),
+				CommunityIdentifier::from_str("aaaaabbbbb").unwrap(),
+				Some((cid, cindex - 1))
+			),
+			Error::<TestRuntime>::InexistentCommunity
+		);
 	})
 }
 
