@@ -2,6 +2,8 @@
 members = [
   'balances',
   'balances-tx-payment',
+  'balances-tx-payment/rpc',
+  'balances-tx-payment/rpc/runtime-api',
   'bazaar',
   'bazaar/rpc',
   'bazaar/rpc/runtime-api',
