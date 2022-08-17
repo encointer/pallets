@@ -13,6 +13,8 @@ use crate::fixed::{
 	types::{U64F64, U66F62},
 };
 
+pub type ProposalIdType = u128;
+
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -39,8 +41,8 @@ pub enum ProposalState<BlockNumber> {
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct Proposal<BlockNumber> {
-	start: BlockNumber,
-	proposal_type: ProposalAction,
-	state: ProposalState<BlockNumber>,
-	access_policy: ProposalAccessPolicy,
+	pub start: BlockNumber,
+	pub action: ProposalAction,
+	pub state: ProposalState<BlockNumber>,
+	pub access_policy: ProposalAccessPolicy,
 }

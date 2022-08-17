@@ -20,7 +20,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::EncodeLike;
-use encointer_primitives::proposals::Proposal;
+use encointer_primitives::proposals::{Proposal, ProposalIdType};
 use frame_support::{
 	dispatch::DispatchResult,
 	traits::{Get, OnTimestampSet},
@@ -46,7 +46,6 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		type ProposalId: Decode + Encode + MaxEncodedLen + EncodeLike + TypeInfo;
 	}
 
 	#[pallet::event]
@@ -57,36 +56,52 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		SomeError,
+		ProposalIdOutOfBounds,
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
-	pub(super) type CurrentCeremonyIndex<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::ProposalId, Proposal<T::BlockNumber>, OptionQuery>;
+	pub(super) type Proposals<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<T::BlockNumber>, OptionQuery>;
 
-	// #[pallet::genesis_config]
-	// pub struct GenesisConfig<T: Config> {}
-	//
-	// #[cfg(feature = "std")]
-	// impl<T: Config> Default for GenesisConfig<T> {
-	// 	fn default() -> Self {
-	// 		Self {}
-	// 	}
-	// }
+	#[pallet::storage]
+	#[pallet::getter(fn proposal_count)]
+	pub(super) type ProposalCount<T: Config> = StorageValue<_, ProposalIdType, ValueQuery>;
 
-	// #[pallet::genesis_build]
-	// impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-	// 	fn build(&self) {}
-	// }
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub proposal_count: ProposalIdType,
+	}
+
+	#[cfg(feature = "std")]
+	#[allow(clippy::derivable_impls)]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { proposal_count: 0u128 }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			<ProposalCount<T>>::put(&self.proposal_count);
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10000)]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
-			proposal: Proposal,
+			proposal: Proposal<T::BlockNumber>,
 		) -> DispatchResultWithPostInfo {
+			let _sender = ensure_signed(origin)?;
+			let current_proposal_id = Self::proposal_count();
+			let next_proposal_id = current_proposal_id
+				.checked_add(1u128)
+				.ok_or(Error::<T>::ProposalIdOutOfBounds)?;
+			<Proposals<T>>::insert(next_proposal_id, proposal);
+			<ProposalCount<T>>::put(next_proposal_id);
 			Ok(().into())
 		}
 	}
@@ -94,11 +109,10 @@ pub mod pallet {
 }
 
 // mod weights;
-//
-// #[cfg(test)]
-// mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 //
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
