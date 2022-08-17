@@ -21,12 +21,12 @@ use encointer_primitives::{
 	communities::NominalIncome as NominalIncomeType,
 	democracy::{ProposalAccessPolicy, ProposalAction, ProposalState},
 };
-use frame_support::{assert_err, assert_ok};
-use mock::{new_test_ext, EncointerDemocracy, Origin, System, TestRuntime};
+use frame_support::{assert_ok};
+use mock::{new_test_ext, EncointerDemocracy, Origin, TestRuntime};
 
 use encointer_primitives::communities::CommunityIdentifier;
 use test_utils::{
-	helpers::{last_event, register_test_community},
+	helpers::{register_test_community},
 	*,
 };
 

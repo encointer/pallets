@@ -19,14 +19,12 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::EncodeLike;
+
 use encointer_primitives::democracy::{Proposal, ProposalIdType};
 use frame_support::{
-	dispatch::DispatchResult,
-	traits::{Get, OnTimestampSet},
-	weights::DispatchClass,
+	traits::{Get},
 };
-use log::{info, warn};
+
 
 // Logger target
 const LOG: &str = "encointer";

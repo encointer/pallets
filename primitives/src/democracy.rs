@@ -1,17 +1,14 @@
-use crate::communities::{CommunityIdentifier, Location, NominalIncome as NominalIncomeType};
+use crate::communities::{CommunityIdentifier, NominalIncome as NominalIncomeType};
 use codec::{Decode, Encode, MaxEncodedLen};
-use ep_core::fixed::types::I64F64;
+
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::Convert;
 
-use crate::fixed::{
-	traits::ToFixed,
-	types::{U64F64, U66F62},
-};
+
+
 
 pub type ProposalIdType = u128;
 
