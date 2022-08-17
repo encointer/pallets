@@ -14,6 +14,7 @@ members = [
     'communities',
     'communities/rpc',
     'communities/rpc/runtime-api',
+    'democracy',
     'faucet',
     'primitives',
     'primitives/core',

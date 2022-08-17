@@ -4247,7 +4247,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-faucet"
+name = "pallet-encointer-democracy"
 version = "1.2.0"
 dependencies = [
  "approx",
@@ -4255,72 +4255,47 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "itertools",
+ "log",
+ "pallet-encointer-balances",
+ "pallet-encointer-communities",
+ "pallet-encointer-scheduler",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rstest",
+ "scale-info",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+]
+
+[[package]]
+name = "pallet-encointer-personhood-oracle"
+version = "0.8.0"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "frame-system",
+ "hex",
  "log",
  "pallet-encointer-balances",
  "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
  "pallet-encointer-scheduler",
  "parity-scale-codec",
+ "polkadot-parachain",
  "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
  "test-utils",
-]
-
-[[package]]
-name = "pallet-encointer-proposals"
-version = "1.2.0"
-dependencies = [
- "approx",
- "encointer-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "itertools",
- "log",
- "pallet-encointer-balances",
- "pallet-encointer-communities",
- "pallet-encointer-scheduler",
- "pallet-timestamp",
- "parity-scale-codec",
- "rstest",
- "scale-info",
- "sp-application-crypto",
- "sp-core",
- "sp-io",
- "sp-keystore",
- "sp-runtime",
- "sp-std",
- "test-utils",
-]
-
-[[package]]
-name = "pallet-encointer-proposals"
-version = "1.2.0"
-dependencies = [
- "approx",
- "encointer-primitives",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "itertools",
- "log",
- "pallet-encointer-balances",
- "pallet-encointer-communities",
- "pallet-encointer-scheduler",
- "pallet-timestamp",
- "parity-scale-codec",
- "rstest",
- "scale-info",
- "sp-application-crypto",
- "sp-core",
- "sp-io",
- "sp-keystore",
- "sp-runtime",
- "sp-std",
- "test-utils",
+ "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -4331,7 +4306,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "impl-trait-for-tuples",
  "log",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -4343,21 +4317,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-timestamp"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#b8d485fd4942539c438bf25a7823e410360fa053"
+name = "pallet-encointer-sybil-gate-template"
+version = "0.8.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "log",
  "parity-scale-codec",
  "scale-info",
- "sp-inherents",
+ "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
- "sp-timestamp",
+ "test-utils",
+ "xcm",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -4369,9 +4345,52 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
- "serde",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-transaction-payment-rpc"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#b8d485fd4942539c438bf25a7823e410360fa053"
+dependencies = [
+ "jsonrpsee",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
  "sp-core",
- "sp-io",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-weights",
+]
+
+[[package]]
+name = "pallet-transaction-payment-rpc-runtime-api"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#b8d485fd4942539c438bf25a7823e410360fa053"
+dependencies = [
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "sp-weights",
+]
+
+[[package]]
+name = "pallet-treasury"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v1.0.0#b8d485fd4942539c438bf25a7823e410360fa053"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
  "sp-runtime",
  "sp-std",
 ]
