@@ -4256,9 +4256,10 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "pallet-encointer-balances",
+ "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
- "pallet-encointer-reputation-commitments",
- "pallet-treasury",
+ "pallet-encointer-scheduler",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -4269,7 +4270,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-reputation-commitments"
+name = "pallet-encointer-proposals"
 version = "1.2.0"
 dependencies = [
  "approx",
@@ -4277,15 +4278,46 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "itertools",
  "log",
- "pallet-encointer-ceremonies",
+ "pallet-encointer-balances",
  "pallet-encointer-communities",
  "pallet-encointer-scheduler",
  "pallet-timestamp",
  "parity-scale-codec",
+ "rstest",
  "scale-info",
+ "sp-application-crypto",
  "sp-core",
  "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+]
+
+[[package]]
+name = "pallet-encointer-proposals"
+version = "1.2.0"
+dependencies = [
+ "approx",
+ "encointer-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "itertools",
+ "log",
+ "pallet-encointer-balances",
+ "pallet-encointer-communities",
+ "pallet-encointer-scheduler",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rstest",
+ "scale-info",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
  "sp-runtime",
  "sp-std",
  "test-utils",

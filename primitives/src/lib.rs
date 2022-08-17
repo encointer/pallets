@@ -24,6 +24,7 @@ pub mod common;
 pub mod communities;
 pub mod error;
 pub mod faucet;
+pub mod proposals;
 pub mod reputation_commitments;
 pub mod scheduler;
 pub mod storage;
