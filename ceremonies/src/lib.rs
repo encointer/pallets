@@ -58,6 +58,7 @@ const LOG: &str = "encointer";
 pub use pallet::*;
 pub use weights::WeightInfo;
 
+mod storage_helper;
 #[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
@@ -109,8 +110,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
 			ensure!(
-				vec![CeremonyPhaseType::Registering, CeremonyPhaseType::Attesting]
-					.contains(&current_phase),
+				CeremonyPhaseType::is_registering_or_attesting(&current_phase),
 				Error::<T>::RegisteringOrAttestationPhaseRequired
 			);
 
@@ -169,6 +169,88 @@ pub mod pallet {
 
 			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
 			Self::deposit_event(Event::ParticipantRegistered(cid, participant_type, sender));
+
+			Ok(().into())
+		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::upgrade_registration(), DispatchClass::Normal, Pays::Yes))]
+		pub fn upgrade_registration(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			proof: ProofOfAttendance<T::Signature, T::AccountId>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin.clone())?;
+			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
+
+			ensure!(
+				CeremonyPhaseType::is_registering_or_attesting(&current_phase),
+				Error::<T>::RegisteringOrAttestationPhaseRequired
+			);
+
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+
+			if current_phase == CeremonyPhaseType::Attesting {
+				cindex += 1
+			};
+
+			let participant_type = Self::get_participant_type((cid, cindex), &sender)
+				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+			if participant_type == ParticipantType::Newbie {
+				Self::remove_participant_from_registry(cid, cindex, &sender)?;
+				Self::register_participant(origin, cid, Some(proof))?;
+			} else {
+				return Err(<Error<T>>::MustBeNewbieToUpgradeRegistration.into())
+			}
+			Ok(().into())
+		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::unregister_participant(), DispatchClass::Normal, Pays::Yes))]
+		pub fn unregister_participant(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			maybe_reputation_community_ceremony: Option<CommunityCeremony>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			let current_phase = <encointer_scheduler::Pallet<T>>::current_phase();
+			ensure!(
+				CeremonyPhaseType::is_registering_or_attesting(&current_phase),
+				Error::<T>::RegisteringOrAttestationPhaseRequired
+			);
+
+			ensure!(
+				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				Error::<T>::InexistentCommunity
+			);
+
+			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+
+			if current_phase == CeremonyPhaseType::Attesting {
+				cindex += 1
+			};
+
+			let participant_type = Self::get_participant_type((cid, cindex), &sender)
+				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+			if participant_type == ParticipantType::Reputable {
+				let cc = maybe_reputation_community_ceremony
+					.ok_or(<Error<T>>::ReputationCommunityCeremonyRequired)?;
+				ensure!(
+					cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
+					Error::<T>::ProofOutdated
+				);
+
+				ensure!(
+					Self::participant_reputation(&cc, &sender) == Reputation::VerifiedLinked,
+					Error::<T>::ReputationMustBeLinked
+				);
+
+				<ParticipantReputation<T>>::insert(&cc, &sender, Reputation::VerifiedUnlinked);
+				<ParticipantReputation<T>>::remove((cid, cindex), &sender);
+			}
+			Self::remove_participant_from_registry(cid, cindex, &sender)?;
 
 			Ok(().into())
 		}
@@ -429,7 +511,7 @@ pub mod pallet {
 			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
 
 			if <NewbieIndex<T>>::contains_key((cid, cindex), &newbie) {
-				Self::unregister_newbie(cid, cindex, &newbie)?;
+				Self::remove_participant_from_registry(cid, cindex, &newbie)?;
 				Self::register(cid, cindex, &newbie, false)?;
 			}
 
@@ -775,6 +857,12 @@ pub mod pallet {
 		AttestationsBeyondTimeTolerance,
 		// Not possible to pay rewards in attestations phase
 		EarlyRewardsNotPossible,
+		// Only newbies can upgrade their registration
+		MustBeNewbieToUpgradeRegistration,
+		// To unregister as a reputable you need to provide a provide a community ceremony where you have a linked reputation
+		ReputationCommunityCeremonyRequired,
+		// In order to unregister a reputable, the provided reputation must be linked
+		ReputationMustBeLinked,
 	}
 
 	#[pallet::storage]
@@ -1214,7 +1302,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// removes a participant from the registry maintaining continuous indices
-	fn unregister_newbie(
+	fn remove_participant_from_registry(
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,
 		participant: &T::AccountId,
@@ -1223,24 +1311,42 @@ impl<T: Config> Pallet<T> {
 			return Err(<Error<T>>::WrongPhaseForUnregistering)
 		}
 
-		let participant_count = <NewbieCount<T>>::get((cid, cindex));
-
-		if !<NewbieIndex<T>>::contains_key((cid, cindex), &participant) || participant_count < 1 {
-			return Ok(())
+		let participant_type = Self::get_participant_type((cid, cindex), participant)
+			.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
+		match participant_type {
+			ParticipantType::Bootstrapper => {
+				storage_helper::remove_participant_from_registry::<
+					BootstrapperIndex<T>,
+					BootstrapperRegistry<T>,
+					BootstrapperCount<T>,
+					T::AccountId,
+				>(cid, cindex, participant);
+			},
+			ParticipantType::Reputable => {
+				storage_helper::remove_participant_from_registry::<
+					ReputableIndex<T>,
+					ReputableRegistry<T>,
+					ReputableCount<T>,
+					T::AccountId,
+				>(cid, cindex, participant);
+			},
+			ParticipantType::Endorsee => {
+				storage_helper::remove_participant_from_registry::<
+					EndorseeIndex<T>,
+					EndorseeRegistry<T>,
+					EndorseeCount<T>,
+					T::AccountId,
+				>(cid, cindex, participant);
+			},
+			ParticipantType::Newbie => {
+				storage_helper::remove_participant_from_registry::<
+					NewbieIndex<T>,
+					NewbieRegistry<T>,
+					NewbieCount<T>,
+					T::AccountId,
+				>(cid, cindex, participant);
+			},
 		}
-
-		let participant_index = <NewbieIndex<T>>::get((cid, cindex), &participant);
-
-		let last_participant = <NewbieRegistry<T>>::get((cid, cindex), &participant_count)
-			.expect("Indices are continuous, thus index participant_count is Some; qed");
-
-		<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &last_participant);
-		<NewbieIndex<T>>::insert((cid, cindex), &last_participant, &participant_index);
-
-		<NewbieRegistry<T>>::remove((cid, cindex), &participant_count);
-		<NewbieIndex<T>>::remove((cid, cindex), &participant);
-
-		<NewbieCount<T>>::insert((cid, cindex), participant_count.saturating_sub(1));
 
 		Ok(())
 	}
