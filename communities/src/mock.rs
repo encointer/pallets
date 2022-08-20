@@ -48,6 +48,7 @@ pub fn master() -> AccountId {
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type CommunityMaster = EnsureAlice;
+	type TrustableForNonDestructiveAction = EnsureAlice;
 	type WeightInfo = ();
 }
 
