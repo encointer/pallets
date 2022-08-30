@@ -3312,3 +3312,36 @@ fn participants_assigned_matches_participants_registered() {
 		assert_eq!(all_assigned, all_participants);
 	});
 }
+
+#[test]
+fn validate_reputation_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = account_id(&AccountKeyring::Alice.pair());
+		for _ in 0..8 {
+			run_to_next_phase();
+			run_to_next_phase();
+			run_to_next_phase();
+		}
+		let cindex = EncointerScheduler::current_ceremony_index();
+		assert_eq!(cindex, 9);
+
+		// fails because too old
+		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedUnlinked);
+		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 2), false);
+		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
+		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 2), false);
+
+		// fails because not verifieds
+		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::UnverifiedReputable);
+		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), false);
+		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::Unverified);
+		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), false);
+
+		// passes
+		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::VerifiedUnlinked);
+		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), true);
+		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::VerifiedLinked);
+		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), true);
+	});
+}

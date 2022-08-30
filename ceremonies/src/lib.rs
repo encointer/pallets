@@ -1900,10 +1900,22 @@ impl<T: Config> Pallet<T> {
 		None
 	}
 
-	#[cfg(any(test, feature = "runtime-benchmarks"))]
+	pub fn validate_reputation(
+		account_id: &T::AccountId,
+		cid: &CommunityIdentifier,
+		cindex: CeremonyIndexType,
+	) -> bool {
+		let current_cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+		if cindex < current_cindex.saturating_sub(Self::reputation_lifetime()) {
+			return false
+		}
+		<ParticipantReputation<T>>::get((*cid, cindex), account_id).is_verified()
+	}
+
+	#[cfg(any(test, feature = "runtime-benchmarks", feature = "mocks"))]
 	// only to be used by tests
-	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
-		<ParticipantReputation<T>>::insert(cidcindex, account, rep);
+	pub fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
+		<ParticipantReputation<T>>::insert(&cidcindex, account, rep);
 	}
 }
 

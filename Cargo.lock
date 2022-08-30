@@ -4258,6 +4258,7 @@ dependencies = [
  "itertools",
  "log",
  "pallet-encointer-balances",
+ "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
  "pallet-encointer-scheduler",
  "pallet-timestamp",

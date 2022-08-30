@@ -15,7 +15,9 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate as dut;
-use frame_support::pallet_prelude::GenesisBuild;
+use encointer_primitives::balances::BalanceType;
+use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
+use sp_runtime::traits::ConstU32;
 
 use test_utils::*;
 
@@ -32,13 +34,19 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
+		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
-		EncointerDemocracy: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerDemocracy: dut::{Pallet, Call, Storage, Config, Event<T>},
 	}
 );
 
+// parameter_types! {
+// 	pub const MaxReputationVecLength: u32 = 10;
+// }
+
 impl dut::Config for TestRuntime {
 	type Event = Event;
+	type MaxReputationVecLength = ConstU32<10>;
 }
 
 // boilerplate
@@ -47,6 +55,7 @@ impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime);
+impl_encointer_ceremonies!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -54,6 +63,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
 	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+
+	encointer_ceremonies::GenesisConfig::<TestRuntime> {
+		ceremony_reward: BalanceType::from_num(1),
+		location_tolerance: LOCATION_TOLERANCE, // [m]
+		time_tolerance: TIME_TOLERANCE,         // [ms]
+		inactivity_timeout: 12,
+		endorsement_tickets_per_bootstrapper: 50,
+		reputation_lifetime: 6,
+		meetup_time_offset: 0,
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	t.into()
 }
