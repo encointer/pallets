@@ -21,6 +21,7 @@
 
 use encointer_primitives::{
 	ceremonies::CommunityCeremony,
+	communities::CommunityIdentifier,
 	democracy::{Proposal, ProposalIdType, ReputationVec},
 };
 use frame_support::traits::Get;
@@ -140,7 +141,13 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let valid_reputations = Self::valid_reputations(proposal_id, &sender, &reputations)?;
+			let maybe_cid =
+				match Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?.action {
+					ProposalAction::Community(cid, _) => Some(cid),
+					_ => None,
+				};
+			let valid_reputations =
+				Self::valid_reputations(proposal_id, &sender, &reputations, maybe_cid)?;
 			let num_votes = valid_reputations.len() as u128;
 
 			let ayes = match vote {
@@ -168,13 +175,20 @@ pub mod pallet {
 		/// Returns the reputations that
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
+		/// 3. originate in the correct community (for CommunityProposalActions)
 		pub fn valid_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,
 			reputations: &ReputationVecOf<T>,
+			maybe_cid: Option<CommunityIdentifier>,
 		) -> Result<ReputationVecOf<T>, Error<T>> {
 			let mut valid_reputations = Vec::<CommunityCeremony>::new();
 			for community_ceremony in reputations {
+				if let Some(cid) = maybe_cid {
+					if community_ceremony.0 != cid {
+						continue
+					}
+				}
 				if <VoteEntries<T>>::contains_key(proposal_id, (account_id, community_ceremony)) {
 					continue
 				}

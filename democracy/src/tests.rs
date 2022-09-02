@@ -21,7 +21,7 @@ use crate::mock::{EncointerCeremonies, EncointerScheduler};
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
-	democracy::{ProposalAccessPolicy, ProposalAction, ProposalState, Vote, VoteEntry},
+	democracy::{CommunityProposalAction, ProposalAction, ProposalState, Vote, VoteEntry},
 };
 use frame_support::{assert_err, assert_ok};
 use mock::{new_test_ext, EncointerDemocracy, Origin, TestRuntime};
@@ -48,9 +48,11 @@ fn proposal_submission_works() {
 		let cid = create_cid();
 		let proposal: Proposal<BlockNumber> = Proposal {
 			start: BlockNumber::from(1u64),
-			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32)),
+			action: ProposalAction::Community(
+				cid,
+				CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
+			),
 			state: ProposalState::Ongoing,
-			access_policy: ProposalAccessPolicy::Community(cid),
 		};
 
 		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal.clone()));
@@ -70,7 +72,8 @@ fn valid_reputations_works_with_different_reputations() {
 		assert!(EncointerDemocracy::valid_reputations(
 			1,
 			&alice,
-			&BoundedVec::try_from(vec![(cid, 1)]).unwrap()
+			&BoundedVec::try_from(vec![(cid, 1)]).unwrap(),
+			None
 		)
 		.unwrap()
 		.is_empty());
@@ -79,7 +82,8 @@ fn valid_reputations_works_with_different_reputations() {
 		assert!(EncointerDemocracy::valid_reputations(
 			1,
 			&alice,
-			&BoundedVec::try_from(vec![(cid, 2)]).unwrap()
+			&BoundedVec::try_from(vec![(cid, 2)]).unwrap(),
+			None
 		)
 		.unwrap()
 		.is_empty());
@@ -89,7 +93,8 @@ fn valid_reputations_works_with_different_reputations() {
 			EncointerDemocracy::valid_reputations(
 				1,
 				&alice,
-				&BoundedVec::try_from(vec![(cid, 3)]).unwrap()
+				&BoundedVec::try_from(vec![(cid, 3)]).unwrap(),
+				None
 			)
 			.unwrap()
 			.len(),
@@ -101,7 +106,8 @@ fn valid_reputations_works_with_different_reputations() {
 			EncointerDemocracy::valid_reputations(
 				1,
 				&alice,
-				&BoundedVec::try_from(vec![(cid, 4)]).unwrap()
+				&BoundedVec::try_from(vec![(cid, 4)]).unwrap(),
+				None
 			)
 			.unwrap()
 			.len(),
@@ -112,6 +118,7 @@ fn valid_reputations_works_with_different_reputations() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 1), (cid, 2), (cid, 3), (cid, 4)]).unwrap(),
+			None,
 		)
 		.unwrap();
 		assert_eq!(valid_reputations.len(), 2);
@@ -138,6 +145,7 @@ fn valid_reputations_works_with_used_reputations() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 1), (cid, 2)]).unwrap(),
+			None,
 		)
 		.unwrap();
 		assert_eq!(valid_reputations.len(), 1);
@@ -146,16 +154,61 @@ fn valid_reputations_works_with_used_reputations() {
 }
 
 #[test]
-fn voting_works() {
+fn valid_reputations_works_with_inexistent_reputations() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 		let alice = alice();
 
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked);
+
+		let valid_reputations = EncointerDemocracy::valid_reputations(
+			1,
+			&alice,
+			&BoundedVec::try_from(vec![(cid, 1), (cid, 2)]).unwrap(),
+			None,
+		)
+		.unwrap();
+		assert_eq!(valid_reputations.len(), 1);
+		assert_eq!(valid_reputations.first().unwrap().1, 1);
+	});
+}
+
+#[test]
+fn valid_reputations_works_with_cids() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+		let alice = alice();
+
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 1), &alice, Reputation::VerifiedLinked);
+
+		let valid_reputations = EncointerDemocracy::valid_reputations(
+			1,
+			&alice,
+			&BoundedVec::try_from(vec![(cid, 1), (cid2, 1)]).unwrap(),
+			Some(cid2),
+		)
+		.unwrap();
+		assert_eq!(valid_reputations.len(), 1);
+		assert_eq!(valid_reputations.first().unwrap(), &(cid2, 1u32));
+	});
+}
+
+#[test]
+fn voting_works() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
 		let proposal: Proposal<BlockNumber> = Proposal {
 			start: BlockNumber::from(1u64),
-			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32)),
+			action: ProposalAction::Community(
+				cid,
+				CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
+			),
 			state: ProposalState::Ongoing,
-			access_policy: ProposalAccessPolicy::Community(cid),
 		};
 
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::Unverified);
@@ -190,6 +243,7 @@ fn voting_works() {
 
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::Unverified);
 		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 6), &alice, Reputation::VerifiedLinked);
 
 		assert_ok!(EncointerDemocracy::vote(
 			Origin::signed(alice.clone()),
@@ -197,7 +251,17 @@ fn voting_works() {
 			Vote::Nay,
 			// 3 is invalid because already used
 			// 4 is invalid because unverified
-			BoundedVec::try_from(vec![(cid, 3), (cid, 4), (cid, 5)]).unwrap()
+			// 6 and 7 is invalid because of wrong cid
+			// 8 is invalid because it does not exist
+			BoundedVec::try_from(vec![
+				(cid, 3),
+				(cid, 4),
+				(cid, 5),
+				(cid2, 6),
+				(cid2, 7),
+				(cid, 8)
+			])
+			.unwrap()
 		));
 
 		tally = EncointerDemocracy::tallies(1).unwrap();

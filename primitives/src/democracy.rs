@@ -1,5 +1,5 @@
 use crate::{
-	ceremonies::CommunityCeremony,
+	ceremonies::{CommunityCeremony, InactivityTimeoutType},
 	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
 };
 use codec::{Decode, Encode, MaxEncodedLen};
@@ -33,19 +33,28 @@ pub enum Vote {
 	Nay,
 }
 
-#[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum ProposalAction {
-	UpdateNominalIncome(CommunityIdentifier, NominalIncomeType),
-}
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum ProposalAccessPolicy {
-	Global,
-	Community(CommunityIdentifier),
+pub enum ProposalAction {
+	Global(GlobalProposalAction),
+	Community(CommunityIdentifier, CommunityProposalAction),
 }
+
+#[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum CommunityProposalAction {
+	UpdateNominalIncome(NominalIncomeType),
+}
+
+#[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum GlobalProposalAction {
+	SetInactivityTimeout(InactivityTimeoutType),
+}
+
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -62,5 +71,4 @@ pub struct Proposal<BlockNumber> {
 	pub start: BlockNumber,
 	pub action: ProposalAction,
 	pub state: ProposalState<BlockNumber>,
-	pub access_policy: ProposalAccessPolicy,
 }
