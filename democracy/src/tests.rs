@@ -23,8 +23,8 @@ use encointer_primitives::{
 	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
 	democracy::{CommunityProposalAction, ProposalAction, ProposalState, Vote, VoteEntry},
 };
-use frame_support::{assert_err, assert_ok};
-use mock::{new_test_ext, EncointerDemocracy, Origin, TestRuntime};
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use mock::{new_test_ext, EncointerDemocracy, Origin, System, TestRuntime};
 use sp_runtime::BoundedVec;
 use test_utils::{helpers::register_test_community, *};
 
@@ -41,6 +41,14 @@ fn bob() -> AccountId {
 }
 
 type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
+
+fn advance_n_blocks(n: u64) {
+	let target_block = System::block_number() + n;
+	for _ in 0..n {
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+	}
+}
 
 #[test]
 fn proposal_submission_works() {
@@ -269,3 +277,4 @@ fn voting_works() {
 		assert_eq!(tally.ayes, 2);
 	});
 }
+

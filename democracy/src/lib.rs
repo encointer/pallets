@@ -67,6 +67,7 @@ pub mod pallet {
 	}
 
 	#[pallet::error]
+	#[derive(PartialEq)]
 	pub enum Error<T> {
 		ProposalIdOutOfBounds,
 		InexistentProposal,
@@ -278,7 +279,7 @@ pub mod pallet {
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
-mod test;
+mod tests;
 //
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
