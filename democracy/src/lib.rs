@@ -132,13 +132,19 @@ pub mod pallet {
 		#[pallet::weight(10000)]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
-			proposal: Proposal<T::BlockNumber>,
+			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
 			let _sender = ensure_signed(origin)?;
 			let current_proposal_id = Self::proposal_count();
 			let next_proposal_id = current_proposal_id
 				.checked_add(1u128)
 				.ok_or(Error::<T>::ProposalIdOutOfBounds)?;
+			let current_block = frame_system::Pallet::<T>::block_number();
+			let proposal = Proposal {
+				start: current_block,
+				state: ProposalState::Ongoing,
+				action: proposal_action,
+			};
 			<Proposals<T>>::insert(next_proposal_id, proposal);
 			<ProposalCount<T>>::put(next_proposal_id);
 			<Tallies<T>>::insert(next_proposal_id, Tally { turnout: 0, ayes: 0 });

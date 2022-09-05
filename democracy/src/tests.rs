@@ -54,18 +54,21 @@ fn advance_n_blocks(n: u64) {
 fn proposal_submission_works() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
-		let proposal: Proposal<BlockNumber> = Proposal {
-			start: BlockNumber::from(1u64),
-			action: ProposalAction::Community(
-				cid,
-				CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
-			),
-			state: ProposalState::Ongoing,
-		};
+		let block = System::block_number();
+		let proposal_action = ProposalAction::Community(
+			cid,
+			CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
+		);
 
-		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal.clone()));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			Origin::signed(alice()),
+			proposal_action.clone()
+		));
 		assert_eq!(EncointerDemocracy::proposal_count(), 1);
-		assert_eq!(EncointerDemocracy::proposals(1).unwrap(), proposal);
+		let proposal = EncointerDemocracy::proposals(1).unwrap();
+		assert_eq!(proposal.state, ProposalState::Ongoing);
+		assert_eq!(proposal.action, proposal_action);
+		assert_eq!(proposal.start, block);
 		assert!(EncointerDemocracy::tallies(1).is_some());
 	});
 }
@@ -210,14 +213,10 @@ fn voting_works() {
 		let alice = alice();
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 
-		let proposal: Proposal<BlockNumber> = Proposal {
-			start: BlockNumber::from(1u64),
-			action: ProposalAction::Community(
-				cid,
-				CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
-			),
-			state: ProposalState::Ongoing,
-		};
+		let proposal_action = ProposalAction::Community(
+			cid,
+			CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
+		);
 
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::Unverified);
 		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
@@ -235,7 +234,7 @@ fn voting_works() {
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			Origin::signed(alice.clone()),
-			proposal.clone()
+			proposal_action.clone()
 		));
 
 		assert_ok!(EncointerDemocracy::vote(
@@ -277,4 +276,3 @@ fn voting_works() {
 		assert_eq!(tally.ayes, 2);
 	});
 }
-
