@@ -22,7 +22,7 @@
 use encointer_primitives::{
 	ceremonies::CommunityCeremony,
 	communities::CommunityIdentifier,
-	democracy::{Proposal, ProposalIdType, ReputationVec},
+	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
 };
 use frame_support::traits::Get;
 
@@ -52,6 +52,12 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type MaxReputationVecLength: Get<u32>;
+		#[pallet::constant]
+		type ConfirmationPeriod: Get<Self::BlockNumber>;
+		#[pallet::constant]
+		type ProposalLifetime: Get<Self::BlockNumber>;
+		#[pallet::constant]
+		type MinTurnout: Get<u128>;
 	}
 
 	#[pallet::event]
@@ -66,6 +72,7 @@ pub mod pallet {
 		InexistentProposal,
 		VoteCountOverflow,
 		BoundedVecError,
+		ProposalCannotBeUpdated,
 	}
 
 	#[pallet::storage]
@@ -93,6 +100,11 @@ pub mod pallet {
 		(),
 		ValueQuery,
 	>;
+	// TODO set default value
+	#[pallet::storage]
+	#[pallet::getter(fn cancelled_at_block)]
+	pub(super) type CancelledAtBlock<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProposalAction, T::BlockNumber, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
@@ -202,6 +214,63 @@ pub mod pallet {
 			}
 			BoundedVec::try_from(valid_reputations).map_err(|_e| Error::<T>::BoundedVecError)
 		}
+
+		/// Updates the proposal state
+		/// If the state is changed to Approved, the proposal will be enacted
+		/// In case of enactment, the function returns true
+		pub fn update_proposal_state(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
+			let mut proposal =
+				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			ensure!(proposal.state.can_update(), Error::<T>::ProposalCannotBeUpdated);
+			let mut enacted = false;
+			let current_block = frame_system::Pallet::<T>::block_number();
+			let cancelled_at_block = Self::cancelled_at_block(proposal.action);
+			let proposal_cancelled = proposal.start < cancelled_at_block;
+			let proposal_too_old = current_block - proposal.start > T::ProposalLifetime::get();
+			if proposal_cancelled || proposal_too_old {
+				proposal.state = ProposalState::Cancelled;
+			} else {
+				// passing
+				if Self::is_passing(proposal_id)? {
+					// confirming
+					if let ProposalState::Confirming { since } = proposal.state {
+						// confirmed longer than period
+						if current_block - since > T::ConfirmationPeriod::get() {
+							proposal.state = ProposalState::Approved;
+							Self::enact_proposal(proposal_id)?;
+							enacted = true;
+						}
+					// not confirming
+					} else {
+						proposal.state = ProposalState::Confirming { since: current_block };
+					}
+				// not passing
+				} else {
+					// confirming
+					if let ProposalState::Confirming { since: _ } = proposal.state {
+						proposal.state = ProposalState::Ongoing;
+					}
+				}
+			}
+			<Proposals<T>>::insert(proposal_id, proposal);
+			Ok(enacted)
+		}
+
+		pub fn is_passing(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
+			let tally = Self::tallies(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			if tally.turnout < T::MinTurnout::get() {
+				return Ok(false)
+			}
+			// TODO replace with AQB
+			if tally.ayes < tally.turnout / 2 {
+				return Ok(false)
+			}
+			Ok(true)
+		}
+		fn enact_proposal(proposal_id: ProposalIdType) -> Result<(), Error<T>> {
+			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			Ok(())
+		}
 	}
 }
 
@@ -209,7 +278,7 @@ pub mod pallet {
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
-mod tests;
+mod test;
 //
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;

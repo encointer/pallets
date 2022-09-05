@@ -61,8 +61,14 @@ pub enum GlobalProposalAction {
 pub enum ProposalState<BlockNumber> {
 	Ongoing,
 	Confirming { since: BlockNumber },
-	Approved { since: BlockNumber },
+	Approved,
 	Cancelled,
+}
+
+impl<BlockNumber: std::cmp::PartialEq> ProposalState<BlockNumber> {
+	pub fn can_update(self) -> bool{
+		matches!(self, Self::Confirming{since: _} | Self::Ongoing)
+	}
 }
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]

@@ -17,7 +17,7 @@
 use crate as dut;
 use encointer_primitives::balances::BalanceType;
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
-use sp_runtime::traits::ConstU32;
+use sp_runtime::traits::{ConstU128, ConstU32, ConstU64};
 
 use test_utils::*;
 
@@ -47,6 +47,9 @@ frame_support::construct_runtime!(
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type MaxReputationVecLength = ConstU32<10>;
+	type ConfirmationPeriod = ConstU64<10>;
+	type ProposalLifetime = ConstU64<40>;
+	type MinTurnout = ConstU128<20>;
 }
 
 // boilerplate
