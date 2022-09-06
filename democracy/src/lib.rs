@@ -160,11 +160,14 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let maybe_cid =
-				match Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?.action {
-					ProposalAction::Community(cid, _) => Some(cid),
-					_ => None,
-				};
+			let maybe_cid = match Self::proposals(proposal_id)
+				.ok_or(Error::<T>::InexistentProposal)?
+				.action
+				.get_access_policy()
+			{
+				ProposalAccessPolicy::Community(cid) => Some(cid),
+				_ => None,
+			};
 			let valid_reputations =
 				Self::valid_reputations(proposal_id, &sender, &reputations, maybe_cid)?;
 			let num_votes = valid_reputations.len() as u128;
@@ -194,7 +197,7 @@ pub mod pallet {
 		/// Returns the reputations that
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
-		/// 3. originate in the correct community (for CommunityProposalActions)
+		/// 3. originate in the correct community (for Community AccessPolicy)
 		pub fn valid_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,

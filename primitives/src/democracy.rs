@@ -36,24 +36,43 @@ pub enum Vote {
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum ProposalAccessPolicy {
+	Global,
+	Community(CommunityIdentifier)
+}
+
+#[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum ProposalAction {
-	Global(GlobalProposalAction),
-	Community(CommunityIdentifier, CommunityProposalAction),
+	UpdateNominalIncome(CommunityIdentifier, NominalIncomeType),
+	SetInactivityTimeout(InactivityTimeoutType)
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum CommunityProposalAction {
-	UpdateNominalIncome(NominalIncomeType),
+pub enum ProposalActionIdentifier {
+	UpdateNominalIncome(CommunityIdentifier),
+	SetInactivityTimeout,
 }
 
-#[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum GlobalProposalAction {
-	SetInactivityTimeout(InactivityTimeoutType),
+impl ProposalAction{
+	pub fn get_access_policy(self) -> ProposalAccessPolicy{
+		match self {
+			ProposalAction::UpdateNominalIncome(cid, _) => ProposalAccessPolicy::Community(cid),
+			ProposalAction::SetInactivityTimeout(_) => ProposalAccessPolicy::Global
+		}
+	}
+
+	pub fn get_identifier(self) -> ProposalActionIdentifier{
+		match self {
+			ProposalAction::UpdateNominalIncome(cid, _) => ProposalActionIdentifier::UpdateNominalIncome(cid),
+			ProposalAction::SetInactivityTimeout(_)=> ProposalActionIdentifier::SetInactivityTimeout
+		}
+	}
 }
+
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]

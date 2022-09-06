@@ -21,7 +21,7 @@ use crate::mock::{EncointerCeremonies, EncointerScheduler};
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
-	democracy::{CommunityProposalAction, ProposalAction, ProposalState, Vote, VoteEntry},
+	democracy::{ProposalAction, ProposalState, Vote, VoteEntry},
 };
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use mock::{new_test_ext, EncointerDemocracy, Origin, System, TestRuntime};
@@ -55,10 +55,8 @@ fn proposal_submission_works() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 		let block = System::block_number();
-		let proposal_action = ProposalAction::Community(
-			cid,
-			CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
-		);
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			Origin::signed(alice()),
@@ -213,10 +211,8 @@ fn voting_works() {
 		let alice = alice();
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 
-		let proposal_action = ProposalAction::Community(
-			cid,
-			CommunityProposalAction::UpdateNominalIncome(NominalIncomeType::from(100i32)),
-		);
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
 
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::Unverified);
 		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
