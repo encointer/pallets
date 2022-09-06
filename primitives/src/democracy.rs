@@ -38,7 +38,7 @@ pub enum Vote {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum ProposalAccessPolicy {
 	Global,
-	Community(CommunityIdentifier)
+	Community(CommunityIdentifier),
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -46,7 +46,7 @@ pub enum ProposalAccessPolicy {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum ProposalAction {
 	UpdateNominalIncome(CommunityIdentifier, NominalIncomeType),
-	SetInactivityTimeout(InactivityTimeoutType)
+	SetInactivityTimeout(InactivityTimeoutType),
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -57,22 +57,23 @@ pub enum ProposalActionIdentifier {
 	SetInactivityTimeout,
 }
 
-impl ProposalAction{
-	pub fn get_access_policy(self) -> ProposalAccessPolicy{
+impl ProposalAction {
+	pub fn get_access_policy(self) -> ProposalAccessPolicy {
 		match self {
 			ProposalAction::UpdateNominalIncome(cid, _) => ProposalAccessPolicy::Community(cid),
-			ProposalAction::SetInactivityTimeout(_) => ProposalAccessPolicy::Global
+			ProposalAction::SetInactivityTimeout(_) => ProposalAccessPolicy::Global,
 		}
 	}
 
-	pub fn get_identifier(self) -> ProposalActionIdentifier{
+	pub fn get_identifier(self) -> ProposalActionIdentifier {
 		match self {
-			ProposalAction::UpdateNominalIncome(cid, _) => ProposalActionIdentifier::UpdateNominalIncome(cid),
-			ProposalAction::SetInactivityTimeout(_)=> ProposalActionIdentifier::SetInactivityTimeout
+			ProposalAction::UpdateNominalIncome(cid, _) =>
+				ProposalActionIdentifier::UpdateNominalIncome(cid),
+			ProposalAction::SetInactivityTimeout(_) =>
+				ProposalActionIdentifier::SetInactivityTimeout,
 		}
 	}
 }
-
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
@@ -85,8 +86,8 @@ pub enum ProposalState<BlockNumber> {
 }
 
 impl<BlockNumber: std::cmp::PartialEq> ProposalState<BlockNumber> {
-	pub fn can_update(self) -> bool{
-		matches!(self, Self::Confirming{since: _} | Self::Ongoing)
+	pub fn can_update(self) -> bool {
+		matches!(self, Self::Confirming { since: _ } | Self::Ongoing)
 	}
 }
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]

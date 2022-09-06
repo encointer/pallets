@@ -17,11 +17,11 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use crate::mock::{EncointerCeremonies, EncointerScheduler};
+use crate::mock::EncointerCeremonies;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
-	democracy::{ProposalAction, ProposalState, Vote, VoteEntry},
+	democracy::{ProposalAction, ProposalActionIdentifier, ProposalState, Tally, Vote},
 };
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use mock::{new_test_ext, EncointerDemocracy, Origin, System, TestRuntime};
@@ -43,7 +43,6 @@ fn bob() -> AccountId {
 type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
 
 fn advance_n_blocks(n: u64) {
-	let target_block = System::block_number() + n;
 	for _ in 0..n {
 		System::set_block_number(System::block_number() + 1);
 		System::on_initialize(System::block_number());
@@ -270,5 +269,130 @@ fn voting_works() {
 		tally = EncointerDemocracy::tallies(1).unwrap();
 		assert_eq!(tally.turnout, 3);
 		assert_eq!(tally.ayes, 2);
+	});
+}
+
+#[test]
+fn update_proposal_state_fails_with_inexistent_proposal() {
+	new_test_ext().execute_with(|| {
+		assert_err!(
+			EncointerDemocracy::update_proposal_state(1),
+			Error::<TestRuntime>::InexistentProposal
+		);
+	});
+}
+
+#[test]
+fn update_proposal_state_fails_with_wrong_state() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let proposal: Proposal<BlockNumber> = Proposal {
+			start: BlockNumber::from(1u64),
+			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32)),
+			state: ProposalState::Cancelled,
+		};
+		Proposals::<TestRuntime>::insert(1, proposal);
+
+		let proposal2: Proposal<BlockNumber> = Proposal {
+			start: BlockNumber::from(1u64),
+			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32)),
+			state: ProposalState::Approved,
+		};
+		Proposals::<TestRuntime>::insert(2, proposal2);
+
+		assert_err!(
+			EncointerDemocracy::update_proposal_state(1),
+			Error::<TestRuntime>::ProposalCannotBeUpdated
+		);
+
+		assert_err!(
+			EncointerDemocracy::update_proposal_state(2),
+			Error::<TestRuntime>::ProposalCannotBeUpdated
+		);
+	});
+}
+
+#[test]
+fn update_proposal_state_works_with_cancelled_proposal() {
+	new_test_ext().execute_with(|| {
+		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+
+		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal_action));
+
+		CancelledAtBlock::<TestRuntime>::insert(ProposalActionIdentifier::SetInactivityTimeout, 3);
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+
+		advance_n_blocks(5);
+
+		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
+	});
+}
+
+#[test]
+fn update_proposal_state_works_with_too_old_proposal() {
+	new_test_ext().execute_with(|| {
+		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+
+		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal_action));
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+
+		advance_n_blocks(40);
+
+		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+
+		advance_n_blocks(1);
+
+		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
+	});
+}
+
+#[test]
+fn update_proposal_state_works() {
+	new_test_ext().execute_with(|| {
+		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+
+		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal_action));
+
+		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+
+		// propsal is passing
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 100 });
+
+		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(
+			EncointerDemocracy::proposals(1).unwrap().state,
+			ProposalState::Confirming { since: 0 }
+		);
+
+		// not passing anymore
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 0 });
+
+		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+
+		// nothing changes if repeated
+		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+
+		// passing
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 100 });
+
+		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(
+			EncointerDemocracy::proposals(1).unwrap().state,
+			ProposalState::Confirming { since: 0 }
+		);
+
+		advance_n_blocks(11);
+		// proposal is enacted
+		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), true);
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);
 	});
 }

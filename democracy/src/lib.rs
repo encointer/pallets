@@ -105,7 +105,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn cancelled_at_block)]
 	pub(super) type CancelledAtBlock<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalAction, T::BlockNumber, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::BlockNumber, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
@@ -234,7 +234,8 @@ pub mod pallet {
 			ensure!(proposal.state.can_update(), Error::<T>::ProposalCannotBeUpdated);
 			let mut enacted = false;
 			let current_block = frame_system::Pallet::<T>::block_number();
-			let cancelled_at_block = Self::cancelled_at_block(proposal.action);
+			let proposal_action_identifier = proposal.action.get_identifier();
+			let cancelled_at_block = Self::cancelled_at_block(proposal_action_identifier);
 			let proposal_cancelled = proposal.start < cancelled_at_block;
 			let proposal_too_old = current_block - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled || proposal_too_old {
@@ -248,6 +249,10 @@ pub mod pallet {
 						if current_block - since > T::ConfirmationPeriod::get() {
 							proposal.state = ProposalState::Approved;
 							Self::enact_proposal(proposal_id)?;
+							<CancelledAtBlock<T>>::insert(
+								proposal_action_identifier,
+								current_block,
+							);
 							enacted = true;
 						}
 					// not confirming
