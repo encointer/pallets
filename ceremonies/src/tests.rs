@@ -2719,6 +2719,37 @@ fn set_endorsement_tickets_per_bootstrapper_works() {
 }
 
 #[test]
+fn set_endorsement_tickets_per_reputable_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerCeremonies::set_endorsement_tickets_per_reputable(
+				Origin::signed(AccountKeyring::Bob.into()),
+				1u8,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_endorsement_tickets_per_reputable_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_reputable(
+			Origin::signed(master()),
+			2u8
+		));
+
+		assert_eq!(EncointerCeremonies::endorsement_tickets_per_reputable(), 2u8);
+		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_reputable(
+			Origin::signed(master()),
+			3u8
+		));
+
+		assert_eq!(EncointerCeremonies::endorsement_tickets_per_reputable(), 3u8);
+	});
+}
+
+#[test]
 fn set_reputation_lifetime_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(

@@ -660,7 +660,7 @@ pub mod pallet {
 		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_bootstrapper(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_bootstrapper(
 			origin: OriginFor<T>,
-			endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
+			endorsement_tickets_per_bootstrapper: EndorsementTicketsType,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<EndorsementTicketsPerBootstrapper<T>>::put(endorsement_tickets_per_bootstrapper);
@@ -671,6 +671,23 @@ pub mod pallet {
 			);
 			Self::deposit_event(Event::EndorsementTicketsPerBootstrapperUpdated(
 				endorsement_tickets_per_bootstrapper,
+			));
+			Ok(().into())
+		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_bootstrapper(), DispatchClass::Normal, Pays::Yes))]
+		pub fn set_endorsement_tickets_per_reputable(
+			origin: OriginFor<T>,
+			endorsement_tickets_per_reputable: EndorsementTicketsType,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<EndorsementTicketsPerReputable<T>>::put(endorsement_tickets_per_reputable);
+			info!(
+				target: LOG,
+				"set endorsement tickets per reputable to {}", endorsement_tickets_per_reputable
+			);
+			Self::deposit_event(Event::EndorsementTicketsPerReputableUpdated(
+				endorsement_tickets_per_reputable,
 			));
 			Ok(().into())
 		}
@@ -759,7 +776,9 @@ pub mod pallet {
 		/// inactivity timeout has changed. affects how many ceremony cycles a community can be idle before getting purged
 		InactivityTimeoutUpdated(InactivityTimeoutType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
-		EndorsementTicketsPerBootstrapperUpdated(EndorsementTicketsPerBootstrapperType),
+		EndorsementTicketsPerBootstrapperUpdated(EndorsementTicketsType),
+		/// The number of endorsement tickets which bootstrappers can give out has changed
+		EndorsementTicketsPerReputableUpdated(EndorsementTicketsType),
 		/// reputation lifetime has changed. After this many ceremony cycles, reputations is outdated
 		ReputationLifetimeUpdated(ReputationLifetimeType),
 		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups will take place
@@ -1114,11 +1133,17 @@ pub mod pallet {
 	pub(super) type InactivityTimeout<T: Config> =
 		StorageValue<_, InactivityTimeoutType, ValueQuery>;
 
-	/// The number newbies a bootstrapper can endorse to accelerate community growth
+	/// The number of newbies a bootstrapper can endorse to accelerate community growth
 	#[pallet::storage]
 	#[pallet::getter(fn endorsement_tickets_per_bootstrapper)]
 	pub(super) type EndorsementTicketsPerBootstrapper<T: Config> =
-		StorageValue<_, EndorsementTicketsPerBootstrapperType, ValueQuery>;
+		StorageValue<_, EndorsementTicketsType, ValueQuery>;
+
+	/// The number of newbies a reputable can endorse per cycle to accelerate community growth
+	#[pallet::storage]
+	#[pallet::getter(fn endorsement_tickets_per_reputable)]
+	pub(super) type EndorsementTicketsPerReputable<T: Config> =
+		StorageValue<_, EndorsementTicketsType, ValueQuery>;
 
 	/// The number of ceremony cycles that a participant's reputation is valid for
 	#[pallet::storage]
@@ -1140,7 +1165,8 @@ pub mod pallet {
 		pub location_tolerance: u32,
 		pub time_tolerance: T::Moment,
 		pub inactivity_timeout: InactivityTimeoutType,
-		pub endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
+		pub endorsement_tickets_per_bootstrapper: EndorsementTicketsType,
+		pub endorsement_tickets_per_reputable: EndorsementTicketsType,
 		pub reputation_lifetime: ReputationLifetimeType,
 		pub meetup_time_offset: MeetupTimeOffsetType,
 	}
@@ -1157,6 +1183,7 @@ pub mod pallet {
 				time_tolerance: Default::default(),
 				inactivity_timeout: Default::default(),
 				endorsement_tickets_per_bootstrapper: Default::default(),
+				endorsement_tickets_per_reputable: Default::default(),
 				reputation_lifetime: Default::default(),
 				meetup_time_offset: Default::default(),
 			}
