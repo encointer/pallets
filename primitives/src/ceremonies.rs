@@ -59,6 +59,12 @@ impl Default for Reputation {
 	}
 }
 
+impl Reputation {
+	pub fn is_verified(self) -> bool {
+		self == Self::VerifiedLinked || self == Self::VerifiedUnlinked
+	}
+}
+
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum ParticipantType {

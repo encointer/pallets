@@ -3073,3 +3073,33 @@ fn attest_attendees_works() {
 		assert!(wit_vec.contains(&account_id(&bob)));
 	});
 }
+
+#[test]
+fn has_reputation_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = account_id(&AccountKeyring::Alice.pair());
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		assert_eq!(cindex, 3);
+
+		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedUnlinked);
+
+		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedUnlinked);
+
+		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), true);
+	});
+}

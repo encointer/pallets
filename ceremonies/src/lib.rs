@@ -897,6 +897,18 @@ pub mod pallet {
 	>;
 
 	#[pallet::storage]
+	#[pallet::getter(fn reputable_newbie_tickets)]
+	pub(super) type BurnedReputableNewbieTickets<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		T::AccountId,
+		u8,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn bootstrapper_registry)]
 	pub(super) type BootstrapperRegistry<T: Config> = StorageDoubleMap<
 		_,
@@ -1973,6 +1985,20 @@ impl<T: Config> Pallet<T> {
 		));
 		Ok(())
 	}
+
+	fn has_reputation(participant: &T::AccountId, cid: &CommunityIdentifier) -> bool {
+		let reputation_lifetime = Self::reputation_lifetime();
+		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+		for i in 0..=reputation_lifetime {
+			if Self::participant_reputation(&(*cid, cindex.saturating_sub(i)), participant)
+				.is_verified()
+			{
+				return true
+			}
+		}
+		return false
+	}
+
 	#[cfg(any(test, feature = "runtime-benchmarks"))]
 	// only to be used by tests
 	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
