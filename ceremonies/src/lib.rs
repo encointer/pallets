@@ -1999,6 +1999,20 @@ impl<T: Config> Pallet<T> {
 		return false
 	}
 
+	fn is_endorsed(
+		participant: &T::AccountId,
+		cc: &CommunityCeremony,
+	) -> Option<CeremonyIndexType> {
+		let reputation_lifetime = Self::reputation_lifetime();
+		for i in (0..=reputation_lifetime).rev() {
+			let cindex = cc.1.saturating_sub(i);
+			if <Endorsees<T>>::contains_key(&(cc.0, cindex), participant) {
+				return Some(cindex)
+			}
+		}
+		return None
+	}
+
 	#[cfg(any(test, feature = "runtime-benchmarks"))]
 	// only to be used by tests
 	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {

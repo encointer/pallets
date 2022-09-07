@@ -3103,3 +3103,25 @@ fn has_reputation_works() {
 		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), true);
 	});
 }
+
+#[test]
+fn is_endorsed_works() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = account_id(&AccountKeyring::Alice.pair());
+
+		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 4)), None);
+
+		Endorsees::<TestRuntime>::insert((cid, 2), &alice, ());
+
+		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 4)), Some(2));
+
+		// above reputation lifetime
+		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 9)), None);
+
+		Endorsees::<TestRuntime>::insert((cid, 1), &alice, ());
+
+		// will return the earlies endorsement
+		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 4)), Some(1));
+	});
+}
