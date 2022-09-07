@@ -1437,6 +1437,90 @@ fn endorsing_after_registration_works() {
 }
 
 #[test]
+fn endorse_newbie_works_for_reputables() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let reputable = account_id(&sr25519::Pair::from_entropy(&[10u8; 32], None).0);
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		EncointerCeremonies::fake_reputation(
+			(cid, cindex - 1),
+			&reputable,
+			Reputation::VerifiedUnlinked,
+		);
+
+		// a newbie
+		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
+		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(reputable.clone()),
+			cid,
+			account_id(&zoran)
+		));
+		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex), &account_id(&zoran)));
+		assert_eq!(BurnedReputableNewbieTickets::<TestRuntime>::get((cid, cindex), &reputable), 1);
+		assert_eq!(BurnedBootstrapperNewbieTickets::<TestRuntime>::get(cid, &reputable), 0);
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(reputable.clone()),
+			cid,
+			account_id(&yran)
+		));
+		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex), &account_id(&yran)));
+		assert_eq!(BurnedReputableNewbieTickets::<TestRuntime>::get((cid, cindex), &reputable), 2);
+		assert_eq!(BurnedBootstrapperNewbieTickets::<TestRuntime>::get(cid, &reputable), 0);
+
+		assert_err!(
+			EncointerCeremonies::endorse_newcomer(
+				Origin::signed(reputable.clone()),
+				cid,
+				account_id(&zoran)
+			),
+			Error::<TestRuntime>::NoMoreNewbieTickets,
+		);
+	});
+}
+
+#[test]
+fn endorse_newbie_fails_if_already_endorsed_in_previous_ceremony() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let alice = AccountId::from(AccountKeyring::Alice);
+
+		// a newbie
+		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(alice.clone()),
+			cid,
+			yran.clone()
+		));
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_err!(
+			EncointerCeremonies::endorse_newcomer(Origin::signed(alice.clone()), cid, yran),
+			Error::<TestRuntime>::AlreadyEndorsed
+		);
+	});
+}
+
+#[test]
+fn endorse_newbie_fails_if_not_authorized() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+
+		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		assert_err!(
+			EncointerCeremonies::endorse_newcomer(Origin::signed(account_id(&zoran)), cid, yran),
+			Error::<TestRuntime>::AuthorizationRequired
+		);
+	});
+}
+
+#[test]
 fn registering_in_attestation_phase_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
@@ -1465,6 +1549,24 @@ fn registering_in_assigning_phase_fails() {
 			register(yran.clone(), cid, None),
 			Error::<TestRuntime>::RegisteringOrAttestationPhaseRequired,
 		);
+	});
+}
+
+#[test]
+fn registering_endorsee_removes_endorsement() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+		assert!(EncointerBalances::issue(cid, &yran, NominalIncome::from_num(1)).is_ok());
+
+		Endorsees::<TestRuntime>::insert((cid, cindex), &yran, ());
+
+		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex), &yran));
+		register(yran.clone(), cid, None).unwrap();
+
+		assert!(EndorseeIndex::<TestRuntime>::contains_key((cid, cindex), &yran));
+		assert!(!Endorsees::<TestRuntime>::contains_key((cid, cindex), &yran));
 	});
 }
 

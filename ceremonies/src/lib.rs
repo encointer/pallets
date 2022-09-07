@@ -486,29 +486,48 @@ pub mod pallet {
 				Error::<T>::InexistentCommunity
 			);
 
-			ensure!(
-				<encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender),
-				Error::<T>::AuthorizationRequired
-			);
-
-			ensure!(
-				<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-					Self::endorsement_tickets_per_bootstrapper(),
-				Error::<T>::NoMoreNewbieTickets
-			);
+			let mut is_bootstrapper = false;
 
 			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
 				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
 			}
+
+			if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender) {
+				is_bootstrapper = true;
+				ensure!(
+					<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
+						Self::endorsement_tickets_per_bootstrapper(),
+					Error::<T>::NoMoreNewbieTickets
+				);
+			} else if Self::has_reputation(&sender, &cid) {
+				ensure!(
+					<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), &sender) <
+						Self::endorsement_tickets_per_reputable(),
+					Error::<T>::NoMoreNewbieTickets
+				);
+			} else {
+				return Err(Error::<T>::AuthorizationRequired.into())
+			}
+
 			ensure!(
-				!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
+				Self::is_endorsed(&newbie, &(cid, cindex)).is_none(),
 				Error::<T>::AlreadyEndorsed
 			);
 
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			if is_bootstrapper {
+				<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1);
+			// safe; limited by AMOUNT_NEWBIE_TICKETS
+			} else {
+				<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender.clone(), |b| {
+					*b += 1
+				}); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			}
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
-			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			let new_endorsee_count = Self::endorsee_count((cid, cindex))
+				.checked_add(1)
+				.ok_or(<Error<T>>::RegistryOverflow)?;
+			<EndorseesCount<T>>::insert((cid, cindex), new_endorsee_count);
 
 			if <NewbieIndex<T>>::contains_key((cid, cindex), &newbie) {
 				Self::remove_participant_from_registry(cid, cindex, &newbie)?;
@@ -1213,6 +1232,7 @@ pub mod pallet {
 			<TimeTolerance<T>>::put(&self.time_tolerance);
 			<InactivityTimeout<T>>::put(&self.inactivity_timeout);
 			<EndorsementTicketsPerBootstrapper<T>>::put(&self.endorsement_tickets_per_bootstrapper);
+			<EndorsementTicketsPerReputable<T>>::put(&self.endorsement_tickets_per_reputable);
 			<ReputationLifetime<T>>::put(&self.reputation_lifetime);
 			<MeetupTimeOffset<T>>::put(&self.meetup_time_offset);
 		}
@@ -1320,10 +1340,11 @@ impl<T: Config> Pallet<T> {
 				<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
 				<ReputableCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Reputable
-			} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
+			} else if let Some(endorsed_cindex) = Self::is_endorsed(sender, &(cid, cindex)) {
 				let participant_index = <EndorseeCount<T>>::get((cid, cindex))
 					.checked_add(1)
 					.ok_or(Error::<T>::RegistryOverflow)?;
+				<Endorsees<T>>::remove((cid, endorsed_cindex), &sender);
 				<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 				<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
 				<EndorseeCount<T>>::insert((cid, cindex), participant_index);
@@ -1996,7 +2017,7 @@ impl<T: Config> Pallet<T> {
 				return true
 			}
 		}
-		return false
+		false
 	}
 
 	fn is_endorsed(
@@ -2010,7 +2031,7 @@ impl<T: Config> Pallet<T> {
 				return Some(cindex)
 			}
 		}
-		return None
+		None
 	}
 
 	#[cfg(any(test, feature = "runtime-benchmarks"))]
