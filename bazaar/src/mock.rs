@@ -15,8 +15,8 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate as dut;
+use crate::mock::frame_system::EnsureSigned;
 use frame_support::pallet_prelude::GenesisBuild;
-
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;

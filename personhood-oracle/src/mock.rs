@@ -22,6 +22,7 @@ use encointer_primitives::{
 	scheduler::CeremonyPhaseType,
 };
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
+use frame_system::EnsureSigned;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;

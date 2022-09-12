@@ -47,7 +47,7 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 	let bs = bootstrappers::<T>();
 
 	encointer_communities::Pallet::<T>::new_community(
-		RawOrigin::Root.into(),
+		RawOrigin::Signed(account("alice", 1, 1)).into(),
 		location,
 		bs.clone(),
 		CommunityMetadata::default(),

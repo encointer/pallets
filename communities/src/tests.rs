@@ -166,24 +166,6 @@ fn new_community_works() {
 }
 
 #[test]
-fn new_community_errs_with_invalid_origin() {
-	new_test_ext().execute_with(|| {
-		let bob = AccountId::from(AccountKeyring::Bob);
-		assert_dispatch_err(
-			EncointerCommunities::new_community(
-				Origin::signed(bob),
-				Location::default(),
-				vec![],
-				CommunityMetadataType::default(),
-				None,
-				None,
-			),
-			DispatchError::BadOrigin,
-		);
-	});
-}
-
-#[test]
 fn two_communities_in_same_bucket_works() {
 	new_test_ext().execute_with(|| {
 		let alice = AccountId::from(AccountKeyring::Alice);
@@ -391,21 +373,6 @@ fn add_location_works() {
 		.ok();
 		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash3), vec![location3]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash3), vec![cid]);
-	});
-}
-
-#[test]
-fn add_new_location_errs_with_invalid_origin() {
-	new_test_ext().execute_with(|| {
-		let cid = register_test_community(None, 0.0, 0.0);
-		assert_dispatch_err(
-			EncointerCommunities::add_location(
-				Origin::signed(AccountKeyring::Bob.into()),
-				cid,
-				Location::default(),
-			),
-			DispatchError::BadOrigin,
-		);
 	});
 }
 

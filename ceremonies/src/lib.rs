@@ -694,7 +694,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_bootstrapper(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_reputable(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_reputable(
 			origin: OriginFor<T>,
 			endorsement_tickets_per_reputable: EndorsementTicketsType,

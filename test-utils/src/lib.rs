@@ -194,7 +194,7 @@ macro_rules! impl_encointer_communities {
 		impl encointer_communities::Config for $t {
 			type Event = Event;
 			type CommunityMaster = EnsureAlice;
-			type TrustableForNonDestructiveAction = EnsureAlice;
+			type TrustableForNonDestructiveAction = EnsureSigned<AccountId>;
 			type WeightInfo = ();
 		}
 	};

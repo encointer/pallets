@@ -28,7 +28,7 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 		..Default::default()
 	};
 	encointer_communities::Pallet::<T>::new_community(
-		RawOrigin::Root.into(),
+		RawOrigin::Signed(account("alice", 1, 1)).into(),
 		location,
 		bs.clone(),
 		community_meta.clone(),

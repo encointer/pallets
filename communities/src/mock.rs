@@ -18,8 +18,8 @@
 
 pub use crate as dut;
 
+use crate::mock::frame_system::EnsureSigned;
 use frame_support::pallet_prelude::GenesisBuild;
-
 use test_utils::*;
 
 use encointer_primitives::scheduler::CeremonyPhaseType;
@@ -48,7 +48,7 @@ pub fn master() -> AccountId {
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type CommunityMaster = EnsureAlice;
-	type TrustableForNonDestructiveAction = EnsureAlice;
+	type TrustableForNonDestructiveAction = EnsureSigned<AccountId>;
 	type WeightInfo = ();
 }
 
