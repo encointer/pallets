@@ -50,7 +50,7 @@ fn setup_test_community<T: Config>() -> (
 
 	// setup test community
 	assert_ok!(Communities::<T>::new_community(
-		RawOrigin::Signed(account("alice", 1, 1)).into(),
+		RawOrigin::Root.into(),
 		get_location(0),
 		bootstrappers.clone(),
 		community_metadata.clone(),
@@ -71,11 +71,11 @@ benchmarks! {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 
 		for j in 1..NUM_LOCATIONS-1 {
-			assert_ok!(Pallet::<T>::add_location(RawOrigin::Signed(account("alice", 1, 1)).into(), cid, get_location(j)));
+			assert_ok!(Pallet::<T>::add_location(RawOrigin::Root.into(), cid, get_location(j)));
 		}
 		assert_eq!(Pallet::<T>::community_identifiers().len(), 1);
 	} : {
-		assert_ok!(Communities::<T>::new_community(RawOrigin::Signed(account("alice", 1, 1)).into(), get_location(NUM_LOCATIONS-1), bootstrappers, community_metadata, demurrage, nominal_income));
+		assert_ok!(Communities::<T>::new_community(RawOrigin::Root.into(), get_location(NUM_LOCATIONS-1), bootstrappers, community_metadata, demurrage, nominal_income));
 	}
 	verify {
 		assert_eq!(Pallet::<T>::community_identifiers().len(), 2);
@@ -85,11 +85,11 @@ benchmarks! {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 
 		for j in 1..NUM_LOCATIONS-1 {
-			assert_ok!(Pallet::<T>::add_location(RawOrigin::Signed(account("alice", 1, 1)).into(), cid, get_location(j)));
+			assert_ok!(Pallet::<T>::add_location(RawOrigin::Root.into(), cid, get_location(j)));
 		}
 		assert_eq!(Pallet::<T>::get_locations(&cid).len() as u32, NUM_LOCATIONS - 1);
 	} : {
-		assert_ok!(Communities::<T>::add_location(RawOrigin::Signed(account("alice", 1, 1)).into(), cid, get_location(NUM_LOCATIONS-1)));
+		assert_ok!(Communities::<T>::add_location(RawOrigin::Root.into(), cid, get_location(NUM_LOCATIONS-1)));
 	}
 	verify {
 		assert_eq!(Pallet::<T>::get_locations(&cid).len() as u32, NUM_LOCATIONS);
@@ -99,7 +99,7 @@ benchmarks! {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 
 		for j in 1..NUM_LOCATIONS-1 {
-			assert_ok!(Pallet::<T>::add_location(RawOrigin::Signed(account("alice", 1, 1)).into(), cid, get_location(j)));
+			assert_ok!(Pallet::<T>::add_location(RawOrigin::Root.into(), cid, get_location(j)));
 		}
 		assert_eq!(Pallet::<T>::get_locations(&cid).len() as u32, NUM_LOCATIONS - 1);
 	} : {

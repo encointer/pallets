@@ -17,8 +17,6 @@
 //! Mock runtime for the encointer_communities module
 
 pub use crate as dut;
-
-use crate::mock::frame_system::EnsureSigned;
 use frame_support::pallet_prelude::GenesisBuild;
 use test_utils::*;
 
@@ -48,7 +46,7 @@ pub fn master() -> AccountId {
 impl dut::Config for TestRuntime {
 	type Event = Event;
 	type CommunityMaster = EnsureAlice;
-	type TrustableForNonDestructiveAction = EnsureSigned<AccountId>;
+	type TrustableForNonDestructiveAction = EnsureAlice;
 	type WeightInfo = ();
 }
 
