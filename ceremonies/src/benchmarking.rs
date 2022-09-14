@@ -342,7 +342,8 @@ benchmarks! {
 		let cid = create_community::<T>();
 		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
-		let zoran= account_id::<T>(&generate_pair());
+		// we let the newbie be endorsed by a reputable as this is the worst case scenario
+		let zoran = account_id::<T>(&generate_pair());
 		Pallet::<T>::fake_reputation((cid, cindex - 1), &zoran, Reputation::VerifiedUnlinked);
 
 		// issue some income such that newbies are allowed to register
