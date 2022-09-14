@@ -3223,7 +3223,7 @@ fn is_endorsed_works() {
 
 		Endorsees::<TestRuntime>::insert((cid, 1), &alice, ());
 
-		// will return the earlies endorsement
+		// will return the earliest endorsement
 		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 4)), Some(1));
 	});
 }
