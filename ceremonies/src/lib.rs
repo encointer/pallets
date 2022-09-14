@@ -486,28 +486,9 @@ pub mod pallet {
 				Error::<T>::InexistentCommunity
 			);
 
-			let mut is_bootstrapper = false;
-
 			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
 				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
-			}
-
-			if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender) {
-				is_bootstrapper = true;
-				ensure!(
-					<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-						Self::endorsement_tickets_per_bootstrapper(),
-					Error::<T>::NoMoreNewbieTickets
-				);
-			} else if Self::has_reputation(&sender, &cid) {
-				ensure!(
-					<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), &sender) <
-						Self::endorsement_tickets_per_reputable(),
-					Error::<T>::NoMoreNewbieTickets
-				);
-			} else {
-				return Err(Error::<T>::AuthorizationRequired.into())
 			}
 
 			ensure!(
@@ -515,14 +496,27 @@ pub mod pallet {
 				Error::<T>::AlreadyEndorsed
 			);
 
-			if is_bootstrapper {
+			if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender) {
+				ensure!(
+					<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
+						Self::endorsement_tickets_per_bootstrapper(),
+					Error::<T>::NoMoreNewbieTickets
+				);
 				<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1);
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
-			} else {
+			} else if Self::has_reputation(&sender, &cid) {
+				ensure!(
+					<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), &sender) <
+						Self::endorsement_tickets_per_reputable(),
+					Error::<T>::NoMoreNewbieTickets
+				);
 				<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender.clone(), |b| {
 					*b += 1
 				}); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			} else {
+				return Err(Error::<T>::AuthorizationRequired.into())
 			}
+
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
 			let new_endorsee_count = Self::endorsee_count((cid, cindex))
 				.checked_add(1)

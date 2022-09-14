@@ -1453,6 +1453,7 @@ fn endorse_newbie_works_for_reputables() {
 		// a newbie
 		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let bob = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			Origin::signed(reputable.clone()),
 			cid,
@@ -1474,7 +1475,7 @@ fn endorse_newbie_works_for_reputables() {
 			EncointerCeremonies::endorse_newcomer(
 				Origin::signed(reputable.clone()),
 				cid,
-				account_id(&zoran)
+				account_id(&bob)
 			),
 			Error::<TestRuntime>::NoMoreNewbieTickets,
 		);
