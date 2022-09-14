@@ -2019,7 +2019,7 @@ impl<T: Config> Pallet<T> {
 		cc: &CommunityCeremony,
 	) -> Option<CeremonyIndexType> {
 		let reputation_lifetime = Self::reputation_lifetime();
-		for i in (0..=reputation_lifetime).rev() {
+		for i in 0..=reputation_lifetime {
 			let cindex = cc.1.saturating_sub(i);
 			if <Endorsees<T>>::contains_key(&(cc.0, cindex), participant) {
 				return Some(cindex)

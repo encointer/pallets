@@ -3221,10 +3221,5 @@ fn is_endorsed_works() {
 
 		// above reputation lifetime
 		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 9)), None);
-
-		Endorsees::<TestRuntime>::insert((cid, 1), &alice, ());
-
-		// will return the earliest endorsement
-		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 4)), Some(1));
 	});
 }
