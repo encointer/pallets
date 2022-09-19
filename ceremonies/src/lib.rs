@@ -486,29 +486,42 @@ pub mod pallet {
 				Error::<T>::InexistentCommunity
 			);
 
-			ensure!(
-				<encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender),
-				Error::<T>::AuthorizationRequired
-			);
-
-			ensure!(
-				<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-					Self::endorsement_tickets_per_bootstrapper(),
-				Error::<T>::NoMoreNewbieTickets
-			);
-
 			let mut cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			if <encointer_scheduler::Pallet<T>>::current_phase() != CeremonyPhaseType::Registering {
 				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
 			}
+
 			ensure!(
-				!<Endorsees<T>>::contains_key((cid, cindex), &newbie),
+				Self::is_endorsed(&newbie, &(cid, cindex)).is_none(),
 				Error::<T>::AlreadyEndorsed
 			);
 
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender) {
+				ensure!(
+					<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
+						Self::endorsement_tickets_per_bootstrapper(),
+					Error::<T>::NoMoreNewbieTickets
+				);
+				<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1);
+			// safe; limited by AMOUNT_NEWBIE_TICKETS
+			} else if Self::has_reputation(&sender, &cid) {
+				ensure!(
+					<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), &sender) <
+						Self::endorsement_tickets_per_reputable(),
+					Error::<T>::NoMoreNewbieTickets
+				);
+				<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender.clone(), |b| {
+					*b += 1
+				}); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			} else {
+				return Err(Error::<T>::AuthorizationRequired.into())
+			}
+
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
-			<EndorseesCount<T>>::mutate((cid, cindex), |c| *c += 1); // safe; limited by AMOUNT_NEWBIE_TICKETS
+			let new_endorsee_count = Self::endorsee_count((cid, cindex))
+				.checked_add(1)
+				.ok_or(<Error<T>>::RegistryOverflow)?;
+			<EndorseesCount<T>>::insert((cid, cindex), new_endorsee_count);
 
 			if <NewbieIndex<T>>::contains_key((cid, cindex), &newbie) {
 				Self::remove_participant_from_registry(cid, cindex, &newbie)?;
@@ -660,7 +673,7 @@ pub mod pallet {
 		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_bootstrapper(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_bootstrapper(
 			origin: OriginFor<T>,
-			endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
+			endorsement_tickets_per_bootstrapper: EndorsementTicketsType,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<EndorsementTicketsPerBootstrapper<T>>::put(endorsement_tickets_per_bootstrapper);
@@ -671,6 +684,23 @@ pub mod pallet {
 			);
 			Self::deposit_event(Event::EndorsementTicketsPerBootstrapperUpdated(
 				endorsement_tickets_per_bootstrapper,
+			));
+			Ok(().into())
+		}
+
+		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_reputable(), DispatchClass::Normal, Pays::Yes))]
+		pub fn set_endorsement_tickets_per_reputable(
+			origin: OriginFor<T>,
+			endorsement_tickets_per_reputable: EndorsementTicketsType,
+		) -> DispatchResultWithPostInfo {
+			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
+			<EndorsementTicketsPerReputable<T>>::put(endorsement_tickets_per_reputable);
+			info!(
+				target: LOG,
+				"set endorsement tickets per reputable to {}", endorsement_tickets_per_reputable
+			);
+			Self::deposit_event(Event::EndorsementTicketsPerReputableUpdated(
+				endorsement_tickets_per_reputable,
 			));
 			Ok(().into())
 		}
@@ -759,7 +789,9 @@ pub mod pallet {
 		/// inactivity timeout has changed. affects how many ceremony cycles a community can be idle before getting purged
 		InactivityTimeoutUpdated(InactivityTimeoutType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
-		EndorsementTicketsPerBootstrapperUpdated(EndorsementTicketsPerBootstrapperType),
+		EndorsementTicketsPerBootstrapperUpdated(EndorsementTicketsType),
+		/// The number of endorsement tickets which bootstrappers can give out has changed
+		EndorsementTicketsPerReputableUpdated(EndorsementTicketsType),
 		/// reputation lifetime has changed. After this many ceremony cycles, reputations is outdated
 		ReputationLifetimeUpdated(ReputationLifetimeType),
 		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups will take place
@@ -871,6 +903,18 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		CommunityIdentifier,
+		Blake2_128Concat,
+		T::AccountId,
+		u8,
+		ValueQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn reputable_newbie_tickets)]
+	pub(super) type BurnedReputableNewbieTickets<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityCeremony,
 		Blake2_128Concat,
 		T::AccountId,
 		u8,
@@ -1114,11 +1158,17 @@ pub mod pallet {
 	pub(super) type InactivityTimeout<T: Config> =
 		StorageValue<_, InactivityTimeoutType, ValueQuery>;
 
-	/// The number newbies a bootstrapper can endorse to accelerate community growth
+	/// The number of newbies a bootstrapper can endorse to accelerate community growth
 	#[pallet::storage]
 	#[pallet::getter(fn endorsement_tickets_per_bootstrapper)]
 	pub(super) type EndorsementTicketsPerBootstrapper<T: Config> =
-		StorageValue<_, EndorsementTicketsPerBootstrapperType, ValueQuery>;
+		StorageValue<_, EndorsementTicketsType, ValueQuery>;
+
+	/// The number of newbies a reputable can endorse per cycle to accelerate community growth
+	#[pallet::storage]
+	#[pallet::getter(fn endorsement_tickets_per_reputable)]
+	pub(super) type EndorsementTicketsPerReputable<T: Config> =
+		StorageValue<_, EndorsementTicketsType, ValueQuery>;
 
 	/// The number of ceremony cycles that a participant's reputation is valid for
 	#[pallet::storage]
@@ -1140,7 +1190,8 @@ pub mod pallet {
 		pub location_tolerance: u32,
 		pub time_tolerance: T::Moment,
 		pub inactivity_timeout: InactivityTimeoutType,
-		pub endorsement_tickets_per_bootstrapper: EndorsementTicketsPerBootstrapperType,
+		pub endorsement_tickets_per_bootstrapper: EndorsementTicketsType,
+		pub endorsement_tickets_per_reputable: EndorsementTicketsType,
 		pub reputation_lifetime: ReputationLifetimeType,
 		pub meetup_time_offset: MeetupTimeOffsetType,
 	}
@@ -1157,6 +1208,7 @@ pub mod pallet {
 				time_tolerance: Default::default(),
 				inactivity_timeout: Default::default(),
 				endorsement_tickets_per_bootstrapper: Default::default(),
+				endorsement_tickets_per_reputable: Default::default(),
 				reputation_lifetime: Default::default(),
 				meetup_time_offset: Default::default(),
 			}
@@ -1174,6 +1226,7 @@ pub mod pallet {
 			<TimeTolerance<T>>::put(&self.time_tolerance);
 			<InactivityTimeout<T>>::put(&self.inactivity_timeout);
 			<EndorsementTicketsPerBootstrapper<T>>::put(&self.endorsement_tickets_per_bootstrapper);
+			<EndorsementTicketsPerReputable<T>>::put(&self.endorsement_tickets_per_reputable);
 			<ReputationLifetime<T>>::put(&self.reputation_lifetime);
 			<MeetupTimeOffset<T>>::put(&self.meetup_time_offset);
 		}
@@ -1281,10 +1334,11 @@ impl<T: Config> Pallet<T> {
 				<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
 				<ReputableCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Reputable
-			} else if <Endorsees<T>>::contains_key((cid, cindex), &sender) {
+			} else if let Some(endorsed_cindex) = Self::is_endorsed(sender, &(cid, cindex)) {
 				let participant_index = <EndorseeCount<T>>::get((cid, cindex))
 					.checked_add(1)
 					.ok_or(Error::<T>::RegistryOverflow)?;
+				<Endorsees<T>>::remove((cid, endorsed_cindex), &sender);
 				<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
 				<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
 				<EndorseeCount<T>>::insert((cid, cindex), participant_index);
@@ -1946,6 +2000,34 @@ impl<T: Config> Pallet<T> {
 		));
 		Ok(())
 	}
+
+	fn has_reputation(participant: &T::AccountId, cid: &CommunityIdentifier) -> bool {
+		let reputation_lifetime = Self::reputation_lifetime();
+		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+		for i in 0..=reputation_lifetime {
+			if Self::participant_reputation(&(*cid, cindex.saturating_sub(i)), participant)
+				.is_verified()
+			{
+				return true
+			}
+		}
+		false
+	}
+
+	fn is_endorsed(
+		participant: &T::AccountId,
+		cc: &CommunityCeremony,
+	) -> Option<CeremonyIndexType> {
+		let reputation_lifetime = Self::reputation_lifetime();
+		for i in 0..=reputation_lifetime {
+			let cindex = cc.1.saturating_sub(i);
+			if <Endorsees<T>>::contains_key(&(cc.0, cindex), participant) {
+				return Some(cindex)
+			}
+		}
+		None
+	}
+
 	#[cfg(any(test, feature = "runtime-benchmarks"))]
 	// only to be used by tests
 	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {

@@ -18,7 +18,6 @@
 
 pub use crate as dut;
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
-
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -99,6 +98,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		time_tolerance: TIME_TOLERANCE,         // [ms]
 		inactivity_timeout: 3,
 		endorsement_tickets_per_bootstrapper: 50,
+		endorsement_tickets_per_reputable: 2,
 		reputation_lifetime: 6,
 		meetup_time_offset: 0,
 	}

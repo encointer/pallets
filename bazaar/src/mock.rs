@@ -16,7 +16,6 @@
 
 use crate as dut;
 use frame_support::pallet_prelude::GenesisBuild;
-
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;

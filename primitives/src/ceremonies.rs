@@ -30,7 +30,7 @@ pub type MeetupIndexType = u64;
 pub type AttestationIndexType = u64;
 pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 pub type InactivityTimeoutType = u32;
-pub type EndorsementTicketsPerBootstrapperType = u8;
+pub type EndorsementTicketsType = u8;
 pub type ReputationLifetimeType = u32;
 pub type MeetupTimeOffsetType = i32;
 pub type MeetupData<AccountId, Moment> =
@@ -56,6 +56,12 @@ pub enum Reputation {
 impl Default for Reputation {
 	fn default() -> Self {
 		Reputation::Unverified
+	}
+}
+
+impl Reputation {
+	pub fn is_verified(self) -> bool {
+		self == Self::VerifiedLinked || self == Self::VerifiedUnlinked
 	}
 }
 

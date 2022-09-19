@@ -61,6 +61,7 @@ pub trait WeightInfo {
 	fn set_meetup_time_offset() -> Weight;
 	fn set_reputation_lifetime() -> Weight;
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight;
+	fn set_endorsement_tickets_per_reputable() -> Weight;
 	fn set_time_tolerance() -> Weight;
 	fn set_location_tolerance() -> Weight;
 	fn purge_community_ceremony() -> Weight;
@@ -70,9 +71,9 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn register_participant() -> Weight {
-		(187_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(13 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+		(221_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(13 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
 	}
 	fn upgrade_registration() -> Weight {
 		(247_000_000 as Weight)
@@ -95,9 +96,9 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	fn endorse_newcomer() -> Weight {
-		(170_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(17 as Weight))
-			.saturating_add(T::DbWeight::get().writes(9 as Weight))
+		(2_029_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(20 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(9 as Weight))
 	}
 	fn claim_rewards() -> Weight {
 		(816_000_000 as Weight)
@@ -118,6 +119,9 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight {
 		(29_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
+	fn set_endorsement_tickets_per_reputable() -> Weight {
+		(38_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
 	fn set_time_tolerance() -> Weight {
 		(29_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -132,7 +136,7 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 // For tests
 impl WeightInfo for () {
 	fn register_participant() -> Weight {
-		(187_000_000 as Weight)
+		(221_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(13 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
 	}
@@ -157,8 +161,8 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	fn endorse_newcomer() -> Weight {
-		(170_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(17 as Weight))
+		(2_029_000_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(20 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(9 as Weight))
 	}
 	fn claim_rewards() -> Weight {
@@ -179,6 +183,9 @@ impl WeightInfo for () {
 	}
 	fn set_endorsement_tickets_per_bootstrapper() -> Weight {
 		(29_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+	}
+	fn set_endorsement_tickets_per_reputable() -> Weight {
+		(38_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn set_time_tolerance() -> Weight {
 		(29_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))

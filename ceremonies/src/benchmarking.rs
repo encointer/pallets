@@ -340,12 +340,16 @@ benchmarks! {
 
 	endorse_newcomer {
 		let cid = create_community::<T>();
-		let alice: T::AccountId = account("alice", 1, 1);
+		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+
+		// we let the newbie be endorsed by a reputable as this is the worst case scenario
+		let zoran = account_id::<T>(&generate_pair());
+		Pallet::<T>::fake_reputation((cid, cindex - 1), &zoran, Reputation::VerifiedUnlinked);
 
 		// issue some income such that newbies are allowed to register
 		assert_ok!(encointer_balances::Pallet::<T>::issue(
 			cid,
-			&alice,
+			&zoran,
 			NominalIncome::from_num(1)
 		));
 
@@ -355,10 +359,9 @@ benchmarks! {
 			cid, None
 		));
 
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
 		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 0);
-	}: _(RawOrigin::Signed(alice), cid, account_id::<T>(&newbie))
+	}: _(RawOrigin::Signed(zoran), cid, account_id::<T>(&newbie))
 	verify {
 		assert_eq!(<EndorseesCount<T>>::get((cid, cindex)), 1);
 	}
@@ -416,6 +419,12 @@ benchmarks! {
 	}: _(RawOrigin::Root, 10)
 	verify {
 		assert_eq!(EndorsementTicketsPerBootstrapper::<T>::get(), 10)
+	}
+
+	set_endorsement_tickets_per_reputable {
+	}: _(RawOrigin::Root, 10)
+	verify {
+		assert_eq!(EndorsementTicketsPerReputable::<T>::get(), 10)
 	}
 
 	set_time_tolerance {
