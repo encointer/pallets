@@ -73,6 +73,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		time_tolerance: TIME_TOLERANCE,         // [ms]
 		inactivity_timeout: 12,
 		endorsement_tickets_per_bootstrapper: 50,
+		endorsement_tickets_per_reputable: 2,
 		reputation_lifetime: 6,
 		meetup_time_offset: 0,
 	}
