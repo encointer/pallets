@@ -600,6 +600,8 @@ fn claim_rewards_works() {
 
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 3).into()));
 
+		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 3);
+
 		for sender in vec![alice.clone(), bob.clone(), charlie.clone()].iter() {
 			let result: f64 = EncointerBalances::balance(cid, sender).lossy_into();
 			assert_abs_diff_eq!(
@@ -715,6 +717,7 @@ fn claim_rewards_works_with_one_missing_attestation() {
 
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
+		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 6);
 	});
 }
 
@@ -966,6 +969,7 @@ fn claim_rewards_can_be_called_by_non_participant() {
 
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
+		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 6);
 	});
 }
 
@@ -1049,6 +1053,7 @@ fn early_rewards_with_one_noshow_works() {
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 5).into()));
+		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 5);
 	})
 }
 
@@ -1822,6 +1827,8 @@ fn grow_population_and_removing_community_works() {
 				ParticipantReputation::<TestRuntime>::iter_prefix((cid, cindex)).next(),
 				None
 			);
+
+			assert_eq!(ReputationCount::<TestRuntime>::contains_key((cid, cindex)), false);
 
 			assert_eq!(Endorsees::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
 			assert_eq!(EndorseesCount::<TestRuntime>::contains_key((cid, cindex)), false);

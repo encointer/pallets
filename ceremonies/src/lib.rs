@@ -912,6 +912,11 @@ pub mod pallet {
 	/// This is not the same as `EndorseeRegistry`, which contains the `Endorsees` who
 	/// have registered for a meetup.
 	#[pallet::storage]
+	#[pallet::getter(fn reputation_count)]
+	pub(super) type ReputationCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ReputationCountType, ValueQuery>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn endorsees)]
 	pub(super) type Endorsees<T: Config> = StorageDoubleMap<
 		_,
@@ -1310,6 +1315,7 @@ impl<T: Config> Pallet<T> {
 		Assignments::<T>::remove(cc);
 
 		<ParticipantReputation<T>>::remove_prefix(cc, None);
+		<ReputationCount<T>>::remove(cc);
 
 		<Endorsees<T>>::remove_prefix(cc, None);
 		<EndorseesCount<T>>::remove(cc);
@@ -1754,6 +1760,7 @@ impl<T: Config> Pallet<T> {
 					participant,
 					Reputation::VerifiedUnlinked,
 				);
+				<ReputationCount<T>>::mutate((&cid, cindex), |b| *b += 1); // safe, as reputation_count is limited by the number of locations available on earth
 			}
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
@@ -1916,6 +1923,7 @@ impl<T: Config> Pallet<T> {
 	// only to be used by tests
 	pub fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
 		<ParticipantReputation<T>>::insert(&cidcindex, account, rep);
+		<ReputationCount<T>>::mutate(&cidcindex, |b| *b += 1);
 	}
 }
 
