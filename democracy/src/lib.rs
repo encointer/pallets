@@ -27,7 +27,7 @@ use encointer_primitives::{
 use frame_support::traits::Get;
 
 // Logger target
-const LOG: &str = "encointer";
+//const LOG: &str = "encointer";
 
 pub use pallet::*;
 
@@ -63,11 +63,11 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		SomeEvent,
+		ProposalEnacted,
 	}
 
 	#[pallet::error]
-	#[derive(PartialEq)]
+	#[derive(PartialEq, Eq)]
 	pub enum Error<T> {
 		ProposalIdOutOfBounds,
 		InexistentProposal,
@@ -282,9 +282,9 @@ pub mod pallet {
 			}
 			Ok(true)
 		}
-		fn enact_proposal(proposal_id: ProposalIdType) -> Result<(), Error<T>> {
-			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			Ok(())
+		fn enact_proposal(_proposal_id: ProposalIdType) -> Result<(), Error<T>> {
+			Self::deposit_event(Event::ProposalEnacted);
+			todo!();
 		}
 	}
 }
