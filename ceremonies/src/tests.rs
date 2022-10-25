@@ -1027,16 +1027,34 @@ fn claim_rewards_error_results_in_meetup_marked_as_completed() {
 			)
 			.unwrap();
 		}
+		println!(
+			"Call claim_rewards in attesting phase, for cid {:?} and cindex {:?}",
+			&cid, cindex
+		);
 
 		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
 			.is_err());
 		// nothing happens in attesting phase
+		println!("storage : {:?}", EncointerCeremonies::issued_rewards((cid, cindex), 1));
+		println!("attesting phase storage:");
+		for v in IssuedRewards::<TestRuntime>::iter() {
+			println!("test storage  {:?}", v);
+		}
 		assert!(!IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		run_to_next_phase();
 		// Registering
+		println!(
+			"Call claim_rewards in Registering phase, for cid {:?} and cindex {:?}",
+			&cid, cindex
+		);
 		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
 			.is_err());
 		// in registering, the meetup is marked as completed
+		println!("storage : {:?}", EncointerCeremonies::issued_rewards((cid, cindex), 1));
+		println!("registering phase storage:");
+		for v in IssuedRewards::<TestRuntime>::iter() {
+			println!("test storage  {:?}", v);
+		}
 		assert!(IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 	});
 }
@@ -1459,6 +1477,10 @@ fn endorse_newbie_works_for_reputables() {
 			cid,
 			account_id(&zoran)
 		));
+		println!("Endorsees:");
+		for v in <Endorsees<TestRuntime>>::iter() {
+			println!("test storage  {:?}", v);
+		}
 		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex), &account_id(&zoran)));
 		assert_eq!(BurnedReputableNewbieTickets::<TestRuntime>::get((cid, cindex), &reputable), 1);
 		assert_eq!(BurnedBootstrapperNewbieTickets::<TestRuntime>::get(cid, &reputable), 0);
