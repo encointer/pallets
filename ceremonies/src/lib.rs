@@ -518,10 +518,6 @@ pub mod pallet {
 			}
 
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
-			println!("Print endorsees:");
-			for v in <Endorsees<T>>::iter() {
-				println!("endorse  {:?}", v);
-			}
 			let new_endorsee_count = Self::endorsee_count((cid, cindex))
 				.checked_add(1)
 				.ok_or(<Error<T>>::RegistryOverflow)?;
@@ -571,10 +567,6 @@ pub mod pallet {
 				&cid,
 				participant
 			);
-			println!(
-				"validating meetup {:?} for cid {:?} triggered by {:?}",
-				meetup_index, &cid, participant
-			);
 
 			//gather all data
 			let meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index)
@@ -602,13 +594,7 @@ pub mod pallet {
 					// because in attesting phase there could be a failing early payout attempt
 					if current_phase == CeremonyPhaseType::Registering {
 						info!(target: LOG, "marking issuance as completed for failed meetup.");
-						println!("marking issuance as completed for failed meetup, for meetup {:?} for cid {:?} for cindex {:?}",
-								 meetup_index, cid, cindex);
 						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
-						println!("Print issue rewards in registering:");
-						for v in <IssuedRewards<T>>::iter() {
-							println!("storage  {:?}", v);
-						}
 					}
 					match err {
 						MeetupValidationError::BallotEmpty => {
@@ -616,7 +602,6 @@ pub mod pallet {
 								target: LOG,
 								"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
 							);
-							println!("ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid);
 							return Err(<Error<T>>::VotesNotDependable.into())
 						},
 						MeetupValidationError::NoDependableVote => {
@@ -626,20 +611,12 @@ pub mod pallet {
 							meetup_index,
 							cid
 						);
-							println!("ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
-									 meetup_index,
-									 cid);
-
 							return Err(<Error<T>>::VotesNotDependable.into())
 						},
 						MeetupValidationError::IndexOutOfBounds => {
 							debug!(
 								target: LOG,
 								"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
-							);
-							println!(
-								"index out of bounds for meetup {:?}, cid: {:?}",
-								meetup_index, cid
 							);
 							return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
 						},
@@ -652,10 +629,6 @@ pub mod pallet {
 				debug!(
 					target: LOG,
 					"early rewards not possible for meetup {:?}, cid: {:?}", meetup_index, cid
-				);
-				println!(
-					"early rewards not possible for meetup {:?}, cid: {:?}",
-					meetup_index, cid
 				);
 				return Err(<Error<T>>::EarlyRewardsNotPossible.into())
 			}
@@ -674,10 +647,6 @@ pub mod pallet {
 					reason: p.reason,
 				});
 			}
-			println!(
-				"Call issue_rewards, meetup {:?} for cid {:?} and cindex {:?}",
-				meetup_index, &cid, cindex
-			);
 
 			Self::issue_rewards(
 				cid,
@@ -1911,7 +1880,6 @@ impl<T: Config> Pallet<T> {
 				.get(*i)
 				.ok_or(Error::<T>::MeetupValidationIndexOutOfBounds)?;
 			trace!(target: LOG, "participant merits reward: {:?}", participant);
-			println!("participant merits reward: {:?}", participant);
 
 			if <encointer_balances::Pallet<T>>::issue(cid, participant, reward).is_ok() {
 				<ParticipantReputation<T>>::insert(
@@ -1925,7 +1893,6 @@ impl<T: Config> Pallet<T> {
 
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, ());
 		info!(target: LOG, "issuing rewards completed");
-		println!("issuing rewards completed");
 
 		Self::deposit_event(Event::RewardsIssued(
 			cid,
