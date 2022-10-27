@@ -305,7 +305,7 @@ pub fn reputation_cache_dirty_key<Account: Encode>(account: &Account) -> Vec<u8>
 	(consts::REPUTATION_CACHE_DIRTY_KEY, account).encode()
 }
 
-pub fn claim_reward_successfull() -> PalletString {
+pub fn successful_claim_rewards() -> PalletString {
 	PalletString::from(consts::CLAIM_REWARD_OK)
 }
 

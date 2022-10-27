@@ -149,7 +149,7 @@ where
 	);
 
 	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-	IssuedRewards::<T>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+	IssuedRewards::<T>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 	let proof = create_proof_of_attendance::<T>(prover_account, cid, cindex - 1, prover);
 	proof
 }

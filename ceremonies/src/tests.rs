@@ -348,7 +348,7 @@ fn registering_participant_works() {
 		let newbies = add_population(2, 2);
 		let newbie_1 = account_id(&newbies[0]);
 		let newbie_2 = account_id(&newbies[01]);
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		assert_ok!(register(newbie_1.clone(), cid, None));
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 1);
 
@@ -754,7 +754,7 @@ fn claim_rewards_works() {
 		// Registering
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
 		let msg = IssuedRewards::<TestRuntime>::get((cid, cindex), 1);
-		assert_eq!(msg, claim_reward_successfull());
+		assert_eq!(msg, successful_claim_rewards());
 
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 2).into()));
 
@@ -1277,7 +1277,7 @@ fn register_with_reputation_works() {
 
 		// see if Zoran can register with his fresh key
 		// for the next ceremony claiming his former attendance
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let proof = prove_attendance(account_id(&zoran_new), cid, cindex - 1, &zoran);
 		assert_ok!(register(account_id(&zoran_new), cid, Some(proof)));
 		assert_eq!(
@@ -1678,7 +1678,7 @@ fn ceremony_index_and_purging_registry_works() {
 			IssuedRewards::<TestRuntime>::insert(
 				(cid, EncointerScheduler::current_ceremony_index()),
 				0,
-				claim_reward_successfull(),
+				successful_claim_rewards(),
 			);
 
 			run_to_next_phase();
@@ -1742,7 +1742,7 @@ fn grow_population_and_removing_community_works() {
 		IssuedRewards::<TestRuntime>::insert(
 			(cid, EncointerScheduler::current_ceremony_index() - 1),
 			0,
-			claim_reward_successfull(),
+			successful_claim_rewards(),
 		);
 		participants.iter().for_each(|p| {
 			assert!(
@@ -1950,8 +1950,8 @@ fn update_inactivity_counters_works() {
 
 		let mut cindex = 5;
 
-		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, claim_reward_successfull());
-		IssuedRewards::<TestRuntime>::insert((cid1, cindex), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, successful_claim_rewards());
+		IssuedRewards::<TestRuntime>::insert((cid1, cindex), 0, successful_claim_rewards());
 
 		let timeout = 1;
 		assert_eq!(
@@ -1960,7 +1960,7 @@ fn update_inactivity_counters_works() {
 		);
 
 		cindex += 1;
-		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid0, cindex), 0, successful_claim_rewards());
 		assert_eq!(
 			EncointerCeremonies::update_inactivity_counters(cindex, timeout, vec![cid0, cid1]),
 			vec![]
@@ -2010,7 +2010,7 @@ fn purge_inactive_communities_works() {
 		IssuedRewards::<TestRuntime>::insert(
 			(cid, EncointerScheduler::current_ceremony_index()),
 			0,
-			claim_reward_successfull(),
+			successful_claim_rewards(),
 		);
 		run_to_next_phase();
 		run_to_next_phase();
@@ -2365,7 +2365,7 @@ fn remove_participant_from_registry_works() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
 
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 
@@ -2426,7 +2426,7 @@ fn remove_participant_from_registry_works_for_all_participant_types() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
 
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 
@@ -2478,7 +2478,7 @@ fn remove_participant_from_registry_with_no_participants_fails() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
 
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 
@@ -2494,7 +2494,7 @@ fn upgrade_registration_works() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
 
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2524,7 +2524,7 @@ fn upgrade_registration_fails_if_not_registered_or_not_newbie() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2559,7 +2559,7 @@ fn upgrade_registration_fails_in_wrong_phase() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2586,7 +2586,7 @@ fn upgrade_registration_fails_with_inexistent_community() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2612,7 +2612,7 @@ fn unregister_participant_works_with_reputables() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2653,7 +2653,7 @@ fn unregister_participant_fails_with_reputables_and_wrong_reputation() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2701,7 +2701,7 @@ fn unregister_participant_works_with_newbies() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2725,7 +2725,7 @@ fn unregister_participant_fails_in_wrong_phase() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
@@ -2750,7 +2750,7 @@ fn unregister_participant_fails_with_inexistent_community() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
-		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, claim_reward_successfull());
+		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, successful_claim_rewards());
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
 		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());

@@ -1897,7 +1897,7 @@ impl<T: Config> Pallet<T> {
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
 
-		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, claim_reward_successfull());
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, successful_claim_rewards());
 		info!(target: LOG, "issuing rewards completed");
 
 		Self::deposit_event(Event::RewardsIssued(
