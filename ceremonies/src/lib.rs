@@ -63,6 +63,7 @@ mod storage_helper;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use encointer_primitives::common::PalletString;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -594,7 +595,12 @@ pub mod pallet {
 					// because in attesting phase there could be a failing early payout attempt
 					if current_phase == CeremonyPhaseType::Registering {
 						info!(target: LOG, "marking issuance as completed for failed meetup.");
-						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
+						<IssuedRewards<T>>::insert(
+							(cid, cindex),
+							meetup_index,
+							format!("Error::{:?}", err),
+						);
+						return Ok(Pays::No.into())
 					}
 					match err {
 						MeetupValidationError::BallotEmpty => {
@@ -1143,7 +1149,7 @@ pub mod pallet {
 		CommunityCeremony,
 		Blake2_128Concat,
 		MeetupIndexType,
-		(),
+		PalletString,
 		ValueQuery,
 	>;
 
@@ -1891,7 +1897,7 @@ impl<T: Config> Pallet<T> {
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
 
-		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, ());
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, claim_reward_successfull());
 		info!(target: LOG, "issuing rewards completed");
 
 		Self::deposit_event(Event::RewardsIssued(

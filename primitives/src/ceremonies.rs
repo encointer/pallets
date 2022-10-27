@@ -17,7 +17,11 @@
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
-use crate::communities::{CommunityIdentifier, Location};
+use crate::{
+	common::PalletString,
+	communities::{CommunityIdentifier, Location},
+};
+
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H256};
@@ -290,6 +294,7 @@ pub mod consts {
 	/// Dirty bit key for reputation offchain storage
 	pub const REPUTATION_CACHE_DIRTY_KEY: &[u8] = b"reputation_cache_dirty";
 	pub const STORAGE_REPUTATION_KEY: &[u8; 10] = b"reputation";
+	pub const CLAIM_REWARD_OK: &str = "Ok";
 }
 
 pub fn reputation_cache_key<Account: Encode>(account: &Account) -> Vec<u8> {
@@ -298,6 +303,10 @@ pub fn reputation_cache_key<Account: Encode>(account: &Account) -> Vec<u8> {
 
 pub fn reputation_cache_dirty_key<Account: Encode>(account: &Account) -> Vec<u8> {
 	(consts::REPUTATION_CACHE_DIRTY_KEY, account).encode()
+}
+
+pub fn claim_reward_successfull() -> PalletString {
+	PalletString::from(consts::CLAIM_REWARD_OK)
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
