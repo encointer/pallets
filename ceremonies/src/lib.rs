@@ -49,9 +49,10 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
-use scale_info::TypeInfo;
+use scale_info::{prelude::*, TypeInfo};
 use sp_runtime::traits::{CheckedSub, IdentifyAccount, Member, Verify};
 use sp_std::{cmp::max, prelude::*, vec};
+
 // Logger target
 const LOG: &str = "encointer";
 
@@ -595,11 +596,8 @@ pub mod pallet {
 					// because in attesting phase there could be a failing early payout attempt
 					if current_phase == CeremonyPhaseType::Registering {
 						info!(target: LOG, "marking issuance as completed for failed meetup.");
-						<IssuedRewards<T>>::insert(
-							(cid, cindex),
-							meetup_index,
-							format!("Error::{:?}", err),
-						);
+						let msg: PalletString = PalletString::from(format!("Error::{:?}", err));
+						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, msg);
 						return Ok(Pays::No.into())
 					}
 					match err {
