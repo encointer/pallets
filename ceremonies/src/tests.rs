@@ -986,7 +986,7 @@ fn claim_rewards_fails_with_two_missing_attestations() {
 }
 
 #[test]
-fn claim_rewards_error_results_in_meetup_marked_as_completed() {
+fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_error() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
