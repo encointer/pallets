@@ -33,15 +33,15 @@ std = [
 	"codec/std",
 	"log/std",
 	"scale-info/std",
-
 	# local deps
 	"encointer-primitives/std",
-
 	# substrate deps
 	"frame-support/std",
 	"frame-system/std",
 	"sp-std/std",
 	"sp-runtime/std",
+	"pallet-asset-tx-payment/std",
+	"pallet-transaction-payment/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "approx"]

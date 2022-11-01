@@ -43,20 +43,21 @@ default = ["std"]
 std = [
   "codec/std",
   "log/std",
-  "frame-support/std",
-  "frame-system/std",
   "scale-info/std",
-  "sp-std/std",
-  "pallet-timestamp/std",
   "encointer-balances/std",
   "encointer-ceremonies-assignment/std",
   "encointer-communities/std",
+  "encointer-meetup-validation/std",
   "encointer-primitives/std",
   "encointer-scheduler/std",
-  "frame-benchmarking/std",
+  "frame-support/std",
+  "frame-system/std",
+  "pallet-timestamp/std",
   "sp-io/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "frame-benchmarking/std",
   "sp-core/std",
-  "encointer-meetup-validation/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto", "sp-core"]

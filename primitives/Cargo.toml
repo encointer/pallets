@@ -41,7 +41,6 @@ serde_derive = [
   "serde",
 ]
 std = [
-  "serde_derive",
   "bs58/std",
   "codec/std",
   "ep-core/std",
