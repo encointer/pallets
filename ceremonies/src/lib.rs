@@ -629,11 +629,7 @@ pub mod pallet {
 					if current_phase == CeremonyPhaseType::Registering {
 						info!(target: LOG, "marking issuance as completed for failed meetup.");
 
-						<IssuedRewards<T>>::insert(
-							(cid, cindex),
-							meetup_index,
-							Some(meetup_result),
-						);
+						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, meetup_result);
 						Self::deposit_event(Event::MeetupEvaluated(
 							cid,
 							meetup_index,
@@ -1168,8 +1164,8 @@ pub mod pallet {
 		CommunityCeremony,
 		Blake2_128Concat,
 		MeetupIndexType,
-		Option<MeetupResult>,
-		ValueQuery,
+		MeetupResult,
+		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -1916,7 +1912,7 @@ impl<T: Config> Pallet<T> {
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
 
-		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, Some(MeetupResult::Ok));
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, MeetupResult::Ok);
 		info!(target: LOG, "issuing rewards completed");
 
 		Self::deposit_event(Event::RewardsIssued(
