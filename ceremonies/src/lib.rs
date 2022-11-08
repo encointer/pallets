@@ -629,7 +629,16 @@ pub mod pallet {
 					if current_phase == CeremonyPhaseType::Registering {
 						info!(target: LOG, "marking issuance as completed for failed meetup.");
 
-						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, meetup_result);
+						<IssuedRewards<T>>::insert(
+							(cid, cindex),
+							meetup_index,
+							Some(meetup_result),
+						);
+						Self::deposit_event(Event::MeetupEvaluated(
+							cid,
+							meetup_index,
+							meetup_result,
+						));
 						return Ok(Pays::No.into())
 					} else {
 						return error
@@ -826,6 +835,9 @@ pub mod pallet {
 
 		/// The inactivity counter of a community has been increased
 		InactivityCounterUpdated(CommunityIdentifier, u32),
+
+		/// Result of the meetup at the previous ceremony
+		MeetupEvaluated(CommunityIdentifier, MeetupIndexType, MeetupResult),
 	}
 
 	#[pallet::error]
@@ -1156,7 +1168,7 @@ pub mod pallet {
 		CommunityCeremony,
 		Blake2_128Concat,
 		MeetupIndexType,
-		MeetupResult,
+		Option<MeetupResult>,
 		ValueQuery,
 	>;
 
@@ -1904,7 +1916,7 @@ impl<T: Config> Pallet<T> {
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
 
-		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, MeetupResult::Ok);
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, Some(MeetupResult::Ok));
 		info!(target: LOG, "issuing rewards completed");
 
 		Self::deposit_event(Event::RewardsIssued(

@@ -354,14 +354,6 @@ pub enum MeetupResult {
 	Ok,
 	VotesNotDependable,
 	MeetupValidationIndexOutOfBounds,
-	NoResult,
-	Other,
-}
-
-impl Default for MeetupResult {
-	fn default() -> Self {
-		MeetupResult::NoResult
-	}
 }
 
 #[cfg(test)]
