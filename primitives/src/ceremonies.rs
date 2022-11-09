@@ -18,6 +18,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::communities::{CommunityIdentifier, Location};
+
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H256};
@@ -345,6 +346,14 @@ pub struct CeremonyInfo {
 pub struct ReputationCacheValue {
 	pub ceremony_info: CeremonyInfo,
 	pub reputation: Vec<(CeremonyIndexType, CommunityReputation)>,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+pub enum MeetupResult {
+	Ok,
+	VotesNotDependable,
+	MeetupValidationIndexOutOfBounds,
 }
 
 #[cfg(test)]

@@ -590,19 +590,16 @@ pub mod pallet {
 				Ok(participant_judgements) => participant_judgements,
 				// handle errors
 				Err(err) => {
-					// only mark issuance as complete in registering phase
-					// because in attesting phase there could be a failing early payout attempt
-					if current_phase == CeremonyPhaseType::Registering {
-						info!(target: LOG, "marking issuance as completed for failed meetup.");
-						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, ());
-					}
-					match err {
+					let (error, meetup_result) = match err {
 						MeetupValidationError::BallotEmpty => {
 							debug!(
 								target: LOG,
 								"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
 							);
-							return Err(<Error<T>>::VotesNotDependable.into())
+							(
+								Err(<Error<T>>::VotesNotDependable.into()),
+								MeetupResult::VotesNotDependable,
+							)
 						},
 						MeetupValidationError::NoDependableVote => {
 							debug!(
@@ -611,15 +608,36 @@ pub mod pallet {
 							meetup_index,
 							cid
 						);
-							return Err(<Error<T>>::VotesNotDependable.into())
+							(
+								Err(<Error<T>>::VotesNotDependable.into()),
+								MeetupResult::VotesNotDependable,
+							)
 						},
 						MeetupValidationError::IndexOutOfBounds => {
 							debug!(
 								target: LOG,
 								"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
 							);
-							return Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into())
+							(
+								Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into()),
+								MeetupResult::MeetupValidationIndexOutOfBounds,
+							)
 						},
+					};
+					// only mark issuance as complete in registering phase
+					// because in attesting phase there could be a failing early payout attempt
+					if current_phase == CeremonyPhaseType::Registering {
+						info!(target: LOG, "marking issuance as completed for failed meetup.");
+
+						<IssuedRewards<T>>::insert((cid, cindex), meetup_index, meetup_result);
+						Self::deposit_event(Event::MeetupEvaluated(
+							cid,
+							meetup_index,
+							meetup_result,
+						));
+						return Ok(Pays::No.into())
+					} else {
+						return error
 					}
 				},
 			};
@@ -813,6 +831,9 @@ pub mod pallet {
 
 		/// The inactivity counter of a community has been increased
 		InactivityCounterUpdated(CommunityIdentifier, u32),
+
+		/// Result of the meetup at the previous ceremony
+		MeetupEvaluated(CommunityIdentifier, MeetupIndexType, MeetupResult),
 	}
 
 	#[pallet::error]
@@ -1143,8 +1164,8 @@ pub mod pallet {
 		CommunityCeremony,
 		Blake2_128Concat,
 		MeetupIndexType,
-		(),
-		ValueQuery,
+		MeetupResult,
+		OptionQuery,
 	>;
 
 	#[pallet::storage]
@@ -1880,6 +1901,7 @@ impl<T: Config> Pallet<T> {
 				.get(*i)
 				.ok_or(Error::<T>::MeetupValidationIndexOutOfBounds)?;
 			trace!(target: LOG, "participant merits reward: {:?}", participant);
+
 			if <encointer_balances::Pallet<T>>::issue(cid, participant, reward).is_ok() {
 				<ParticipantReputation<T>>::insert(
 					(&cid, cindex),
@@ -1890,7 +1912,7 @@ impl<T: Config> Pallet<T> {
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
 
-		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, ());
+		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, MeetupResult::Ok);
 		info!(target: LOG, "issuing rewards completed");
 
 		Self::deposit_event(Event::RewardsIssued(
