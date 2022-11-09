@@ -225,6 +225,24 @@ fn attest_all(
 	assert_ok!(EncointerCeremonies::attest_claims(Origin::signed(attestor), claims));
 }
 
+/// Attest all attendees with the new `attest_attendees` extrinsic.
+fn attest_all_attendees(
+	attendees: Vec<sr25519::Pair>,
+	cid: CommunityIdentifier,
+	n_participants: u32,
+) {
+	let attestees: Vec<_> = attendees.into_iter().map(|a| account_id(&a)).collect();
+
+	for attestor in attestees.iter() {
+		assert_ok!(EncointerCeremonies::attest_attendees(
+			Origin::signed(attestor.clone()),
+			cid,
+			n_participants,
+			attestees.clone().into_iter().filter(|a| a != attestor).collect()
+		));
+	}
+}
+
 fn attest(attestor: AccountId, claims: Vec<TestClaim>) {
 	assert_ok!(EncointerCeremonies::attest_claims(Origin::signed(attestor), claims));
 }
@@ -1150,6 +1168,89 @@ fn early_rewards_works() {
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
+	})
+}
+
+#[test]
+fn early_rewards_with_new_attest_attendees_extrinsic_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants = vec![alice.clone(), bob, charlie, dave, eve, ferdie];
+
+		attest_all_attendees(all_participants, cid, 6);
+
+		// Still attesting phase
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
+
+		// everybody should receive their reward
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
+	})
+}
+
+#[test]
+fn early_rewards_with_new_attest_attendees_extrinsic_with_one_missing_attestation_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+
+		// Ferdie is missing
+		let all_participants = vec![alice.clone(), bob, charlie, dave, eve];
+
+		attest_all_attendees(all_participants, cid, 5);
+
+		// Still attesting phase
+		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
+
+		// everybody should receive their reward
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 5).into()));
 	})
 }
 
