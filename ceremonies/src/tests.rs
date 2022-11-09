@@ -234,11 +234,13 @@ fn attest_all_attendees(
 	let attestees: Vec<_> = attendees.into_iter().map(|a| account_id(&a)).collect();
 
 	for attestor in attestees.iter() {
+		let others: Vec<_> = attestees.clone().into_iter().filter(|a| a != attestor).collect();
+
 		assert_ok!(EncointerCeremonies::attest_attendees(
 			Origin::signed(attestor.clone()),
 			cid,
 			n_participants,
-			attestees.clone().into_iter().filter(|a| a != attestor).collect()
+			others
 		));
 	}
 }
@@ -1209,6 +1211,64 @@ fn early_rewards_with_new_attest_attendees_extrinsic_works() {
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
+	})
+}
+
+#[test]
+fn early_rewards_with_new_failing_in_production_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		let ferdie = AccountKeyring::Ferdie.to_account_id();
+		register_alice_bob_ferdie(cid);
+
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: AssignmentParams { m: 3, s1: 1, s2: 1 },
+				endorsees: AssignmentParams { m: 2, s1: 1, s2: 1 },
+				newbies: AssignmentParams { m: 2, s1: 1, s2: 1 },
+				locations: AssignmentParams { m: 9, s1: 8, s2: 7 },
+			},
+		);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+
+		let confirmed_participants_count = 3;
+
+		assert_ok!(EncointerCeremonies::attest_attendees(
+			Origin::signed(alice.clone()),
+			cid,
+			confirmed_participants_count,
+			vec![bob.clone(), ferdie.clone()]
+		));
+
+		assert_ok!(EncointerCeremonies::attest_attendees(
+			Origin::signed(bob.clone()),
+			cid,
+			confirmed_participants_count,
+			vec![alice.clone(), ferdie.clone()]
+		));
+
+		assert_ok!(EncointerCeremonies::attest_attendees(
+			Origin::signed(ferdie),
+			cid,
+			confirmed_participants_count,
+			vec![alice.clone(), bob]
+		));
+
+		// Still attesting phase
+		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
+
+		// everybody should receive their reward
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 3).into()));
 	})
 }
 
