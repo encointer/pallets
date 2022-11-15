@@ -327,8 +327,7 @@ pub mod pallet {
 			let meetup_index = Self::get_meetup_index((cid, cindex), &sender)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
 			let mut meetup_participants =
-				Self::get_meetup_participants((cid, cindex), meetup_index)
-					.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
+				Self::get_meetup_participants((cid, cindex), meetup_index)?;
 			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			meetup_participants.retain(|x| x != &sender);
 			let num_registered = meetup_participants.len();
@@ -569,8 +568,7 @@ pub mod pallet {
 			);
 
 			//gather all data
-			let meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index)
-				.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
+			let meetup_participants = Self::get_meetup_participants((cid, cindex), meetup_index)?;
 			let (participant_votes, participant_attestations) =
 				Self::gather_meetup_validation_data(cid, cindex, meetup_participants.clone());
 
@@ -904,18 +902,20 @@ pub mod pallet {
 		WrongPhaseForUnregistering,
 		/// Error while finding meetup participants
 		GetMeetupParticipantsError,
-		// index out of bounds while validating the meetup
+		/// index out of bounds while validating the meetup
 		MeetupValidationIndexOutOfBounds,
-		// Attestations beyond time tolerance
+		/// Attestations beyond time tolerance
 		AttestationsBeyondTimeTolerance,
-		// Not possible to pay rewards in attestations phase
+		/// Not possible to pay rewards in attestations phase
 		EarlyRewardsNotPossible,
-		// Only newbies can upgrade their registration
+		/// Only newbies can upgrade their registration
 		MustBeNewbieToUpgradeRegistration,
-		// To unregister as a reputable you need to provide a provide a community ceremony where you have a linked reputation
+		/// To unregister as a reputable you need to provide a provide a community ceremony where you have a linked reputation
 		ReputationCommunityCeremonyRequired,
-		// In order to unregister a reputable, the provided reputation must be linked
+		/// In order to unregister a reputable, the provided reputation must be linked
 		ReputationMustBeLinked,
+		/// Meetup Index > Meetup Count or < 1
+		InvalidMeetupIndex,
 	}
 
 	#[pallet::storage]
@@ -1303,7 +1303,7 @@ impl<T: Config> Pallet<T> {
 				}
 
 				meetup_registry =
-					Self::get_meetup_participants((cid, cindex), participant_meetup_index);
+					Self::get_meetup_participants((cid, cindex), participant_meetup_index).ok();
 			}
 
 			aggregated_account_data_personal =
@@ -1754,19 +1754,20 @@ impl<T: Config> Pallet<T> {
 	fn get_meetup_participants(
 		community_ceremony: CommunityCeremony,
 		mut meetup_index: MeetupIndexType,
-	) -> Option<Vec<T::AccountId>> {
+	) -> Result<Vec<T::AccountId>, Error<T>> {
 		let mut result: Vec<T::AccountId> = vec![];
 		let meetup_count = Self::meetup_count(community_ceremony);
 
-		//safe; meetup index conversion from 1 based to 0 based
-		meetup_index -= 1;
-		if meetup_index > meetup_count {
+		if meetup_index > meetup_count || meetup_index < 1 {
 			error!(
 				target: LOG,
-				"Invalid meetup index > meetup count: {}, {}", meetup_index, meetup_count
+				"Invalid meetup index {}, meetup_count is {}", meetup_index, meetup_count
 			);
-			return Some(vec![])
+			return Err(<Error<T>>::InvalidMeetupIndex)
 		}
+
+		//safe; meetup index conversion from 1 based to 0 based
+		meetup_index -= 1;
 
 		let params = Self::assignments(community_ceremony);
 
@@ -1777,7 +1778,8 @@ impl<T: Config> Pallet<T> {
 			params.bootstrappers_reputables,
 			meetup_count,
 			assigned.bootstrappers + assigned.reputables,
-		)?;
+		)
+		.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
 		for p in bootstrappers_reputables {
 			if p < assigned.bootstrappers {
 				//safe; small number per meetup
@@ -1803,12 +1805,9 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		let endorsees = assignment_fn_inverse(
-			meetup_index,
-			params.endorsees,
-			meetup_count,
-			assigned.endorsees,
-		)?;
+		let endorsees =
+			assignment_fn_inverse(meetup_index, params.endorsees, meetup_count, assigned.endorsees)
+				.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
 		for p in endorsees {
 			if p < assigned.endorsees {
 				//safe; small number per meetup
@@ -1823,7 +1822,8 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let newbies =
-			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies)?;
+			assignment_fn_inverse(meetup_index, params.newbies, meetup_count, assigned.newbies)
+				.ok_or(<Error<T>>::GetMeetupParticipantsError)?;
 		for p in newbies {
 			if p < assigned.newbies {
 				//safe; small number per meetup
@@ -1837,7 +1837,7 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		Some(result)
+		Ok(result)
 	}
 
 	fn verify_attendee_signature(
@@ -1960,8 +1960,7 @@ impl<T: Config> Pallet<T> {
 
 		let meetup_index = Self::get_meetup_index((*cid, cindex), participant)
 			.ok_or(Error::<T>::ParticipantIsNotRegistered)?;
-		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index)
-			.ok_or(Error::<T>::GetMeetupParticipantsError)?;
+		let meetup_participants = Self::get_meetup_participants((*cid, cindex), meetup_index)?;
 
 		let meetup_location = Self::get_meetup_location((*cid, cindex), meetup_index)
 			.ok_or(Error::<T>::MeetupLocationNotFound)?;
