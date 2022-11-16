@@ -951,6 +951,118 @@ fn claim_rewards_works_with_one_missing_attestation() {
 }
 
 #[test]
+fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = perform_bootstrapping_ceremony(None, 10);
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+		let dave = AccountKeyring::Dave.pair();
+		let eve = AccountKeyring::Eve.pair();
+		let ferdie = AccountKeyring::Ferdie.pair();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid);
+
+		let mut all_participants = vec![alice, bob, charlie, dave, eve, ferdie];
+
+		for i in 0..50 {
+			let n: u8 = i + 13;
+			let pair = sr25519::Pair::from_entropy(&[n; 32], None).0;
+			register_as_reputable(&pair.clone(), cid).ok();
+			all_participants.push(pair);
+		}
+
+		let all_participants_accounts: Vec<AccountId> =
+			all_participants.iter().map(|p| account_id(p)).collect();
+
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
+			},
+		);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+
+		let meetup_count = EncointerCeremonies::meetup_count((cid, cindex));
+		for i in 1..=meetup_count {
+			let participants =
+				EncointerCeremonies::get_meetup_participants((cid, cindex), i).unwrap();
+			let mut attestees = vec![];
+			for p in participants.clone().into_iter() {
+				let pos = all_participants_accounts.iter().position(|a| a == &p).unwrap();
+
+				attestees.push(all_participants[pos].clone());
+			}
+			attest_all_attendees(attestees, cid, participants.len() as u32)
+		}
+
+		run_to_next_phase();
+		// Registering
+
+		for i in 1..=meetup_count {
+			assert_ok!(EncointerCeremonies::claim_rewards(
+				Origin::signed(account_id(&all_participants[0].clone())),
+				cid,
+				Some(i),
+			));
+		}
+
+		assert_err!(
+			EncointerCeremonies::claim_rewards(
+				Origin::signed(account_id(&all_participants[0].clone())),
+				cid,
+				Some(0)
+			),
+			Error::<TestRuntime>::InvalidMeetupIndex,
+		);
+
+		assert_err!(
+			EncointerCeremonies::claim_rewards(
+				Origin::signed(account_id(&all_participants[0].clone())),
+				cid,
+				Some(1 + meetup_count)
+			),
+			Error::<TestRuntime>::InvalidMeetupIndex,
+		);
+
+		assert_err!(
+			EncointerCeremonies::claim_rewards(
+				Origin::signed(account_id(&all_participants[0].clone())),
+				cid,
+				Some(2 + meetup_count)
+			),
+			Error::<TestRuntime>::InvalidMeetupIndex,
+		);
+		assert_err!(
+			EncointerCeremonies::claim_rewards(
+				Origin::signed(account_id(&all_participants[0].clone())),
+				cid,
+				Some(2 * meetup_count - 1)
+			),
+			Error::<TestRuntime>::InvalidMeetupIndex,
+		);
+
+		assert_err!(
+			EncointerCeremonies::claim_rewards(
+				Origin::signed(account_id(&all_participants[0].clone())),
+				cid,
+				Some(2 * meetup_count + 1)
+			),
+			Error::<TestRuntime>::InvalidMeetupIndex,
+		);
+	});
+}
+
+#[test]
 fn claim_rewards_fails_with_two_missing_attestations() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
@@ -2350,6 +2462,13 @@ fn get_meetup_participants_works() {
 
 		assert_eq!(m0_participants, m0_expected_participants);
 		assert_eq!(m1_participants, m1_expected_participants);
+
+		// Error on invalid indices
+		assert!(EncointerCeremonies::get_meetup_participants((cid, cindex), 0).is_err());
+
+		assert!(EncointerCeremonies::get_meetup_participants((cid, cindex), 3).is_err());
+
+		assert!(EncointerCeremonies::get_meetup_participants((cid, cindex), 10).is_err());
 	});
 }
 
