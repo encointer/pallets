@@ -236,12 +236,15 @@ fn perform_bootstrapping_ceremony(
 	}
 
 	create_locations(n_locations).into_iter().for_each(|location| {
-		EncointerCommunities::add_location(Origin::signed(bootstrappers[0].clone()), cid, location)
-			.unwrap();
+		assert_ok!(EncointerCommunities::add_location(
+			Origin::signed(bootstrappers[0].clone()),
+			cid,
+			location
+		));
 	});
 
 	bootstrappers.iter().cloned().for_each(|b| {
-		register(b, cid, None).unwrap();
+		assert_ok!(register(b, cid, None));
 	});
 
 	run_to_next_phase();
