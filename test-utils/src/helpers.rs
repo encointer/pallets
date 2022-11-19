@@ -43,7 +43,7 @@ pub fn bootstrappers() -> Vec<sr25519::Pair> {
 
 /// register a simple test community with a specified location and defined bootstrappers
 pub fn register_test_community<Runtime>(
-	custom_bootstrappers: Option<Vec<sr25519::Pair>>,
+	custom_bootstrappers: Option<Vec<AccountId>>,
 	lat: f64,
 	lon: f64,
 ) -> CommunityIdentifier
@@ -52,12 +52,8 @@ where
 	Runtime: frame_system::Config<AccountId = AccountId>,
 	<Runtime as frame_system::Config>::Origin: OriginTrait<AccountId = AccountId>,
 {
-	let bs: Vec<AccountId> = custom_bootstrappers
-		.unwrap_or_else(bootstrappers)
-		.into_iter()
-		.map(|b| account_id(&b))
-		.collect();
-
+	let bs = custom_bootstrappers
+		.unwrap_or_else(|| bootstrappers().into_iter().map(|b| account_id(&b)).collect());
 	let prime = &bs[0];
 
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };

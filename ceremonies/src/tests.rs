@@ -232,25 +232,23 @@ fn create_locations(n_locations: u32) -> Vec<Location> {
 
 /// perform bootstrapping ceremony for test community with either the supplied bootstrappers or the default bootstrappers
 fn perform_bootstrapping_ceremony(
-	custom_bootstrappers: Option<Vec<sr25519::Pair>>,
+	custom_bootstrappers: Option<Vec<AccountId>>,
 	n_locations: u32,
 ) -> CommunityIdentifier {
-	let bootstrappers: Vec<sr25519::Pair> = custom_bootstrappers.unwrap_or_else(|| bootstrappers());
+	let bootstrappers: Vec<_> = custom_bootstrappers
+		.unwrap_or_else(|| bootstrappers().into_iter().map(|b| account_id(&b)).collect());
 	let cid = register_test_community::<TestRuntime>(Some(bootstrappers.clone()), 0.0, 0.0);
 	if n_locations > 70 {
 		panic!("Too many locations.")
 	}
 
-	for location in create_locations(n_locations) {
-		EncointerCommunities::add_location(
-			Origin::signed(bootstrappers[0].public().into()),
-			cid,
-			location,
-		)
-		.unwrap();
-	}
-	bootstrappers.iter().for_each(|b| {
-		let _ = register(b.public().into(), cid, None).unwrap();
+	create_locations(n_locations).into_iter().for_each(|location| {
+		EncointerCommunities::add_location(Origin::signed(bootstrappers[0].clone()), cid, location)
+			.unwrap();
+	});
+
+	bootstrappers.iter().cloned().for_each(|b| {
+		register(b, cid, None).unwrap();
 	});
 
 	run_to_next_phase();
@@ -258,11 +256,8 @@ fn perform_bootstrapping_ceremony(
 	run_to_next_phase();
 	// Attesting
 
-	for i in 0..bootstrappers.len() {
-		let mut bs = bootstrappers.clone();
-		let claimant = bs.remove(i);
-		attest_all(account_id(&claimant), bs.into_iter().map(|b| account_id(&b)).collect(), cid, 6);
-	}
+	fully_attest_attendees(bootstrappers, cid, 6);
+
 	run_to_next_phase();
 	// Registering
 	cid
@@ -499,37 +494,33 @@ fn claim_rewards_works() {
 		//      dave signs ferdie and reports wrong number of participants
 
 		// alice attests all others except for ferdie, who doesn't show up
-		EncointerCeremonies::attest_attendees(
-			Origin::signed(alice.clone()),
-			cid,
-			5,
+		attest_all(
+			alice.clone(),
 			vec![bob.clone(), charlie.clone(), dave.clone(), eve.clone()],
-		)
-		.unwrap();
+			cid,
+			5,
+		);
 		// bob attests all others except for ferdie, who doesn't show up
-		EncointerCeremonies::attest_attendees(
-			Origin::signed(bob.clone()),
-			cid,
-			5,
+		attest_all(
+			bob.clone(),
 			vec![alice.clone(), charlie.clone(), dave.clone(), eve.clone()],
-		)
-		.unwrap();
-		// charlie attests all others except for ferdie, who doesn't show up
-		EncointerCeremonies::attest_attendees(
-			Origin::signed(charlie.clone()),
 			cid,
 			5,
+		);
+		// charlie attests all others except for ferdie, who doesn't show up
+		attest_all(
+			charlie.clone(),
 			vec![alice.clone(), bob.clone(), dave.clone(), eve.clone()],
-		)
-		.unwrap();
+			cid,
+			5,
+		);
 		// dave attests all others plus nonexistent ferdie and reports wrong number
-		EncointerCeremonies::attest_attendees(
-			Origin::signed(dave.clone()),
+		attest_all(
+			dave.clone(),
+			vec![alice.clone(), bob.clone(), charlie.clone(), eve.clone(), ferdie.clone()],
 			cid,
 			6,
-			vec![alice.clone(), bob.clone(), charlie.clone(), eve.clone(), ferdie.clone()],
-		)
-		.unwrap();
+		);
 		// eve does not attest anybody...
 		// ferdie is not here...
 
