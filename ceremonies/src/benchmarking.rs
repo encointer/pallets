@@ -79,38 +79,6 @@ where
 	}
 }
 
-fn get_all_claims<T: Config>(
-	attestees: Vec<TestPublic>,
-	cid: CommunityIdentifier,
-	cindex: CeremonyIndexType,
-	mindex: MeetupIndexType,
-	location: Location,
-	timestamp: T::Moment,
-	n_participants: u32,
-) -> Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>>
-where
-	<T as frame_system::Config>::AccountId: ByteArray,
-	<T as Config>::Signature: From<sr25519::Signature>,
-{
-	let mut claims: Vec<ClaimOfAttendance<T::Signature, T::AccountId, T::Moment>> = vec![];
-	for a in attestees.into_iter() {
-		let mut claim = ClaimOfAttendance::<T::Signature, T::AccountId, T::Moment>::new_unsigned(
-			account_id::<T>(&a),
-			cindex,
-			cid,
-			mindex,
-			location,
-			timestamp,
-			n_participants,
-		);
-
-		claim.claimant_signature = Some(sign(&a, &claim.payload_encoded()).into());
-
-		claims.push(claim);
-	}
-	claims
-}
-
 /// Goes to next ceremony phase.
 ///
 /// We purposely don't use `run_to_next_phase` because in the actual node aura complained
@@ -280,37 +248,6 @@ benchmarks! {
 		);
 	}
 
-
-	attest_claims {
-		let cid = create_community::<T>();
-
-		let attestor = generate_pair();
-		let attestor_account = account_id::<T>(&attestor);
-
-		assert_ok!(Pallet::<T>::register_participant(
-			RawOrigin::Signed(attestor_account.clone()).into(),
-			cid,
-			Some(fake_last_attendance_and_get_proof::<T>(&attestor, cid)))
-		);
-
-		let attestees =  register_users::<T>(cid, 2, 7);
-
-		next_phase::<T>();
-		next_phase::<T>();
-
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		let loc = test_location();
-		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
-		let mindex = 1;
-
-		let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc, time, 10);
-		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 0);
-
-	}: _(RawOrigin::Signed(attestor_account), claims)
-	verify {
-		assert_eq!(AttestationCount::<T>::get((cid, cindex)), 1);
-	}
-
 	attest_attendees {
 		let cid = create_community::<T>();
 
@@ -369,7 +306,7 @@ benchmarks! {
 	claim_rewards {
 		frame_system::Pallet::<T>::set_block_number(frame_system::Pallet::<T>::block_number() + 1u32.into()); // this is needed to assert events
 		let cid = create_community::<T>();
-		let users = register_users::<T>(cid, 2, 8);
+		let users: Vec<_> = register_users::<T>(cid, 2, 8).into_iter().map(|u| account_id::<T>(&u)).collect();
 
 		next_phase::<T>();
 		next_phase::<T>();
@@ -380,18 +317,18 @@ benchmarks! {
 		let mindex = 1;
 
 		// attest_claims
-		for i in 0..10 {
-			let attestor = users[i as usize].clone();
-			let mut attestees = users.clone();
-			attestees.remove(i as usize);
-			let claims = get_all_claims::<T>(attestees, cid, cindex, mindex, loc, time, 10);
-			assert_ok!(Pallet::<T>::attest_claims(RawOrigin::Signed(account_id::<T>(&attestor)).into(), claims));
+		for attestor in users.iter() {
+			assert_ok!(Pallet::<T>::attest_attendees(
+				RawOrigin::Signed(attestor.clone()).into(),
+				cid, 10,
+				users.clone().into_iter().filter(|u| u!= attestor).collect()
+			));
 		}
 
 		next_phase::<T>();
 		assert!(!IssuedRewards::<T>::contains_key((cid, cindex), mindex));
 
-	}: _(RawOrigin::Signed(account_id::<T>(&users[0])), cid, None)
+	}: _(RawOrigin::Signed(users[0].clone()), cid, None)
 	verify {
 		assert_eq!(last_event::<T>(), Some(Event::RewardsIssued(cid, 1, 10).into()));
 		assert!(IssuedRewards::<T>::contains_key((cid, cindex), mindex));

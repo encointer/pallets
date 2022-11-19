@@ -211,8 +211,9 @@ fn fully_attest_meetup(cid: CommunityIdentifier, mindex: MeetupIndexType) {
 	let cindex = EncointerScheduler::current_ceremony_index();
 	let meetup_participants =
 		EncointerCeremonies::get_meetup_participants((cid, cindex), mindex).unwrap();
+	let n_participants = meetup_participants.len() as u32;
 
-	fully_attest_attendees(meetup_participants, cid, meetup_participants.len() as u32);
+	fully_attest_attendees(meetup_participants, cid, n_participants);
 }
 
 fn create_locations(n_locations: u32) -> Vec<Location> {
