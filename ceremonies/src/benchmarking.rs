@@ -316,7 +316,7 @@ benchmarks! {
 		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
 		let mindex = 1;
 
-		// attest_claims
+		// attest_attendees
 		for attestor in users.iter() {
 			assert_ok!(Pallet::<T>::attest_attendees(
 				RawOrigin::Signed(attestor.clone()).into(),

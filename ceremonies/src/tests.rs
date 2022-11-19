@@ -360,7 +360,7 @@ fn registering_participant_in_wrong_phase_fails() {
 }
 
 #[test]
-fn attest_claims_works() {
+fn attest_attendees_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
@@ -395,7 +395,7 @@ fn attest_claims_works() {
 }
 
 #[test]
-fn attest_claims_for_non_participant_fails_silently() {
+fn attest_attendees_for_non_participant_fails_silently() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.to_account_id();
@@ -436,7 +436,7 @@ fn attest_attendee_for_non_participant_fails() {
 }
 
 #[test]
-fn attest_claims_with_non_participant_fails_silently() {
+fn attest_attendees_with_non_participant_fails_silently() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.to_account_id();
