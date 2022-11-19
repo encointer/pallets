@@ -208,6 +208,22 @@ fn attest_all_attendees(
 	}
 }
 
+/// Perform full attestation of all participants for a given meetup.
+fn fully_attest_meetup(cid: CommunityIdentifier, mindex: MeetupIndexType) {
+	let cindex = EncointerScheduler::current_ceremony_index();
+	let meetup_participants =
+		EncointerCeremonies::get_meetup_participants((cid, cindex), mindex).unwrap();
+
+	for attestor in meetup_participants.iter() {
+		assert_ok!(EncointerCeremonies::attest_attendees(
+			Origin::signed(attestor.clone()),
+			cid,
+			meetup_participants.len() as u32,
+			meetup_participants.clone().into_iter().filter(|a| a != attestor).collect()
+		));
+	}
+}
+
 fn create_locations(n_locations: u32) -> Vec<Location> {
 	(1..n_locations)
 		.map(|i| i as f64)
@@ -1700,10 +1716,8 @@ fn grow_population_and_removing_community_works() {
 			MeetupResult::Ok,
 		);
 		participants.iter().for_each(|p| {
-			assert!(
-				EncointerBalances::issue(cid, &account_id(&p), NominalIncome::from_num(1)).is_ok()
-			);
-			let _ = register(account_id(&p), cid, None).unwrap();
+			assert_ok!(EncointerBalances::issue(cid, &account_id(&p), NominalIncome::from_num(1)));
+			assert_ok!(register(account_id(&p), cid, None));
 		});
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1717,7 +1731,7 @@ fn grow_population_and_removing_community_works() {
 		run_to_next_phase();
 		// WITNESSING
 
-		attest_all_attendees(participants.clone(), cid, participants.len() as u32);
+		fully_attest_meetup(cid, 1);
 
 		run_to_next_phase();
 		// Registering
@@ -1741,7 +1755,7 @@ fn grow_population_and_removing_community_works() {
 
 		run_to_next_phase();
 
-		attest_all_attendees(participants.clone(), cid, participants.len() as u32);
+		fully_attest_meetup(cid, 1);
 
 		run_to_next_phase();
 		// Registering
@@ -1765,8 +1779,8 @@ fn grow_population_and_removing_community_works() {
 
 		run_to_next_phase();
 		// WITNESSING
-		attest_all_attendees(participants.clone(), cid, participants.len() as u32);
-		attest_all_attendees(participants.clone(), cid, participants.len() as u32);
+		fully_attest_meetup(cid, 1);
+		fully_attest_meetup(cid, 2);
 
 		run_to_next_phase();
 		// Registering
