@@ -992,15 +992,9 @@ fn early_rewards_works() {
 		// Assigning
 		run_to_next_phase();
 		// Attesting
+
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve, ferdie];
-
-		for p in all_participants.clone().into_iter() {
-			let mut attestees = all_participants.clone();
-			// remove self
-			attestees.retain(|a| a != &p);
-
-			attest_all(p, attestees, cid, 6);
-		}
+		fully_attest_attendees(all_participants, cid, 6);
 
 		// Still attesting phase
 		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
