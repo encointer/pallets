@@ -500,7 +500,7 @@ fn claim_rewards_works() {
 			vec![alice.clone(), charlie.clone(), dave.clone(), eve.clone()],
 		)
 		.unwrap();
-		// charlie attests all others except for ferdie
+		// charlie attests all others except for ferdie, who doesn't show up
 		EncointerCeremonies::attest_attendees(
 			Origin::signed(charlie.clone()),
 			cid,
@@ -523,11 +523,11 @@ fn claim_rewards_works() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(alice.clone()), cid, None).ok();
+		EncointerCeremonies::claim_rewards(Origin::signed(alice.clone()), cid, None).unwrap();
 		let meetup_result = IssuedRewards::<TestRuntime>::get((cid, cindex), 1);
 		assert_eq!(meetup_result, Some(MeetupResult::Ok));
 
-		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 2).into()));
+		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 3).into()));
 
 		assert!(event_deposited::<TestRuntime>(
 			BalancesEvent::Issued(
@@ -548,26 +548,35 @@ fn claim_rewards_works() {
 		));
 
 		assert!(event_deposited::<TestRuntime>(
-			Event::NoReward {
+			BalancesEvent::Issued(
 				cid,
-				cindex,
-				meetup_index: 1,
-				account: ferdie.clone(),
-				reason: ExclusionReason::TooFewOutgoingAttestations,
-			}
+				charlie.clone(),
+				EncointerCeremonies::ceremony_reward().lossy_into()
+			)
 			.into()
 		));
 
-		assert!(event_deposited::<TestRuntime>(
-			Event::NoReward {
-				cid,
-				cindex,
-				meetup_index: 1,
-				account: eve.clone(),
-				reason: ExclusionReason::TooFewOutgoingAttestations,
-			}
-			.into()
-		));
+		// assert!(event_deposited::<TestRuntime>(
+		// 	Event::NoReward {
+		// 		cid,
+		// 		cindex,
+		// 		meetup_index: 1,
+		// 		account: ferdie.clone(),
+		// 		reason: ExclusionReason::TooFewOutgoingAttestations,
+		// 	}
+		// 	.into()
+		// ));
+
+		// assert!(event_deposited::<TestRuntime>(
+		// 	Event::NoReward {
+		// 		cid,
+		// 		cindex,
+		// 		meetup_index: 1,
+		// 		account: eve.clone(),
+		// 		reason: ExclusionReason::TooFewOutgoingAttestations,
+		// 	}
+		// 	.into()
+		// ));
 
 		assert!(event_deposited::<TestRuntime>(
 			Event::NoReward {
@@ -576,17 +585,6 @@ fn claim_rewards_works() {
 				meetup_index: 1,
 				account: dave.clone(),
 				reason: ExclusionReason::WrongVote,
-			}
-			.into()
-		));
-
-		assert!(event_deposited::<TestRuntime>(
-			Event::NoReward {
-				cid,
-				cindex,
-				meetup_index: 1,
-				account: charlie.clone(),
-				reason: ExclusionReason::NoVote,
 			}
 			.into()
 		));
@@ -605,7 +603,13 @@ fn claim_rewards_works() {
 			epsilon = 1.0e-6
 		);
 
-		assert_eq!(EncointerBalances::balance(cid, &charlie), ZERO);
+		let result: f64 = EncointerBalances::balance(cid, &charlie).lossy_into();
+		assert_abs_diff_eq!(
+			result,
+			EncointerCeremonies::ceremony_reward().lossy_into(),
+			epsilon = 1.0e-6
+		);
+
 		assert_eq!(EncointerBalances::balance(cid, &eve), ZERO);
 		assert_eq!(EncointerBalances::balance(cid, &ferdie), ZERO);
 
@@ -619,7 +623,7 @@ fn claim_rewards_works() {
 		);
 		assert_eq!(
 			EncointerCeremonies::participant_reputation((cid, cindex), &charlie),
-			Reputation::Unverified
+			Reputation::VerifiedUnlinked
 		);
 		assert_eq!(
 			EncointerCeremonies::participant_reputation((cid, cindex), &eve),
