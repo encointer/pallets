@@ -175,7 +175,7 @@ fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519
 	participants
 }
 
-/// shorthand for generating multiple identical signed claims of the attestees
+/// Shorthand for attesting all attendees.
 fn attest_all(
 	attestor: AccountId,
 	attestees: Vec<AccountId>,
@@ -190,7 +190,7 @@ fn attest_all(
 	));
 }
 
-/// Attest all attendees with the new `attest_attendees` extrinsic.
+/// Fully attest all attendees with the new `attest_attendees` extrinsic.
 fn attest_all_attendees(
 	attendees: Vec<sr25519::Pair>,
 	cid: CommunityIdentifier,
