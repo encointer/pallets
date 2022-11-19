@@ -212,14 +212,7 @@ fn fully_attest_meetup(cid: CommunityIdentifier, mindex: MeetupIndexType) {
 	let meetup_participants =
 		EncointerCeremonies::get_meetup_participants((cid, cindex), mindex).unwrap();
 
-	for attestor in meetup_participants.iter() {
-		assert_ok!(EncointerCeremonies::attest_attendees(
-			Origin::signed(attestor.clone()),
-			cid,
-			meetup_participants.len() as u32,
-			meetup_participants.clone().into_iter().filter(|a| a != attestor).collect()
-		));
-	}
+	fully_attest_attendees(meetup_participants, cid, meetup_participants.len() as u32);
 }
 
 fn create_locations(n_locations: u32) -> Vec<Location> {
