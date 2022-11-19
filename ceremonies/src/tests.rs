@@ -360,7 +360,7 @@ fn registering_participant_in_wrong_phase_fails() {
 }
 
 #[test]
-fn attest_attendees_works() {
+fn attest_attendees_works2() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
