@@ -561,27 +561,27 @@ fn claim_rewards_works() {
 			.into()
 		));
 
-		// assert!(event_deposited::<TestRuntime>(
-		// 	Event::NoReward {
-		// 		cid,
-		// 		cindex,
-		// 		meetup_index: 1,
-		// 		account: ferdie.clone(),
-		// 		reason: ExclusionReason::TooFewOutgoingAttestations,
-		// 	}
-		// 	.into()
-		// ));
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: ferdie.clone(),
+				reason: ExclusionReason::NoVote,
+			}
+			.into()
+		));
 
-		// assert!(event_deposited::<TestRuntime>(
-		// 	Event::NoReward {
-		// 		cid,
-		// 		cindex,
-		// 		meetup_index: 1,
-		// 		account: eve.clone(),
-		// 		reason: ExclusionReason::TooFewOutgoingAttestations,
-		// 	}
-		// 	.into()
-		// ));
+		assert!(event_deposited::<TestRuntime>(
+			Event::NoReward {
+				cid,
+				cindex,
+				meetup_index: 1,
+				account: eve.clone(),
+				reason: ExclusionReason::NoVote,
+			}
+			.into()
+		));
 
 		assert!(event_deposited::<TestRuntime>(
 			Event::NoReward {
