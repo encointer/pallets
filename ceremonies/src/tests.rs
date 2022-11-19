@@ -191,7 +191,7 @@ fn attest_all(
 }
 
 /// Fully attest all attendees with the new `attest_attendees` extrinsic.
-fn attest_all_attendees(
+fn fully_attest_attendees(
 	attendees: Vec<sr25519::Pair>,
 	cid: CommunityIdentifier,
 	n_participants: u32,
@@ -764,7 +764,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 
 				attestees.push(all_participants[pos].clone());
 			}
-			attest_all_attendees(attestees, cid, participants.len() as u32)
+			fully_attest_attendees(attestees, cid, participants.len() as u32)
 		}
 
 		run_to_next_phase();
@@ -1070,7 +1070,7 @@ fn early_rewards_with_new_attest_attendees_extrinsic_works() {
 		// Attesting
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve, ferdie];
 
-		attest_all_attendees(all_participants, cid, 6);
+		fully_attest_attendees(all_participants, cid, 6);
 
 		// Still attesting phase
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
@@ -1112,7 +1112,7 @@ fn early_rewards_with_new_attest_attendees_extrinsic_with_one_missing_attestatio
 		// Ferdie is missing
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve];
 
-		attest_all_attendees(all_participants, cid, 5);
+		fully_attest_attendees(all_participants, cid, 5);
 
 		// Still attesting phase
 		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
