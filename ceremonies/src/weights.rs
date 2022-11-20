@@ -53,7 +53,6 @@ pub trait WeightInfo {
 	fn register_participant() -> Weight;
 	fn upgrade_registration() -> Weight;
 	fn unregister_participant() -> Weight;
-	fn attest_claims() -> Weight;
 	fn attest_attendees() -> Weight;
 	fn endorse_newcomer() -> Weight;
 	fn claim_rewards() -> Weight;
@@ -84,11 +83,6 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 		(91_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(9 as Weight))
 			.saturating_add(T::DbWeight::get().writes(5 as Weight))
-	}
-	fn attest_claims() -> Weight {
-		(1_438_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(27 as Weight))
-			.saturating_add(T::DbWeight::get().writes(12 as Weight))
 	}
 	fn attest_attendees() -> Weight {
 		(265_000_000 as Weight)
@@ -149,11 +143,6 @@ impl WeightInfo for () {
 		(91_000_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(9 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
-	}
-	fn attest_claims() -> Weight {
-		(1_438_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(27 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(12 as Weight))
 	}
 	fn attest_attendees() -> Weight {
 		(265_000_000 as Weight)

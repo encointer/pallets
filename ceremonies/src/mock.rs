@@ -25,11 +25,10 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 use encointer_primitives::{
 	balances::{BalanceType, Demurrage},
-	ceremonies::{ClaimOfAttendance, ProofOfAttendance},
+	ceremonies::ProofOfAttendance,
 	scheduler::CeremonyPhaseType,
 };
 
-pub type TestClaim = ClaimOfAttendance<Signature, AccountId, Moment>;
 pub type TestProofOfAttendance = ProofOfAttendance<Signature, AccountId>;
 
 frame_support::construct_runtime!(
