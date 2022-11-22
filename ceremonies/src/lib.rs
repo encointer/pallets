@@ -249,6 +249,9 @@ pub mod pallet {
 
 				<ParticipantReputation<T>>::insert(&cc, &sender, Reputation::VerifiedUnlinked);
 				<ParticipantReputation<T>>::remove((cid, cindex), &sender);
+
+				// invalidate reputation cache
+				sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
 			}
 			Self::remove_participant_from_registry(cid, cindex, &sender)?;
 
