@@ -1273,7 +1273,7 @@ impl<T: Config> Pallet<T> {
 				Self::endorsement_tickets_per_reputable()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
-			<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender.clone(), |b| *b += 1);
+			<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender, |b| *b += 1);
 			return Ok(())
 		}
 
@@ -1282,7 +1282,7 @@ impl<T: Config> Pallet<T> {
 				Self::endorsement_tickets_per_bootstrapper()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1);
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender, |b| *b += 1);
 			return Ok(())
 		}
 
