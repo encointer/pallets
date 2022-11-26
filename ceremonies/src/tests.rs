@@ -839,15 +839,16 @@ fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_erro
 			.unwrap();
 		}
 
+		// no early claim possible
 		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
 			.is_err());
 		// nothing happens in attesting phase
 		assert!(!IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		run_to_next_phase();
-		// Registering
+		// Registering phase
 		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
 			.is_ok());
-		// in registering, the meetup is marked as completed
+		// in registering phase, the meetup is marked as completed
 		assert!(IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		let meetup_result = IssuedRewards::<TestRuntime>::get((cid, cindex), 1);
 		assert_eq!(meetup_result, Some(MeetupResult::VotesNotDependable));
@@ -1157,7 +1158,10 @@ fn register_with_reputation_works() {
 		println!("cindex {}", cindex);
 		// wrong sender of good proof fails
 		let proof = prove_attendance(account_id(&zoran_new), cid, cindex - 1, &zoran);
-		assert!(register(account_id(&yuri), cid, Some(proof)).is_err());
+		assert_err!(
+			register(account_id(&yuri), cid, Some(proof)),
+			Error::<TestRuntime>::WrongProofSubject
+		);
 
 		// see if Zoran can register with his fresh key
 		// for the next ceremony claiming his former attendance
@@ -1175,11 +1179,17 @@ fn register_with_reputation_works() {
 
 		// double signing (re-using reputation) fails
 		let proof_second = prove_attendance(account_id(&yuri), cid, cindex - 1, &zoran);
-		assert!(register(account_id(&yuri), cid, Some(proof_second)).is_err());
+		assert_err!(
+			register(account_id(&yuri), cid, Some(proof_second)),
+			Error::<TestRuntime>::AttendanceUnverifiedOrAlreadyUsed
+		);
 
 		// signer without reputation fails
 		let proof = prove_attendance(account_id(&yuri), cid, cindex - 1, &yuri);
-		assert!(register(account_id(&yuri), cid, Some(proof)).is_err());
+		assert_err!(
+			register(account_id(&yuri), cid, Some(proof)),
+			Error::<TestRuntime>::AttendanceUnverifiedOrAlreadyUsed
+		);
 	});
 }
 
