@@ -1268,8 +1268,8 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		sender: &T::AccountId,
 	) -> Result<(), Error<T>> {
-		if Self::has_reputation(&sender, &cid) &&
-			<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), &sender) <
+		if Self::has_reputation(sender, &cid) &&
+			<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), sender) <
 				Self::endorsement_tickets_per_reputable()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
@@ -1277,8 +1277,8 @@ impl<T: Config> Pallet<T> {
 			return Ok(())
 		}
 
-		if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender) &&
-			<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
+		if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(sender) &&
+			<BurnedBootstrapperNewbieTickets<T>>::get(&cid, sender) <
 				Self::endorsement_tickets_per_bootstrapper()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
