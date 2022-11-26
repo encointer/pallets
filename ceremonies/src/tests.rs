@@ -3137,6 +3137,8 @@ fn attest_attendees_works() {
 fn has_reputation_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		
 		let alice = account_id(&AccountKeyring::Alice.pair());
 
 		run_to_next_phase();
@@ -3155,6 +3157,11 @@ fn has_reputation_works() {
 
 		// acausal cindex
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedUnlinked);
+
+		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+
+		// reputation of different community doesn't count
+		EncointerCeremonies::fake_reputation((cid2, 1), &alice, Reputation::VerifiedUnlinked);
 
 		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
 
