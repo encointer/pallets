@@ -1824,6 +1824,11 @@ fn grow_population_and_removing_community_works() {
 
 			assert_eq!(IssuedRewards::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
 
+			assert_eq!(
+				BurnedReputableNewbieTickets::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
+
 			assert_eq!(InactivityCounters::<TestRuntime>::contains_key(cid), false);
 		}
 	});

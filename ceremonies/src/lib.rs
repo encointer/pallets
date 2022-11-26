@@ -1313,6 +1313,7 @@ impl<T: Config> Pallet<T> {
 
 		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
 		<IssuedRewards<T>>::remove_prefix(cc, None);
+		<BurnedReputableNewbieTickets<T>>::remove_prefix(cc, None);
 
 		Self::deposit_event(Event::CommunityCeremonyHistoryPurged(cindex, cid));
 	}
