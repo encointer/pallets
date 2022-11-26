@@ -1319,7 +1319,31 @@ fn endorsing_two_newbies_works() {
 }
 
 #[test]
-fn endorsing_after_registration_works() {
+fn endorsement_survives_idle_cycle() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let alice = AccountId::from(AccountKeyring::Alice);
+
+		// a newbie
+		let zoran = account_id(&sr25519::Pair::from_entropy(&[9u8; 32], None).0);
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(alice.clone()),
+			cid,
+			zoran.clone()
+		));
+		assert!(EncointerCeremonies::is_endorsed(&zoran, &(cid, 4)).is_some());
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+		assert!(EncointerCeremonies::is_endorsed(&zoran, &(cid, 4)).is_some());
+	});
+}
+
+#[test]
+fn endorsing_works_after_newbie_has_registered() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
