@@ -278,7 +278,10 @@ pub mod pallet {
 			let (cindex, meetup_index, meetup_participants, _meetup_location, _meetup_time) =
 				Self::gather_meetup_data(&cid, &sender)?;
 
-			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotAssignedToThisMeetup);
+			ensure!(
+				meetup_participants.contains(&sender),
+				Error::<T>::OriginNotAssignedToThisMeetup
+			);
 			ensure!(
 				attestations.len() < meetup_participants.len(),
 				Error::<T>::TooManyAttestations

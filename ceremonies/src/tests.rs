@@ -425,12 +425,10 @@ fn attest_attendee_from_non_registered_participant_fails() {
 		run_to_next_phase();
 		run_to_next_phase();
 		// Attesting
-		assert_err!(EncointerCeremonies::attest_attendees(
-			Origin::signed(eve),
-			cid,
-			3,
-			vec![alice, ferdie],
-		), Error::<TestRuntime>::ParticipantIsNotRegistered);
+		assert_err!(
+			EncointerCeremonies::attest_attendees(Origin::signed(eve), cid, 3, vec![alice, ferdie],),
+			Error::<TestRuntime>::ParticipantIsNotRegistered
+		);
 	});
 }
 
@@ -447,12 +445,15 @@ fn attest_attendee_for_alien_participant_fails() {
 		run_to_next_phase();
 		run_to_next_phase();
 		// Attesting
-		assert_err!(EncointerCeremonies::attest_attendees(
-			Origin::signed(newbie),
-			cid,
-			3,
-			vec![alice, ferdie],
-		), Error::<TestRuntime>::OriginNotAssignedToThisMeetup);
+		assert_err!(
+			EncointerCeremonies::attest_attendees(
+				Origin::signed(newbie),
+				cid,
+				3,
+				vec![alice, ferdie],
+			),
+			Error::<TestRuntime>::OriginNotAssignedToThisMeetup
+		);
 	});
 }
 
@@ -3159,7 +3160,7 @@ fn has_reputation_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cid2 = register_test_community::<TestRuntime>(None, 1.0, 1.0);
-		
+
 		let alice = account_id(&AccountKeyring::Alice.pair());
 
 		run_to_next_phase();
