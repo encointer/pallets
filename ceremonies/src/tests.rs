@@ -1194,7 +1194,7 @@ fn register_with_reputation_works() {
 }
 
 #[test]
-fn endorsing_newbie_works_until_no_more_tickets() {
+fn endorsement_by_bootstrapper_for_newbie_works_until_no_more_tickets() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = perform_bootstrapping_ceremony(None, 1);
@@ -1238,7 +1238,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 }
 
 #[test]
-fn endorsing_newbie_for_second_next_ceremony_works() {
+fn endorsing_newbie_for_next_ceremony_works_after_registering_phase() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
@@ -1254,6 +1254,16 @@ fn endorsing_newbie_for_second_next_ceremony_works() {
 			account_id(&zoran)
 		));
 		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex + 1), &account_id(&zoran)));
+
+		run_to_next_phase();
+
+		let bogdan = sr25519::Pair::from_entropy(&[99u8; 32], None).0;
+		assert_ok!(EncointerCeremonies::endorse_newcomer(
+			Origin::signed(alice.clone()),
+			cid,
+			account_id(&bogdan)
+		));
+		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex + 1), &account_id(&bogdan)));
 	});
 }
 
