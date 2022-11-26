@@ -917,6 +917,10 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// Accounts that have been endorsed by a reputable or a bootstrapper.
+	///
+	/// This is not the same as `EndorseeRegistry`, which contains the `Endorsees` who
+	/// have registered for a meetup.
 	#[pallet::storage]
 	#[pallet::getter(fn endorsees)]
 	pub(super) type Endorsees<T: Config> = StorageDoubleMap<
@@ -1313,6 +1317,7 @@ impl<T: Config> Pallet<T> {
 
 		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
 		<IssuedRewards<T>>::remove_prefix(cc, None);
+		<BurnedReputableNewbieTickets<T>>::remove_prefix(cc, None);
 
 		Self::deposit_event(Event::CommunityCeremonyHistoryPurged(cindex, cid));
 	}
@@ -1490,6 +1495,9 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<InactivityCounters<T>>::remove(cid);
+
+		#[allow(deprecated)]
+		<BurnedBootstrapperNewbieTickets<T>>::remove_prefix(cid, None);
 
 		<encointer_communities::Pallet<T>>::remove_community(cid);
 	}

@@ -1781,6 +1781,8 @@ fn grow_population_and_removing_community_works() {
 		// only sanity check. Community removal is better tested in the communities pallet.
 		assert_eq!(EncointerCommunities::community_identifiers().contains(&cid), false);
 
+		assert_eq!(BurnedBootstrapperNewbieTickets::<TestRuntime>::iter_prefix(cid).next(), None);
+
 		for cindex in current_cindex.saturating_sub(reputation_lifetime)..=current_cindex {
 			assert_eq!(
 				BootstrapperRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(),
@@ -1823,6 +1825,11 @@ fn grow_population_and_removing_community_works() {
 			);
 
 			assert_eq!(IssuedRewards::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
+
+			assert_eq!(
+				BurnedReputableNewbieTickets::<TestRuntime>::iter_prefix((cid, cindex)).next(),
+				None
+			);
 
 			assert_eq!(InactivityCounters::<TestRuntime>::contains_key(cid), false);
 		}
