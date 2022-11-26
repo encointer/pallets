@@ -638,7 +638,7 @@ pub mod pallet {
 		/// A participant has registered N attestations for fellow meetup participants
 		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
 		/// rewards have been claimed and issued successfully for N participants for their meetup at the previous ceremony
-		RewardsIssued(CommunityIdentifier, MeetupIndexType, u8),
+		RewardsIssued(CommunityIdentifier, MeetupIndexType, MeetupParticipantIndexType),
 		/// inactivity timeout has changed. affects how many ceremony cycles a community can be idle before getting purged
 		InactivityTimeoutUpdated(InactivityTimeoutType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
@@ -1763,7 +1763,7 @@ impl<T: Config> Pallet<T> {
 		Self::deposit_event(Event::RewardsIssued(
 			cid,
 			meetup_idx,
-			participants_indices.len() as u8,
+			participants_indices.len() as MeetupParticipantIndexType,
 		));
 		Ok(())
 	}
