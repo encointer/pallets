@@ -1492,6 +1492,9 @@ impl<T: Config> Pallet<T> {
 
 		<InactivityCounters<T>>::remove(cid);
 
+		#[allow(deprecated)]
+		<BurnedBootstrapperNewbieTickets<T>>::remove_prefix(cid, None);
+
 		<encointer_communities::Pallet<T>>::remove_community(cid);
 	}
 
