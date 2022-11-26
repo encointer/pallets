@@ -415,7 +415,7 @@ fn attest_attendees_for_non_participant_fails_silently() {
 }
 
 #[test]
-fn attest_attendee_for_non_participant_fails() {
+fn attest_attendee_from_non_registered_participant_fails() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.to_account_id();
@@ -425,13 +425,34 @@ fn attest_attendee_for_non_participant_fails() {
 		run_to_next_phase();
 		run_to_next_phase();
 		// Attesting
-		assert!(EncointerCeremonies::attest_attendees(
+		assert_err!(EncointerCeremonies::attest_attendees(
 			Origin::signed(eve),
 			cid,
 			3,
 			vec![alice, ferdie],
-		)
-		.is_err());
+		), Error::<TestRuntime>::ParticipantIsNotRegistered);
+	});
+}
+
+#[test]
+fn attest_attendee_for_alien_participant_fails() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let alice = AccountKeyring::Alice.to_account_id();
+		let ferdie = AccountKeyring::Ferdie.to_account_id();
+		register_alice_bob_ferdie(cid);
+		// register non-bootstrapper that will not be assigned to bootstrapping meetup
+		let newbie = account_id(&add_population(1, 0)[0]);
+		assert_ok!(register(newbie.clone(), cid, None));
+		run_to_next_phase();
+		run_to_next_phase();
+		// Attesting
+		assert_err!(EncointerCeremonies::attest_attendees(
+			Origin::signed(newbie),
+			cid,
+			3,
+			vec![alice, ferdie],
+		), Error::<TestRuntime>::OriginNotAssignedToThisMeetup);
 	});
 }
 
