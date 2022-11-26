@@ -728,49 +728,18 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 			));
 		}
 
-		assert_err!(
-			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
-				cid,
-				Some(0)
-			),
-			Error::<TestRuntime>::InvalidMeetupIndex,
-		);
-
-		assert_err!(
-			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
-				cid,
-				Some(1 + meetup_count)
-			),
-			Error::<TestRuntime>::InvalidMeetupIndex,
-		);
-
-		assert_err!(
-			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
-				cid,
-				Some(2 + meetup_count)
-			),
-			Error::<TestRuntime>::InvalidMeetupIndex,
-		);
-		assert_err!(
-			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
-				cid,
-				Some(2 * meetup_count - 1)
-			),
-			Error::<TestRuntime>::InvalidMeetupIndex,
-		);
-
-		assert_err!(
-			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
-				cid,
-				Some(2 * meetup_count + 1)
-			),
-			Error::<TestRuntime>::InvalidMeetupIndex,
-		);
+		for index in
+			vec![0, 1 + meetup_count, 2 + meetup_count, 2 * meetup_count - 1, 2 * meetup_count + 1]
+		{
+			assert_err!(
+				EncointerCeremonies::claim_rewards(
+					Origin::signed(account_id(&all_participants[0].clone())),
+					cid,
+					Some(index)
+				),
+				Error::<TestRuntime>::InvalidMeetupIndex,
+			);
+		}
 	});
 }
 
