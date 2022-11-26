@@ -3153,9 +3153,24 @@ fn has_reputation_works() {
 
 		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
 
+		// acausal cindex
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedUnlinked);
 
 		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+
+		// reputation type does not qualify
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::Unverified);
+
+		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::UnverifiedReputable);
+
+		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+
+		// reputation type qualifies
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked);
+
+		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), true);
 
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedUnlinked);
 
