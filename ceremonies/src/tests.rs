@@ -344,7 +344,10 @@ fn registering_participant_twice_fails() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		assert_ok!(register(alice.clone(), cid, None));
-		assert!(register(alice.clone(), cid, None).is_err());
+		assert_err!(
+			register(alice.clone(), cid, None),
+			Error::<TestRuntime>::ParticipantAlreadyRegistered
+		);
 	});
 }
 
@@ -355,7 +358,10 @@ fn registering_participant_in_wrong_phase_fails() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		run_to_next_phase();
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
-		assert!(register(alice.clone(), cid, None).is_err());
+		assert_err!(
+			register(alice.clone(), cid, None),
+			Error::<TestRuntime>::RegisteringOrAttestationPhaseRequired
+		);
 	});
 }
 
@@ -553,55 +559,49 @@ fn claim_rewards_works() {
 
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 3).into()));
 
-		assert!(event_deposited::<TestRuntime>(
-			BalancesEvent::Issued(
-				cid,
-				alice.clone(),
-				EncointerCeremonies::ceremony_reward().lossy_into()
-			)
-			.into()
-		));
+		for sender in vec![alice.clone(), bob.clone(), charlie.clone()].iter() {
+			let result: f64 = EncointerBalances::balance(cid, sender).lossy_into();
+			assert_abs_diff_eq!(
+				result,
+				EncointerCeremonies::ceremony_reward().lossy_into(),
+				epsilon = 1.0e-6
+			);
+			assert_eq!(
+				EncointerCeremonies::participant_reputation((cid, cindex), sender),
+				Reputation::VerifiedUnlinked
+			);
+			assert!(event_deposited::<TestRuntime>(
+				BalancesEvent::Issued(
+					cid,
+					sender.clone(),
+					EncointerCeremonies::ceremony_reward().lossy_into()
+				)
+				.into()
+			));
+		}
 
-		assert!(event_deposited::<TestRuntime>(
-			BalancesEvent::Issued(
-				cid,
-				bob.clone(),
-				EncointerCeremonies::ceremony_reward().lossy_into()
-			)
-			.into()
-		));
-
-		assert!(event_deposited::<TestRuntime>(
-			BalancesEvent::Issued(
-				cid,
-				charlie.clone(),
-				EncointerCeremonies::ceremony_reward().lossy_into()
-			)
-			.into()
-		));
-
-		assert!(event_deposited::<TestRuntime>(
-			Event::NoReward {
-				cid,
-				cindex,
-				meetup_index: 1,
-				account: ferdie.clone(),
-				reason: ExclusionReason::NoVote,
-			}
-			.into()
-		));
-
-		assert!(event_deposited::<TestRuntime>(
-			Event::NoReward {
-				cid,
-				cindex,
-				meetup_index: 1,
-				account: eve.clone(),
-				reason: ExclusionReason::NoVote,
-			}
-			.into()
-		));
-
+		for sender in vec![eve.clone(), ferdie.clone()].iter() {
+			assert_eq!(EncointerBalances::balance(cid, sender), ZERO);
+			assert_eq!(
+				EncointerCeremonies::participant_reputation((cid, cindex), sender),
+				Reputation::Unverified
+			);
+			assert!(event_deposited::<TestRuntime>(
+				Event::NoReward {
+					cid,
+					cindex,
+					meetup_index: 1,
+					account: sender.clone(),
+					reason: ExclusionReason::NoVote,
+				}
+				.into()
+			));
+		}
+		assert_eq!(EncointerBalances::balance(cid, &dave), ZERO);
+		assert_eq!(
+			EncointerCeremonies::participant_reputation((cid, cindex), &dave),
+			Reputation::Unverified
+		);
 		assert!(event_deposited::<TestRuntime>(
 			Event::NoReward {
 				cid,
@@ -613,60 +613,13 @@ fn claim_rewards_works() {
 			.into()
 		));
 
-		let result: f64 = EncointerBalances::balance(cid, &alice).lossy_into();
-		assert_abs_diff_eq!(
-			result,
-			EncointerCeremonies::ceremony_reward().lossy_into(),
-			epsilon = 1.0e-6
-		);
-
-		let result: f64 = EncointerBalances::balance(cid, &bob).lossy_into();
-		assert_abs_diff_eq!(
-			result,
-			EncointerCeremonies::ceremony_reward().lossy_into(),
-			epsilon = 1.0e-6
-		);
-
-		let result: f64 = EncointerBalances::balance(cid, &charlie).lossy_into();
-		assert_abs_diff_eq!(
-			result,
-			EncointerCeremonies::ceremony_reward().lossy_into(),
-			epsilon = 1.0e-6
-		);
-
-		assert_eq!(EncointerBalances::balance(cid, &eve), ZERO);
-		assert_eq!(EncointerBalances::balance(cid, &ferdie), ZERO);
-
-		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex), &alice),
-			Reputation::VerifiedUnlinked
-		);
-		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex), &bob),
-			Reputation::VerifiedUnlinked
-		);
-		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex), &charlie),
-			Reputation::VerifiedUnlinked
-		);
-		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex), &eve),
-			Reputation::Unverified
-		);
-		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex), &ferdie),
-			Reputation::Unverified
-		);
-
 		// Claiming twice does not work for any of the meetup participants
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).is_err());
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(bob), cid, None).is_err());
-
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(charlie), cid, None).is_err());
-
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(dave), cid, None).is_err());
-
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(ferdie), cid, None).is_err());
+		for sender in vec![alice, bob, charlie, dave, ferdie].iter() {
+			assert_err!(
+				EncointerCeremonies::claim_rewards(Origin::signed(sender.clone()), cid, None),
+				Error::<TestRuntime>::RewardsAlreadyIssued
+			);
+		}
 	});
 }
 
