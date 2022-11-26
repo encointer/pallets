@@ -709,7 +709,7 @@ pub mod pallet {
 		TooManyAttestations,
 		/// can't have more claims than other meetup participants
 		TooManyClaims,
-		/// bootstrapper has run out of newbie tickets
+		/// sender has run out of newbie tickets
 		NoMoreNewbieTickets,
 		/// newbie is already endorsed
 		AlreadyEndorsed,
