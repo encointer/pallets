@@ -763,7 +763,7 @@ pub mod pallet {
 		CommunityIdentifier,
 		Blake2_128Concat,
 		T::AccountId,
-		u8,
+		EndorsementTicketsType,
 		ValueQuery,
 	>;
 
@@ -775,7 +775,7 @@ pub mod pallet {
 		CommunityCeremony,
 		Blake2_128Concat,
 		T::AccountId,
-		u8,
+		EndorsementTicketsType,
 		ValueQuery,
 	>;
 
@@ -936,7 +936,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn endorsees_count)]
 	pub(super) type EndorseesCount<T: Config> =
-		StorageMap<_, Blake2_128Concat, CommunityCeremony, u64, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ParticipantIndexType, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn meetup_count)]
