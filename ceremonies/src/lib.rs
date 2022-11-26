@@ -917,6 +917,10 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// Accounts that have been endorsed by a reputable or a bootstrapper.
+	///
+	/// This is not the same as `EndorseeRegistry`, which contains the `Endorsees` who
+	/// have registered for a meetup.
 	#[pallet::storage]
 	#[pallet::getter(fn endorsees)]
 	pub(super) type Endorsees<T: Config> = StorageDoubleMap<
