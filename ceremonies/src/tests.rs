@@ -954,48 +954,7 @@ fn early_rewards_works() {
 }
 
 #[test]
-fn early_rewards_with_new_attest_attendees_extrinsic_works() {
-	new_test_ext().execute_with(|| {
-		System::set_block_number(System::block_number() + 1); // this is needed to assert events
-		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-		let alice = AccountKeyring::Alice.to_account_id();
-		let bob = AccountKeyring::Bob.to_account_id();
-		let charlie = AccountKeyring::Charlie.to_account_id();
-		let dave = AccountKeyring::Dave.to_account_id();
-		let eve = AccountKeyring::Eve.to_account_id();
-		let ferdie = AccountKeyring::Ferdie.to_account_id();
-		let cindex = EncointerScheduler::current_ceremony_index();
-		register_alice_bob_ferdie(cid);
-		register_charlie_dave_eve(cid);
-
-		Assignments::<TestRuntime>::insert(
-			(cid, cindex),
-			Assignment {
-				bootstrappers_reputables: Default::default(),
-				endorsees: Default::default(),
-				newbies: Default::default(),
-				locations: AssignmentParams { m: 7, s1: 8, s2: 9 },
-			},
-		);
-
-		run_to_next_phase();
-		// Assigning
-		run_to_next_phase();
-		// Attesting
-		let all_participants = vec![alice.clone(), bob, charlie, dave, eve, ferdie];
-
-		fully_attest_attendees(all_participants, cid, 6);
-
-		// Still attesting phase
-		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
-
-		// everybody should receive their reward
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
-	})
-}
-
-#[test]
-fn early_rewards_with_new_attest_attendees_extrinsic_with_one_missing_attestation_works() {
+fn early_rewards_with_one_noshow_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
@@ -1037,7 +996,7 @@ fn early_rewards_with_new_attest_attendees_extrinsic_with_one_missing_attestatio
 }
 
 #[test]
-fn early_rewards_does_not_work_with_one_missing_attestation() {
+fn early_rewards_does_not_work_with_one_missing_submission_of_attestations() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
@@ -1066,14 +1025,14 @@ fn early_rewards_does_not_work_with_one_missing_attestation() {
 		run_to_next_phase();
 		// Attesting
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve, ferdie];
+		let mut submitters = all_participants.clone();
+		submitters.remove(0);
 
-		for p in all_participants.clone().into_iter() {
+		for p in submitters.into_iter() {
 			let mut attestees = all_participants.clone();
 			// remove self
 			let i = attestees.iter().position(|a| a == &p).unwrap();
 			attestees.remove(i);
-			// remove one more participant
-			attestees.remove(i % 5);
 			attest_all(p, attestees, cid, 6);
 		}
 
@@ -1343,7 +1302,7 @@ fn endorsement_survives_idle_cycle() {
 }
 
 #[test]
-fn endorsing_works_after_newbie_has_registered() {
+fn endorsing_works_after_subject_has_already_registered() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
