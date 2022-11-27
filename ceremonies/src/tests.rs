@@ -41,6 +41,7 @@ use test_utils::{
 	},
 	*,
 };
+use sp_state_machine::backend::Backend;
 
 /// Run until a particular block.
 fn run_to_block(n: u64) {
@@ -1619,7 +1620,9 @@ fn after_inactive_cycle_forbid_non_bootstrapper_registration() {
 
 #[test]
 fn grow_population_and_removing_community_works() {
-	new_test_ext().execute_with(|| {
+	let ext = new_test_ext();
+	let state_size = ext.backend.usage_info();
+	ext.execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 3);
 		let mut participants = bootstrappers();
 
@@ -1781,6 +1784,7 @@ fn grow_population_and_removing_community_works() {
 			assert_eq!(InactivityCounters::<TestRuntime>::contains_key(cid), false);
 		}
 	});
+	assert_eq!(state_size, ext.inner.top.len());
 }
 
 #[test]
