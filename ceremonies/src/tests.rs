@@ -1452,7 +1452,7 @@ fn endorse_newbie_fails_if_already_endorsed_in_previous_ceremony() {
 }
 
 #[test]
-fn endorse_newbie_fails_without_reputation() {
+fn endorse_newbie_fails_if_sender_has_no_reputation_and_is_not_bootstrapper() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 
