@@ -332,26 +332,7 @@ pub mod pallet {
 				Error::<T>::AlreadyEndorsed
 			);
 
-			if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender) {
-				ensure!(
-					<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-						Self::endorsement_tickets_per_bootstrapper(),
-					Error::<T>::NoMoreNewbieTickets
-				);
-				<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1);
-			// safe; limited by AMOUNT_NEWBIE_TICKETS
-			} else if Self::has_reputation(&sender, &cid) {
-				ensure!(
-					<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), &sender) <
-						Self::endorsement_tickets_per_reputable(),
-					Error::<T>::NoMoreNewbieTickets
-				);
-				<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender.clone(), |b| {
-					*b += 1
-				}); // safe; limited by AMOUNT_NEWBIE_TICKETS
-			} else {
-				return Err(Error::<T>::AuthorizationRequired.into())
-			}
+			Self::burn_newbie_tickets(cid, cindex, &sender)?;
 
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
 			let new_endorsee_count = Self::endorsee_count((cid, cindex))
@@ -685,8 +666,6 @@ pub mod pallet {
 		MeetupTimeCalculationError,
 		/// no valid claims were supplied
 		NoValidClaims,
-		/// sender doesn't have the necessary authority to perform action
-		AuthorizationRequired,
 		/// the action can only be performed during REGISTERING phase
 		RegisteringPhaseRequired,
 		/// the action can only be performed during ATTESTING phase
@@ -1276,6 +1255,36 @@ impl<T: Config> Pallet<T> {
 			<ReputableIndex<T>>::contains_key((cid, cindex), &sender) ||
 			<EndorseeIndex<T>>::contains_key((cid, cindex), &sender) ||
 			<NewbieIndex<T>>::contains_key((cid, cindex), &sender)
+	}
+
+	/// Will burn the `sender`'s newbie tickets if he has some.
+	///
+	/// First we try to use the the reputable tickets because they refill with new reputation, and
+	/// then we try to use the bootstrapper tickets.
+	fn burn_newbie_tickets(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		sender: &T::AccountId,
+	) -> Result<(), Error<T>> {
+		if Self::has_reputation(sender, &cid) &&
+			<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), sender) <
+				Self::endorsement_tickets_per_reputable()
+		{
+			// safe; limited by AMOUNT_NEWBIE_TICKETS
+			<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender, |b| *b += 1);
+			return Ok(())
+		}
+
+		if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(sender) &&
+			<BurnedBootstrapperNewbieTickets<T>>::get(&cid, sender) <
+				Self::endorsement_tickets_per_bootstrapper()
+		{
+			// safe; limited by AMOUNT_NEWBIE_TICKETS
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender, |b| *b += 1);
+			return Ok(())
+		}
+
+		Err(Error::<T>::NoMoreNewbieTickets)
 	}
 
 	#[allow(deprecated)]
