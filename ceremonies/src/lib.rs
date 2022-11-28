@@ -686,8 +686,6 @@ pub mod pallet {
 		NoValidAttestations,
 		/// sender doesn't have the necessary authority to perform action
 		AuthorizationRequired,
-		/// the action can only be performed during REGISTERING phase
-		RegisteringPhaseRequired,
 		/// the action can only be performed during ATTESTING phase
 		AttestationPhaseRequired,
 		/// the action can only be performed during REGISTERING or ATTESTING phase
@@ -704,8 +702,6 @@ pub mod pallet {
 		AttendanceUnverifiedOrAlreadyUsed,
 		/// can't have more attestations than other meetup participants
 		TooManyAttestations,
-		/// can't have more claims than other meetup participants
-		TooManyClaims,
 		/// bootstrapper has run out of newbie tickets
 		NoMoreNewbieTickets,
 		/// newbie is already endorsed
@@ -738,8 +734,6 @@ pub mod pallet {
 		GetMeetupParticipantsError,
 		/// index out of bounds while validating the meetup
 		MeetupValidationIndexOutOfBounds,
-		/// Attestations beyond time tolerance
-		AttestationsBeyondTimeTolerance,
 		/// Not possible to pay rewards in attestations phase
 		EarlyRewardsNotPossible,
 		/// Only newbies can upgrade their registration
