@@ -665,8 +665,6 @@ pub mod pallet {
 		MeetupTimeCalculationError,
 		/// no valid claims were supplied
 		NoValidAttestations,
-		/// sender doesn't have the necessary authority to perform action
-		AuthorizationRequired,
 		/// the action can only be performed during ATTESTING phase
 		AttestationPhaseRequired,
 		/// the action can only be performed during REGISTERING or ATTESTING phase
