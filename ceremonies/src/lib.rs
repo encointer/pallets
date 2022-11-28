@@ -279,10 +279,6 @@ pub mod pallet {
 				Self::gather_meetup_data(&cid, &sender)?;
 
 			ensure!(
-				meetup_participants.contains(&sender),
-				Error::<T>::OriginNotAssignedToThisMeetup
-			);
-			ensure!(
 				attestations.len() < meetup_participants.len(),
 				Error::<T>::TooManyAttestations
 			);
@@ -706,8 +702,6 @@ pub mod pallet {
 		WrongProofSubject,
 		/// former attendance has not been verified or has already been linked to other account
 		AttendanceUnverifiedOrAlreadyUsed,
-		/// origin is not assigned to this meetup
-		OriginNotAssignedToThisMeetup,
 		/// can't have more attestations than other meetup participants
 		TooManyAttestations,
 		/// can't have more claims than other meetup participants
