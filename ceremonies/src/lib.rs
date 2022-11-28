@@ -331,26 +331,7 @@ pub mod pallet {
 				Error::<T>::AlreadyEndorsed
 			);
 
-			if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(&sender) {
-				ensure!(
-					<BurnedBootstrapperNewbieTickets<T>>::get(&cid, &sender) <
-						Self::endorsement_tickets_per_bootstrapper(),
-					Error::<T>::NoMoreNewbieTickets
-				);
-				<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender.clone(), |b| *b += 1);
-			// safe; limited by AMOUNT_NEWBIE_TICKETS
-			} else if Self::has_reputation(&sender, &cid) {
-				ensure!(
-					<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), &sender) <
-						Self::endorsement_tickets_per_reputable(),
-					Error::<T>::NoMoreNewbieTickets
-				);
-				<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender.clone(), |b| {
-					*b += 1
-				}); // safe; limited by AMOUNT_NEWBIE_TICKETS
-			} else {
-				return Err(Error::<T>::AuthorizationRequired.into())
-			}
+			Self::burn_newbie_tickets(cid, cindex, &sender)?;
 
 			<Endorsees<T>>::insert((cid, cindex), newbie.clone(), ());
 			let new_endorsee_count = Self::endorsee_count((cid, cindex))
@@ -637,7 +618,7 @@ pub mod pallet {
 		/// A participant has registered N attestations for fellow meetup participants
 		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
 		/// rewards have been claimed and issued successfully for N participants for their meetup at the previous ceremony
-		RewardsIssued(CommunityIdentifier, MeetupIndexType, u8),
+		RewardsIssued(CommunityIdentifier, MeetupIndexType, MeetupParticipantIndexType),
 		/// inactivity timeout has changed. affects how many ceremony cycles a community can be idle before getting purged
 		InactivityTimeoutUpdated(InactivityTimeoutType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
@@ -702,7 +683,7 @@ pub mod pallet {
 		AttendanceUnverifiedOrAlreadyUsed,
 		/// can't have more attestations than other meetup participants
 		TooManyAttestations,
-		/// bootstrapper has run out of newbie tickets
+		/// sender has run out of newbie tickets
 		NoMoreNewbieTickets,
 		/// newbie is already endorsed
 		AlreadyEndorsed,
@@ -754,7 +735,7 @@ pub mod pallet {
 		CommunityIdentifier,
 		Blake2_128Concat,
 		T::AccountId,
-		u8,
+		EndorsementTicketsType,
 		ValueQuery,
 	>;
 
@@ -766,7 +747,7 @@ pub mod pallet {
 		CommunityCeremony,
 		Blake2_128Concat,
 		T::AccountId,
-		u8,
+		EndorsementTicketsType,
 		ValueQuery,
 	>;
 
@@ -927,7 +908,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn endorsees_count)]
 	pub(super) type EndorseesCount<T: Config> =
-		StorageMap<_, Blake2_128Concat, CommunityCeremony, u64, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ParticipantIndexType, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn meetup_count)]
@@ -1267,6 +1248,36 @@ impl<T: Config> Pallet<T> {
 			<ReputableIndex<T>>::contains_key((cid, cindex), &sender) ||
 			<EndorseeIndex<T>>::contains_key((cid, cindex), &sender) ||
 			<NewbieIndex<T>>::contains_key((cid, cindex), &sender)
+	}
+
+	/// Will burn the `sender`'s newbie tickets if he has some.
+	///
+	/// First we try to use the the reputable tickets because they refill with new reputation, and
+	/// then we try to use the bootstrapper tickets.
+	fn burn_newbie_tickets(
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		sender: &T::AccountId,
+	) -> Result<(), Error<T>> {
+		if Self::has_reputation(sender, &cid) &&
+			<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), sender) <
+				Self::endorsement_tickets_per_reputable()
+		{
+			// safe; limited by AMOUNT_NEWBIE_TICKETS
+			<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender, |b| *b += 1);
+			return Ok(())
+		}
+
+		if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(sender) &&
+			<BurnedBootstrapperNewbieTickets<T>>::get(&cid, sender) <
+				Self::endorsement_tickets_per_bootstrapper()
+		{
+			// safe; limited by AMOUNT_NEWBIE_TICKETS
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender, |b| *b += 1);
+			return Ok(())
+		}
+
+		Err(Error::<T>::NoMoreNewbieTickets)
 	}
 
 	#[allow(deprecated)]
@@ -1754,7 +1765,7 @@ impl<T: Config> Pallet<T> {
 		Self::deposit_event(Event::RewardsIssued(
 			cid,
 			meetup_idx,
-			participants_indices.len() as u8,
+			participants_indices.len() as MeetupParticipantIndexType,
 		));
 		Ok(())
 	}

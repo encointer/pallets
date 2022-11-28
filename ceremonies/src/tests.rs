@@ -1428,7 +1428,7 @@ fn endorse_newbie_fails_if_already_endorsed_in_previous_ceremony() {
 }
 
 #[test]
-fn endorse_newbie_fails_if_not_authorized() {
+fn endorse_newbie_fails_if_sender_has_no_reputation_and_is_not_bootstrapper() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 
@@ -1436,7 +1436,7 @@ fn endorse_newbie_fails_if_not_authorized() {
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
 		assert_err!(
 			EncointerCeremonies::endorse_newcomer(Origin::signed(account_id(&zoran)), cid, yran),
-			Error::<TestRuntime>::AuthorizationRequired
+			Error::<TestRuntime>::NoMoreNewbieTickets
 		);
 	});
 }
