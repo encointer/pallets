@@ -441,24 +441,53 @@ fn attest_attendee_from_non_registered_participant_fails() {
 #[test]
 fn attest_attendee_for_alien_participant_fails() {
 	new_test_ext().execute_with(|| {
-		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountKeyring::Alice.to_account_id();
-		let ferdie = AccountKeyring::Ferdie.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		let charlie = AccountKeyring::Charlie.to_account_id();
+		let bootstrappers = vec![alice.clone(), bob.clone(), charlie.clone()];
+		let cid = perform_bootstrapping_ceremony(Some(bootstrappers), 3);
+		
+		EncointerCeremonies::claim_rewards(Origin::signed(alice.clone()), cid, None).unwrap();
+
 		register_alice_bob_ferdie(cid);
-		// register non-bootstrapper that will not be assigned to bootstrapping meetup
-		let newbie = account_id(&add_population(1, 0)[0]);
-		assert_ok!(register(newbie.clone(), cid, None));
+		register_charlie_dave_eve(cid);
+
+		let participants: Vec<AccountId> =
+			add_population(99, 0).iter().map(|b| account_id(&b)).collect();
+		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
+			Origin::signed(master()),
+			100u8
+		));
+		for p in participants.iter() {
+			assert_ok!(EncointerCeremonies::endorse_newcomer(
+				Origin::signed(alice.clone()),
+				cid,
+				p.clone()
+			));
+			assert_ok!(register(p.clone(), cid, None));
+		}
+
 		run_to_next_phase();
 		run_to_next_phase();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		let alices_meetup_index = EncointerCeremonies::get_meetup_index((cid, cindex), &alice).unwrap();
+		let bobs_meetup_index = EncointerCeremonies::get_meetup_index((cid, cindex), &bob).unwrap();
+		assert_ne!(alices_meetup_index, bobs_meetup_index);
+
+		let mut bobs_peers = EncointerCeremonies::get_meetup_participants((cid, cindex), bobs_meetup_index).unwrap();
+		// remove self
+		let i = bobs_peers.iter().position(|a| a == &bob).unwrap();
+		bobs_peers.remove(i);
+
 		// Attesting
 		assert_err!(
 			EncointerCeremonies::attest_attendees(
-				Origin::signed(newbie),
+				Origin::signed(alice),
 				cid,
-				3,
-				vec![alice, ferdie],
+				bobs_peers.len() as u32 + 1,
+				bobs_peers,
 			),
-			Error::<TestRuntime>::OriginNotAssignedToThisMeetup
+			Error::<TestRuntime>::NoValidAttestations
 		);
 	});
 }

@@ -687,7 +687,7 @@ pub mod pallet {
 		/// meetup time calculation failed
 		MeetupTimeCalculationError,
 		/// no valid claims were supplied
-		NoValidClaims,
+		NoValidAttestations,
 		/// sender doesn't have the necessary authority to perform action
 		AuthorizationRequired,
 		/// the action can only be performed during REGISTERING phase
@@ -1844,7 +1844,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if verified_attestees.is_empty() {
-			return Err(<Error<T>>::NoValidClaims)
+			return Err(<Error<T>>::NoValidAttestations)
 		}
 
 		let count = <AttestationCount<T>>::get((cid, cindex));
