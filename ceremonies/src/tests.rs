@@ -446,7 +446,7 @@ fn attest_attendee_for_alien_participant_fails() {
 		let charlie = AccountKeyring::Charlie.to_account_id();
 		let bootstrappers = vec![alice.clone(), bob.clone(), charlie.clone()];
 		let cid = perform_bootstrapping_ceremony(Some(bootstrappers), 3);
-		
+
 		EncointerCeremonies::claim_rewards(Origin::signed(alice.clone()), cid, None).unwrap();
 
 		register_alice_bob_ferdie(cid);
@@ -470,11 +470,13 @@ fn attest_attendee_for_alien_participant_fails() {
 		run_to_next_phase();
 		run_to_next_phase();
 		let cindex = EncointerScheduler::current_ceremony_index();
-		let alices_meetup_index = EncointerCeremonies::get_meetup_index((cid, cindex), &alice).unwrap();
+		let alices_meetup_index =
+			EncointerCeremonies::get_meetup_index((cid, cindex), &alice).unwrap();
 		let bobs_meetup_index = EncointerCeremonies::get_meetup_index((cid, cindex), &bob).unwrap();
 		assert_ne!(alices_meetup_index, bobs_meetup_index);
 
-		let mut bobs_peers = EncointerCeremonies::get_meetup_participants((cid, cindex), bobs_meetup_index).unwrap();
+		let mut bobs_peers =
+			EncointerCeremonies::get_meetup_participants((cid, cindex), bobs_meetup_index).unwrap();
 		// remove self
 		let i = bobs_peers.iter().position(|a| a == &bob).unwrap();
 		bobs_peers.remove(i);
