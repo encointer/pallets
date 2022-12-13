@@ -203,7 +203,7 @@ pub fn meetup_time<Moment: Copy + AtLeast32Bit>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use communities::Degree;
+	use encointer_primitives::communities::Degree;
 	#[test]
 	fn meetup_time_works() {
 		let attesting_start = 1671408000000u64; // Mon Dec 19 2022 00:00:00 UTC
