@@ -203,6 +203,20 @@ pub fn meetup_time<Moment: Copy + AtLeast32Bit>(
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use communities::Degree;
+	#[test]
+	fn meetup_time_works() {
+		let attesting_start = 1671408000000u64; // Mon Dec 19 2022 00:00:00 UTC
+		let moments_per_day = 86400000u64; // ms per day
+		let meetup_time_offset = -2100000; // 35 minutes
+		let greenbay_location =
+			Location { lat: Degree::from_num(0.0), lon: Degree::from_num(-88.15) };
+		assert_eq!(
+			meetup_time(greenbay_location, attesting_start, moments_per_day, meetup_time_offset)
+				as u64,
+			1671470220000u64
+		) // Mon Dec 19 2022 17:17:00 UTC
+	}
 
 	#[test]
 	fn assignment_fn_works() {
