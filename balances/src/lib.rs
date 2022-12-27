@@ -19,7 +19,7 @@
 pub use crate::weights::WeightInfo;
 use core::marker::PhantomData;
 use encointer_primitives::{
-	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
+	balances::{BalanceEntry, BalanceType, Demurrage, DemurrageError, FeeConversionFactorType},
 	communities::CommunityIdentifier,
 };
 use frame_support::{
@@ -254,16 +254,18 @@ impl<T: Config> Pallet<T> {
 		match entry.apply_demurrage(demurrage, current_block) {
 			Ok(updated_entry) => updated_entry,
 			Err(e) => {
-				// This should never happen in production! The `apply_demurrage` method is designed
-				// to only return an error when some blockchain invariants no longer hold like:
-				// * last_update < current_block
-				// * demurrage < 0
-				// * blocknumber > 2^32
-				//
-				// Still if such an invariant is violated, what should we do here? Shall we use an
-				// expect after all?
-				debug!("Error when applying demurrage: {:?}", e);
-				Default::default()
+				// This should never happen in production! We handle every potential error case
+				// explicitly to be sure  that we detect changes in the `DemurrageError` enum.
+
+				match e {
+					DemurrageError::LastBlockBiggerThanCurrent =>
+						unreachable!("block number monotonically increases; qed"),
+					DemurrageError::ElapsedBlocksMoreThan32Bits => unreachable!(
+						"This can only be reached around the year 2720 with 6 seconds block time; qed"
+					),
+					DemurrageError::DemurrageMustBePositive =>
+						unreachable!("Demurrage is always positive; qed"),
+				}
 			},
 		}
 	}
