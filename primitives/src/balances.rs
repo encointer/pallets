@@ -69,15 +69,15 @@ where
 	///
 	/// The following formula is applied to the principal:
 	/// 	updated_principal = old_principal * e^(-demurrage_per_block * elapsed_blocks)
+	///
+	/// **Note**: This function will be used at every single transaction that is pay with community
+	/// currency. It is important that it is as efficient as possible, but also that it is bullet-
+	/// proof (no-hidden panics!!).
 	pub fn apply_demurrage(
 		self,
 		demurrage_per_block: Demurrage,
 		current_block: BlockNumber,
 	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
-		if demurrage_per_block < 0 {
-			return Err(DemurrageError::DemurrageMustBeNegative)
-		}
-
 		if self.last_update == current_block {
 			// Nothing to be done, as no time elapsed.
 			return Ok(self)
@@ -93,37 +93,41 @@ where
 
 		let elapsed_u32: u32 = elapsed_blocks
 			.try_into()
-			.map_err(|_| DemurrageError::ElapsedBlocksMoreThan32Bits)?;
+			.map_err(|_| DemurrageError::ElapsedBlocksMoreThan32Bits)?; // 698 years with 6 seconds block time.
 
-		let demurrage_factor = match demurrage_factor(demurrage_per_block, elapsed_u32) {
-			Ok(d) => d,
-			Err(_) => {
-				// We can only have errors here if one of the operations overflowed. However, we take the
-				// inverse of these operations at the end, which is why we can set the demurrage factor to
-				// 0 in this case.
-				0.into()
-			},
-		};
+		let demurrage_factor = demurrage_factor(demurrage_per_block, elapsed_u32)?;
 
 		let principal = self
 			.principal
 			.checked_mul(demurrage_factor)
+			// Should never happen as demurrage_factor is bound to [0,1)
 			.ok_or(DemurrageError::ApplyingDemurrageOverflowed)?;
 
 		Ok(Self { principal, last_update: current_block })
 	}
 }
 
-/// e^(-demurrage_per_block * elapsed_blocks)
+/// e^(-demurrage_per_block * elapsed_blocks) within [0,1).
+///
+/// Returns an error if the demurrage is negative.
 pub fn demurrage_factor(
 	demurrage_per_block: Demurrage,
 	elapsed_blocks: u32,
 ) -> Result<BalanceType, DemurrageError> {
-	let exponent = -demurrage_per_block
-		.checked_mul(elapsed_blocks.into())
-		.ok_or(DemurrageError::ExponentOverflowed)?;
+	if demurrage_per_block < 0 {
+		return Err(DemurrageError::DemurrageMustBePositive)
+	}
 
-	exp(exponent).map_err(|_| DemurrageError::DemurrageOverflowed)
+	// We can only have errors here if one of the operations overflowed. However, we take the
+	// inverse of these operations at the end, which is why we can set the demurrage factor to
+	// 0 in this case.
+
+	let exponent = match (-demurrage_per_block).checked_mul(elapsed_blocks.into()) {
+		Some(exp) => exp,
+		None => return Ok(0.into()),
+	};
+
+	Ok(exp(exponent).unwrap_or(0.into()))
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -132,7 +136,7 @@ pub enum DemurrageError {
 	LastBlockBiggerThanCurrent,
 	ElapsedBlocksMoreThan32Bits,
 	ExponentOverflowed,
-	DemurrageMustBeNegative,
+	DemurrageMustBePositive,
 	DemurrageOverflowed,
 	ApplyingDemurrageOverflowed,
 }
@@ -229,7 +233,7 @@ mod tests {
 		let bal = BalanceEntry::<u32>::new(0.into(), 0);
 		assert_eq!(
 			bal.apply_demurrage(Demurrage::from_num(-0.5), ONE_YEAR).unwrap_err(),
-			DemurrageError::DemurrageMustBeNegative,
+			DemurrageError::DemurrageMustBePositive,
 		);
 	}
 

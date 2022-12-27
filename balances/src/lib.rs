@@ -21,7 +21,6 @@ use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
 	communities::CommunityIdentifier,
-	fixed::transcendental::exp,
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -251,21 +250,16 @@ impl<T: Config> Pallet<T> {
 		demurrage: BalanceType,
 	) -> BalanceEntry<T::BlockNumber> {
 		let current_block = frame_system::Pallet::<T>::block_number();
-		let elapsed_time_block_number = current_block - entry.last_update;
-		let elapsed_time_u32: u32 = elapsed_time_block_number
-			.try_into()
-			.ok()
-			.expect("blockchain will not exceed 2^32 blocks; qed");
-		let elapsed_time = BalanceType::from_num(elapsed_time_u32);
-		let exponent: BalanceType = -demurrage * elapsed_time;
-		let exp_result: BalanceType = exp(exponent).unwrap();
-		//.expect("demurrage should never overflow");
-		BalanceEntry {
-			principal: entry
-				.principal
-				.checked_mul(exp_result)
-				.expect("demurrage should never overflow"),
-			last_update: current_block,
+
+		match entry.apply_demurrage(demurrage, current_block) {
+			Ok(updated_entry) => updated_entry,
+			Err(e) => {
+				// This should never happen in production!
+				debug!("Error when applying demurrage: {:?}", e);
+
+				// Todo: is this the safe fallback, or shall we introduce expects?
+				Default::default()
+			},
 		}
 	}
 
