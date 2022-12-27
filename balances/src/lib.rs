@@ -254,10 +254,15 @@ impl<T: Config> Pallet<T> {
 		match entry.apply_demurrage(demurrage, current_block) {
 			Ok(updated_entry) => updated_entry,
 			Err(e) => {
-				// This should never happen in production!
+				// This should never happen in production! The `apply_demurrage` method is designed
+				// to only return an error when some blockchain invariants no longer hold like:
+				// * last_update < current_block
+				// * demurrage < 0
+				// * blocknumber > 2^32
+				//
+				// Still if such an invariant is violated, what should we do here? Shall we use an
+				// expect after all?
 				debug!("Error when applying demurrage: {:?}", e);
-
-				// Todo: is this the safe fallback, or shall we introduce expects?
 				Default::default()
 			},
 		}

@@ -70,7 +70,7 @@ where
 	/// The following formula is applied to the principal:
 	/// 	updated_principal = old_principal * e^(-demurrage_per_block * elapsed_blocks)
 	///
-	/// **Note**: This function will be used at every single transaction that is pay with community
+	/// **Note**: This function will be used at every single transaction that is paid with community
 	/// currency. It is important that it is as efficient as possible, but also that it is bullet-
 	/// proof (no-hidden panics!!).
 	pub fn apply_demurrage(
