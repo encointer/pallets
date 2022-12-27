@@ -233,6 +233,18 @@ mod tests {
 		);
 	}
 
+	#[test]
+	fn apply_demurrage_with_overflowing_values_works() {
+		let demurrage = Demurrage::from_num(0.000048135220872218395);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		// This produced a overflow before: https://github.com/encointer/encointer-node/issues/290
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 0f64);
+
+		// Just make a ridiculous assumption.
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100 * ONE_YEAR).unwrap().principal, 0f64);
+	}
+
 	#[rstest(
 		balance,
 		expected_result,
