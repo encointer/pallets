@@ -74,6 +74,10 @@ where
 		demurrage_per_block: Demurrage,
 		current_block: BlockNumber,
 	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
+		if demurrage_per_block < 0 {
+			return Err(DemurrageError::DemurrageMustBeNegative)
+		}
+
 		if self.last_update == current_block {
 			// Nothing to be done, as no time elapsed.
 			return Ok(self)
@@ -208,6 +212,15 @@ mod tests {
 		assert_abs_diff_eq(
 			bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).unwrap().principal,
 			0f64,
+		);
+	}
+
+	#[test]
+	fn apply_demurrage_when_demurrage_is_negative_errs() {
+		let bal = BalanceEntry::<u32>::new(0.into(), 0);
+		assert_eq!(
+			bal.apply_demurrage(Demurrage::from_num(-0.5), ONE_YEAR).unwrap_err(),
+			DemurrageError::DemurrageMustBeNegative,
 		);
 	}
 
