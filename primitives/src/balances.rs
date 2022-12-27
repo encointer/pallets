@@ -68,7 +68,7 @@ where
 	/// Applies the demurrage and returns an updated BalanceEntry.
 	///
 	/// The following formula is applied to the principal:
-	/// 	updated_principal = old_principal * e^(-demurrage_per_block * elapsed_blocks)
+	///    updated_principal = old_principal * e^(-demurrage_per_block * elapsed_blocks)
 	///
 	/// **Note**: This function will be used at every single transaction that is paid with community
 	/// currency. It is important that it is as efficient as possible, but also that it is bullet-
@@ -131,7 +131,7 @@ pub fn demurrage_factor(
 		None => return Ok(0.into()),
 	};
 
-	Ok(exp(exponent).unwrap_or(0.into()))
+	Ok(exp(exponent).unwrap_or_else(|_| 0.into()))
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
