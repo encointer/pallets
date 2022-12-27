@@ -21,10 +21,11 @@ use sp_core::RuntimeDebug;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::Convert;
+use sp_runtime::traits::{AtLeast32Bit, Convert};
 
 use crate::fixed::{
 	traits::ToFixed,
+	transcendental::exp,
 	types::{U64F64, U66F62},
 };
 #[cfg(feature = "serde_derive")]
@@ -54,6 +55,53 @@ pub struct BalanceEntry<BlockNumber> {
 	pub principal: BalanceType,
 	/// The time (block height) at which the balance was last adjusted
 	pub last_update: BlockNumber,
+}
+
+impl<BlockNumber> BalanceEntry<BlockNumber>
+where
+	BlockNumber: AtLeast32Bit,
+{
+	pub fn new(principal: BalanceType, last_update: BlockNumber) -> Self {
+		Self { principal, last_update }
+	}
+
+	pub fn apply_demurrage(
+		self,
+		demurrage: Demurrage,
+		current_block: BlockNumber,
+	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
+		let elapsed_blocks = current_block
+			.checked_sub(&self.last_update)
+			.ok_or(DemurrageError::LastBlockBiggerThanCurrent)?;
+
+		let elapsed_u32: u32 = elapsed_blocks
+			.try_into()
+			.map_err(|_| DemurrageError::ElapsedBlocksMoreThan32Bits)?;
+
+		let exponent = -demurrage
+			.checked_mul(elapsed_u32.into())
+			.ok_or(DemurrageError::ExponentOverflowed)?;
+
+		// exp(-demurrage * elapsed_blocks)
+		let effective_demurrage = exp(exponent).map_err(|_| DemurrageError::DemurrageOverflowed)?;
+
+		let principal = self
+			.principal
+			.checked_mul(effective_demurrage)
+			.ok_or(DemurrageError::ApplyingDemurrageOverflowed)?;
+
+		Ok(Self { principal, last_update: current_block })
+	}
+}
+
+#[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+pub enum DemurrageError {
+	LastBlockBiggerThanCurrent,
+	ElapsedBlocksMoreThan32Bits,
+	ExponentOverflowed,
+	DemurrageOverflowed,
+	ApplyingDemurrageOverflowed,
 }
 
 /// Our BalanceType is I64F64, so the smallest possible number is
@@ -110,10 +158,27 @@ impl Convert<u128, BalanceType> for EncointerBalanceConverter {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::fixed::traits::LossyInto;
+	use crate::fixed::traits::{LossyFrom, LossyInto};
 	use approx::assert_abs_diff_eq;
 	use rstest::*;
 	use test_utils::helpers::almost_eq;
+
+	const ONE_YEAR: u32 = 86400 / 5 * 356;
+
+	fn assert_abs_diff_eq(balance: BalanceType, expected: f64) {
+		assert_abs_diff_eq!(f64::lossy_from(balance), expected, epsilon = 1.0e-12)
+	}
+
+	#[test]
+	fn demurrage_works() {
+		// 1.1267607882072287e-7
+		let demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+		// println!("demurrage: {:?}", demurrage.to_num::<f64>());
+
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 0.5);
+	}
 
 	#[rstest(
 		balance,
