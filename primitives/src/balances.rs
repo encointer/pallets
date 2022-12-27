@@ -78,6 +78,10 @@ where
 		demurrage_per_block: Demurrage,
 		current_block: BlockNumber,
 	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
+		if demurrage_per_block < 0 {
+			return Err(DemurrageError::DemurrageMustBePositive)
+		}
+
 		if self.last_update == current_block {
 			// Nothing to be done, as no time elapsed.
 			return Ok(self)
