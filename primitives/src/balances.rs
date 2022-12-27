@@ -104,8 +104,7 @@ where
 		let principal = self
 			.principal
 			.checked_mul(demurrage_factor)
-			// Should never happen as demurrage_factor is bound to [0,1)
-			.ok_or(DemurrageError::ApplyingDemurrageOverflowed)?;
+			.expect("demurrage_factor [0,1), hence can't overflow; qed");
 
 		Ok(Self { principal, last_update: current_block })
 	}
@@ -126,11 +125,13 @@ pub fn demurrage_factor(
 	// inverse of these operations at the end, which is why we can set the demurrage factor to
 	// 0 in this case.
 
+	// demurrage > 0; hence exponent <= 0
 	let exponent = match (-demurrage_per_block).checked_mul(elapsed_blocks.into()) {
 		Some(exp) => exp,
 		None => return Ok(0.into()),
 	};
 
+	// exponent <= 0; hence return value [0, 1)
 	Ok(exp(exponent).unwrap_or_else(|_| 0.into()))
 }
 
@@ -139,10 +140,7 @@ pub fn demurrage_factor(
 pub enum DemurrageError {
 	LastBlockBiggerThanCurrent,
 	ElapsedBlocksMoreThan32Bits,
-	ExponentOverflowed,
 	DemurrageMustBePositive,
-	DemurrageOverflowed,
-	ApplyingDemurrageOverflowed,
 }
 
 /// Our BalanceType is I64F64, so the smallest possible number is
