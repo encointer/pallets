@@ -74,6 +74,11 @@ where
 		demurrage_per_block: Demurrage,
 		current_block: BlockNumber,
 	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
+		if self.last_update == current_block {
+			// Nothing to be done, as no time elapsed.
+			return Ok(self)
+		}
+
 		let elapsed_blocks = current_block
 			.checked_sub(&self.last_update)
 			.ok_or(DemurrageError::LastBlockBiggerThanCurrent)?;
@@ -82,12 +87,7 @@ where
 			.try_into()
 			.map_err(|_| DemurrageError::ElapsedBlocksMoreThan32Bits)?;
 
-		let exponent = -demurrage_per_block
-			.checked_mul(elapsed_u32.into())
-			.ok_or(DemurrageError::ExponentOverflowed)?;
-
-		// e^(-demurrage_per_block * elapsed_blocks)
-		let effective_demurrage = exp(exponent).map_err(|_| DemurrageError::DemurrageOverflowed)?;
+		let effective_demurrage = effective_demurrage(demurrage_per_block, elapsed_u32)?;
 
 		let principal = self
 			.principal
@@ -96,6 +96,18 @@ where
 
 		Ok(Self { principal, last_update: current_block })
 	}
+}
+
+/// e^(-demurrage_per_block * elapsed_blocks)
+pub fn effective_demurrage(
+	demurrage_per_block: Demurrage,
+	elapsed_blocks: u32,
+) -> Result<BalanceType, DemurrageError> {
+	let exponent = -demurrage_per_block
+		.checked_mul(elapsed_blocks.into())
+		.ok_or(DemurrageError::ExponentOverflowed)?;
+
+	exp(exponent).map_err(|_| DemurrageError::DemurrageOverflowed)
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
