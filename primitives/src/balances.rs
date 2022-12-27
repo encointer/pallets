@@ -65,9 +65,13 @@ where
 		Self { principal, last_update }
 	}
 
+	/// Applies the demurrage and returns an updated BalanceEntry.
+	///
+	/// The following formula is applied to the principal:
+	/// 	updated_principal = old_principal * e^(-demurrage_per_block * elapsed_blocks)
 	pub fn apply_demurrage(
 		self,
-		demurrage: Demurrage,
+		demurrage_per_block: Demurrage,
 		current_block: BlockNumber,
 	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
 		let elapsed_blocks = current_block
@@ -78,11 +82,11 @@ where
 			.try_into()
 			.map_err(|_| DemurrageError::ElapsedBlocksMoreThan32Bits)?;
 
-		let exponent = -demurrage
+		let exponent = -demurrage_per_block
 			.checked_mul(elapsed_u32.into())
 			.ok_or(DemurrageError::ExponentOverflowed)?;
 
-		// exp(-demurrage * elapsed_blocks)
+		// e^(-demurrage_per_block * elapsed_blocks)
 		let effective_demurrage = exp(exponent).map_err(|_| DemurrageError::DemurrageOverflowed)?;
 
 		let principal = self
