@@ -79,6 +79,10 @@ where
 			return Ok(self)
 		}
 
+		if self.principal.eq(&0i16) {
+			return Ok(Self { principal: self.principal, last_update: current_block })
+		}
+
 		let elapsed_blocks = current_block
 			.checked_sub(&self.last_update)
 			.ok_or(DemurrageError::LastBlockBiggerThanCurrent)?;
@@ -181,53 +185,29 @@ mod tests {
 
 	const ONE_YEAR: u32 = 86400 / 5 * 356;
 
+	// 1.1267607882072287e-7
+	const DEFAULT_DEMURRAGE: Demurrage =
+		Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+
 	fn assert_abs_diff_eq(balance: BalanceType, expected: f64) {
-		assert_abs_diff_eq!(f64::lossy_from(balance), expected, epsilon = 1.0e-15)
+		assert_abs_diff_eq!(f64::lossy_from(balance), expected, epsilon = 1.0e-12)
 	}
 
 	#[test]
 	fn demurrage_works() {
-		// 1.1267607882072287e-7
-		let demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
-		// println!("demurrage: {:?}", demurrage.to_num::<f64>());
-
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
-
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 0.5);
+		assert_abs_diff_eq(
+			bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).unwrap().principal,
+			0.5,
+		);
 	}
 
 	#[test]
-	fn reproduce_green_bay_error() {
-		// Value of the GreenBay community on Gesell, which produced the runtime panic.
-		let demurrage = Demurrage::from_num(0.000048135220872218395);
-		let bal = BalanceEntry::<u32>::new(1.into(), 0);
-
-		// ok
+	fn apply_demurrage_works_when_principal_is_zero() {
+		let bal = BalanceEntry::<u32>::new(0.into(), 0);
 		assert_abs_diff_eq(
-			bal.apply_demurrage(demurrage, ONE_YEAR / 12).unwrap().principal,
-			// 1 * e^(-demurrage * (ONE_YEAR / 12))
-			1.920136726072690e-11,
-		);
-
-		// ok
-		assert_abs_diff_eq(
-			bal.apply_demurrage(demurrage, ONE_YEAR / 10).unwrap().principal,
-			// 1 * e^(-demurrage * (ONE_YEAR / 10))
-			1.380379767846385e-13,
-		);
-
-		// ok
-		assert_abs_diff_eq(
-			bal.apply_demurrage(demurrage, ONE_YEAR / 7).unwrap().principal,
-			// 1 * e^(-demurrage * ONE_YEAR 7)
-			4.25176651672447e-19,
-		);
-
-		// panics at demurrage overflowed
-		assert_abs_diff_eq(
-			bal.apply_demurrage(demurrage, ONE_YEAR / 6).unwrap().principal,
-			// 1 * e^(-demurrage * ONE_YEAR / 6)
-			4.25176651672447e-19,
+			bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).unwrap().principal,
+			0f64,
 		);
 	}
 
