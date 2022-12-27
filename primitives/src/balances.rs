@@ -170,7 +170,7 @@ mod tests {
 	const ONE_YEAR: u32 = 86400 / 5 * 356;
 
 	fn assert_abs_diff_eq(balance: BalanceType, expected: f64) {
-		assert_abs_diff_eq!(f64::lossy_from(balance), expected, epsilon = 1.0e-12)
+		assert_abs_diff_eq!(f64::lossy_from(balance), expected, epsilon = 1.0e-15)
 	}
 
 	#[test]
@@ -189,7 +189,34 @@ mod tests {
 		// Value of the GreenBay community on Gesell, which produced the runtime panic.
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 0.5);
+
+		// ok
+		assert_abs_diff_eq(
+			bal.apply_demurrage(demurrage, ONE_YEAR / 12).unwrap().principal,
+			// 1 * e^(-demurrage * (ONE_YEAR / 12))
+			1.920136726072690e-11,
+		);
+
+		// ok
+		assert_abs_diff_eq(
+			bal.apply_demurrage(demurrage, ONE_YEAR / 10).unwrap().principal,
+			// 1 * e^(-demurrage * (ONE_YEAR / 10))
+			1.380379767846385e-13,
+		);
+
+		// ok
+		assert_abs_diff_eq(
+			bal.apply_demurrage(demurrage, ONE_YEAR / 7).unwrap().principal,
+			// 1 * e^(-demurrage * ONE_YEAR 7)
+			4.25176651672447e-19,
+		);
+
+		// panics at demurrage overflowed
+		assert_abs_diff_eq(
+			bal.apply_demurrage(demurrage, ONE_YEAR / 6).unwrap().principal,
+			// 1 * e^(-demurrage * ONE_YEAR / 6)
+			4.25176651672447e-19,
+		);
 	}
 
 	#[rstest(
