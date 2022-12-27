@@ -61,6 +61,28 @@ fn issue_should_work() {
 }
 
 #[test]
+fn reproduce_green_bay_panic() {
+	new_test_ext().execute_with(|| {
+		// Current block of Gesell at 27.12.2022
+		System::set_block_number(System::block_number() + 4_548_921);
+		System::on_initialize(System::block_number());
+
+		let cid = CommunityIdentifier::default();
+
+		// Green Bay demurrage rate
+		EncointerBalances::set_demurrage(&cid, Demurrage::from_num(0.000048135220872218395));
+
+		let alice = AccountKeyring::Alice.to_account_id();
+
+		// Panics because it tries to calculate the demurrage with a default value for the not-yet
+		// existing balance of alice: { principal 0, last_update: 0 }. With the high demurrage rate
+		// of the Green Bay community, this results in an overflow when the effective demurrage is
+		// computed.
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
+	});
+}
+
+#[test]
 fn burn_should_work() {
 	new_test_ext().execute_with(|| {
 		let cid = CommunityIdentifier::default();
