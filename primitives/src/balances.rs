@@ -95,11 +95,19 @@ where
 			.try_into()
 			.map_err(|_| DemurrageError::ElapsedBlocksMoreThan32Bits)?;
 
-		let effective_demurrage = effective_demurrage(demurrage_per_block, elapsed_u32)?;
+		let demurrage_factor = match demurrage_factor(demurrage_per_block, elapsed_u32) {
+			Ok(d) => d,
+			Err(_) => {
+				// We can only have errors here if one of the operations overflowed. However, we take the
+				// inverse of these operations at the end, which is why we can set the demurrage factor to
+				// 0 in this case.
+				0.into()
+			},
+		};
 
 		let principal = self
 			.principal
-			.checked_mul(effective_demurrage)
+			.checked_mul(demurrage_factor)
 			.ok_or(DemurrageError::ApplyingDemurrageOverflowed)?;
 
 		Ok(Self { principal, last_update: current_block })
@@ -107,7 +115,7 @@ where
 }
 
 /// e^(-demurrage_per_block * elapsed_blocks)
-pub fn effective_demurrage(
+pub fn demurrage_factor(
 	demurrage_per_block: Demurrage,
 	elapsed_blocks: u32,
 ) -> Result<BalanceType, DemurrageError> {
@@ -124,6 +132,7 @@ pub enum DemurrageError {
 	LastBlockBiggerThanCurrent,
 	ElapsedBlocksMoreThan32Bits,
 	ExponentOverflowed,
+	DemurrageMustBeNegative,
 	DemurrageOverflowed,
 	ApplyingDemurrageOverflowed,
 }
@@ -207,7 +216,7 @@ mod tests {
 	}
 
 	#[test]
-	fn apply_demurrage_works_when_principal_is_zero() {
+	fn apply_demurrage_when_principal_is_zero_works() {
 		let bal = BalanceEntry::<u32>::new(0.into(), 0);
 		assert_abs_diff_eq(
 			bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).unwrap().principal,
