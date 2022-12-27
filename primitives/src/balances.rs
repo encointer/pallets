@@ -184,6 +184,14 @@ mod tests {
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 0.5);
 	}
 
+	#[test]
+	fn reproduce_green_bay_error() {
+		// Value of the GreenBay community on Gesell, which produced the runtime panic.
+		let demurrage = Demurrage::from_num(0.000048135220872218395);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 0.5);
+	}
+
 	#[rstest(
 		balance,
 		expected_result,
