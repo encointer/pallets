@@ -253,6 +253,28 @@ mod tests {
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100 * ONE_YEAR).unwrap().principal, 0f64);
 	}
 
+	#[test]
+	fn apply_demurrage_with_block_number_bigger_than_u32max_returns_an_error() {
+		let demurrage = Demurrage::from_num(0.000048135220872218395);
+		let bal = BalanceEntry::<u64>::new(1.into(), 0);
+
+		assert_eq!(
+			bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).unwrap_err(),
+			DemurrageError::ElapsedBlocksMoreThan32Bits,
+		)
+	}
+
+	#[test]
+	fn apply_demurrage_with_block_number_not_monotonically_rising_returns_an_error() {
+		let demurrage = Demurrage::from_num(0.000048135220872218395);
+		let bal = BalanceEntry::<u64>::new(1.into(), 1);
+
+		assert_eq!(
+			bal.apply_demurrage(demurrage, 0).unwrap_err(),
+			DemurrageError::LastBlockBiggerThanCurrent,
+		)
+	}
+
 	#[rstest(
 		balance,
 		expected_result,
