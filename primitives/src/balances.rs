@@ -267,12 +267,36 @@ mod tests {
 	#[test]
 	fn apply_demurrage_with_block_number_not_monotonically_rising_returns_an_error() {
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
-		let bal = BalanceEntry::<u64>::new(1.into(), 1);
+		let bal = BalanceEntry::<u32>::new(1.into(), 1);
 
 		assert_eq!(
 			bal.apply_demurrage(demurrage, 0).unwrap_err(),
 			DemurrageError::LastBlockBiggerThanCurrent,
 		)
+	}
+
+	#[test]
+	fn apply_demurrage_with_zero_demurrage_works() {
+		let demurrage = Demurrage::from_num(0.0);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 1f64);
+	}
+
+	#[test]
+	fn apply_demurrage_with_0_elapsed_blocks_works() {
+		let demurrage = Demurrage::from_num(100);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 0).unwrap().principal, 1f64);
+	}
+
+	#[test]
+	fn apply_demurrage_with_massive_demurrage_works() {
+		let demurrage = Demurrage::from_num(u32::MAX);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100).unwrap().principal, 0f64);
 	}
 
 	#[rstest(
