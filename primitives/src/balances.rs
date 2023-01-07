@@ -76,22 +76,22 @@ where
 	pub fn apply_demurrage(
 		self,
 		demurrage_per_block: Demurrage,
-		current_block: BlockNumber,
+		current_block_number: BlockNumber,
 	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
 		if demurrage_per_block < 0 {
 			return Err(DemurrageError::DemurrageMustBePositive)
 		}
 
-		if self.last_update == current_block {
+		if self.last_update == current_block_number {
 			// Nothing to be done, as no time elapsed.
 			return Ok(self)
 		}
 
 		if self.principal.eq(&0i16) {
-			return Ok(Self { principal: self.principal, last_update: current_block })
+			return Ok(Self { principal: self.principal, last_update: current_block_number })
 		}
 
-		let elapsed_blocks = current_block
+		let elapsed_blocks = current_block_number
 			.checked_sub(&self.last_update)
 			.ok_or(DemurrageError::LastBlockBiggerThanCurrent)?;
 
@@ -106,7 +106,7 @@ where
 			.checked_mul(demurrage_factor)
 			.expect("demurrage_factor [0,1), hence can't overflow; qed");
 
-		Ok(Self { principal, last_update: current_block })
+		Ok(Self { principal, last_update: current_block_number })
 	}
 }
 
