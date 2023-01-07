@@ -258,11 +258,6 @@ impl<T: Config> Pallet<T> {
 				// explicitly to be sure  that we detect changes in the `DemurrageError` enum.
 
 				match e {
-					DemurrageError::LastBlockBiggerThanCurrent =>
-						unreachable!("block number monotonically increases; qed"),
-					DemurrageError::ElapsedBlocksMoreThan32Bits => unreachable!(
-						"This can only be reached around the year 2720 with 6 seconds block time; qed"
-					),
 					DemurrageError::DemurrageMustBePositive =>
 						unreachable!("Demurrage is always positive; qed"),
 				}

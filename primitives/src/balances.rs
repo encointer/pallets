@@ -16,8 +16,10 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use ep_core::fixed::types::I64F64;
+use log::{trace, warn};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
+use sp_std::fmt::Debug;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -30,6 +32,8 @@ use crate::fixed::{
 };
 #[cfg(feature = "serde_derive")]
 use ep_core::serde::serialize_fixed;
+
+const LOG: &str = "encointer::demurrage";
 
 // We're working with fixpoint here.
 
@@ -59,7 +63,7 @@ pub struct BalanceEntry<BlockNumber> {
 
 impl<BlockNumber> BalanceEntry<BlockNumber>
 where
-	BlockNumber: AtLeast32Bit,
+	BlockNumber: AtLeast32Bit + Debug,
 {
 	pub fn new(principal: BalanceType, last_update: BlockNumber) -> Self {
 		Self { principal, last_update }
@@ -91,13 +95,24 @@ where
 			return Ok(Self { principal: self.principal, last_update: current_block_number })
 		}
 
-		let elapsed_blocks = current_block_number
-			.checked_sub(&self.last_update)
-			.ok_or(DemurrageError::LastBlockBiggerThanCurrent)?;
+		let elapsed_blocks =
+			current_block_number.checked_sub(&self.last_update).unwrap_or_else(|| {
+				// This should never be the case on a sound blockchain setup, but we really
+				// never want to panic here.
+				warn!(
+					target: LOG,
+					"last block {:?} bigger than current {:?}, defaulting to elapsed_blocks=0",
+					self.last_update,
+					current_block_number
+				);
+				0u32.into()
+			});
 
-		let elapsed_u32: u32 = elapsed_blocks
-			.try_into()
-			.map_err(|_| DemurrageError::ElapsedBlocksMoreThan32Bits)?; // 698 years with 6 seconds block time.
+		let elapsed_u32: u32 = elapsed_blocks.try_into().unwrap_or_else(|_| {
+			// 698 years with 6 seconds block time.
+			trace!(target: LOG, "elapsed_blocks > u32::MAX, defaulting to u32::MAX");
+			u32::MAX
+		});
 
 		let demurrage_factor = demurrage_factor(demurrage_per_block, elapsed_u32)?;
 
@@ -140,8 +155,6 @@ pub fn demurrage_factor(
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum DemurrageError {
-	LastBlockBiggerThanCurrent,
-	ElapsedBlocksMoreThan32Bits,
 	DemurrageMustBePositive,
 }
 
@@ -254,24 +267,25 @@ mod tests {
 	}
 
 	#[test]
-	fn apply_demurrage_with_block_number_bigger_than_u32max_returns_an_error() {
+	fn apply_demurrage_with_block_number_bigger_than_u32max_returns_does_not_overfloww() {
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
 		let bal = BalanceEntry::<u64>::new(1.into(), 0);
 
-		assert_eq!(
-			bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).unwrap_err(),
-			DemurrageError::ElapsedBlocksMoreThan32Bits,
-		)
+		assert_abs_diff_eq(
+			bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).unwrap().principal,
+			0f64,
+		);
 	}
 
 	#[test]
-	fn apply_demurrage_with_block_number_not_monotonically_rising_returns_an_error() {
+	fn apply_demurrage_with_block_number_not_monotonically_rising_returns_just_updates_last_block()
+	{
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
 		let bal = BalanceEntry::<u32>::new(1.into(), 1);
 
 		assert_eq!(
-			bal.apply_demurrage(demurrage, 0).unwrap_err(),
-			DemurrageError::LastBlockBiggerThanCurrent,
+			bal.apply_demurrage(demurrage, 0).unwrap(),
+			BalanceEntry::<u32>::new(1.into(), 0)
 		)
 	}
 
