@@ -74,6 +74,9 @@ where
 	/// The following formula is applied to the principal:
 	///    updated_principal = old_principal * e^(-demurrage_per_block * elapsed_blocks)
 	///
+	/// If the `demurrage_per_block` is negative it will take the absolute value of
+	/// it for the calculation.
+	///
 	/// **Note**: This function will be used at every single transaction that is paid with community
 	/// currency. It is important that it is as efficient as possible, but also that it is bullet-
 	/// proof (no-hidden panics!!).
@@ -81,18 +84,14 @@ where
 		self,
 		demurrage_per_block: Demurrage,
 		current_block_number: BlockNumber,
-	) -> Result<BalanceEntry<BlockNumber>, DemurrageError> {
-		if demurrage_per_block < 0 {
-			return Err(DemurrageError::DemurrageMustBePositive)
-		}
-
+	) -> BalanceEntry<BlockNumber> {
 		if self.last_update == current_block_number {
 			// Nothing to be done, as no time elapsed.
-			return Ok(self)
+			return self
 		}
 
 		if self.principal.eq(&0i16) {
-			return Ok(Self { principal: self.principal, last_update: current_block_number })
+			return Self { principal: self.principal, last_update: current_block_number }
 		}
 
 		let elapsed_blocks =
@@ -114,28 +113,21 @@ where
 			u32::MAX
 		});
 
-		let demurrage_factor = demurrage_factor(demurrage_per_block, elapsed_u32)?;
+		let demurrage_factor = demurrage_factor(demurrage_per_block, elapsed_u32);
 
 		let principal = self
 			.principal
 			.checked_mul(demurrage_factor)
 			.expect("demurrage_factor [0,1), hence can't overflow; qed");
 
-		Ok(Self { principal, last_update: current_block_number })
+		Self { principal, last_update: current_block_number }
 	}
 }
 
 /// e^(-demurrage_per_block * elapsed_blocks) within [0,1).
 ///
-/// Returns an error if the demurrage is negative.
-pub fn demurrage_factor(
-	demurrage_per_block: Demurrage,
-	elapsed_blocks: u32,
-) -> Result<BalanceType, DemurrageError> {
-	if demurrage_per_block < 0 {
-		return Err(DemurrageError::DemurrageMustBePositive)
-	}
-
+/// It will take the absolute value of the `demurrage_per_block` if it is negative.
+pub fn demurrage_factor(demurrage_per_block: Demurrage, elapsed_blocks: u32) -> BalanceType {
 	// We can only have errors here if one of the operations overflowed.
 	//
 	// However, as we compute exp(-x), which goes to 0 for big x, we can
@@ -143,19 +135,13 @@ pub fn demurrage_factor(
 	// because of the big x.
 
 	// demurrage >= 0; hence exponent <= 0
-	let exponent = match (-demurrage_per_block).checked_mul(elapsed_blocks.into()) {
+	let exponent = match (-demurrage_per_block.abs()).checked_mul(elapsed_blocks.into()) {
 		Some(exp) => exp,
-		None => return Ok(0.into()),
+		None => return 0.into(),
 	};
 
 	// exponent <= 0; hence return value [0, 1)
-	Ok(exp(exponent).unwrap_or_else(|_| 0.into()))
-}
-
-#[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-pub enum DemurrageError {
-	DemurrageMustBePositive,
+	exp(exponent).unwrap_or_else(|_| 0.into())
 }
 
 /// Our BalanceType is I64F64, so the smallest possible number is
@@ -230,28 +216,19 @@ mod tests {
 	#[test]
 	fn demurrage_works() {
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
-		assert_abs_diff_eq(
-			bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).unwrap().principal,
-			0.5,
-		);
+		assert_abs_diff_eq(bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0.5);
 	}
 
 	#[test]
 	fn apply_demurrage_when_principal_is_zero_works() {
 		let bal = BalanceEntry::<u32>::new(0.into(), 0);
-		assert_abs_diff_eq(
-			bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).unwrap().principal,
-			0f64,
-		);
+		assert_abs_diff_eq(bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0f64);
 	}
 
 	#[test]
-	fn apply_demurrage_when_demurrage_is_negative_errs() {
-		let bal = BalanceEntry::<u32>::new(0.into(), 0);
-		assert_eq!(
-			bal.apply_demurrage(Demurrage::from_num(-0.5), ONE_YEAR).unwrap_err(),
-			DemurrageError::DemurrageMustBePositive,
-		);
+	fn apply_demurrage_when_demurrage_is_negative_works() {
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		assert_abs_diff_eq(bal.apply_demurrage(-DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0.5);
 	}
 
 	#[test]
@@ -260,10 +237,10 @@ mod tests {
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
 
 		// This produced a overflow before: https://github.com/encointer/encointer-node/issues/290
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 0f64);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).principal, 0f64);
 
 		// Just make a ridiculous assumption.
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100 * ONE_YEAR).unwrap().principal, 0f64);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100 * ONE_YEAR).principal, 0f64);
 	}
 
 	#[test]
@@ -271,10 +248,7 @@ mod tests {
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
 		let bal = BalanceEntry::<u64>::new(1.into(), 0);
 
-		assert_abs_diff_eq(
-			bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).unwrap().principal,
-			0f64,
-		);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).principal, 0f64);
 	}
 
 	#[test]
@@ -283,10 +257,7 @@ mod tests {
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
 		let bal = BalanceEntry::<u32>::new(1.into(), 1);
 
-		assert_eq!(
-			bal.apply_demurrage(demurrage, 0).unwrap(),
-			BalanceEntry::<u32>::new(1.into(), 0)
-		)
+		assert_eq!(bal.apply_demurrage(demurrage, 0), BalanceEntry::<u32>::new(1.into(), 0))
 	}
 
 	#[test]
@@ -294,7 +265,7 @@ mod tests {
 		let demurrage = Demurrage::from_num(0.0);
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
 
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).unwrap().principal, 1f64);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).principal, 1f64);
 	}
 
 	#[test]
@@ -302,7 +273,7 @@ mod tests {
 		let demurrage = Demurrage::from_num(100);
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
 
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 0).unwrap().principal, 1f64);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 0).principal, 1f64);
 	}
 
 	#[test]
@@ -310,7 +281,7 @@ mod tests {
 		let demurrage = Demurrage::from_num(u32::MAX);
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
 
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100).unwrap().principal, 0f64);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100).principal, 0f64);
 	}
 
 	#[rstest(

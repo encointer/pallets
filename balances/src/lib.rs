@@ -19,7 +19,7 @@
 pub use crate::weights::WeightInfo;
 use core::marker::PhantomData;
 use encointer_primitives::{
-	balances::{BalanceEntry, BalanceType, Demurrage, DemurrageError, FeeConversionFactorType},
+	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
 	communities::CommunityIdentifier,
 };
 use frame_support::{
@@ -251,18 +251,7 @@ impl<T: Config> Pallet<T> {
 	) -> BalanceEntry<T::BlockNumber> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
-		match entry.apply_demurrage(demurrage, current_block) {
-			Ok(updated_entry) => updated_entry,
-			Err(e) => {
-				// This should never happen in production! We handle every potential error case
-				// explicitly to be sure  that we detect changes in the `DemurrageError` enum.
-
-				match e {
-					DemurrageError::DemurrageMustBePositive =>
-						unreachable!("Demurrage is always positive; qed"),
-				}
-			},
-		}
+		entry.apply_demurrage(demurrage, current_block)
 	}
 
 	/// Create a new account on-chain if it does not exist.
