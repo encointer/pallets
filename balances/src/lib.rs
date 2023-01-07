@@ -247,7 +247,7 @@ impl<T: Config> Pallet<T> {
 	///     * exp(-1* demurrage_rate_per_block * number_of_blocks_since_last_written)
 	pub(crate) fn apply_demurrage(
 		entry: BalanceEntry<T::BlockNumber>,
-		demurrage: BalanceType,
+		demurrage: Demurrage,
 	) -> BalanceEntry<T::BlockNumber> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
