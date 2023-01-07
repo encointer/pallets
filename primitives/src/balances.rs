@@ -125,7 +125,7 @@ pub fn demurrage_factor(
 	// inverse of these operations at the end, which is why we can set the demurrage factor to
 	// 0 in this case.
 
-	// demurrage > 0; hence exponent <= 0
+	// demurrage >= 0; hence exponent <= 0
 	let exponent = match (-demurrage_per_block).checked_mul(elapsed_blocks.into()) {
 		Some(exp) => exp,
 		None => return Ok(0.into()),
