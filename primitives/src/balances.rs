@@ -121,9 +121,11 @@ pub fn demurrage_factor(
 		return Err(DemurrageError::DemurrageMustBePositive)
 	}
 
-	// We can only have errors here if one of the operations overflowed. However, we take the
-	// inverse of these operations at the end, which is why we can set the demurrage factor to
-	// 0 in this case.
+	// We can only have errors here if one of the operations overflowed.
+	//
+	// However, as we compute exp(-x), which goes to 0 for big x, we can
+	// approximate the result as 0 if we overflow somewhere on the way
+	// because of the big x.
 
 	// demurrage >= 0; hence exponent <= 0
 	let exponent = match (-demurrage_per_block).checked_mul(elapsed_blocks.into()) {
