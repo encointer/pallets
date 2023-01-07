@@ -244,7 +244,7 @@ mod tests {
 	}
 
 	#[test]
-	fn apply_demurrage_with_block_number_bigger_than_u32max_returns_does_not_overfloww() {
+	fn apply_demurrage_with_block_number_bigger_than_u32max_does_not_overflow() {
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
 		let bal = BalanceEntry::<u64>::new(1.into(), 0);
 
@@ -252,8 +252,7 @@ mod tests {
 	}
 
 	#[test]
-	fn apply_demurrage_with_block_number_not_monotonically_rising_returns_just_updates_last_block()
-	{
+	fn apply_demurrage_with_block_number_not_monotonically_rising_just_updates_last_block() {
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
 		let bal = BalanceEntry::<u32>::new(1.into(), 1);
 
@@ -269,7 +268,7 @@ mod tests {
 	}
 
 	#[test]
-	fn apply_demurrage_with_0_elapsed_blocks_works() {
+	fn apply_demurrage_with_zero_elapsed_blocks_works() {
 		let demurrage = Demurrage::from_num(100);
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
 
