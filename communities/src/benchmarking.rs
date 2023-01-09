@@ -125,7 +125,7 @@ benchmarks! {
 	update_demurrage {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 	} : {
-		assert_ok!(Communities::<T>::update_demurrage(RawOrigin::Root.into(), cid, Demurrage::from(23u32)));
+		assert_ok!(Communities::<T>::update_demurrage(RawOrigin::Root.into(), cid, Demurrage::from(0.5)));
 	}
 	verify {
 		assert_eq!(encointer_balances::Pallet::<T>::demurrage_per_block(&cid), 23);
