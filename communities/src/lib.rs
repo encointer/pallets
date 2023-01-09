@@ -29,7 +29,7 @@ use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::PalletString,
 	communities::{
-		consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
+		consts::*, validate_nominal_income, CommunityIdentifier,
 		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
 		NominalIncome as NominalIncomeType,
 	},
