@@ -20,7 +20,7 @@ pub use crate::weights::WeightInfo;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
-	communities::CommunityIdentifier,
+	communities::{validate_demurrage, CommunityIdentifier, RangeError},
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -367,8 +367,13 @@ impl<T: Config> Pallet<T> {
 		<DemurragePerBlock<T>>::try_get(cid).unwrap_or_else(|_| T::DefaultDemurrage::get())
 	}
 
-	pub fn set_demurrage(cid: &CommunityIdentifier, demurrage: Demurrage) {
+	pub fn set_demurrage(
+		cid: &CommunityIdentifier,
+		demurrage: Demurrage,
+	) -> Result<(), RangeError> {
+		validate_demurrage(&demurrage)?;
 		<DemurragePerBlock<T>>::insert(cid, &demurrage);
+		Ok(())
 	}
 
 	pub fn purge_balances(cid: CommunityIdentifier) {

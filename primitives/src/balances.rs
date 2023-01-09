@@ -240,12 +240,15 @@ mod tests {
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).principal, 0f64);
 
 		// Just make a ridiculous assumption.
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100 * ONE_YEAR).principal, 0f64);
+		assert_abs_diff_eq(
+			bal.apply_demurrage(Demurrage::from_num(u32::MAX), u32::MAX).principal,
+			0f64,
+		);
 	}
 
 	#[test]
 	fn apply_demurrage_with_block_number_bigger_than_u32max_does_not_overflow() {
-		let demurrage = Demurrage::from_num(0.000048135220872218395);
+		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
 		let bal = BalanceEntry::<u64>::new(1.into(), 0);
 
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).principal, 0f64);
@@ -253,7 +256,7 @@ mod tests {
 
 	#[test]
 	fn apply_demurrage_with_block_number_not_monotonically_rising_just_updates_last_block() {
-		let demurrage = Demurrage::from_num(0.000048135220872218395);
+		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
 		let bal = BalanceEntry::<u32>::new(1.into(), 1);
 
 		assert_eq!(bal.apply_demurrage(demurrage, 0), BalanceEntry::<u32>::new(1.into(), 0))
@@ -269,7 +272,7 @@ mod tests {
 
 	#[test]
 	fn apply_demurrage_with_zero_elapsed_blocks_works() {
-		let demurrage = Demurrage::from_num(100);
+		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
 
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 0).principal, 1f64);
@@ -277,10 +280,14 @@ mod tests {
 
 	#[test]
 	fn apply_demurrage_with_massive_demurrage_works() {
-		let demurrage = Demurrage::from_num(u32::MAX);
+		// Have to do -1 otherwise we have a panic in the exp function:
+		// https://github.com/encointer/substrate-fixed/issues/18
+		//
+		// Not critical as we safeguard against this with `validate_demurrage`.
+		let demurrage = Demurrage::from_num(i64::MAX - 1);
 		let bal = BalanceEntry::<u32>::new(1.into(), 0);
 
-		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 100).principal, 0f64);
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 1).principal, 0f64);
 	}
 
 	#[rstest(

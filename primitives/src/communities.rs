@@ -67,6 +67,7 @@ pub type MaxSpeedMpsType = u32;
 pub enum RangeError {
 	LessThanZero,
 	LessThanOrEqualZero,
+	TooHigh { limit: u32 },
 }
 
 /// Ensure that the demurrage is in a sane range.
@@ -75,6 +76,11 @@ pub enum RangeError {
 pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	if demurrage < &Demurrage::from_num(0) {
 		return Err(RangeError::LessThanZero)
+	}
+
+	// Just some safeguarding against overflows
+	if demurrage > &Demurrage::from_num(1) {
+		return Err(RangeError::TooHigh { limit: 1 })
 	}
 	Ok(())
 }

@@ -253,8 +253,6 @@ pub mod pallet {
 			T::CommunityMaster::ensure_origin(origin)?;
 
 			Self::ensure_cid_exists(&cid)?;
-			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-			Self::ensure_cid_exists(&cid)?;
 
 			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)..map_err(|_| {
 				<Error<T>>::InvalidDemurrage
