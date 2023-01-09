@@ -78,7 +78,11 @@ pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 		return Err(RangeError::LessThanZero)
 	}
 
-	// Just some safeguarding against overflows
+	// Just some safeguarding against overflows, but 1 is already a very high value:
+	//
+	// e^-(50) = 1.9e-22, i.e., after 50 blocks the demurrage is close to 100%.
+	//
+	// So the community does still have the choice of a huge demurrage.
 	if demurrage > &Demurrage::from_num(1) {
 		return Err(RangeError::TooHigh { limit: 1 })
 	}
