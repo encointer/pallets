@@ -128,9 +128,8 @@ pub mod pallet {
 			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
 
 			if let Some(d) = demurrage {
-				<encointer_balances::Pallet<T>>::set_demurrage(&cid, d)..map_err(|_| {
-					<Error<T>>::InvalidDemurrage
-				})
+				<encointer_balances::Pallet<T>>::set_demurrage(&cid, d)
+					.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			}
 			if let Some(i) = nominal_income {
 				<NominalIncome<T>>::insert(&cid, i)
@@ -254,9 +253,8 @@ pub mod pallet {
 
 			Self::ensure_cid_exists(&cid)?;
 
-			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)..map_err(|_| {
-				<Error<T>>::InvalidDemurrage
-			})?;
+			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
+				.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
 			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
