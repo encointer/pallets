@@ -20,8 +20,7 @@ pub use crate::weights::WeightInfo;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
-	communities::CommunityIdentifier,
-	fixed::transcendental::exp,
+	communities::{validate_demurrage, CommunityIdentifier, RangeError},
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -248,25 +247,11 @@ impl<T: Config> Pallet<T> {
 	///     * exp(-1* demurrage_rate_per_block * number_of_blocks_since_last_written)
 	pub(crate) fn apply_demurrage(
 		entry: BalanceEntry<T::BlockNumber>,
-		demurrage: BalanceType,
+		demurrage: Demurrage,
 	) -> BalanceEntry<T::BlockNumber> {
 		let current_block = frame_system::Pallet::<T>::block_number();
-		let elapsed_time_block_number = current_block - entry.last_update;
-		let elapsed_time_u32: u32 = elapsed_time_block_number
-			.try_into()
-			.ok()
-			.expect("blockchain will not exceed 2^32 blocks; qed");
-		let elapsed_time = BalanceType::from_num(elapsed_time_u32);
-		let exponent: BalanceType = -demurrage * elapsed_time;
-		let exp_result: BalanceType = exp(exponent).unwrap();
-		//.expect("demurrage should never overflow");
-		BalanceEntry {
-			principal: entry
-				.principal
-				.checked_mul(exp_result)
-				.expect("demurrage should never overflow"),
-			last_update: current_block,
-		}
+
+		entry.apply_demurrage(demurrage, current_block)
 	}
 
 	/// Create a new account on-chain if it does not exist.
@@ -382,8 +367,13 @@ impl<T: Config> Pallet<T> {
 		<DemurragePerBlock<T>>::try_get(cid).unwrap_or_else(|_| T::DefaultDemurrage::get())
 	}
 
-	pub fn set_demurrage(cid: &CommunityIdentifier, demurrage: Demurrage) {
+	pub fn set_demurrage(
+		cid: &CommunityIdentifier,
+		demurrage: Demurrage,
+	) -> Result<(), RangeError> {
+		validate_demurrage(&demurrage)?;
 		<DemurragePerBlock<T>>::insert(cid, &demurrage);
+		Ok(())
 	}
 
 	pub fn purge_balances(cid: CommunityIdentifier) {
