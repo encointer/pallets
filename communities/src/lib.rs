@@ -29,7 +29,7 @@ use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::PalletString,
 	communities::{
-		consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
+		consts::*, validate_nominal_income, CommunityIdentifier,
 		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
 		NominalIncome as NominalIncomeType,
 	},
@@ -92,9 +92,7 @@ pub mod pallet {
 			community_metadata
 				.validate()
 				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
-			if let Some(d) = demurrage {
-				validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-			}
+
 			if let Some(i) = nominal_income {
 				validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 			}
@@ -131,6 +129,7 @@ pub mod pallet {
 
 			if let Some(d) = demurrage {
 				<encointer_balances::Pallet<T>>::set_demurrage(&cid, d)
+					.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			}
 			if let Some(i) = nominal_income {
 				<NominalIncome<T>>::insert(&cid, i)
@@ -253,10 +252,9 @@ pub mod pallet {
 			T::CommunityMaster::ensure_origin(origin)?;
 
 			Self::ensure_cid_exists(&cid)?;
-			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-			Self::ensure_cid_exists(&cid)?;
 
-			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage);
+			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
+				.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
 			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));

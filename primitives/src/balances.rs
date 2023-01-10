@@ -16,19 +16,24 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use ep_core::fixed::types::I64F64;
+use log::{trace, warn};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
+use sp_std::fmt::Debug;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::traits::Convert;
+use sp_runtime::traits::{AtLeast32Bit, Convert};
 
 use crate::fixed::{
 	traits::ToFixed,
+	transcendental::exp,
 	types::{U64F64, U66F62},
 };
 #[cfg(feature = "serde_derive")]
 use ep_core::serde::serialize_fixed;
+
+const LOG: &str = "encointer::demurrage";
 
 // We're working with fixpoint here.
 
@@ -54,6 +59,89 @@ pub struct BalanceEntry<BlockNumber> {
 	pub principal: BalanceType,
 	/// The time (block height) at which the balance was last adjusted
 	pub last_update: BlockNumber,
+}
+
+impl<BlockNumber> BalanceEntry<BlockNumber>
+where
+	BlockNumber: AtLeast32Bit + Debug,
+{
+	pub fn new(principal: BalanceType, last_update: BlockNumber) -> Self {
+		Self { principal, last_update }
+	}
+
+	/// Applies the demurrage and returns an updated BalanceEntry.
+	///
+	/// The following formula is applied to the principal:
+	///    updated_principal = old_principal * e^(-demurrage_per_block * elapsed_blocks)
+	///
+	/// If the `demurrage_per_block` is negative it will take the absolute value of
+	/// it for the calculation.
+	///
+	/// **Note**: This function will be used at every single transaction that is paid with community
+	/// currency. It is important that it is as efficient as possible, but also that it is bullet-
+	/// proof (no-hidden panics!!).
+	pub fn apply_demurrage(
+		self,
+		demurrage_per_block: Demurrage,
+		current_block_number: BlockNumber,
+	) -> BalanceEntry<BlockNumber> {
+		if self.last_update == current_block_number {
+			// Nothing to be done, as no time elapsed.
+			return self
+		}
+
+		if self.principal.eq(&0i16) {
+			return Self { principal: self.principal, last_update: current_block_number }
+		}
+
+		let elapsed_blocks =
+			current_block_number.checked_sub(&self.last_update).unwrap_or_else(|| {
+				// This should never be the case on a sound blockchain setup, but we really
+				// never want to panic here.
+				warn!(
+					target: LOG,
+					"last block {:?} bigger than current {:?}, defaulting to elapsed_blocks=0",
+					self.last_update,
+					current_block_number
+				);
+				0u32.into()
+			});
+
+		let elapsed_u32: u32 = elapsed_blocks.try_into().unwrap_or_else(|_| {
+			// 698 years with 6 seconds block time.
+			trace!(target: LOG, "elapsed_blocks > u32::MAX, defaulting to u32::MAX");
+			u32::MAX
+		});
+
+		let demurrage_factor = demurrage_factor(demurrage_per_block, elapsed_u32);
+
+		let principal = self
+			.principal
+			.checked_mul(demurrage_factor)
+			.expect("demurrage_factor [0,1), hence can't overflow; qed");
+
+		Self { principal, last_update: current_block_number }
+	}
+}
+
+/// e^(-demurrage_per_block * elapsed_blocks) within [0,1).
+///
+/// It will take the absolute value of the `demurrage_per_block` if it is negative.
+pub fn demurrage_factor(demurrage_per_block: Demurrage, elapsed_blocks: u32) -> BalanceType {
+	// We can only have errors here if one of the operations overflowed.
+	//
+	// However, as we compute exp(-x), which goes to 0 for big x, we can
+	// approximate the result as 0 if we overflow somewhere on the way
+	// because of the big x.
+
+	// demurrage >= 0; hence exponent <= 0
+	let exponent = match (-demurrage_per_block.abs()).checked_mul(elapsed_blocks.into()) {
+		Some(exp) => exp,
+		None => return 0.into(),
+	};
+
+	// exponent <= 0; hence return value [0, 1)
+	exp(exponent).unwrap_or_else(|_| 0.into())
 }
 
 /// Our BalanceType is I64F64, so the smallest possible number is
@@ -110,10 +198,97 @@ impl Convert<u128, BalanceType> for EncointerBalanceConverter {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::fixed::traits::LossyInto;
+	use crate::fixed::traits::{LossyFrom, LossyInto};
 	use approx::assert_abs_diff_eq;
 	use rstest::*;
 	use test_utils::helpers::almost_eq;
+
+	const ONE_YEAR: u32 = 86400 / 5 * 356;
+
+	// 1.1267607882072287e-7
+	const DEFAULT_DEMURRAGE: Demurrage =
+		Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+
+	fn assert_abs_diff_eq(balance: BalanceType, expected: f64) {
+		assert_abs_diff_eq!(f64::lossy_from(balance), expected, epsilon = 1.0e-12)
+	}
+
+	#[test]
+	fn demurrage_works() {
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		assert_abs_diff_eq(bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0.5);
+	}
+
+	#[test]
+	fn apply_demurrage_when_principal_is_zero_works() {
+		let bal = BalanceEntry::<u32>::new(0.into(), 0);
+		assert_abs_diff_eq(bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0f64);
+	}
+
+	#[test]
+	fn apply_demurrage_when_demurrage_is_negative_works() {
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		assert_abs_diff_eq(bal.apply_demurrage(-DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0.5);
+	}
+
+	#[test]
+	fn apply_demurrage_with_overflowing_values_works() {
+		let demurrage = Demurrage::from_num(0.000048135220872218395);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		// This produced a overflow before: https://github.com/encointer/encointer-node/issues/290
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).principal, 0f64);
+
+		// Just make a ridiculous assumption.
+		assert_abs_diff_eq(
+			bal.apply_demurrage(Demurrage::from_num(u32::MAX), u32::MAX).principal,
+			0f64,
+		);
+	}
+
+	#[test]
+	fn apply_demurrage_with_block_number_bigger_than_u32max_does_not_overflow() {
+		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
+		let bal = BalanceEntry::<u64>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).principal, 0f64);
+	}
+
+	#[test]
+	fn apply_demurrage_with_block_number_not_monotonically_rising_just_updates_last_block() {
+		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
+		let bal = BalanceEntry::<u32>::new(1.into(), 1);
+
+		assert_eq!(bal.apply_demurrage(demurrage, 0), BalanceEntry::<u32>::new(1.into(), 0))
+	}
+
+	#[test]
+	fn apply_demurrage_with_zero_demurrage_works() {
+		let demurrage = Demurrage::from_num(0.0);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).principal, 1f64);
+	}
+
+	#[test]
+	fn apply_demurrage_with_zero_elapsed_blocks_works() {
+		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 0).principal, 1f64);
+	}
+
+	#[test]
+	fn apply_demurrage_with_massive_demurrage_works() {
+		// Have to do -1 otherwise we have a panic in the exp function:
+		// https://github.com/encointer/substrate-fixed/issues/18
+		//
+		// Not critical as we safeguard against this with `validate_demurrage`.
+		let demurrage = Demurrage::from_num(i64::MAX - 1);
+		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+
+		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 1).principal, 0f64);
+	}
 
 	#[rstest(
 		balance,
