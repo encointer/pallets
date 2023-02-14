@@ -67,7 +67,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// the default demurrage rate applied to community balances
 		#[pallet::constant]
 		type DefaultDemurrage: Get<Demurrage>;
@@ -81,12 +81,13 @@ pub mod pallet {
 
 		type WeightInfo: WeightInfo;
 
-		type CeremonyMaster: EnsureOrigin<Self::Origin>;
+		type CeremonyMaster: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Transfer some balance to another account.
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::transfer(), DispatchClass::Normal, Pays::Yes))]
 		pub fn transfer(
 			origin: OriginFor<T>,
@@ -99,6 +100,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_fee_conversion_factor(), DispatchClass::Normal))]
 		pub fn set_fee_conversion_factor(
 			origin: OriginFor<T>,
@@ -111,6 +113,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::transfer_all(), DispatchClass::Normal))]
 		pub fn transfer_all(
 			origin: OriginFor<T>,

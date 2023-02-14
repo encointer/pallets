@@ -33,7 +33,7 @@ use encointer_primitives::{
 };
 use frame_support::{
 	traits::{Currency, Get, PalletInfo},
-	weights::GetDispatchInfo,
+	dispatch::GetDispatchInfo,
 	Parameter,
 };
 use frame_system::ensure_signed;
@@ -62,7 +62,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// The XCM sender module.
 		type XcmSender: SendXcm;
 
@@ -85,6 +85,7 @@ pub mod pallet {
 		///
 		/// The `pallet_personhood_oracle_index` is the pallet's module index of the respective encointer-parachain's
 		/// `pallet-encointer-personhood-oracle` pallet to query.
+		#[pallet::call_index(0)]
 		#[pallet::weight(5_000_000)]
 		pub fn request_personhood_uniqueness_rating(
 			origin: OriginFor<T>,
@@ -161,6 +162,7 @@ pub mod pallet {
 		///
 		/// Faucet that funds accounts. Currently, this can only be called from other parachains, as
 		/// the PersonhoodUniquenessRating can otherwise not be verified.
+		#[pallet::call_index(1)]
 		#[pallet::weight(5_000_000)]
 		pub fn faucet(
 			origin: OriginFor<T>,
