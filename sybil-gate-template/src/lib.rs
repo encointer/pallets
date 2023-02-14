@@ -123,7 +123,7 @@ pub mod pallet {
 				CallMetadata::new(
 					sender_pallet_sybil_gate_index,
 					resp_index,
-					resp_call.get_dispatch_info().weight,
+					resp_call.get_dispatch_info().weight.get(),
 				),
 			);
 

@@ -59,39 +59,39 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn next_phase() -> Weight {
-		(55_100_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(10 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(55_100_000)
+			.saturating_add(T::DbWeight::get().reads(10))
+			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	fn push_by_one_day() -> Weight {
-		(14_300_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(14_300_000)
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn set_phase_duration() -> Weight {
-		(3_000_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(3_000_000).saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn set_next_phase_timestamp() -> Weight {
-		(1_900_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(1_900_000).saturating_add(T::DbWeight::get().writes(1))
 	}
 }
 
 // For tests
 impl WeightInfo for () {
 	fn next_phase() -> Weight {
-		(55_100_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(10 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(5_100_000)
+			.saturating_add(RocksDbWeight::get().reads(10))
+			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 	fn push_by_one_day() -> Weight {
-		(14_300_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(14_300_000)
+			.saturating_add(RocksDbWeight::get().reads(1))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn set_phase_duration() -> Weight {
-		(3_000_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(3_000_000).saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn set_next_phase_timestamp() -> Weight {
-		(1_900_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(1_900_000).saturating_add(RocksDbWeight::get().writes(1))
 	}
 }
