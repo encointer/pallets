@@ -142,7 +142,7 @@ pub mod pallet {
 			);
 			match T::XcmSender::send_xcm(sibling_junction(parachain_id), message) {
 				Ok(()) => {
-					<PendingRequests<T>>::insert(&request_hash, &sender);
+					<PendingRequests<T>>::insert(request_hash, &sender);
 					Self::deposit_event(Event::PersonhoodUniquenessRatingRequestSentSuccess(
 						sender,
 						request_hash,
@@ -174,7 +174,7 @@ pub mod pallet {
 			Sibling::try_from_account(&sender).ok_or(<Error<T>>::OnlyParachainsAllowed)?;
 
 			let account =
-				<PendingRequests<T>>::take(&request_hash).ok_or(<Error<T>>::UnexpectedResponse)?;
+				<PendingRequests<T>>::take(request_hash).ok_or(<Error<T>>::UnexpectedResponse)?;
 
 			debug!(target: LOG, "Received PersonhoodUniquenessRating for account: {:?}", account);
 

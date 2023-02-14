@@ -29,7 +29,7 @@ pub fn remove_participant_from_registry<Index, Registry, Count, AccountId>(
 	AccountId: EncodeLike + Decode,
 {
 	let participant_count = Count::get((cid, cindex));
-	let participant_index = Index::get((cid, cindex), &participant);
+	let participant_index = Index::get((cid, cindex), participant);
 	let maybe_last_participant = Registry::get((cid, cindex), participant_count);
 
 	if let Some(last_participant) = maybe_last_participant {
@@ -37,7 +37,7 @@ pub fn remove_participant_from_registry<Index, Registry, Count, AccountId>(
 		Index::insert((cid, cindex), last_participant, participant_index);
 
 		Registry::remove((cid, cindex), participant_count);
-		Index::remove((cid, cindex), &participant);
+		Index::remove((cid, cindex), participant);
 
 		Count::insert((cid, cindex), participant_count.saturating_sub(1));
 	}

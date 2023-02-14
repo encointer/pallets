@@ -271,7 +271,6 @@ fn group_participants_by_num_incoming_attestations(
 	participant_attestations: &Attestations,
 ) -> Result<Vec<ParticipantGroup>, MeetupValidationError> {
 	let num_incoming_attestations: Participants = (0..participant_attestations.len())
-		.into_iter()
 		.map(|p| {
 			participant_attestations
 				.iter()
@@ -298,12 +297,10 @@ fn group_indices_by_value(
 	indices: Participants,
 	values: &Vec<usize>,
 ) -> Result<Vec<ParticipantGroup>, MeetupValidationError> {
-	match indices.iter().max() {
-		Some(max) =>
-			if max >= &values.len() {
-				return Err(MeetupValidationError::IndexOutOfBounds)
-			},
-		None => (),
+	if let Some(max) = indices.iter().max() {
+		if max >= &values.len() {
+			return Err(MeetupValidationError::IndexOutOfBounds)
+		}
 	}
 
 	let mut sorted_indices: Participants = indices;

@@ -172,7 +172,7 @@ pub mod pallet {
 			let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
 			ensure!(
-				OfferingRegistry::<T>::contains_key(&business_identifier, &oid),
+				OfferingRegistry::<T>::contains_key(&business_identifier, oid),
 				Error::<T>::NonexistentOffering
 			);
 
@@ -196,7 +196,7 @@ pub mod pallet {
 			let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
 			ensure!(
-				OfferingRegistry::<T>::contains_key(&business_identifier, &oid),
+				OfferingRegistry::<T>::contains_key(&business_identifier, oid),
 				Error::<T>::NonexistentOffering
 			);
 

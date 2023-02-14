@@ -156,7 +156,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			<FeeConversionFactor<T>>::put(&self.fee_conversion_factor);
+			<FeeConversionFactor<T>>::put(self.fee_conversion_factor);
 		}
 	}
 
@@ -265,7 +265,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Remove an account from a community
 	fn remove_account(cid: CommunityIdentifier, who: &T::AccountId) -> DispatchResult {
-		ensure!(Balance::<T>::contains_key(cid, &who), Error::<T>::NoAccount);
+		ensure!(Balance::<T>::contains_key(cid, who), Error::<T>::NoAccount);
 		ensure!(
 			Self::balance(cid, who) < T::ExistentialDeposit::get(),
 			Error::<T>::ExistentialDeposit
@@ -375,7 +375,7 @@ impl<T: Config> Pallet<T> {
 		demurrage: Demurrage,
 	) -> Result<(), RangeError> {
 		validate_demurrage(&demurrage)?;
-		<DemurragePerBlock<T>>::insert(cid, &demurrage);
+		<DemurragePerBlock<T>>::insert(cid, demurrage);
 		Ok(())
 	}
 
