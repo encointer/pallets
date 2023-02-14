@@ -159,9 +159,9 @@ fn transfer_should_create_new_account() {
 
 		assert_eq!(
 			events[2],
-			mock::RuntimeEvent::EncointerBalances(
-				crate::Event::Transferred(cid, alice, zoltan, amount)
-			),
+			mock::RuntimeEvent::EncointerBalances(crate::Event::Transferred(
+				cid, alice, zoltan, amount
+			)),
 		);
 	});
 }

@@ -1658,10 +1658,7 @@ impl<T: Config> Pallet<T> {
 				}
 			} else if p < assigned.bootstrappers + assigned.reputables {
 				//safe; small number per meetup
-				match Self::reputable_registry(
-					community_ceremony,
-					p - assigned.bootstrappers + 1,
-				) {
+				match Self::reputable_registry(community_ceremony, p - assigned.bootstrappers + 1) {
 					Some(r) => result.push(r),
 					None => error!(
 						target: LOG,

@@ -95,8 +95,7 @@ fn get_proof(
 	pair: &sr25519::Pair,
 ) -> Option<TestProofOfAttendance> {
 	match EncointerCeremonies::participant_reputation((cid, cindex), account_id(pair)) {
-		Reputation::VerifiedUnlinked =>
-			Some(prove_attendance(account_id(pair), cid, cindex, pair)),
+		Reputation::VerifiedUnlinked => Some(prove_attendance(account_id(pair), cid, cindex, pair)),
 		_ => None,
 	}
 }
@@ -112,7 +111,7 @@ fn make_reputable_and_get_proof(
 		&account_id(p),
 		Reputation::VerifiedUnlinked,
 	);
-	
+
 	prove_attendance(account_id(p), cid, cindex, p)
 }
 
@@ -1617,7 +1616,8 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: i64
 		);
 		println!("lon before {:?}", lon_micro as f64 / 1_000_000.0);
 		assert!(
-			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 - adjusted_mtime).unsigned_abs()
+			tol > (EncointerCeremonies::get_meetup_time(location).unwrap() as i64 - adjusted_mtime)
+				.unsigned_abs()
 		);
 	});
 }
@@ -2546,11 +2546,7 @@ fn upgrade_registration_fails_in_wrong_phase() {
 
 		run_to_next_phase();
 		assert_err!(
-			EncointerCeremonies::upgrade_registration(
-				RuntimeOrigin::signed(alice),
-				cid,
-				proof
-			),
+			EncointerCeremonies::upgrade_registration(RuntimeOrigin::signed(alice), cid, proof),
 			Error::<TestRuntime>::RegisteringOrAttestationPhaseRequired
 		);
 	})

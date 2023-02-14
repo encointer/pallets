@@ -59,16 +59,10 @@ fn create_new_business_is_ok() {
 		assert!(
 			EncointerBazaar::create_business(RuntimeOrigin::signed(alice()), cid, url()).is_ok()
 		);
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(Event::BusinessCreated(cid, alice()).into())
-		);
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::BusinessCreated(cid, alice()).into()));
 
 		assert!(EncointerBazaar::create_business(RuntimeOrigin::signed(bob()), cid, url1()).is_ok());
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(Event::BusinessCreated(cid, bob()).into())
-		);
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::BusinessCreated(cid, bob()).into()));
 
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
 		assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData::new(url1(), 1));
@@ -115,10 +109,7 @@ fn create_business_duplicate_is_err() {
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
 
 		assert_eq!(System::events().len(), 2);
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(Event::BusinessCreated(cid, alice()).into())
-		);
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::BusinessCreated(cid, alice()).into()));
 	});
 }
 
@@ -136,10 +127,7 @@ fn update_existing_business_is_ok() {
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url1(), 2));
 
 		assert_eq!(System::events().len(), 2);
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(Event::BusinessUpdated(cid, alice()).into())
-		);
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::BusinessUpdated(cid, alice()).into()));
 	});
 }
 
@@ -184,10 +172,7 @@ fn delete_existing_business_is_ok() {
 
 		assert_eq!(System::events().len(), 2);
 
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(Event::BusinessDeleted(cid, alice()).into())
-		);
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::BusinessDeleted(cid, alice()).into()));
 	});
 }
 
@@ -434,9 +419,6 @@ fn when_deleting_business_delete_all_its_offerings() {
 		);
 
 		assert_eq!(System::events().len(), 2);
-		assert_eq!(
-			last_event::<TestRuntime>(),
-			Some(Event::BusinessDeleted(cid, alice()).into())
-		);
+		assert_eq!(last_event::<TestRuntime>(), Some(Event::BusinessDeleted(cid, alice()).into()));
 	});
 }

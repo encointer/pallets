@@ -94,8 +94,9 @@ impl CallMetadata {
 
 /// This allows to generically call the sybil-personhood-oracle, whose response calls the method with the
 /// index defined in the `SybilResponse`
-#[derive(Default)]
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Default, Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum SybilResponse {
 	#[default]
