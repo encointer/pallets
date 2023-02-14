@@ -41,11 +41,10 @@ use encointer_primitives::{
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
-	dispatch::{DispatchResult, DispatchResultWithPostInfo},
+	dispatch::{DispatchResult, DispatchResultWithPostInfo, Pays},
 	ensure,
 	sp_std::cmp::min,
 	traits::{Get, Randomness},
-	dispatch::Pays,
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
@@ -62,8 +61,7 @@ mod storage_helper;
 #[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
-	use super::Pays;
+	use super::{Pays, *};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 

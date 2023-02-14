@@ -25,9 +25,8 @@
 
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
-	dispatch::DispatchResult,
+	dispatch::{DispatchClass, DispatchResult},
 	traits::{Get, OnTimestampSet},
-	dispatch::DispatchClass,
 };
 use log::{info, warn};
 use sp_runtime::traits::{CheckedDiv, One, Saturating, Zero};
@@ -41,8 +40,7 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
-	use super::DispatchClass;
+	use super::{DispatchClass, *};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
