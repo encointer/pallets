@@ -68,7 +68,7 @@ pub mod pallet {
 		+ encointer_communities::Config
 	{
 		/// The overarching event type.
-		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// The XCM sender module.
 		type XcmSender: SendXcm;
 	}
@@ -83,6 +83,7 @@ pub mod pallet {
 		///
 		/// Todo: The total weight of this call should include the weight of `CallMetadata` that
 		/// is passed here.
+		#[pallet::call_index(0)]
 		#[pallet::weight(5_000_000)]
 		pub fn issue_personhood_uniqueness_rating(
 			origin: OriginFor<T>,

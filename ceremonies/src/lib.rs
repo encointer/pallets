@@ -45,7 +45,7 @@ use frame_support::{
 	ensure,
 	sp_std::cmp::min,
 	traits::{Get, Randomness},
-	weights::Pays,
+	dispatch::Pays,
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
@@ -63,6 +63,7 @@ mod storage_helper;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use super::Pays;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -79,9 +80,9 @@ pub mod pallet {
 		+ encointer_balances::Config
 		+ encointer_scheduler::Config
 	{
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		type CeremonyMaster: EnsureOrigin<Self::Origin>;
+		type CeremonyMaster: EnsureOrigin<Self::RuntimeOrigin>;
 
 		type Public: IdentifyAccount<AccountId = Self::AccountId>;
 		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
@@ -101,6 +102,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::register_participant(), DispatchClass::Normal, Pays::Yes))]
 		pub fn register_participant(
 			origin: OriginFor<T>,
@@ -173,6 +175,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::upgrade_registration(), DispatchClass::Normal, Pays::Yes))]
 		pub fn upgrade_registration(
 			origin: OriginFor<T>,
@@ -208,6 +211,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::unregister_participant(), DispatchClass::Normal, Pays::Yes))]
 		pub fn unregister_participant(
 			origin: OriginFor<T>,
@@ -258,6 +262,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight((<T as Config>::WeightInfo::attest_attendees(), DispatchClass::Normal, Pays::Yes))]
 		pub fn attest_attendees(
 			origin: OriginFor<T>,
@@ -309,6 +314,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight((<T as Config>::WeightInfo::endorse_newcomer(), DispatchClass::Normal, Pays::Yes))]
 		pub fn endorse_newcomer(
 			origin: OriginFor<T>,
@@ -351,6 +357,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight((<T as Config>::WeightInfo::claim_rewards(), DispatchClass::Normal, Pays::Yes))]
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
@@ -492,6 +499,7 @@ pub mod pallet {
 			Ok(Pays::No.into())
 		}
 
+		#[pallet::call_index(6)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_inactivity_timeout(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_inactivity_timeout(
 			origin: OriginFor<T>,
@@ -504,6 +512,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(7)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_bootstrapper(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_bootstrapper(
 			origin: OriginFor<T>,
@@ -522,6 +531,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(8)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_reputable(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_reputable(
 			origin: OriginFor<T>,
@@ -539,6 +549,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(9)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_reputation_lifetime(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_reputation_lifetime(
 			origin: OriginFor<T>,
@@ -551,6 +562,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(10)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_meetup_time_offset(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_meetup_time_offset(
 			origin: OriginFor<T>,
@@ -572,6 +584,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(11)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_time_tolerance(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_time_tolerance(
 			origin: OriginFor<T>,
@@ -584,6 +597,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(12)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_location_tolerance(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_location_tolerance(
 			origin: OriginFor<T>,
@@ -595,7 +609,7 @@ pub mod pallet {
 			Self::deposit_event(Event::LocationToleranceUpdated(location_tolerance));
 			Ok(().into())
 		}
-
+		#[pallet::call_index(13)]
 		#[pallet::weight((<T as Config>::WeightInfo::purge_community_ceremony(), DispatchClass::Normal, Pays::Yes))]
 		pub fn purge_community_ceremony(
 			origin: OriginFor<T>,

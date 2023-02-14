@@ -63,12 +63,12 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config + encointer_scheduler::Config + encointer_balances::Config
 	{
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Required origin for updating a community (though can always be Root).
-		type CommunityMaster: EnsureOrigin<Self::Origin>;
+		type CommunityMaster: EnsureOrigin<Self::RuntimeOrigin>;
 		/// Origin for non destructive actions like adding a community or location
-		type TrustableForNonDestructiveAction: EnsureOrigin<Self::Origin>;
+		type TrustableForNonDestructiveAction: EnsureOrigin<Self::RuntimeOrigin>;
 
 		type WeightInfo: WeightInfo;
 	}
@@ -78,6 +78,7 @@ pub mod pallet {
 		/// Add a new community.
 		///
 		/// May only be called from `T::TrustableForNonDestructiveAction`.
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::new_community(), DispatchClass::Normal, Pays::Yes))]
 		pub fn new_community(
 			origin: OriginFor<T>,
@@ -148,6 +149,7 @@ pub mod pallet {
 		/// May only be called from `T::TrustableForNonDestructiveAction`.
 		///
 		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::add_location(), DispatchClass::Normal, Pays::Yes))]
 		pub fn add_location(
 			origin: OriginFor<T>,
@@ -194,6 +196,7 @@ pub mod pallet {
 		/// May only be called from `T::CommunityMaster`.
 		///
 		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::remove_location(), DispatchClass::Normal, Pays::Yes))]
 		pub fn remove_location(
 			origin: OriginFor<T>,
@@ -219,6 +222,7 @@ pub mod pallet {
 		/// Update the metadata of the community with `cid`.
 		///
 		/// May only be called from `T::CommunityMaster`.
+		#[pallet::call_index(3)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_community_metadata(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
@@ -243,6 +247,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_demurrage(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_demurrage(
 			origin: OriginFor<T>,
@@ -262,6 +267,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_nominal_income(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_nominal_income(
 			origin: OriginFor<T>,
@@ -283,6 +289,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(6)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_min_solar_trip_time_s(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_min_solar_trip_time_s(
 			origin: OriginFor<T>,
@@ -295,6 +302,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(7)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_max_speed_mps(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_max_speed_mps(
 			origin: OriginFor<T>,
@@ -307,6 +315,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(8)]
 		#[pallet::weight((<T as Config>::WeightInfo::purge_community(), DispatchClass::Normal, Pays::Yes))]
 		pub fn purge_community(
 			origin: OriginFor<T>,

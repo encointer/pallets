@@ -32,10 +32,11 @@ use encointer_primitives::{
 	},
 };
 use frame_support::{
-	traits::{Currency, Get, PalletInfo},
 	dispatch::GetDispatchInfo,
+	traits::{Currency, Get, PalletInfo},
 	Parameter,
 };
+
 use frame_system::ensure_signed;
 use log::debug;
 use polkadot_parachain::primitives::Sibling;
@@ -123,7 +124,7 @@ pub mod pallet {
 				CallMetadata::new(
 					sender_pallet_sybil_gate_index,
 					resp_index,
-					resp_call.get_dispatch_info().weight.get(),
+					resp_call.get_dispatch_info().weight.ref_time(),
 				),
 			);
 
