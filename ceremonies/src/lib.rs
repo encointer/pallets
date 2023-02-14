@@ -139,7 +139,7 @@ pub mod pallet {
 				);
 				ensure!(
 					Self::participant_reputation(
-						&(p.community_identifier, p.ceremony_index),
+						(p.community_identifier, p.ceremony_index),
 						&p.attendee_public
 					) == Reputation::VerifiedUnlinked,
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed
@@ -150,7 +150,7 @@ pub mod pallet {
 
 				// this reputation must now be burned so it can not be used again
 				<ParticipantReputation<T>>::insert(
-					&(p.community_identifier, p.ceremony_index),
+					(p.community_identifier, p.ceremony_index),
 					&p.attendee_public,
 					Reputation::VerifiedLinked,
 				);
@@ -245,11 +245,11 @@ pub mod pallet {
 				);
 
 				ensure!(
-					Self::participant_reputation(&cc, &sender) == Reputation::VerifiedLinked,
+					Self::participant_reputation(cc, &sender) == Reputation::VerifiedLinked,
 					Error::<T>::ReputationMustBeLinked
 				);
 
-				<ParticipantReputation<T>>::insert(&cc, &sender, Reputation::VerifiedUnlinked);
+				<ParticipantReputation<T>>::insert(cc, &sender, Reputation::VerifiedUnlinked);
 				<ParticipantReputation<T>>::remove((cid, cindex), &sender);
 
 				// invalidate reputation cache
@@ -297,7 +297,7 @@ pub mod pallet {
 			<MeetupParticipantCountVote<T>>::insert(
 				(cid, cindex),
 				&sender,
-				&number_of_participants_vote,
+				number_of_participants_vote,
 			);
 
 			Self::add_attestations_to_registry(
