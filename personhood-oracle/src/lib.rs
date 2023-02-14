@@ -191,7 +191,7 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		ensure!(
 			<encointer_ceremonies::Pallet<T>>::participant_reputation(
-				&(p.community_identifier, p.ceremony_index),
+				(p.community_identifier, p.ceremony_index),
 				&p.attendee_public
 			) == Reputation::VerifiedUnlinked,
 			Error::<T>::AttendanceUsed

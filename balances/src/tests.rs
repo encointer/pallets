@@ -55,7 +55,7 @@ fn issue_should_work() {
 
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::Issued(cid, alice.clone(), BalanceType::from_num(50.1)).into())
+			Some(Event::Issued(cid, alice, BalanceType::from_num(50.1)).into())
 		);
 	});
 }
@@ -160,7 +160,7 @@ fn transfer_should_create_new_account() {
 		assert_eq!(
 			events[2],
 			mock::RuntimeEvent::EncointerBalances(
-				crate::Event::Transferred(cid, alice, zoltan, amount).into()
+				crate::Event::Transferred(cid, alice, zoltan, amount)
 			),
 		);
 	});
@@ -181,7 +181,7 @@ fn transfer_does_not_create_new_account_if_below_ed() {
 
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50u128)));
 		assert_noop!(
-			EncointerBalances::transfer(Some(alice.clone()).into(), zoltan.clone(), cid, amount),
+			EncointerBalances::transfer(Some(alice).into(), zoltan, cid, amount),
 			Error::<TestRuntime>::ExistentialDeposit,
 		);
 	});
@@ -201,7 +201,7 @@ fn if_account_does_not_exist_in_community_transfer_errs_with_no_account_error() 
 		let amount = BalanceType::from_num(0.0000000001);
 
 		assert_noop!(
-			EncointerBalances::transfer(Some(alice.clone()).into(), zoltan.clone(), cid, amount),
+			EncointerBalances::transfer(Some(alice).into(), zoltan, cid, amount),
 			Error::<TestRuntime>::NoAccount,
 		);
 	});
@@ -339,7 +339,7 @@ fn remove_account_works() {
 
 		assert_ok!(EncointerBalances::transfer(
 			Some(alice.clone()).into(),
-			bob.clone(),
+			bob,
 			cid,
 			BalanceType::from_num(50)
 		));
@@ -372,7 +372,7 @@ fn transfer_removes_account_if_source_below_existential_deposit() {
 
 		assert_ok!(EncointerBalances::transfer(
 			Some(alice.clone()).into(),
-			bob.clone(),
+			bob,
 			cid,
 			BalanceType::from_num(30)
 		));

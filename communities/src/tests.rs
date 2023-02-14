@@ -43,7 +43,7 @@ pub fn register_test_community(
 	lon: f64,
 ) -> CommunityIdentifier {
 	let bs: Vec<AccountId> = custom_bootstrappers
-		.unwrap_or_else(|| bootstrappers())
+		.unwrap_or_else(bootstrappers)
 		.into_iter()
 		.map(|b| account_id(&b))
 		.collect();
@@ -53,14 +53,14 @@ pub fn register_test_community(
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };
 	dut::Pallet::<TestRuntime>::new_community(
 		RuntimeOrigin::signed(prime.clone()),
-		location.clone(),
+		location,
 		bs.clone(),
 		Default::default(),
 		None,
 		None,
 	)
 	.unwrap();
-	CommunityIdentifier::new(location.clone(), bs).unwrap()
+	CommunityIdentifier::new(location, bs).unwrap()
 }
 
 #[test]
@@ -137,14 +137,14 @@ fn new_community_works() {
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 		let location = Location { lat: T::from_num(1i32), lon: T::from_num(1i32) };
 		assert!(EncointerCommunities::is_valid_location(&location));
-		let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+		let bs = vec![alice.clone(), bob, charlie];
 		let community_meta: CommunityMetadataType = CommunityMetadataType {
 			name: "Default".into(),
 			symbol: "DEF".into(),
 			..Default::default()
 		};
 		assert_ok!(EncointerCommunities::new_community(
-			RuntimeOrigin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice),
 			location,
 			bs.clone(),
 			community_meta.clone(),
@@ -152,17 +152,17 @@ fn new_community_works() {
 			None
 		));
 
-		let cid = CommunityIdentifier::new(location.clone(), bs.clone()).unwrap();
+		let cid = CommunityIdentifier::new(location, bs.clone()).unwrap();
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::CommunityRegistered(cid).into()));
 
 		let cids = EncointerCommunities::community_identifiers();
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 		assert!(cids.contains(&cid));
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
-		assert_eq!(EncointerCommunities::bootstrappers(&cid), bs);
-		assert_eq!(EncointerCommunities::bootstrappers(&cid), bs);
-		assert_eq!(EncointerCommunities::community_metadata(&cid), community_meta);
+		assert_eq!(EncointerCommunities::bootstrappers(cid), bs);
+		assert_eq!(EncointerCommunities::bootstrappers(cid), bs);
+		assert_eq!(EncointerCommunities::community_metadata(cid), community_meta);
 	});
 }
 
@@ -173,7 +173,7 @@ fn two_communities_in_same_bucket_works() {
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 		let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-		let bs2 = vec![bob.clone(), charlie.clone(), alice.clone()];
+		let bs2 = vec![bob, charlie, alice.clone()];
 		let community_meta: CommunityMetadataType = CommunityMetadataType {
 			name: "Default".into(),
 			symbol: "DEF".into(),
@@ -196,23 +196,23 @@ fn two_communities_in_same_bucket_works() {
 		));
 
 		assert_ok!(EncointerCommunities::new_community(
-			RuntimeOrigin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice),
 			location2,
 			bs2.clone(),
-			community_meta.clone(),
+			community_meta,
 			None,
 			None
 		));
 
-		let cid = CommunityIdentifier::new(location.clone(), bs.clone()).unwrap();
-		let cid2 = CommunityIdentifier::new(location2.clone(), bs2.clone()).unwrap();
+		let cid = CommunityIdentifier::new(location, bs).unwrap();
+		let cid2 = CommunityIdentifier::new(location2, bs2).unwrap();
 		let cids = EncointerCommunities::community_identifiers();
 
 		assert!(cids.contains(&cid));
 		assert!(cids.contains(&cid2));
 
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
-		assert_eq!(EncointerCommunities::locations(&cid2, &geo_hash2), vec![location2]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![location]);
+		assert_eq!(EncointerCommunities::locations(cid2, &geo_hash2), vec![location2]);
 
 		let mut cids_by_geohash = EncointerCommunities::cids_by_geohash(&geo_hash);
 		let mut expected_cids_by_geohash = vec![cid, cid2];
@@ -237,7 +237,7 @@ fn updating_community_metadata_works() {
 			new_metadata.clone(),
 		));
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::MetadataUpdated(cid).into()));
-		assert_eq!(CommunityMetadata::<TestRuntime>::try_get(&cid).unwrap(), new_metadata);
+		assert_eq!(CommunityMetadata::<TestRuntime>::try_get(cid).unwrap(), new_metadata);
 	});
 }
 
@@ -251,7 +251,7 @@ fn updating_community_errs_with_invalid_origin() {
 			EncointerCommunities::update_community_metadata(
 				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				cid,
-				new_metadata.clone(),
+				new_metadata,
 			),
 			DispatchError::BadOrigin,
 		);
@@ -274,7 +274,7 @@ fn updating_nominal_income_works() {
 			last_event::<TestRuntime>(),
 			Some(Event::NominalIncomeUpdated(cid, income).into())
 		);
-		assert_eq!(NominalIncome::<TestRuntime>::try_get(&cid).unwrap(), income);
+		assert_eq!(NominalIncome::<TestRuntime>::try_get(cid).unwrap(), income);
 	});
 }
 
@@ -310,7 +310,7 @@ fn updating_demurrage_works() {
 			Some(Event::DemurrageUpdated(cid, demurrage).into())
 		);
 		assert_eq!(
-			encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(&cid).unwrap(),
+			encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(cid).unwrap(),
 			demurrage
 		);
 	});
@@ -340,7 +340,7 @@ fn add_location_works() {
 
 		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// add location in same bucket
@@ -355,7 +355,7 @@ fn add_location_works() {
 		));
 
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::LocationAdded(cid, location2).into()));
-		let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
+		let mut locations = EncointerCommunities::locations(cid, &geo_hash);
 		let mut expected_locations = vec![location, location2];
 		locations.sort();
 		expected_locations.sort();
@@ -367,12 +367,12 @@ fn add_location_works() {
 		let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon).unwrap();
 
 		EncointerCommunities::add_location(
-			RuntimeOrigin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper),
 			cid,
 			location3,
 		)
 		.ok();
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash3), vec![location3]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash3), vec![location3]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash3), vec![cid]);
 	});
 }
@@ -388,7 +388,7 @@ fn remove_community_works() {
 
 		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// add location in same bucket
@@ -407,13 +407,13 @@ fn remove_community_works() {
 		.ok();
 
 		EncointerCommunities::add_location(
-			RuntimeOrigin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper),
 			cid2,
 			location3,
 		)
 		.ok();
 
-		let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
+		let mut locations = EncointerCommunities::locations(cid, &geo_hash);
 		let mut expected_locations = vec![location, location2];
 		locations.sort();
 		expected_locations.sort();
@@ -430,8 +430,8 @@ fn remove_community_works() {
 		// assert that balances have been purged
 		assert_eq!(EncointerCommunities::get_all_balances(&alice).len(), 1);
 
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
-		assert_eq!(EncointerCommunities::locations(&cid2, &geo_hash3), vec![location3]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![]);
+		assert_eq!(EncointerCommunities::locations(cid2, &geo_hash3), vec![location3]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash3), vec![cid2]);
 	});
 }
@@ -445,7 +445,7 @@ fn remove_location_works() {
 
 		let location = Location { lat: T::from_num(0i32), lon: T::from_num(0i32) };
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![location]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// add location in same bucket
@@ -459,7 +459,7 @@ fn remove_location_works() {
 			location2,
 		)
 		.ok();
-		let mut locations = EncointerCommunities::locations(&cid, &geo_hash);
+		let mut locations = EncointerCommunities::locations(cid, &geo_hash);
 		let mut expected_locations = vec![location, location2];
 		locations.sort();
 		expected_locations.sort();
@@ -473,17 +473,17 @@ fn remove_location_works() {
 			location,
 		));
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::LocationRemoved(cid, location).into()));
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![location2]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![location2]);
 		assert_eq!(EncointerCommunities::cids_by_geohash(&geo_hash), vec![cid]);
 
 		// remove second location
 		EncointerCommunities::remove_location(
-			RuntimeOrigin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper),
 			cid,
 			location2,
 		)
 		.ok();
-		assert_eq!(EncointerCommunities::locations(&cid, &geo_hash), vec![]);
+		assert_eq!(EncointerCommunities::locations(cid, &geo_hash), vec![]);
 		assert_eq!(
 			EncointerCommunities::cids_by_geohash(&geo_hash),
 			Vec::<CommunityIdentifier>::new()
@@ -513,7 +513,7 @@ fn new_community_too_close_to_existing_community_fails() {
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 		let location = Location { lat: T::from_num(1i32), lon: T::from_num(1i32) };
-		let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+		let bs = vec![alice.clone(), bob, charlie];
 		assert_ok!(EncointerCommunities::new_community(
 			RuntimeOrigin::signed(alice.clone()),
 			location,
@@ -526,9 +526,9 @@ fn new_community_too_close_to_existing_community_fails() {
 		// second community
 		let location = Location { lat: T::from_num(1.000001_f64), lon: T::from_num(1.000001_f64) };
 		assert!(EncointerCommunities::new_community(
-			RuntimeOrigin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice),
 			location,
-			bs.clone(),
+			bs,
 			Default::default(),
 			None,
 			None
@@ -543,7 +543,7 @@ fn new_community_with_near_pole_locations_fails() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
-		let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+		let bs = vec![alice.clone(), bob, charlie];
 
 		let location = Location { lat: T::from_num(89), lon: T::from_num(60) };
 		assert!(EncointerCommunities::new_community(
@@ -559,7 +559,7 @@ fn new_community_with_near_pole_locations_fails() {
 		let a = Location { lat: T::from_num(-89), lon: T::from_num(60) };
 
 		assert!(EncointerCommunities::new_community(
-			RuntimeOrigin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice),
 			a,
 			bs,
 			Default::default(),
@@ -576,14 +576,14 @@ fn new_community_near_dateline_fails() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let bob = AccountId::from(AccountKeyring::Bob);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
-		let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
+		let bs = vec![alice.clone(), bob, charlie];
 
 		let location = Location { lat: T::from_num(10), lon: T::from_num(179) };
 
 		assert!(EncointerCommunities::new_community(
-			RuntimeOrigin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice),
 			location,
-			bs.clone(),
+			bs,
 			Default::default(),
 			None,
 			None
@@ -783,7 +783,7 @@ fn get_nearby_locations_works() {
 		.ok();
 		// location far away different cid
 		EncointerCommunities::add_location(
-			RuntimeOrigin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper),
 			cid2,
 			location8,
 		)
@@ -862,7 +862,7 @@ fn get_locations_works() {
 		)
 		.is_ok());
 		assert!(EncointerCommunities::add_location(
-			RuntimeOrigin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper),
 			cid,
 			location5
 		)

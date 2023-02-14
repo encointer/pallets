@@ -45,7 +45,7 @@ pub fn apply_fee_conversion_factor(
 ) -> u128 {
 	balance
 		.saturating_mul(reward)
-		.saturating_mul(fee_conversion_factor as u128)
+		.saturating_mul(fee_conversion_factor)
 		.checked_div(ONE_KILO_KSM) // <- unit discrepancy: balance [pKSM] vs. fee_conversion_factor [KKSM]
 		.expect("Divisor != 0; qed")
 }

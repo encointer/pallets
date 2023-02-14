@@ -125,7 +125,7 @@ pub mod pallet {
 
 			<CommunityIdentifiers<T>>::mutate(|v| v.push(cid));
 
-			<Bootstrappers<T>>::insert(&cid, &bootstrappers);
+			<Bootstrappers<T>>::insert(cid, &bootstrappers);
 			<CommunityMetadata<T>>::insert(cid, &community_metadata);
 
 			if let Some(d) = demurrage {

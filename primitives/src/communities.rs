@@ -456,7 +456,7 @@ mod tests {
 		assert_eq!(
 			CommunityIdentifier::new(
 				Location::new(Degree::from_num(-89.5), Degree::from_num(-87.0)),
-				empty.clone()
+				empty
 			)
 			.unwrap()
 			.to_string(),

@@ -135,7 +135,7 @@ fn push_one_day_works() {
 
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
-			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
+			(genesis_time - genesis_time.rem(ONE_DAY)) + ONE_DAY
 		);
 
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
@@ -168,7 +168,7 @@ fn resync_catches_up_short_cycle_times_at_genesis_during_first_registering_phase
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
-			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * TEN_MIN
+			(genesis_time - genesis_time.rem(ONE_DAY)) + TEN_MIN
 		);
 	});
 }
@@ -243,7 +243,7 @@ fn resync_after_next_phase_works() {
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
-			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
+			(genesis_time - genesis_time.rem(ONE_DAY)) + ONE_DAY
 		);
 
 		run_to_block(1);
@@ -283,7 +283,7 @@ fn resync_after_next_phase_works() {
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
-			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
+			(genesis_time - genesis_time.rem(ONE_DAY)) + ONE_DAY
 		);
 		// now the next ASSIGNING phase starts exactly at the time it would have startet if next_phase had not been called.
 		// But the ceremony index increased by one
@@ -303,7 +303,7 @@ fn resync_after_next_phase_works_during_assigning() {
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
-			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
+			(genesis_time - genesis_time.rem(ONE_DAY)) + ONE_DAY
 		);
 
 		run_to_block(1);
@@ -336,11 +336,11 @@ fn resync_after_next_phase_works_during_attesting() {
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
 			EncointerScheduler::next_phase_timestamp(),
-			(genesis_time - genesis_time.rem(ONE_DAY)) + 1 * ONE_DAY
+			(genesis_time - genesis_time.rem(ONE_DAY)) + ONE_DAY
 		);
 
 		run_to_block(1);
-		set_timestamp(genesis_time + 1 * ONE_DAY + TEN_MIN);
+		set_timestamp(genesis_time + ONE_DAY + TEN_MIN);
 
 		run_to_block(2);
 		set_timestamp(genesis_time + 2 * ONE_DAY + TEN_MIN);

@@ -27,7 +27,7 @@ use test_utils::{
 };
 
 fn create_cid() -> CommunityIdentifier {
-	return register_test_community::<TestRuntime>(None, 0.0, 0.0)
+	register_test_community::<TestRuntime>(None, 0.0, 0.0)
 }
 
 fn alice() -> AccountId {
@@ -39,15 +39,15 @@ fn bob() -> AccountId {
 }
 
 fn url() -> String {
-	return "https://encointer.org".to_string()
+	"https://encointer.org".to_string()
 }
 
 fn url1() -> String {
-	return "https://substrate.dev".to_string()
+	"https://substrate.dev".to_string()
 }
 
 fn url2() -> String {
-	return "https://polkadot.network".to_string()
+	"https://polkadot.network".to_string()
 }
 
 #[test]
@@ -61,13 +61,13 @@ fn create_new_business_is_ok() {
 		);
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::BusinessCreated(cid.clone(), alice()).into())
+			Some(Event::BusinessCreated(cid, alice()).into())
 		);
 
 		assert!(EncointerBazaar::create_business(RuntimeOrigin::signed(bob()), cid, url1()).is_ok());
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::BusinessCreated(cid.clone(), bob()).into())
+			Some(Event::BusinessCreated(cid, bob()).into())
 		);
 
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
@@ -117,7 +117,7 @@ fn create_business_duplicate_is_err() {
 		assert_eq!(System::events().len(), 2);
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::BusinessCreated(cid.clone(), alice()).into())
+			Some(Event::BusinessCreated(cid, alice()).into())
 		);
 	});
 }
@@ -138,7 +138,7 @@ fn update_existing_business_is_ok() {
 		assert_eq!(System::events().len(), 2);
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::BusinessUpdated(cid.clone(), alice()).into())
+			Some(Event::BusinessUpdated(cid, alice()).into())
 		);
 	});
 }
@@ -186,7 +186,7 @@ fn delete_existing_business_is_ok() {
 
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::BusinessDeleted(cid.clone(), alice()).into())
+			Some(Event::BusinessDeleted(cid, alice()).into())
 		);
 	});
 }
@@ -226,7 +226,7 @@ fn get_oid(test_event: &mock::RuntimeEvent) -> u32 {
 		Event::OfferingCreated(_, _, oid) => oid,
 		_ => panic!(),
 	};
-	return *oid
+	*oid
 }
 
 #[test]
@@ -299,7 +299,7 @@ fn update_existing_offering_is_ok() {
 		assert_eq!(records.len(), 2);
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::OfferingUpdated(cid.clone(), alice(), 1).into())
+			Some(Event::OfferingUpdated(cid, alice(), 1).into())
 		);
 
 		assert_eq!(
@@ -365,7 +365,7 @@ fn delete_existing_offering_is_ok() {
 		assert_eq!(System::events().len(), 2);
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::OfferingDeleted(cid.clone(), alice(), 1).into())
+			Some(Event::OfferingDeleted(cid, alice(), 1).into())
 		);
 	});
 }
@@ -436,7 +436,7 @@ fn when_deleting_business_delete_all_its_offerings() {
 		assert_eq!(System::events().len(), 2);
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::BusinessDeleted(cid.clone(), alice()).into())
+			Some(Event::BusinessDeleted(cid, alice()).into())
 		);
 	});
 }
