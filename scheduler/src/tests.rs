@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{
-	mock::{master, new_test_ext, Origin, System, TestRuntime, Timestamp},
+	mock::{master, new_test_ext, RuntimeOrigin, System, TestRuntime, Timestamp},
 	CeremonyPhaseType, Event,
 };
 use frame_support::{
@@ -47,7 +47,7 @@ pub fn run_to_block(n: u64) {
 }
 
 pub fn set_timestamp(t: u64) {
-	let _ = pallet_timestamp::Pallet::<TestRuntime>::set(Origin::none(), t);
+	let _ = pallet_timestamp::Pallet::<TestRuntime>::set(RuntimeOrigin::none(), t);
 }
 
 #[test]
@@ -56,15 +56,15 @@ fn ceremony_phase_statemachine_works() {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 		assert_eq!(
 			last_event::<TestRuntime>(),
 			Some(Event::PhaseChangedTo(CeremonyPhaseType::Assigning).into())
 		);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
 	});
@@ -74,7 +74,7 @@ fn ceremony_phase_statemachine_works() {
 fn next_phase_errs_with_bad_origin() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_dispatch_err(
-			EncointerScheduler::next_phase(Origin::signed(AccountKeyring::Bob.into())),
+			EncointerScheduler::next_phase(RuntimeOrigin::signed(AccountKeyring::Bob.into())),
 			DispatchError::BadOrigin,
 		);
 	});
@@ -84,7 +84,7 @@ fn next_phase_errs_with_bad_origin() {
 fn push_by_one_day_errs_with_bad_origin() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_dispatch_err(
-			EncointerScheduler::push_by_one_day(Origin::signed(AccountKeyring::Bob.into())),
+			EncointerScheduler::push_by_one_day(RuntimeOrigin::signed(AccountKeyring::Bob.into())),
 			DispatchError::BadOrigin,
 		);
 	});
@@ -143,7 +143,7 @@ fn push_one_day_works() {
 		run_to_block(1);
 		set_timestamp(genesis_time + TEN_MIN);
 
-		assert_ok!(EncointerScheduler::push_by_one_day(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::push_by_one_day(RuntimeOrigin::signed(master())));
 
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::CeremonySchedulePushedByOneDay.into()));
 		assert_eq!(
@@ -250,7 +250,7 @@ fn resync_after_next_phase_works() {
 		set_timestamp(genesis_time + TEN_MIN);
 
 		// now use next_phase manually
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 		assert_eq!(
@@ -263,7 +263,7 @@ fn resync_after_next_phase_works() {
 		set_timestamp(genesis_time + 2 * TEN_MIN);
 
 		// again
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 1);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 		assert_eq!(
@@ -278,7 +278,7 @@ fn resync_after_next_phase_works() {
 		// again
 		// because we would skip an entire Cycle now, we resync to the next
 		// even next_phase_timestamp in the future
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
 		assert_eq!(
@@ -311,9 +311,9 @@ fn resync_after_next_phase_works_during_assigning() {
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 
 		// now use next_phase manually
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
@@ -348,9 +348,9 @@ fn resync_after_next_phase_works_during_attesting() {
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 
 		// now use next_phase manually
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
-		assert_ok!(EncointerScheduler::next_phase(Origin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::signed(master())));
 
 		assert_eq!(EncointerScheduler::current_ceremony_index(), 2);
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
@@ -366,7 +366,7 @@ fn set_phase_duration_errs_with_bad_origin() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_dispatch_err(
 			EncointerScheduler::set_phase_duration(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				CeremonyPhaseType::Registering,
 				Moment::from(10u32),
 			),
@@ -379,19 +379,19 @@ fn set_phase_duration_errs_with_bad_origin() {
 fn set_phase_duration_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_ok!(EncointerScheduler::set_phase_duration(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			CeremonyPhaseType::Registering,
 			Moment::from(10u32)
 		));
 
 		assert_ok!(EncointerScheduler::set_phase_duration(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			CeremonyPhaseType::Assigning,
 			Moment::from(11u32)
 		));
 
 		assert_ok!(EncointerScheduler::set_phase_duration(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			CeremonyPhaseType::Attesting,
 			Moment::from(12u32)
 		));
@@ -412,7 +412,7 @@ fn set_phase_duration_works() {
 		);
 
 		assert_ok!(EncointerScheduler::set_phase_duration(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			CeremonyPhaseType::Registering,
 			Moment::from(13u32)
 		));
@@ -439,7 +439,7 @@ fn set_next_phase_timestamp_errs_with_bad_origin() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_dispatch_err(
 			EncointerScheduler::set_next_phase_timestamp(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				Moment::from(10u32),
 			),
 			DispatchError::BadOrigin,
@@ -451,13 +451,13 @@ fn set_next_phase_timestamp_errs_with_bad_origin() {
 fn set_next_phase_timestamp_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		assert_ok!(EncointerScheduler::set_next_phase_timestamp(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			Moment::from(10u32)
 		));
 
 		assert_eq!(EncointerScheduler::next_phase_timestamp(), Moment::from(10u32));
 		assert_ok!(EncointerScheduler::set_next_phase_timestamp(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			Moment::from(11u32)
 		));
 

@@ -41,7 +41,7 @@ frame_support::construct_runtime!(
 );
 
 impl dut::Config for TestRuntime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type CeremonyMaster = EnsureAlice;
 	type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
 	type MomentsPerDay = MomentsPerDay;

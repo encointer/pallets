@@ -33,7 +33,7 @@ use frame_support::{
 		OnInitialize,
 	},
 };
-use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
+use mock::{master, new_test_ext, EncointerBalances, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::{app_crypto::Pair, testing::sr25519, AccountId32, DispatchError};
 use sp_std::str::FromStr;
 use test_utils::{
@@ -145,12 +145,12 @@ fn transfer_should_create_new_account() {
 
 		assert_eq!(
 			events[0],
-			mock::Event::System(frame_system::Event::NewAccount { account: zoltan.clone() })
+			mock::RuntimeEvent::System(frame_system::Event::NewAccount { account: zoltan.clone() })
 		);
 
 		assert_eq!(
 			events[1],
-			mock::Event::EncointerBalances(crate::Event::Endowed {
+			mock::RuntimeEvent::EncointerBalances(crate::Event::Endowed {
 				cid,
 				who: zoltan.clone(),
 				balance: amount
@@ -159,7 +159,7 @@ fn transfer_should_create_new_account() {
 
 		assert_eq!(
 			events[2],
-			mock::Event::EncointerBalances(
+			mock::RuntimeEvent::EncointerBalances(
 				crate::Event::Transferred(cid, alice, zoltan, amount).into()
 			),
 		);
@@ -267,7 +267,7 @@ fn set_fee_conversion_factor_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerBalances::set_fee_conversion_factor(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				5,
 			),
 			DispatchError::BadOrigin,
@@ -278,10 +278,16 @@ fn set_fee_conversion_factor_errs_with_bad_origin() {
 #[test]
 fn set_fee_conversion_factor_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 5));
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(
+			RuntimeOrigin::signed(master()),
+			5
+		));
 
 		assert_eq!(EncointerBalances::fee_conversion_factor(), 5);
-		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 6));
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(
+			RuntimeOrigin::signed(master()),
+			6
+		));
 
 		assert_eq!(EncointerBalances::fee_conversion_factor(), 6);
 	});

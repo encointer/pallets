@@ -18,7 +18,7 @@
 
 use super::*;
 use frame_support::assert_err;
-use mock::{new_test_ext, EncointerBazaar, Origin, System, TestRuntime};
+use mock::{new_test_ext, EncointerBazaar, RuntimeOrigin, System, TestRuntime};
 
 use encointer_primitives::communities::CommunityIdentifier;
 use test_utils::{
@@ -56,13 +56,15 @@ fn create_new_business_is_ok() {
 		System::set_block_number(System::block_number() + 1);
 		let cid = create_cid();
 
-		assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
+		assert!(
+			EncointerBazaar::create_business(RuntimeOrigin::signed(alice()), cid, url()).is_ok()
+		);
 		assert_eq!(
 			last_event::<TestRuntime>(),
 			Some(Event::BusinessCreated(cid.clone(), alice()).into())
 		);
 
-		assert!(EncointerBazaar::create_business(Origin::signed(bob()), cid, url1()).is_ok());
+		assert!(EncointerBazaar::create_business(RuntimeOrigin::signed(bob()), cid, url1()).is_ok());
 		assert_eq!(
 			last_event::<TestRuntime>(),
 			Some(Event::BusinessCreated(cid.clone(), bob()).into())
@@ -81,7 +83,7 @@ fn create_business_with_invalid_cid_is_err() {
 		System::set_block_number(System::block_number() + 1);
 		assert_err!(
 			EncointerBazaar::create_business(
-				Origin::signed(alice()),
+				RuntimeOrigin::signed(alice()),
 				CommunityIdentifier::default(),
 				url(),
 			),
@@ -103,9 +105,11 @@ fn create_business_duplicate_is_err() {
 		System::set_block_number(System::block_number() + 1);
 		let cid = create_cid();
 
-		assert!(EncointerBazaar::create_business(Origin::signed(alice()), cid, url()).is_ok());
+		assert!(
+			EncointerBazaar::create_business(RuntimeOrigin::signed(alice()), cid, url()).is_ok()
+		);
 		assert_err!(
-			EncointerBazaar::create_business(Origin::signed(alice()), cid, url1()),
+			EncointerBazaar::create_business(RuntimeOrigin::signed(alice()), cid, url1()),
 			Error::<TestRuntime>::ExistingBusiness,
 		);
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url(), 1));
@@ -125,7 +129,9 @@ fn update_existing_business_is_ok() {
 		let cid = create_cid();
 		BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
 
-		assert!(EncointerBazaar::update_business(Origin::signed(alice()), cid, url1()).is_ok());
+		assert!(
+			EncointerBazaar::update_business(RuntimeOrigin::signed(alice()), cid, url1()).is_ok()
+		);
 
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::new(url1(), 2));
 
@@ -145,12 +151,12 @@ fn update_inexistent_business_is_err() {
 		BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 3));
 
 		assert_err!(
-			EncointerBazaar::update_business(Origin::signed(bob()), cid, url1()),
+			EncointerBazaar::update_business(RuntimeOrigin::signed(bob()), cid, url1()),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
 		assert_err!(
 			EncointerBazaar::update_business(
-				Origin::signed(alice()),
+				RuntimeOrigin::signed(alice()),
 				CommunityIdentifier::default(),
 				url1(),
 			),
@@ -171,7 +177,7 @@ fn delete_existing_business_is_ok() {
 		BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 2));
 		BusinessRegistry::<TestRuntime>::insert(cid, bob(), BusinessData::new(url1(), 3));
 
-		assert!(EncointerBazaar::delete_business(Origin::signed(alice()), cid).is_ok());
+		assert!(EncointerBazaar::delete_business(RuntimeOrigin::signed(alice()), cid).is_ok());
 
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
 		assert_eq!(EncointerBazaar::business_registry(cid, bob()), BusinessData::new(url1(), 3));
@@ -193,11 +199,14 @@ fn delete_inexistent_business_is_err() {
 		BusinessRegistry::<TestRuntime>::insert(cid, bob(), BusinessData::new(url1(), 2));
 
 		assert_err!(
-			EncointerBazaar::delete_business(Origin::signed(alice()), cid),
+			EncointerBazaar::delete_business(RuntimeOrigin::signed(alice()), cid),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
 		assert_err!(
-			EncointerBazaar::delete_business(Origin::signed(bob()), CommunityIdentifier::default()),
+			EncointerBazaar::delete_business(
+				RuntimeOrigin::signed(bob()),
+				CommunityIdentifier::default()
+			),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
 
@@ -208,9 +217,9 @@ fn delete_inexistent_business_is_err() {
 	});
 }
 
-fn get_oid(test_event: &mock::Event) -> u32 {
+fn get_oid(test_event: &mock::RuntimeEvent) -> u32 {
 	let raw_event = match test_event {
-		mock::Event::EncointerBazaar(event) => event,
+		mock::RuntimeEvent::EncointerBazaar(event) => event,
 		_ => panic!(),
 	};
 	let oid = match raw_event {
@@ -227,8 +236,12 @@ fn create_new_offering_is_ok() {
 		let cid = create_cid();
 		BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 1));
 
-		assert!(EncointerBazaar::create_offering(Origin::signed(alice()), cid, url1()).is_ok());
-		assert!(EncointerBazaar::create_offering(Origin::signed(alice()), cid, url2()).is_ok());
+		assert!(
+			EncointerBazaar::create_offering(RuntimeOrigin::signed(alice()), cid, url1()).is_ok()
+		);
+		assert!(
+			EncointerBazaar::create_offering(RuntimeOrigin::signed(alice()), cid, url2()).is_ok()
+		);
 
 		let records = System::events();
 		assert_eq!(records.len(), 3);
@@ -259,7 +272,7 @@ fn create_offering_for_inexistent_business_is_err() {
 		BusinessRegistry::<TestRuntime>::insert(cid, alice(), BusinessData::new(url(), 1));
 
 		assert_err!(
-			EncointerBazaar::create_offering(Origin::signed(bob()), cid, url1()),
+			EncointerBazaar::create_offering(RuntimeOrigin::signed(bob()), cid, url1()),
 			Error::<TestRuntime>::NonexistentBusiness,
 		);
 
@@ -279,7 +292,8 @@ fn update_existing_offering_is_ok() {
 			OfferingData::new(url()),
 		);
 
-		assert!(EncointerBazaar::update_offering(Origin::signed(alice()), cid, 1, url1()).is_ok());
+		assert!(EncointerBazaar::update_offering(RuntimeOrigin::signed(alice()), cid, 1, url1())
+			.is_ok());
 
 		let records = System::events();
 		assert_eq!(records.len(), 2);
@@ -308,16 +322,16 @@ fn update_inexistent_offering_is_err() {
 		);
 
 		assert_err!(
-			EncointerBazaar::update_offering(Origin::signed(bob()), cid, 1, url1()),
+			EncointerBazaar::update_offering(RuntimeOrigin::signed(bob()), cid, 1, url1()),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_err!(
-			EncointerBazaar::update_offering(Origin::signed(alice()), cid, 0, url1()),
+			EncointerBazaar::update_offering(RuntimeOrigin::signed(alice()), cid, 0, url1()),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_err!(
 			EncointerBazaar::update_offering(
-				Origin::signed(alice()),
+				RuntimeOrigin::signed(alice()),
 				CommunityIdentifier::default(),
 				1,
 				url1(),
@@ -341,7 +355,7 @@ fn delete_existing_offering_is_ok() {
 			OfferingData::new(url()),
 		);
 
-		assert!(EncointerBazaar::delete_offering(Origin::signed(alice()), cid, 1).is_ok());
+		assert!(EncointerBazaar::delete_offering(RuntimeOrigin::signed(alice()), cid, 1).is_ok());
 
 		assert_eq!(
 			EncointerBazaar::offering_registry(BusinessIdentifier::new(cid, alice()), 1),
@@ -369,16 +383,16 @@ fn delete_inexistent_offering_is_err() {
 		);
 
 		assert_err!(
-			EncointerBazaar::delete_offering(Origin::signed(bob()), cid, 1),
+			EncointerBazaar::delete_offering(RuntimeOrigin::signed(bob()), cid, 1),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_err!(
-			EncointerBazaar::delete_offering(Origin::signed(alice()), cid, 0),
+			EncointerBazaar::delete_offering(RuntimeOrigin::signed(alice()), cid, 0),
 			Error::<TestRuntime>::NonexistentOffering,
 		);
 		assert_err!(
 			EncointerBazaar::delete_offering(
-				Origin::signed(alice()),
+				RuntimeOrigin::signed(alice()),
 				CommunityIdentifier::default(),
 				1,
 			),
@@ -407,7 +421,7 @@ fn when_deleting_business_delete_all_its_offerings() {
 			OfferingData::new(url1()),
 		);
 
-		assert!(EncointerBazaar::delete_business(Origin::signed(alice()), cid).is_ok());
+		assert!(EncointerBazaar::delete_business(RuntimeOrigin::signed(alice()), cid).is_ok());
 
 		assert_eq!(EncointerBazaar::business_registry(cid, alice()), BusinessData::default());
 		assert_eq!(

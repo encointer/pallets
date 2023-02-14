@@ -48,7 +48,7 @@ parameter_types! {
 }
 
 impl dut::Config for TestRuntime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmSender = ();
 }
 

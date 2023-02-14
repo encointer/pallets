@@ -18,7 +18,8 @@ use super::*;
 use approx::assert_abs_diff_eq;
 use frame_support::assert_ok;
 use mock::{
-	dut, master, new_test_ext, EncointerBalances, EncointerCommunities, Origin, System, TestRuntime,
+	dut, master, new_test_ext, EncointerBalances, EncointerCommunities, RuntimeOrigin, System,
+	TestRuntime,
 };
 use sp_core::sr25519;
 use sp_runtime::DispatchError;
@@ -51,7 +52,7 @@ pub fn register_test_community(
 
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };
 	dut::Pallet::<TestRuntime>::new_community(
-		Origin::signed(prime.clone()),
+		RuntimeOrigin::signed(prime.clone()),
 		location.clone(),
 		bs.clone(),
 		Default::default(),
@@ -143,7 +144,7 @@ fn new_community_works() {
 			..Default::default()
 		};
 		assert_ok!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			location,
 			bs.clone(),
 			community_meta.clone(),
@@ -186,7 +187,7 @@ fn two_communities_in_same_bucket_works() {
 		assert_eq!(geo_hash, geo_hash2);
 
 		assert_ok!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			location,
 			bs.clone(),
 			community_meta.clone(),
@@ -195,7 +196,7 @@ fn two_communities_in_same_bucket_works() {
 		));
 
 		assert_ok!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			location2,
 			bs2.clone(),
 			community_meta.clone(),
@@ -231,7 +232,7 @@ fn updating_community_metadata_works() {
 		let new_metadata = CommunityMetadataType { name: "New".into(), ..Default::default() };
 
 		assert_ok!(EncointerCommunities::update_community_metadata(
-			Origin::signed(AccountKeyring::Alice.into()),
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
 			cid,
 			new_metadata.clone(),
 		));
@@ -248,7 +249,7 @@ fn updating_community_errs_with_invalid_origin() {
 
 		assert_dispatch_err(
 			EncointerCommunities::update_community_metadata(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				cid,
 				new_metadata.clone(),
 			),
@@ -265,7 +266,7 @@ fn updating_nominal_income_works() {
 		assert!(NominalIncome::<TestRuntime>::try_get(cid).is_err());
 		let income = BalanceType::from_num(1.1);
 		assert_ok!(EncointerCommunities::update_nominal_income(
-			Origin::signed(AccountKeyring::Alice.into()),
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
 			cid,
 			income,
 		));
@@ -283,7 +284,7 @@ fn updating_nominal_income_errs_with_invalid_origin() {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert_dispatch_err(
 			EncointerCommunities::update_nominal_income(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				cid,
 				BalanceType::from_num(1.1),
 			),
@@ -300,7 +301,7 @@ fn updating_demurrage_works() {
 		assert!(encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
 		let demurrage = Demurrage::from_num(0.0001);
 		assert_ok!(EncointerCommunities::update_demurrage(
-			Origin::signed(AccountKeyring::Alice.into()),
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
 			cid,
 			demurrage,
 		));
@@ -321,7 +322,7 @@ fn updating_demurrage_errs_with_invalid_origin() {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert_dispatch_err(
 			EncointerCommunities::update_demurrage(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				cid,
 				Demurrage::from_num(0.0001),
 			),
@@ -348,7 +349,7 @@ fn add_location_works() {
 		assert_eq!(geo_hash, geo_hash2);
 
 		assert_ok!(EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location2,
 		));
@@ -366,7 +367,7 @@ fn add_location_works() {
 		let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon).unwrap();
 
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location3,
 		)
@@ -399,14 +400,14 @@ fn remove_community_works() {
 		let geo_hash3 = GeoHash::try_from_params(location3.lat, location3.lon).unwrap();
 
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location2,
 		)
 		.ok();
 
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid2,
 			location3,
 		)
@@ -453,7 +454,7 @@ fn remove_location_works() {
 		assert_eq!(geo_hash, geo_hash2);
 
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location2,
 		)
@@ -467,7 +468,7 @@ fn remove_location_works() {
 
 		// remove first location
 		assert_ok!(EncointerCommunities::remove_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location,
 		));
@@ -477,7 +478,7 @@ fn remove_location_works() {
 
 		// remove second location
 		EncointerCommunities::remove_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location2,
 		)
@@ -496,7 +497,7 @@ fn remove_location_errs_with_invalid_origin() {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert_dispatch_err(
 			EncointerCommunities::remove_location(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				cid,
 				Location::default(),
 			),
@@ -514,7 +515,7 @@ fn new_community_too_close_to_existing_community_fails() {
 		let location = Location { lat: T::from_num(1i32), lon: T::from_num(1i32) };
 		let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
 		assert_ok!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			location,
 			bs.clone(),
 			Default::default(),
@@ -525,7 +526,7 @@ fn new_community_too_close_to_existing_community_fails() {
 		// second community
 		let location = Location { lat: T::from_num(1.000001_f64), lon: T::from_num(1.000001_f64) };
 		assert!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			location,
 			bs.clone(),
 			Default::default(),
@@ -546,7 +547,7 @@ fn new_community_with_near_pole_locations_fails() {
 
 		let location = Location { lat: T::from_num(89), lon: T::from_num(60) };
 		assert!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			location,
 			bs.clone(),
 			Default::default(),
@@ -558,7 +559,7 @@ fn new_community_with_near_pole_locations_fails() {
 		let a = Location { lat: T::from_num(-89), lon: T::from_num(60) };
 
 		assert!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			a,
 			bs,
 			Default::default(),
@@ -580,7 +581,7 @@ fn new_community_near_dateline_fails() {
 		let location = Location { lat: T::from_num(10), lon: T::from_num(179) };
 
 		assert!(EncointerCommunities::new_community(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			location,
 			bs.clone(),
 			Default::default(),
@@ -740,49 +741,49 @@ fn get_nearby_locations_works() {
 
 		// same bucket, same cid
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location2,
 		)
 		.ok();
 		// same bucket different cid
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid2,
 			location3,
 		)
 		.ok();
 		//different bucket, same cid
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location4,
 		)
 		.ok();
 		// different bucket, different cid
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid2,
 			location5,
 		)
 		.ok();
 		// different bucket, different cid
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid2,
 			location6,
 		)
 		.ok();
 		// location far away, same cid
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location7,
 		)
 		.ok();
 		// location far away different cid
 		EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid2,
 			location8,
 		)
@@ -837,31 +838,31 @@ fn get_locations_works() {
 		let some_bootstrapper = AccountId::from(AccountKeyring::Alice);
 
 		assert!(EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location1
 		)
 		.is_ok());
 		assert!(EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid2,
 			location2
 		)
 		.is_ok());
 		assert!(EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location3
 		)
 		.is_ok());
 		assert!(EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid2,
 			location4
 		)
 		.is_ok());
 		assert!(EncointerCommunities::add_location(
-			Origin::signed(some_bootstrapper.clone()),
+			RuntimeOrigin::signed(some_bootstrapper.clone()),
 			cid,
 			location5
 		)
@@ -880,7 +881,7 @@ fn set_min_solar_trip_time_s_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerCommunities::set_min_solar_trip_time_s(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				1u32,
 			),
 			DispatchError::BadOrigin,
@@ -891,10 +892,16 @@ fn set_min_solar_trip_time_s_errs_with_bad_origin() {
 #[test]
 fn set_min_solar_trip_time_s_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerCommunities::set_min_solar_trip_time_s(Origin::signed(master()), 2u32));
+		assert_ok!(EncointerCommunities::set_min_solar_trip_time_s(
+			RuntimeOrigin::signed(master()),
+			2u32
+		));
 
 		assert_eq!(EncointerCommunities::min_solar_trip_time_s(), 2u32);
-		assert_ok!(EncointerCommunities::set_min_solar_trip_time_s(Origin::signed(master()), 3u32));
+		assert_ok!(EncointerCommunities::set_min_solar_trip_time_s(
+			RuntimeOrigin::signed(master()),
+			3u32
+		));
 
 		assert_eq!(EncointerCommunities::min_solar_trip_time_s(), 3u32);
 	});
@@ -905,7 +912,7 @@ fn set_max_speed_mps_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerCommunities::set_max_speed_mps(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				1u32,
 			),
 			DispatchError::BadOrigin,
@@ -916,10 +923,10 @@ fn set_max_speed_mps_errs_with_bad_origin() {
 #[test]
 fn set_max_speed_mps_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerCommunities::set_max_speed_mps(Origin::signed(master()), 2u32));
+		assert_ok!(EncointerCommunities::set_max_speed_mps(RuntimeOrigin::signed(master()), 2u32));
 
 		assert_eq!(EncointerCommunities::max_speed_mps(), 2u32);
-		assert_ok!(EncointerCommunities::set_max_speed_mps(Origin::signed(master()), 3u32));
+		assert_ok!(EncointerCommunities::set_max_speed_mps(RuntimeOrigin::signed(master()), 3u32));
 
 		assert_eq!(EncointerCommunities::max_speed_mps(), 3u32);
 	});
@@ -966,7 +973,10 @@ fn purge_community_errs_with_invalid_origin() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
 		assert_dispatch_err(
-			EncointerCommunities::purge_community(Origin::signed(AccountKeyring::Bob.into()), cid),
+			EncointerCommunities::purge_community(
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
+				cid,
+			),
 			DispatchError::BadOrigin,
 		);
 	});

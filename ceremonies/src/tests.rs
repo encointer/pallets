@@ -28,7 +28,7 @@ use frame_support::{
 use itertools::Itertools;
 use mock::{
 	master, new_test_ext, EncointerBalances, EncointerCeremonies, EncointerCommunities,
-	EncointerScheduler, Origin, System, TestProofOfAttendance, TestRuntime, Timestamp,
+	EncointerScheduler, RuntimeOrigin, System, TestProofOfAttendance, TestRuntime, Timestamp,
 };
 use rstest::*;
 use sp_core::{sr25519, Pair, H256, U256};
@@ -66,7 +66,7 @@ fn run_to_next_phase() {
 }
 
 pub fn set_timestamp(t: u64) {
-	let _ = pallet_timestamp::Pallet::<TestRuntime>::set(Origin::none(), t);
+	let _ = pallet_timestamp::Pallet::<TestRuntime>::set(RuntimeOrigin::none(), t);
 }
 
 /// get correct meetup time for a certain cid and meetup
@@ -148,7 +148,7 @@ fn register(
 	cid: CommunityIdentifier,
 	proof: Option<TestProofOfAttendance>,
 ) -> DispatchResultWithPostInfo {
-	EncointerCeremonies::register_participant(Origin::signed(account), cid, proof)
+	EncointerCeremonies::register_participant(RuntimeOrigin::signed(account), cid, proof)
 }
 
 /// shortcut to register well-known keys for current ceremony
@@ -183,7 +183,7 @@ fn attest_all(
 	n_participants: u32,
 ) {
 	assert_ok!(EncointerCeremonies::attest_attendees(
-		Origin::signed(attestor),
+		RuntimeOrigin::signed(attestor),
 		cid,
 		n_participants,
 		attestees
@@ -198,7 +198,7 @@ fn fully_attest_attendees(
 ) {
 	for attestor in attendees.iter() {
 		assert_ok!(EncointerCeremonies::attest_attendees(
-			Origin::signed(attestor.clone()),
+			RuntimeOrigin::signed(attestor.clone()),
 			cid,
 			n_participants,
 			attendees.clone().into_iter().filter(|a| a != attestor).collect()
@@ -238,7 +238,7 @@ fn perform_bootstrapping_ceremony(
 
 	create_locations(n_locations).into_iter().for_each(|location| {
 		assert_ok!(EncointerCommunities::add_location(
-			Origin::signed(bootstrappers[0].clone()),
+			RuntimeOrigin::signed(bootstrappers[0].clone()),
 			cid,
 			location
 		));
@@ -308,13 +308,13 @@ fn registering_participant_works() {
 		let endorsee_1 = account_id(&newbies[0]);
 		let endorsee_2 = account_id(&newbies[1]);
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			endorsee_1.clone()
 		));
 
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			endorsee_2.clone()
 		));
@@ -426,7 +426,7 @@ fn attest_attendee_for_non_participant_fails() {
 		run_to_next_phase();
 		// Attesting
 		assert!(EncointerCeremonies::attest_attendees(
-			Origin::signed(eve),
+			RuntimeOrigin::signed(eve),
 			cid,
 			3,
 			vec![alice, ferdie],
@@ -525,7 +525,8 @@ fn claim_rewards_works() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(alice.clone()), cid, None).unwrap();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice.clone()), cid, None)
+			.unwrap();
 		let meetup_result = IssuedRewards::<TestRuntime>::get((cid, cindex), 1);
 		assert_eq!(meetup_result, Some(MeetupResult::Ok));
 
@@ -637,14 +638,20 @@ fn claim_rewards_works() {
 		);
 
 		// Claiming twice does not work for any of the meetup participants
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).is_err());
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(bob), cid, None).is_err());
+		assert!(
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).is_err()
+		);
+		assert!(EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(bob), cid, None).is_err());
 
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(charlie), cid, None).is_err());
+		assert!(
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(charlie), cid, None).is_err()
+		);
 
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(dave), cid, None).is_err());
+		assert!(EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(dave), cid, None).is_err());
 
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(ferdie), cid, None).is_err());
+		assert!(
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(ferdie), cid, None).is_err()
+		);
 	});
 }
 
@@ -691,7 +698,7 @@ fn claim_rewards_works_with_one_missing_attestation() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
 
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
@@ -747,7 +754,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 
 		for i in 1..=meetup_count {
 			assert_ok!(EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
+				RuntimeOrigin::signed(account_id(&all_participants[0].clone())),
 				cid,
 				Some(i),
 			));
@@ -755,7 +762,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 
 		assert_err!(
 			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
+				RuntimeOrigin::signed(account_id(&all_participants[0].clone())),
 				cid,
 				Some(0)
 			),
@@ -764,7 +771,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 
 		assert_err!(
 			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
+				RuntimeOrigin::signed(account_id(&all_participants[0].clone())),
 				cid,
 				Some(1 + meetup_count)
 			),
@@ -773,7 +780,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 
 		assert_err!(
 			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
+				RuntimeOrigin::signed(account_id(&all_participants[0].clone())),
 				cid,
 				Some(2 + meetup_count)
 			),
@@ -781,7 +788,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 		);
 		assert_err!(
 			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
+				RuntimeOrigin::signed(account_id(&all_participants[0].clone())),
 				cid,
 				Some(2 * meetup_count - 1)
 			),
@@ -790,7 +797,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 
 		assert_err!(
 			EncointerCeremonies::claim_rewards(
-				Origin::signed(account_id(&all_participants[0].clone())),
+				RuntimeOrigin::signed(account_id(&all_participants[0].clone())),
 				cid,
 				Some(2 * meetup_count + 1)
 			),
@@ -843,7 +850,7 @@ fn claim_rewards_fails_with_two_missing_attestations() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
 
 		// nobody receives their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 0).into()));
@@ -887,7 +894,7 @@ fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_erro
 			attestees.retain(|&a| account_id(a) != account_id(p));
 			// this will lead to an error beacuse there is no depandable vote
 			EncointerCeremonies::attest_attendees(
-				Origin::signed(account_id(&p)),
+				RuntimeOrigin::signed(account_id(&p)),
 				cid,
 				i as u32,
 				attestees.into_iter().map(|pa| account_id(&pa)).collect(),
@@ -895,14 +902,22 @@ fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_erro
 			.unwrap();
 		}
 
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
-			.is_err());
+		assert!(EncointerCeremonies::claim_rewards(
+			RuntimeOrigin::signed(account_id(&alice)),
+			cid,
+			None
+		)
+		.is_err());
 		// nothing happens in attesting phase
 		assert!(!IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		run_to_next_phase();
 		// Registering
-		assert!(EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None)
-			.is_ok());
+		assert!(EncointerCeremonies::claim_rewards(
+			RuntimeOrigin::signed(account_id(&alice)),
+			cid,
+			None
+		)
+		.is_ok());
 		// in registering, the meetup is marked as completed
 		assert!(IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		let meetup_result = IssuedRewards::<TestRuntime>::get((cid, cindex), 1);
@@ -960,7 +975,8 @@ fn claim_rewards_can_be_called_by_non_participant() {
 
 		run_to_next_phase();
 		// Registering
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&yran)), cid, Some(1)).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(&yran)), cid, Some(1))
+			.ok();
 
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
@@ -1001,7 +1017,7 @@ fn early_rewards_works() {
 		fully_attest_attendees(all_participants, cid, 6);
 
 		// Still attesting phase
-		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
@@ -1042,7 +1058,7 @@ fn early_rewards_with_new_attest_attendees_extrinsic_works() {
 		fully_attest_attendees(all_participants, cid, 6);
 
 		// Still attesting phase
-		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 6).into()));
@@ -1084,7 +1100,7 @@ fn early_rewards_with_new_attest_attendees_extrinsic_with_one_missing_attestatio
 		fully_attest_attendees(all_participants, cid, 5);
 
 		// Still attesting phase
-		EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 5).into()));
@@ -1134,7 +1150,7 @@ fn early_rewards_does_not_work_with_one_missing_attestation() {
 
 		// Still attesting phase
 		assert_err!(
-			EncointerCeremonies::claim_rewards(Origin::signed(alice), cid, None),
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None),
 			Error::<TestRuntime>::EarlyRewardsNotPossible
 		);
 	});
@@ -1151,7 +1167,8 @@ fn bootstrapping_works() {
 		let eve = AccountKeyring::Eve.pair();
 		let ferdie = AccountKeyring::Ferdie.pair();
 
-		EncointerCeremonies::claim_rewards(Origin::signed(account_id(&alice)), cid, None).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(&alice)), cid, None)
+			.ok();
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		assert_eq!(
@@ -1252,7 +1269,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 		);
 		for i in 0..EncointerCeremonies::endorsement_tickets_per_bootstrapper() {
 			assert_ok!(EncointerCeremonies::endorse_newcomer(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				cid,
 				account_id(&endorsees[i as usize])
 			));
@@ -1271,7 +1288,7 @@ fn endorsing_newbie_works_until_no_more_tickets() {
 
 		assert_err!(
 			EncointerCeremonies::endorse_newcomer(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				cid,
 				account_id(
 					&endorsees
@@ -1295,7 +1312,7 @@ fn endorsing_newbie_for_second_next_ceremony_works() {
 		// a newbie
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			account_id(&zoran)
 		));
@@ -1313,14 +1330,14 @@ fn endorsing_newbie_twice_fails() {
 		// a newbie
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			account_id(&zoran)
 		));
 		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex), &account_id(&zoran)));
 		assert_err!(
 			EncointerCeremonies::endorse_newcomer(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				cid,
 				account_id(&zoran),
 			),
@@ -1340,13 +1357,13 @@ fn endorsing_two_newbies_works() {
 		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			account_id(&zoran)
 		));
 		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex), &account_id(&zoran)));
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			account_id(&yran)
 		));
@@ -1370,7 +1387,7 @@ fn endorsing_after_registration_works() {
 		assert!(NewbieIndex::<TestRuntime>::contains_key((cid, cindex), &yran));
 
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			yran.clone()
 		));
@@ -1399,7 +1416,7 @@ fn endorse_newbie_works_for_reputables() {
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
 		let bob = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(reputable.clone()),
+			RuntimeOrigin::signed(reputable.clone()),
 			cid,
 			account_id(&zoran)
 		));
@@ -1407,7 +1424,7 @@ fn endorse_newbie_works_for_reputables() {
 		assert_eq!(BurnedReputableNewbieTickets::<TestRuntime>::get((cid, cindex), &reputable), 1);
 		assert_eq!(BurnedBootstrapperNewbieTickets::<TestRuntime>::get(cid, &reputable), 0);
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(reputable.clone()),
+			RuntimeOrigin::signed(reputable.clone()),
 			cid,
 			account_id(&yran)
 		));
@@ -1417,7 +1434,7 @@ fn endorse_newbie_works_for_reputables() {
 
 		assert_err!(
 			EncointerCeremonies::endorse_newcomer(
-				Origin::signed(reputable.clone()),
+				RuntimeOrigin::signed(reputable.clone()),
 				cid,
 				account_id(&bob)
 			),
@@ -1435,7 +1452,7 @@ fn endorse_newbie_fails_if_already_endorsed_in_previous_ceremony() {
 		// a newbie
 		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			yran.clone()
 		));
@@ -1445,7 +1462,7 @@ fn endorse_newbie_fails_if_already_endorsed_in_previous_ceremony() {
 		run_to_next_phase();
 
 		assert_err!(
-			EncointerCeremonies::endorse_newcomer(Origin::signed(alice.clone()), cid, yran),
+			EncointerCeremonies::endorse_newcomer(RuntimeOrigin::signed(alice.clone()), cid, yran),
 			Error::<TestRuntime>::AlreadyEndorsed
 		);
 	});
@@ -1459,7 +1476,11 @@ fn endorse_newbie_fails_if_sender_has_no_reputation_and_is_not_bootstrapper() {
 		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
 		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
 		assert_err!(
-			EncointerCeremonies::endorse_newcomer(Origin::signed(account_id(&zoran)), cid, yran),
+			EncointerCeremonies::endorse_newcomer(
+				RuntimeOrigin::signed(account_id(&zoran)),
+				cid,
+				yran
+			),
 			Error::<TestRuntime>::NoMoreNewbieTickets
 		);
 	});
@@ -1560,7 +1581,7 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: i64
 		register_alice_bob_ferdie(cid);
 
 		EncointerCeremonies::set_meetup_time_offset(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			meetup_time_offset as i32,
 		)
 		.ok();
@@ -1705,7 +1726,8 @@ fn grow_population_and_removing_community_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(&pair)), cid, None)
+				.ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1729,7 +1751,8 @@ fn grow_population_and_removing_community_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(&pair)), cid, None)
+				.ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -1754,7 +1777,8 @@ fn grow_population_and_removing_community_works() {
 		run_to_next_phase();
 		// Registering
 		for pair in participants.iter() {
-			EncointerCeremonies::claim_rewards(Origin::signed(account_id(&pair)), cid, None).ok();
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(&pair)), cid, None)
+				.ok();
 		}
 
 		let cindex = EncointerScheduler::current_ceremony_index();
@@ -2460,7 +2484,7 @@ fn upgrade_registration_works() {
 
 		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
 		assert_ok!(EncointerCeremonies::upgrade_registration(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			proof
 		));
@@ -2487,7 +2511,7 @@ fn upgrade_registration_fails_if_not_registered_or_not_newbie() {
 		let proof = make_reputable_and_get_proof(&a, cid, cindex - 1);
 		assert_err!(
 			EncointerCeremonies::upgrade_registration(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				cid,
 				proof.clone()
 			),
@@ -2497,7 +2521,7 @@ fn upgrade_registration_fails_if_not_registered_or_not_newbie() {
 		assert_ok!(register(bootstrapper.clone(), cid, None));
 		assert_err!(
 			EncointerCeremonies::upgrade_registration(
-				Origin::signed(bootstrapper.clone()),
+				RuntimeOrigin::signed(bootstrapper.clone()),
 				cid,
 				proof
 			),
@@ -2524,7 +2548,7 @@ fn upgrade_registration_fails_in_wrong_phase() {
 		run_to_next_phase();
 		assert_err!(
 			EncointerCeremonies::upgrade_registration(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				cid,
 				proof.clone()
 			),
@@ -2550,7 +2574,7 @@ fn upgrade_registration_fails_with_inexistent_community() {
 
 		assert_err!(
 			EncointerCeremonies::upgrade_registration(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				CommunityIdentifier::from_str("aaaaabbbbb").unwrap(),
 				proof.clone()
 			),
@@ -2586,7 +2610,7 @@ fn unregister_participant_works_with_reputables() {
 		);
 
 		assert_ok!(EncointerCeremonies::unregister_participant(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			Some((cid, cindex - 1))
 		));
@@ -2627,7 +2651,11 @@ fn unregister_participant_fails_with_reputables_and_wrong_reputation() {
 		);
 
 		assert_err!(
-			EncointerCeremonies::unregister_participant(Origin::signed(alice.clone()), cid, None),
+			EncointerCeremonies::unregister_participant(
+				RuntimeOrigin::signed(alice.clone()),
+				cid,
+				None
+			),
 			Error::<TestRuntime>::ReputationCommunityCeremonyRequired,
 		);
 
@@ -2639,7 +2667,7 @@ fn unregister_participant_fails_with_reputables_and_wrong_reputation() {
 
 		assert_err!(
 			EncointerCeremonies::unregister_participant(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				cid,
 				Some((cid, cindex - 1))
 			),
@@ -2664,7 +2692,7 @@ fn unregister_participant_works_with_newbies() {
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 1);
 
 		assert_ok!(EncointerCeremonies::unregister_participant(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			Some((cid, cindex - 1))
 		));
@@ -2688,7 +2716,7 @@ fn unregister_participant_fails_in_wrong_phase() {
 		run_to_next_phase();
 		assert_err!(
 			EncointerCeremonies::unregister_participant(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				cid,
 				Some((cid, cindex - 1))
 			),
@@ -2712,7 +2740,7 @@ fn unregister_participant_fails_with_inexistent_community() {
 
 		assert_err!(
 			EncointerCeremonies::unregister_participant(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				CommunityIdentifier::from_str("aaaaabbbbb").unwrap(),
 				Some((cid, cindex - 1))
 			),
@@ -2726,7 +2754,7 @@ fn set_inactivity_timeout_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerCeremonies::set_inactivity_timeout(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				1u32,
 			),
 			DispatchError::BadOrigin,
@@ -2737,10 +2765,16 @@ fn set_inactivity_timeout_errs_with_bad_origin() {
 #[test]
 fn set_inactivity_timeout_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerCeremonies::set_inactivity_timeout(Origin::signed(master()), 2u32));
+		assert_ok!(EncointerCeremonies::set_inactivity_timeout(
+			RuntimeOrigin::signed(master()),
+			2u32
+		));
 
 		assert_eq!(EncointerCeremonies::inactivity_timeout(), 2u32);
-		assert_ok!(EncointerCeremonies::set_inactivity_timeout(Origin::signed(master()), 3u32));
+		assert_ok!(EncointerCeremonies::set_inactivity_timeout(
+			RuntimeOrigin::signed(master()),
+			3u32
+		));
 
 		assert_eq!(EncointerCeremonies::inactivity_timeout(), 3u32);
 	});
@@ -2751,7 +2785,7 @@ fn set_endorsement_tickets_per_bootstrapper_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				1u8,
 			),
 			DispatchError::BadOrigin,
@@ -2763,13 +2797,13 @@ fn set_endorsement_tickets_per_bootstrapper_errs_with_bad_origin() {
 fn set_endorsement_tickets_per_bootstrapper_works() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			2u8
 		));
 
 		assert_eq!(EncointerCeremonies::endorsement_tickets_per_bootstrapper(), 2u8);
 		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			3u8
 		));
 
@@ -2782,7 +2816,7 @@ fn set_endorsement_tickets_per_reputable_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerCeremonies::set_endorsement_tickets_per_reputable(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				1u8,
 			),
 			DispatchError::BadOrigin,
@@ -2794,13 +2828,13 @@ fn set_endorsement_tickets_per_reputable_errs_with_bad_origin() {
 fn set_endorsement_tickets_per_reputable_works() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_reputable(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			2u8
 		));
 
 		assert_eq!(EncointerCeremonies::endorsement_tickets_per_reputable(), 2u8);
 		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_reputable(
-			Origin::signed(master()),
+			RuntimeOrigin::signed(master()),
 			3u8
 		));
 
@@ -2813,7 +2847,7 @@ fn set_reputation_lifetime_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerCeremonies::set_reputation_lifetime(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				1u32,
 			),
 			DispatchError::BadOrigin,
@@ -2824,10 +2858,16 @@ fn set_reputation_lifetime_errs_with_bad_origin() {
 #[test]
 fn set_reputation_lifetime_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerCeremonies::set_reputation_lifetime(Origin::signed(master()), 2u32));
+		assert_ok!(EncointerCeremonies::set_reputation_lifetime(
+			RuntimeOrigin::signed(master()),
+			2u32
+		));
 
 		assert_eq!(EncointerCeremonies::reputation_lifetime(), 2u32);
-		assert_ok!(EncointerCeremonies::set_reputation_lifetime(Origin::signed(master()), 3u32));
+		assert_ok!(EncointerCeremonies::set_reputation_lifetime(
+			RuntimeOrigin::signed(master()),
+			3u32
+		));
 
 		assert_eq!(EncointerCeremonies::reputation_lifetime(), 3u32);
 	});
@@ -2838,7 +2878,7 @@ fn set_meetup_time_offset_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerCeremonies::set_meetup_time_offset(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				5i32,
 			),
 			DispatchError::BadOrigin,
@@ -2851,7 +2891,7 @@ fn set_meetup_time_offset_fails_with_invalid_value() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
 			EncointerCeremonies::set_meetup_time_offset(
-				Origin::signed(master()),
+				RuntimeOrigin::signed(master()),
 				-8 * 3600 * 1000 - 1,
 			),
 			Error::<TestRuntime>::InvalidMeetupTimeOffset,
@@ -2859,7 +2899,7 @@ fn set_meetup_time_offset_fails_with_invalid_value() {
 
 		assert_err!(
 			EncointerCeremonies::set_meetup_time_offset(
-				Origin::signed(master()),
+				RuntimeOrigin::signed(master()),
 				8 * 3600 * 1000 + 1,
 			),
 			Error::<TestRuntime>::InvalidMeetupTimeOffset,
@@ -2872,7 +2912,7 @@ fn set_meetup_time_offset_fails_with_wrong_phase() {
 	new_test_ext().execute_with(|| {
 		run_to_next_phase();
 		assert_err!(
-			EncointerCeremonies::set_meetup_time_offset(Origin::signed(master()), 5i32,),
+			EncointerCeremonies::set_meetup_time_offset(RuntimeOrigin::signed(master()), 5i32,),
 			Error::<TestRuntime>::WrongPhaseForChangingMeetupTimeOffset,
 		);
 	});
@@ -2881,10 +2921,16 @@ fn set_meetup_time_offset_fails_with_wrong_phase() {
 #[test]
 fn set_meetup_time_offset_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerCeremonies::set_meetup_time_offset(Origin::signed(master()), 5i32,));
+		assert_ok!(EncointerCeremonies::set_meetup_time_offset(
+			RuntimeOrigin::signed(master()),
+			5i32,
+		));
 
 		assert_eq!(EncointerCeremonies::meetup_time_offset(), 5i32,);
-		assert_ok!(EncointerCeremonies::set_meetup_time_offset(Origin::signed(master()), -6i32,));
+		assert_ok!(EncointerCeremonies::set_meetup_time_offset(
+			RuntimeOrigin::signed(master()),
+			-6i32,
+		));
 
 		assert_eq!(EncointerCeremonies::meetup_time_offset(), -6i32,);
 	});
@@ -2893,7 +2939,7 @@ fn set_meetup_time_offset_works() {
 #[test]
 fn set_time_tolerance_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerCeremonies::set_time_tolerance(Origin::signed(master()), 600));
+		assert_ok!(EncointerCeremonies::set_time_tolerance(RuntimeOrigin::signed(master()), 600));
 		assert_eq!(EncointerCeremonies::time_tolerance(), 600);
 	});
 }
@@ -2901,7 +2947,10 @@ fn set_time_tolerance_works() {
 #[test]
 fn set_location_tolerance_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerCeremonies::set_location_tolerance(Origin::signed(master()), 1234));
+		assert_ok!(EncointerCeremonies::set_location_tolerance(
+			RuntimeOrigin::signed(master()),
+			1234
+		));
 		assert_eq!(EncointerCeremonies::location_tolerance(), 1234);
 	});
 }
@@ -2928,7 +2977,7 @@ fn get_participant_type_works() {
 		run_to_next_phase();
 
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
-			Origin::signed(bootstrapper.clone()),
+			RuntimeOrigin::signed(bootstrapper.clone()),
 			cid,
 			endorsee.clone()
 		));
@@ -3059,7 +3108,7 @@ fn attest_attendees_works() {
 		);
 
 		EncointerCeremonies::attest_attendees(
-			Origin::signed(account_id(&alice)),
+			RuntimeOrigin::signed(account_id(&alice)),
 			cid,
 			3,
 			vec![account_id(&alice), account_id(&ferdie)],
@@ -3079,7 +3128,7 @@ fn attest_attendees_works() {
 		assert!(wit_vec.contains(&account_id(&ferdie)));
 
 		EncointerCeremonies::attest_attendees(
-			Origin::signed(account_id(&bob)),
+			RuntimeOrigin::signed(account_id(&bob)),
 			cid,
 			4,
 			vec![account_id(&alice), account_id(&ferdie)],
@@ -3108,7 +3157,7 @@ fn attest_attendees_works() {
 		);
 		// TEST: re-registering must overwrite previous entry
 		EncointerCeremonies::attest_attendees(
-			Origin::signed(account_id(&alice)),
+			RuntimeOrigin::signed(account_id(&alice)),
 			cid,
 			3,
 			vec![account_id(&bob), account_id(&ferdie)],
@@ -3118,7 +3167,7 @@ fn attest_attendees_works() {
 
 		// someone who is not meetup participant will be skipped
 		EncointerCeremonies::attest_attendees(
-			Origin::signed(account_id(&ferdie)),
+			RuntimeOrigin::signed(account_id(&ferdie)),
 			cid,
 			4,
 			vec![account_id(&bob), account_id(&eve)],
