@@ -82,6 +82,8 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		type CeremonyMaster: EnsureOrigin<Self::Origin>;
+
+		type GetCurrentBlockNumber: GetCurrentBlockNumber<Self::BlockNumber>;
 	}
 
 	#[pallet::call]
@@ -249,7 +251,7 @@ impl<T: Config> Pallet<T> {
 		entry: BalanceEntry<T::BlockNumber>,
 		demurrage: Demurrage,
 	) -> BalanceEntry<T::BlockNumber> {
-		let current_block = frame_system::Pallet::<T>::block_number();
+		let current_block = <T as Config>::GetCurrentBlockNumber::get_current_block_number();
 
 		entry.apply_demurrage(demurrage, current_block)
 	}
@@ -379,5 +381,16 @@ impl<T: Config> Pallet<T> {
 	pub fn purge_balances(cid: CommunityIdentifier) {
 		#[allow(deprecated)]
 		<Balance<T>>::remove_prefix(cid, None);
+	}
+}
+
+/// Allows configuring the source of the blocknumber.
+pub trait GetCurrentBlockNumber<BlockNumber> {
+	fn get_current_block_number() -> BlockNumber;
+}
+
+impl<T: frame_system::Config> GetCurrentBlockNumber<T::BlockNumber> for frame_system::Pallet<T> {
+	fn get_current_block_number() -> T::BlockNumber {
+		frame_system::Pallet::<T>::block_number()
 	}
 }

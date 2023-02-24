@@ -49,6 +49,7 @@ impl dut::Config for TestRuntime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type WeightInfo = ();
 	type CeremonyMaster = EnsureAlice;
+	type GetCurrentBlockNumber = System;
 }
 
 // boilerplate
