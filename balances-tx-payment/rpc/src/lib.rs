@@ -99,7 +99,7 @@ where
 			CallError::Custom(ErrorObject::owned(
 				Error::DecodeError.into(),
 				"Unable to query fee details.",
-				Some(format!("{:?}", e)),
+				Some(format!("{e:?}")),
 			))
 		})?;
 		let fee_details = api.query_fee_details(&at, uxt, encoded_len).map_err(|e| {
@@ -114,7 +114,7 @@ where
 			value.try_into().map_err(|_| {
 				JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
 					ErrorCode::InvalidParams.code(),
-					format!("{} doesn't fit in NumberOrHex representation", value),
+					format!("{value} doesn't fit in NumberOrHex representation"),
 					None::<()>,
 				)))
 			})

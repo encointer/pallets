@@ -50,7 +50,7 @@ pub fn register_test_community<Runtime>(
 where
 	Runtime: encointer_communities::Config,
 	Runtime: frame_system::Config<AccountId = AccountId>,
-	<Runtime as frame_system::Config>::Origin: OriginTrait<AccountId = AccountId>,
+	<Runtime as frame_system::Config>::RuntimeOrigin: OriginTrait<AccountId = AccountId>,
 {
 	let bs = custom_bootstrappers
 		.unwrap_or_else(|| bootstrappers().into_iter().map(|b| account_id(&b)).collect());
@@ -58,7 +58,7 @@ where
 
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };
 	encointer_communities::Pallet::<Runtime>::new_community(
-		Runtime::Origin::signed(prime.clone()),
+		Runtime::RuntimeOrigin::signed(prime.clone()),
 		location,
 		bs.clone(),
 		Default::default(),
@@ -72,7 +72,7 @@ where
 pub fn get_num_events<T: frame_system::Config>() -> usize {
 	frame_system::Pallet::<T>::events().len()
 }
-pub fn events<T: frame_system::Config>() -> Vec<T::Event> {
+pub fn events<T: frame_system::Config>() -> Vec<T::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events()
 		.into_iter()
 		.map(|evt| evt.event)
@@ -81,11 +81,11 @@ pub fn events<T: frame_system::Config>() -> Vec<T::Event> {
 	events
 }
 
-pub fn last_event<T: frame_system::Config>() -> Option<T::Event> {
+pub fn last_event<T: frame_system::Config>() -> Option<T::RuntimeEvent> {
 	event_at_index::<T>(get_num_events::<T>() - 1)
 }
 
-pub fn event_at_index<T: frame_system::Config>(index: usize) -> Option<T::Event> {
+pub fn event_at_index<T: frame_system::Config>(index: usize) -> Option<T::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events();
 	if events.len() < index {
 		return None
@@ -94,7 +94,7 @@ pub fn event_at_index<T: frame_system::Config>(index: usize) -> Option<T::Event>
 	Some(event.clone())
 }
 
-pub fn event_deposited<T: frame_system::Config>(desired_event: T::Event) -> bool {
+pub fn event_deposited<T: frame_system::Config>(desired_event: T::RuntimeEvent) -> bool {
 	let events = frame_system::Pallet::<T>::events();
 	for eventrec in events.iter() {
 		let frame_system::EventRecord { event, .. } = eventrec;

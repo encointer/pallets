@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::mock::{new_test_ext, Origin, TestRuntime};
+use crate::mock::{new_test_ext, RuntimeOrigin, TestRuntime};
 use codec::Decode;
 use frame_support::assert_ok;
 
@@ -41,7 +41,7 @@ fn issue_proof_of_personhood_is_ok() {
 		let sibling = sibling_junction(1863);
 		let account_id = LocationConverter::convert_ref(&sibling.into()).unwrap();
 		assert_ok!(PersonhoodOracle::issue_personhood_uniqueness_rating(
-			Origin::signed(account_id),
+			RuntimeOrigin::signed(account_id),
 			vec![proof_of_attendance()].encode(),
 			CallMetadata::new(1, 1, 5_000_000),
 		));

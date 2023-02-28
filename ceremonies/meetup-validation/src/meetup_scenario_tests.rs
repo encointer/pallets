@@ -344,7 +344,7 @@ fn n_honest_participants_dont_have_internet_and_n_attackers_try_to_provoke_early
 	let mut participant_votes = vec![num_honest_participants as u32; meetup_size - n];
 
 	// n participants do not have internet
-	participant_votes.append(&mut vec![0 as u32; n]);
+	participant_votes.append(&mut vec![0_u32; n]);
 
 	let mut participant_attestations: Attestations = vec![];
 

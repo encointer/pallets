@@ -33,7 +33,7 @@ use frame_support::{
 		OnInitialize,
 	},
 };
-use mock::{master, new_test_ext, EncointerBalances, Origin, System, TestRuntime};
+use mock::{master, new_test_ext, EncointerBalances, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::{app_crypto::Pair, testing::sr25519, AccountId32, DispatchError};
 use sp_std::str::FromStr;
 use test_utils::{
@@ -55,7 +55,7 @@ fn issue_should_work() {
 
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::Issued(cid, alice.clone(), BalanceType::from_num(50.1)).into())
+			Some(Event::Issued(cid, alice, BalanceType::from_num(50.1)).into())
 		);
 	});
 }
@@ -145,12 +145,12 @@ fn transfer_should_create_new_account() {
 
 		assert_eq!(
 			events[0],
-			mock::Event::System(frame_system::Event::NewAccount { account: zoltan.clone() })
+			mock::RuntimeEvent::System(frame_system::Event::NewAccount { account: zoltan.clone() })
 		);
 
 		assert_eq!(
 			events[1],
-			mock::Event::EncointerBalances(crate::Event::Endowed {
+			mock::RuntimeEvent::EncointerBalances(crate::Event::Endowed {
 				cid,
 				who: zoltan.clone(),
 				balance: amount
@@ -159,9 +159,9 @@ fn transfer_should_create_new_account() {
 
 		assert_eq!(
 			events[2],
-			mock::Event::EncointerBalances(
-				crate::Event::Transferred(cid, alice, zoltan, amount).into()
-			),
+			mock::RuntimeEvent::EncointerBalances(crate::Event::Transferred(
+				cid, alice, zoltan, amount
+			)),
 		);
 	});
 }
@@ -181,7 +181,7 @@ fn transfer_does_not_create_new_account_if_below_ed() {
 
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50u128)));
 		assert_noop!(
-			EncointerBalances::transfer(Some(alice.clone()).into(), zoltan.clone(), cid, amount),
+			EncointerBalances::transfer(Some(alice).into(), zoltan, cid, amount),
 			Error::<TestRuntime>::ExistentialDeposit,
 		);
 	});
@@ -201,7 +201,7 @@ fn if_account_does_not_exist_in_community_transfer_errs_with_no_account_error() 
 		let amount = BalanceType::from_num(0.0000000001);
 
 		assert_noop!(
-			EncointerBalances::transfer(Some(alice.clone()).into(), zoltan.clone(), cid, amount),
+			EncointerBalances::transfer(Some(alice).into(), zoltan, cid, amount),
 			Error::<TestRuntime>::NoAccount,
 		);
 	});
@@ -267,7 +267,7 @@ fn set_fee_conversion_factor_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
 			EncointerBalances::set_fee_conversion_factor(
-				Origin::signed(AccountKeyring::Bob.into()),
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
 				5,
 			),
 			DispatchError::BadOrigin,
@@ -278,10 +278,16 @@ fn set_fee_conversion_factor_errs_with_bad_origin() {
 #[test]
 fn set_fee_conversion_factor_works() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 5));
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(
+			RuntimeOrigin::signed(master()),
+			5
+		));
 
 		assert_eq!(EncointerBalances::fee_conversion_factor(), 5);
-		assert_ok!(EncointerBalances::set_fee_conversion_factor(Origin::signed(master()), 6));
+		assert_ok!(EncointerBalances::set_fee_conversion_factor(
+			RuntimeOrigin::signed(master()),
+			6
+		));
 
 		assert_eq!(EncointerBalances::fee_conversion_factor(), 6);
 	});
@@ -333,7 +339,7 @@ fn remove_account_works() {
 
 		assert_ok!(EncointerBalances::transfer(
 			Some(alice.clone()).into(),
-			bob.clone(),
+			bob,
 			cid,
 			BalanceType::from_num(50)
 		));
@@ -366,7 +372,7 @@ fn transfer_removes_account_if_source_below_existential_deposit() {
 
 		assert_ok!(EncointerBalances::transfer(
 			Some(alice.clone()).into(),
-			bob.clone(),
+			bob,
 			cid,
 			BalanceType::from_num(30)
 		));

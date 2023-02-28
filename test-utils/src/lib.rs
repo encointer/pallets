@@ -95,23 +95,23 @@ macro_rules! impl_frame_system {
 			type BaseCallFilter = frame_support::traits::Everything;
 			type BlockWeights = ();
 			type BlockLength = ();
-			type AccountId = AccountId;
-			type Call = Call;
-			type Lookup = IdentityLookup<Self::AccountId>;
+			type DbWeight = ();
+			type RuntimeOrigin = RuntimeOrigin;
 			type Index = u64;
+			type RuntimeCall = RuntimeCall;
 			type BlockNumber = BlockNumber;
 			type Hash = H256;
 			type Hashing = BlakeTwo256;
+			type AccountId = AccountId;
+			type Lookup = IdentityLookup<Self::AccountId>;
 			type Header = Header;
-			type Event = Event;
-			type Origin = Origin;
+			type RuntimeEvent = RuntimeEvent;
 			type BlockHashCount = BlockHashCount;
-			type DbWeight = ();
 			type Version = ();
 			type PalletInfo = PalletInfo;
+			type AccountData = pallet_balances::AccountData<u64>;
 			type OnNewAccount = ();
 			type OnKilledAccount = ();
-			type AccountData = pallet_balances::AccountData<u64>;
 			type SystemWeightInfo = ();
 			type SS58Prefix = ();
 			type OnSetCode = ();
@@ -157,7 +157,7 @@ macro_rules! impl_balances {
 	($t:ident, $system:ident) => {
 		impl pallet_balances::Config for $t {
 			type Balance = Balance;
-			type Event = Event;
+			type RuntimeEvent = RuntimeEvent;
 			type DustRemoval = ();
 			type ExistentialDeposit = ExistentialDeposit;
 			type AccountStore = System;
@@ -179,7 +179,7 @@ parameter_types! {
 macro_rules! impl_encointer_balances {
 	($t:ident) => {
 		impl encointer_balances::Config for $t {
-			type Event = Event;
+			type RuntimeEvent = RuntimeEvent;
 			type DefaultDemurrage = DefaultDemurrage;
 			type ExistentialDeposit = EncointerBalancesExistentialDeposit;
 			type WeightInfo = ();
@@ -192,7 +192,7 @@ macro_rules! impl_encointer_balances {
 macro_rules! impl_encointer_communities {
 	($t:ident) => {
 		impl encointer_communities::Config for $t {
-			type Event = Event;
+			type RuntimeEvent = RuntimeEvent;
 			type CommunityMaster = EnsureAlice;
 			type TrustableForNonDestructiveAction = EnsureAlice;
 			type WeightInfo = ();
@@ -220,7 +220,7 @@ parameter_types! {
 macro_rules! impl_encointer_ceremonies {
 	($t:ident) => {
 		impl encointer_ceremonies::Config for $t {
-			type Event = Event;
+			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
 			type Public = <Signature as Verify>::Signer;
 			type Signature = Signature;
@@ -241,7 +241,7 @@ parameter_types! {
 macro_rules! impl_encointer_scheduler {
 	($t:ident, $ceremonies:ident) => {
 		impl encointer_scheduler::Config for $t {
-			type Event = Event;
+			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
@@ -250,7 +250,7 @@ macro_rules! impl_encointer_scheduler {
 	};
 	($t:ident) => {
 		impl encointer_scheduler::Config for $t {
-			type Event = Event;
+			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;

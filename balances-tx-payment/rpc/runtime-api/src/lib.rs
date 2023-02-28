@@ -38,7 +38,7 @@ impl fmt::Display for Error {
 			Error::RuntimeError => "Runtime Error",
 			Error::DecodeError => "Decode Error",
 		};
-		write!(f, "{}", msg)
+		write!(f, "{msg}")
 	}
 }
 

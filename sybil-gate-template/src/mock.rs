@@ -42,7 +42,7 @@ frame_support::parameter_types! {
 }
 
 impl dut::Config for TestRuntime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Call = EmptyCall;
 	type XcmSender = ();
 	type Currency = Balances;

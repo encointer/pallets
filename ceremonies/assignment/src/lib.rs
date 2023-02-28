@@ -212,8 +212,9 @@ mod tests {
 		let greenbay_location =
 			Location { lat: Degree::from_num(0.0), lon: Degree::from_num(-88.15) };
 		assert_eq!(
-			meetup_time(greenbay_location, attesting_start, moments_per_day, meetup_time_offset)
-				as u64,
+			{
+				meetup_time(greenbay_location, attesting_start, moments_per_day, meetup_time_offset)
+			},
 			1671470220000u64
 		) // Mon Dec 19 2022 17:17:00 UTC
 	}

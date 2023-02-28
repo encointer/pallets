@@ -296,10 +296,10 @@ mod tests {
 		case(0_000_000_100_000_000_000u128, 0.0000001),
 		case(1_000_000_000_000_000_000u128, 1f64),
 		case(0_100_000_000_000_000_000u128, 0.1),
-		case(12_500_011_800_000_000u128, 0.0125_000_118) // test for potential back conversion error: https://github.com/encointer/encointer-node/issues/200
+		case(12_500_011_800_000_000u128, 0.012_500_011_8) // test for potential back conversion error: https://github.com/encointer/encointer-node/issues/200
 	)]
 	fn u128_to_balance_type_conversion_works(balance: u128, expected_result: f64) {
-		let balance_type = |b_u128| EncointerBalanceConverter::convert(b_u128);
+		let balance_type = EncointerBalanceConverter::convert;
 
 		let res: f64 = balance_type(balance).lossy_into();
 		assert_abs_diff_eq!(res, expected_result, epsilon = 1.0e-12);
@@ -308,7 +308,7 @@ mod tests {
 	#[test]
 	fn u128_to_balance_type_conversion_does_not_overflow() {
 		// this test was problematic in the beginning
-		let balance_type = |b_u128| EncointerBalanceConverter::convert(b_u128);
+		let balance_type = EncointerBalanceConverter::convert;
 
 		let res: f64 = balance_type(123_456_000_000_000_000_000u128).lossy_into();
 		assert_abs_diff_eq!(res, 123.456, epsilon = 1.0e-12);
@@ -322,7 +322,7 @@ mod tests {
 		case(123.456f64, 123_456_000_000_000_000_000u128)
 	)]
 	fn balance_type_to_u128_conversion_works(balance: f64, expected_result: u128) {
-		let fungible = |balance_type| EncointerBalanceConverter::convert(balance_type);
+		let fungible = EncointerBalanceConverter::convert;
 
 		let balance = BalanceType::from_num(balance);
 		assert!(almost_eq(fungible(balance), expected_result, 10000));

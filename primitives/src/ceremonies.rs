@@ -42,10 +42,13 @@ use crate::scheduler::CeremonyPhaseType;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Default, Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum Reputation {
 	// no attestations for attendance claim
+	#[default]
 	Unverified,
 	// no attestation yet but linked to reputation
 	UnverifiedReputable,
@@ -53,12 +56,6 @@ pub enum Reputation {
 	VerifiedUnlinked,
 	// verified former attendance that has already been linked to a new registration
 	VerifiedLinked,
-}
-
-impl Default for Reputation {
-	fn default() -> Self {
-		Reputation::Unverified
-	}
 }
 
 impl Reputation {
