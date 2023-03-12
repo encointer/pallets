@@ -343,10 +343,7 @@ fn registering_participant_twice_fails() {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let alice = AccountId::from(AccountKeyring::Alice);
 		assert_ok!(register(alice.clone(), cid, None));
-		assert_err!(
-			register(alice, cid, None),
-			Error::<TestRuntime>::ParticipantAlreadyRegistered
-		);
+		assert_err!(register(alice, cid, None), Error::<TestRuntime>::ParticipantAlreadyRegistered);
 	});
 }
 
@@ -431,7 +428,12 @@ fn attest_attendee_from_non_registered_participant_fails() {
 		run_to_next_phase();
 		// Attesting
 		assert_err!(
-			EncointerCeremonies::attest_attendees(RuntimeOrigin::signed(eve), cid, 3, vec![alice, ferdie],),
+			EncointerCeremonies::attest_attendees(
+				RuntimeOrigin::signed(eve),
+				cid,
+				3,
+				vec![alice, ferdie],
+			),
 			Error::<TestRuntime>::ParticipantIsNotRegistered
 		);
 	});
@@ -446,7 +448,8 @@ fn attest_attendee_for_alien_participant_fails() {
 		let bootstrappers = vec![alice.clone(), bob.clone(), charlie.clone()];
 		let cid = perform_bootstrapping_ceremony(Some(bootstrappers), 3);
 
-		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice.clone()), cid, None).unwrap();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice.clone()), cid, None)
+			.unwrap();
 
 		register_alice_bob_ferdie(cid);
 		register_charlie_dave_eve(cid);
@@ -647,7 +650,11 @@ fn claim_rewards_works() {
 		// Claiming twice does not work for any of the meetup participants
 		for sender in vec![alice, bob, charlie, dave, ferdie].iter() {
 			assert_err!(
-				EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(sender.clone()), cid, None),
+				EncointerCeremonies::claim_rewards(
+					RuntimeOrigin::signed(sender.clone()),
+					cid,
+					None
+				),
 				Error::<TestRuntime>::RewardsAlreadyIssued
 			);
 		}
@@ -871,14 +878,22 @@ fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_erro
 		}
 
 		// no early claim possible
-		assert!(EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(&alice)), cid, None)
-			.is_err());
+		assert!(EncointerCeremonies::claim_rewards(
+			RuntimeOrigin::signed(account_id(&alice)),
+			cid,
+			None
+		)
+		.is_err());
 		// nothing happens in attesting phase
 		assert!(!IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		run_to_next_phase();
 		// Registering phase
-		assert!(EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(&alice)), cid, None)
-			.is_ok());
+		assert!(EncointerCeremonies::claim_rewards(
+			RuntimeOrigin::signed(account_id(&alice)),
+			cid,
+			None
+		)
+		.is_ok());
 		// in registering phase, the meetup is marked as completed
 		assert!(IssuedRewards::<TestRuntime>::contains_key((cid, cindex), 1));
 		let meetup_result = IssuedRewards::<TestRuntime>::get((cid, cindex), 1);
