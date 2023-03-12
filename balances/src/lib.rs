@@ -20,8 +20,7 @@ pub use crate::weights::WeightInfo;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage, FeeConversionFactorType},
-	communities::CommunityIdentifier,
-	fixed::transcendental::exp,
+	communities::{validate_demurrage, CommunityIdentifier, RangeError},
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -68,7 +67,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// the default demurrage rate applied to community balances
 		#[pallet::constant]
 		type DefaultDemurrage: Get<Demurrage>;
@@ -82,12 +81,13 @@ pub mod pallet {
 
 		type WeightInfo: WeightInfo;
 
-		type CeremonyMaster: EnsureOrigin<Self::Origin>;
+		type CeremonyMaster: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Transfer some balance to another account.
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::transfer(), DispatchClass::Normal, Pays::Yes))]
 		pub fn transfer(
 			origin: OriginFor<T>,
@@ -100,6 +100,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_fee_conversion_factor(), DispatchClass::Normal))]
 		pub fn set_fee_conversion_factor(
 			origin: OriginFor<T>,
@@ -112,6 +113,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::transfer_all(), DispatchClass::Normal))]
 		pub fn transfer_all(
 			origin: OriginFor<T>,
@@ -154,7 +156,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			<FeeConversionFactor<T>>::put(&self.fee_conversion_factor);
+			<FeeConversionFactor<T>>::put(self.fee_conversion_factor);
 		}
 	}
 
@@ -248,25 +250,11 @@ impl<T: Config> Pallet<T> {
 	///     * exp(-1* demurrage_rate_per_block * number_of_blocks_since_last_written)
 	pub(crate) fn apply_demurrage(
 		entry: BalanceEntry<T::BlockNumber>,
-		demurrage: BalanceType,
+		demurrage: Demurrage,
 	) -> BalanceEntry<T::BlockNumber> {
 		let current_block = frame_system::Pallet::<T>::block_number();
-		let elapsed_time_block_number = current_block - entry.last_update;
-		let elapsed_time_u32: u32 = elapsed_time_block_number
-			.try_into()
-			.ok()
-			.expect("blockchain will not exceed 2^32 blocks; qed");
-		let elapsed_time = BalanceType::from_num(elapsed_time_u32);
-		let exponent: BalanceType = -demurrage * elapsed_time;
-		let exp_result: BalanceType = exp(exponent).unwrap();
-		//.expect("demurrage should never overflow");
-		BalanceEntry {
-			principal: entry
-				.principal
-				.checked_mul(exp_result)
-				.expect("demurrage should never overflow"),
-			last_update: current_block,
-		}
+
+		entry.apply_demurrage(demurrage, current_block)
 	}
 
 	/// Create a new account on-chain if it does not exist.
@@ -277,7 +265,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Remove an account from a community
 	fn remove_account(cid: CommunityIdentifier, who: &T::AccountId) -> DispatchResult {
-		ensure!(Balance::<T>::contains_key(cid, &who), Error::<T>::NoAccount);
+		ensure!(Balance::<T>::contains_key(cid, who), Error::<T>::NoAccount);
 		ensure!(
 			Self::balance(cid, who) < T::ExistentialDeposit::get(),
 			Error::<T>::ExistentialDeposit
@@ -382,8 +370,13 @@ impl<T: Config> Pallet<T> {
 		<DemurragePerBlock<T>>::try_get(cid).unwrap_or_else(|_| T::DefaultDemurrage::get())
 	}
 
-	pub fn set_demurrage(cid: &CommunityIdentifier, demurrage: Demurrage) {
-		<DemurragePerBlock<T>>::insert(cid, &demurrage);
+	pub fn set_demurrage(
+		cid: &CommunityIdentifier,
+		demurrage: Demurrage,
+	) -> Result<(), RangeError> {
+		validate_demurrage(&demurrage)?;
+		<DemurragePerBlock<T>>::insert(cid, demurrage);
+		Ok(())
 	}
 
 	pub fn purge_balances(cid: CommunityIdentifier) {

@@ -60,6 +60,10 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		fungible(Pallet::<T>::total_issuance(asset))
 	}
 
+	fn asset_exists(asset: Self::AssetId) -> bool {
+		Pallet::<T>::total_issuance(asset) > 0
+	}
+
 	fn minimum_balance(_asset: Self::AssetId) -> Self::Balance {
 		0
 	}

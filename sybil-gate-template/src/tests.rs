@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use crate::mock::{new_test_ext, Origin, TestRuntime};
+use crate::mock::{new_test_ext, RuntimeOrigin, TestRuntime};
 use frame_support::assert_ok;
 use sp_core::H256;
 use xcm_executor::traits::Convert;
@@ -28,7 +28,7 @@ type SybilGate = crate::Pallet<TestRuntime>;
 fn faucet_works() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(SybilGate::request_personhood_uniqueness_rating(
-			Origin::signed(AccountKeyring::Alice.into()),
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
 			2,
 			1,
 			Default::default(),
@@ -49,7 +49,7 @@ fn faucet_returns_err_if_proof_too_weak() {
 
 		assert_eq!(
 			SybilGate::faucet(
-				Origin::signed(account),
+				RuntimeOrigin::signed(account),
 				request_hash,
 				PersonhoodUniquenessRating::default()
 			)
@@ -66,7 +66,7 @@ fn faucet_returns_err_for_unexpected_request() {
 
 	new_test_ext().execute_with(|| {
 		assert!(SybilGate::faucet(
-			Origin::signed(account),
+			RuntimeOrigin::signed(account),
 			Default::default(),
 			PersonhoodUniquenessRating::default()
 		)

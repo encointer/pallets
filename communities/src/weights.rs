@@ -64,89 +64,89 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn new_community() -> Weight {
-		(8_232_800_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(7 as Weight))
+		Weight::from_ref_time(8_232_800_000)
+			.saturating_add(T::DbWeight::get().reads(5))
+			.saturating_add(T::DbWeight::get().writes(7))
 	}
 	fn add_location() -> Weight {
-		(8_156_200_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(8_156_200_000)
+			.saturating_add(T::DbWeight::get().reads(6))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn remove_location() -> Weight {
-		(49_600_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(49_600_000)
+			.saturating_add(T::DbWeight::get().reads(3))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn update_community_metadata() -> Weight {
-		(26_800_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(26_800_000)
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn update_demurrage() -> Weight {
-		(25_800_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(25_800_000)
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn update_nominal_income() -> Weight {
-		(25_400_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(25_400_000)
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn set_min_solar_trip_time_s() -> Weight {
-		(16_300_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(16_300_000).saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn set_max_speed_mps() -> Weight {
-		(15_500_000 as Weight).saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(15_500_000).saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn purge_community() -> Weight {
-		(18_355_700_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
+		Weight::from_ref_time(18_355_700_000)
+			.saturating_add(T::DbWeight::get().reads(4))
+			.saturating_add(T::DbWeight::get().writes(6))
 	}
 }
 
 // For tests
 impl WeightInfo for () {
 	fn new_community() -> Weight {
-		(8_232_800_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
+		Weight::from_ref_time(8_232_800_000)
+			.saturating_add(RocksDbWeight::get().reads(5))
+			.saturating_add(RocksDbWeight::get().writes(7))
 	}
 	fn add_location() -> Weight {
-		(8_156_200_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(8_156_200_000)
+			.saturating_add(RocksDbWeight::get().reads(6))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn remove_location() -> Weight {
-		(49_600_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(49_600_000)
+			.saturating_add(RocksDbWeight::get().reads(3))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn update_community_metadata() -> Weight {
-		(26_800_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(26_800_000)
+			.saturating_add(RocksDbWeight::get().reads(1))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn update_demurrage() -> Weight {
-		(25_800_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(25_800_000)
+			.saturating_add(RocksDbWeight::get().reads(1))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn update_nominal_income() -> Weight {
-		(25_400_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(25_400_000)
+			.saturating_add(RocksDbWeight::get().reads(1))
+			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn set_min_solar_trip_time_s() -> Weight {
-		(16_300_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(16_300_000).saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn set_max_speed_mps() -> Weight {
-		(15_500_000 as Weight).saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(15_500_000).saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn purge_community() -> Weight {
-		(18_355_700_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(6 as Weight))
+		Weight::from_ref_time(18_355_700_000)
+			.saturating_add(RocksDbWeight::get().reads(4))
+			.saturating_add(RocksDbWeight::get().writes(6))
 	}
 }

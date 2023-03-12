@@ -44,7 +44,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + encointer_communities::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
 	}
 
@@ -55,6 +55,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::create_business(), DispatchClass::Normal, Pays::Yes))]
 		pub fn create_business(
 			origin: OriginFor<T>,
@@ -81,6 +82,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_business(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_business(
 			origin: OriginFor<T>,
@@ -102,6 +104,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::delete_business(), DispatchClass::Normal, Pays::Yes))]
 		pub fn delete_business(
 			origin: OriginFor<T>,
@@ -127,6 +130,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight((<T as Config>::WeightInfo::create_offering(), DispatchClass::Normal, Pays::Yes))]
 		pub fn create_offering(
 			origin: OriginFor<T>,
@@ -154,6 +158,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_offering(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_offering(
 			origin: OriginFor<T>,
@@ -167,7 +172,7 @@ pub mod pallet {
 			let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
 			ensure!(
-				OfferingRegistry::<T>::contains_key(&business_identifier, &oid),
+				OfferingRegistry::<T>::contains_key(&business_identifier, oid),
 				Error::<T>::NonexistentOffering
 			);
 
@@ -178,6 +183,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight((<T as Config>::WeightInfo::delete_offering(), DispatchClass::Normal, Pays::Yes))]
 		pub fn delete_offering(
 			origin: OriginFor<T>,
@@ -190,7 +196,7 @@ pub mod pallet {
 			let business_identifier = BusinessIdentifier::new(cid, sender.clone());
 
 			ensure!(
-				OfferingRegistry::<T>::contains_key(&business_identifier, &oid),
+				OfferingRegistry::<T>::contains_key(&business_identifier, oid),
 				Error::<T>::NonexistentOffering
 			);
 

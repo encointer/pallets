@@ -25,9 +25,8 @@
 
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
-	dispatch::DispatchResult,
+	dispatch::{DispatchClass, DispatchResult},
 	traits::{Get, OnTimestampSet},
-	weights::DispatchClass,
 };
 use log::{info, warn};
 use sp_runtime::traits::{CheckedDiv, One, Saturating, Zero};
@@ -41,7 +40,7 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
+	use super::{DispatchClass, *};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -51,10 +50,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
-		type Event: From<Event> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Required origin to interfere with the scheduling (though can always be Root)
-		type CeremonyMaster: EnsureOrigin<Self::Origin>;
+		type CeremonyMaster: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// Who to inform about ceremony phase change
 		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
@@ -142,7 +141,7 @@ pub mod pallet {
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		fn build(&self) {
-			<CurrentCeremonyIndex<T>>::put(&self.current_ceremony_index);
+			<CurrentCeremonyIndex<T>>::put(self.current_ceremony_index);
 			<CurrentPhase<T>>::put(&self.current_phase);
 
 			self.phase_durations.iter().for_each(|(k, v)| {
@@ -156,6 +155,7 @@ pub mod pallet {
 		/// Manually transition to next phase without affecting the ceremony rhythm
 		///
 		/// May only be called from `T::CeremonyMaster`.
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::next_phase(), DispatchClass::Normal, Pays::Yes))]
 		pub fn next_phase(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
@@ -168,6 +168,7 @@ pub mod pallet {
 		/// Push next phase change by one entire day
 		///
 		/// May only be called from `T::CeremonyMaster`.
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::push_by_one_day(), DispatchClass::Normal, Pays::Yes))]
 		pub fn push_by_one_day(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
@@ -178,6 +179,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_phase_duration(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_phase_duration(
 			origin: OriginFor<T>,
@@ -189,6 +191,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_next_phase_timestamp(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_next_phase_timestamp(
 			origin: OriginFor<T>,

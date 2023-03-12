@@ -122,7 +122,7 @@ where
 	proof
 }
 
-pub fn last_event<T: Config>() -> Option<<T as frame_system::Config>::Event> {
+pub fn last_event<T: Config>() -> Option<<T as frame_system::Config>::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events();
 	if events.len() < 1 {
 		return None
@@ -174,7 +174,7 @@ benchmarks! {
 		where
 		<T as frame_system::Config>::AccountId: ByteArray,
 		<T as Config>::Signature: From<sr25519::Signature>,
-		<T as frame_system::Config>::Event: From<pallet::Event<T>>
+		<T as frame_system::Config>::RuntimeEvent: From<pallet::Event<T>>
 	}
 
 	register_participant {

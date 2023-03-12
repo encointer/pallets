@@ -113,12 +113,12 @@ mod tests {
 	#[test]
 	fn serialize_fixed_works() {
 		assert_eq!(
-			serialize_fixed_point(I64F64::from_num(18.6808776855468714473)),
+			serialize_fixed_point(I64F64::from_num(18.680_877_685_546_87)),
 			"\"18.6808776855468714473\"".to_owned()
 		);
 
 		assert_eq!(
-			serialize_fixed_point(I64F64::from_num(0.6808776855468714473)),
+			serialize_fixed_point(I64F64::from_num(0.680_877_685_546_871_4)),
 			"\"0.6808776855468714473\"".to_owned()
 		);
 
@@ -129,12 +129,12 @@ mod tests {
 	fn deserialize_fixed_works() {
 		assert_eq!(
 			deserialize_fixed_point::<I64F64>("\"18.6808776855468714473\""),
-			I64F64::from_num(18.6808776855468714473)
+			I64F64::from_num(18.680_877_685_546_87)
 		);
 
 		assert_eq!(
 			deserialize_fixed_point::<I64F64>("\"0.6808776855468714473\""),
-			I64F64::from_num(0.6808776855468714473)
+			I64F64::from_num(0.680_877_685_546_871_4)
 		);
 
 		assert_eq!(deserialize_fixed_point::<I64F64>("\"1\""), I64F64::from_num(1));

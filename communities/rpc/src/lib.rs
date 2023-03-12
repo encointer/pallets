@@ -169,7 +169,7 @@ where
 				log::info!("Using cached community list: {:?}", cids);
 				Ok(cids)
 			},
-			None => Err(Error::OffchainStorageNotFound(format!("{:?}", CIDS_KEY)).into()),
+			None => Err(Error::OffchainStorageNotFound(format!("{CIDS_KEY:?}")).into()),
 		}
 	}
 
@@ -192,7 +192,7 @@ where
 				log::info!("Using cached location list with len {}", loc.len());
 				Ok(loc)
 			},
-			None => Err(Error::OffchainStorageNotFound(format!("{:?}", cache_key)).into()),
+			None => Err(Error::OffchainStorageNotFound(format!("{cache_key:?}")).into()),
 		}
 	}
 

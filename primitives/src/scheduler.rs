@@ -22,18 +22,13 @@ use serde::{Deserialize, Serialize};
 
 pub type CeremonyIndexType = u32;
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+#[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CeremonyPhaseType {
+	#[default]
 	Registering,
 	Assigning,
 	Attesting,
-}
-
-impl Default for CeremonyPhaseType {
-	fn default() -> Self {
-		CeremonyPhaseType::Registering
-	}
 }
 
 impl CeremonyPhaseType {

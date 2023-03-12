@@ -58,7 +58,7 @@ pub fn master() -> AccountId {
 }
 
 impl dut::Config for TestRuntime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type CeremonyMaster = EnsureAlice;
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;

@@ -35,7 +35,7 @@ pub fn participant_reputation<AccountId: Encode>(
 	c: CommunityCeremony,
 	account: AccountId,
 ) -> StorageKey {
-	storage_double_map_key("EncointerCeremonies", "ParticipantReputation", &c, &account)
+	storage_double_map_key("EncointerCeremonies", "ParticipantReputation", c, &account)
 }
 
 pub fn storage_key(module: &str, storage_key_name: &str) -> StorageKey {

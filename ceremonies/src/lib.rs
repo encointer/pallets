@@ -41,11 +41,10 @@ use encointer_primitives::{
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
-	dispatch::{DispatchResult, DispatchResultWithPostInfo},
+	dispatch::{DispatchResult, DispatchResultWithPostInfo, Pays},
 	ensure,
 	sp_std::cmp::min,
 	traits::{Get, Randomness},
-	weights::Pays,
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
@@ -62,7 +61,7 @@ mod storage_helper;
 #[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
+	use super::{Pays, *};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -79,9 +78,9 @@ pub mod pallet {
 		+ encointer_balances::Config
 		+ encointer_scheduler::Config
 	{
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		type CeremonyMaster: EnsureOrigin<Self::Origin>;
+		type CeremonyMaster: EnsureOrigin<Self::RuntimeOrigin>;
 
 		type Public: IdentifyAccount<AccountId = Self::AccountId>;
 		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
@@ -101,6 +100,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::register_participant(), DispatchClass::Normal, Pays::Yes))]
 		pub fn register_participant(
 			origin: OriginFor<T>,
@@ -139,7 +139,7 @@ pub mod pallet {
 				);
 				ensure!(
 					Self::participant_reputation(
-						&(p.community_identifier, p.ceremony_index),
+						(p.community_identifier, p.ceremony_index),
 						&p.attendee_public
 					) == Reputation::VerifiedUnlinked,
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed
@@ -150,7 +150,7 @@ pub mod pallet {
 
 				// this reputation must now be burned so it can not be used again
 				<ParticipantReputation<T>>::insert(
-					&(p.community_identifier, p.ceremony_index),
+					(p.community_identifier, p.ceremony_index),
 					&p.attendee_public,
 					Reputation::VerifiedLinked,
 				);
@@ -173,6 +173,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::upgrade_registration(), DispatchClass::Normal, Pays::Yes))]
 		pub fn upgrade_registration(
 			origin: OriginFor<T>,
@@ -208,6 +209,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::unregister_participant(), DispatchClass::Normal, Pays::Yes))]
 		pub fn unregister_participant(
 			origin: OriginFor<T>,
@@ -243,11 +245,11 @@ pub mod pallet {
 				);
 
 				ensure!(
-					Self::participant_reputation(&cc, &sender) == Reputation::VerifiedLinked,
+					Self::participant_reputation(cc, &sender) == Reputation::VerifiedLinked,
 					Error::<T>::ReputationMustBeLinked
 				);
 
-				<ParticipantReputation<T>>::insert(&cc, &sender, Reputation::VerifiedUnlinked);
+				<ParticipantReputation<T>>::insert(cc, &sender, Reputation::VerifiedUnlinked);
 				<ParticipantReputation<T>>::remove((cid, cindex), &sender);
 
 				// invalidate reputation cache
@@ -258,6 +260,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(3)]
 		#[pallet::weight((<T as Config>::WeightInfo::attest_attendees(), DispatchClass::Normal, Pays::Yes))]
 		pub fn attest_attendees(
 			origin: OriginFor<T>,
@@ -293,7 +296,7 @@ pub mod pallet {
 			<MeetupParticipantCountVote<T>>::insert(
 				(cid, cindex),
 				&sender,
-				&number_of_participants_vote,
+				number_of_participants_vote,
 			);
 
 			Self::add_attestations_to_registry(
@@ -308,6 +311,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight((<T as Config>::WeightInfo::endorse_newcomer(), DispatchClass::Normal, Pays::Yes))]
 		pub fn endorse_newcomer(
 			origin: OriginFor<T>,
@@ -350,6 +354,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight((<T as Config>::WeightInfo::claim_rewards(), DispatchClass::Normal, Pays::Yes))]
 		pub fn claim_rewards(
 			origin: OriginFor<T>,
@@ -491,6 +496,7 @@ pub mod pallet {
 			Ok(Pays::No.into())
 		}
 
+		#[pallet::call_index(6)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_inactivity_timeout(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_inactivity_timeout(
 			origin: OriginFor<T>,
@@ -503,6 +509,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(7)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_bootstrapper(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_bootstrapper(
 			origin: OriginFor<T>,
@@ -521,6 +528,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(8)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_endorsement_tickets_per_reputable(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_endorsement_tickets_per_reputable(
 			origin: OriginFor<T>,
@@ -538,6 +546,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(9)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_reputation_lifetime(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_reputation_lifetime(
 			origin: OriginFor<T>,
@@ -550,6 +559,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(10)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_meetup_time_offset(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_meetup_time_offset(
 			origin: OriginFor<T>,
@@ -571,6 +581,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(11)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_time_tolerance(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_time_tolerance(
 			origin: OriginFor<T>,
@@ -583,6 +594,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(12)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_location_tolerance(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_location_tolerance(
 			origin: OriginFor<T>,
@@ -594,7 +606,7 @@ pub mod pallet {
 			Self::deposit_event(Event::LocationToleranceUpdated(location_tolerance));
 			Ok(().into())
 		}
-
+		#[pallet::call_index(13)]
 		#[pallet::weight((<T as Config>::WeightInfo::purge_community_ceremony(), DispatchClass::Normal, Pays::Yes))]
 		pub fn purge_community_ceremony(
 			origin: OriginFor<T>,
@@ -1053,14 +1065,14 @@ pub mod pallet {
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		fn build(&self) {
-			<CeremonyReward<T>>::put(&self.ceremony_reward);
-			<LocationTolerance<T>>::put(&self.location_tolerance);
-			<TimeTolerance<T>>::put(&self.time_tolerance);
-			<InactivityTimeout<T>>::put(&self.inactivity_timeout);
-			<EndorsementTicketsPerBootstrapper<T>>::put(&self.endorsement_tickets_per_bootstrapper);
-			<EndorsementTicketsPerReputable<T>>::put(&self.endorsement_tickets_per_reputable);
-			<ReputationLifetime<T>>::put(&self.reputation_lifetime);
-			<MeetupTimeOffset<T>>::put(&self.meetup_time_offset);
+			<CeremonyReward<T>>::put(self.ceremony_reward);
+			<LocationTolerance<T>>::put(self.location_tolerance);
+			<TimeTolerance<T>>::put(self.time_tolerance);
+			<InactivityTimeout<T>>::put(self.inactivity_timeout);
+			<EndorsementTicketsPerBootstrapper<T>>::put(self.endorsement_tickets_per_bootstrapper);
+			<EndorsementTicketsPerReputable<T>>::put(self.endorsement_tickets_per_reputable);
+			<ReputationLifetime<T>>::put(self.reputation_lifetime);
+			<MeetupTimeOffset<T>>::put(self.meetup_time_offset);
 		}
 	}
 }
@@ -1152,8 +1164,8 @@ impl<T: Config> Pallet<T> {
 				let participant_index = <BootstrapperCount<T>>::get((cid, cindex))
 					.checked_add(1)
 					.ok_or(Error::<T>::RegistryOverflow)?;
-				<BootstrapperRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-				<BootstrapperIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<BootstrapperRegistry<T>>::insert((cid, cindex), participant_index, sender);
+				<BootstrapperIndex<T>>::insert((cid, cindex), sender, participant_index);
 				<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Bootstrapper
 			} else if <encointer_balances::Pallet<T>>::total_issuance(cid) <= 0 {
@@ -1162,25 +1174,25 @@ impl<T: Config> Pallet<T> {
 				let participant_index = <ReputableCount<T>>::get((cid, cindex))
 					.checked_add(1)
 					.ok_or(Error::<T>::RegistryOverflow)?;
-				<ReputableRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-				<ReputableIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<ReputableRegistry<T>>::insert((cid, cindex), participant_index, sender);
+				<ReputableIndex<T>>::insert((cid, cindex), sender, participant_index);
 				<ReputableCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Reputable
 			} else if let Some(endorsed_cindex) = Self::is_endorsed(sender, &(cid, cindex)) {
 				let participant_index = <EndorseeCount<T>>::get((cid, cindex))
 					.checked_add(1)
 					.ok_or(Error::<T>::RegistryOverflow)?;
-				<Endorsees<T>>::remove((cid, endorsed_cindex), &sender);
-				<EndorseeRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-				<EndorseeIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<Endorsees<T>>::remove((cid, endorsed_cindex), sender);
+				<EndorseeRegistry<T>>::insert((cid, cindex), participant_index, sender);
+				<EndorseeIndex<T>>::insert((cid, cindex), sender, participant_index);
 				<EndorseeCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Endorsee
 			} else {
 				let participant_index = <NewbieCount<T>>::get((cid, cindex))
 					.checked_add(1)
 					.ok_or(Error::<T>::RegistryOverflow)?;
-				<NewbieRegistry<T>>::insert((cid, cindex), &participant_index, &sender);
-				<NewbieIndex<T>>::insert((cid, cindex), &sender, &participant_index);
+				<NewbieRegistry<T>>::insert((cid, cindex), participant_index, sender);
+				<NewbieIndex<T>>::insert((cid, cindex), sender, participant_index);
 				<NewbieCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Newbie
 			};
@@ -1242,10 +1254,10 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		sender: &T::AccountId,
 	) -> bool {
-		<BootstrapperIndex<T>>::contains_key((cid, cindex), &sender) ||
-			<ReputableIndex<T>>::contains_key((cid, cindex), &sender) ||
-			<EndorseeIndex<T>>::contains_key((cid, cindex), &sender) ||
-			<NewbieIndex<T>>::contains_key((cid, cindex), &sender)
+		<BootstrapperIndex<T>>::contains_key((cid, cindex), sender) ||
+			<ReputableIndex<T>>::contains_key((cid, cindex), sender) ||
+			<EndorseeIndex<T>>::contains_key((cid, cindex), sender) ||
+			<NewbieIndex<T>>::contains_key((cid, cindex), sender)
 	}
 
 	/// Will burn the `sender`'s newbie tickets if he has some.
@@ -1258,20 +1270,20 @@ impl<T: Config> Pallet<T> {
 		sender: &T::AccountId,
 	) -> Result<(), Error<T>> {
 		if Self::has_reputation(sender, &cid) &&
-			<BurnedReputableNewbieTickets<T>>::get(&(cid, cindex), sender) <
+			<BurnedReputableNewbieTickets<T>>::get((cid, cindex), sender) <
 				Self::endorsement_tickets_per_reputable()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
-			<BurnedReputableNewbieTickets<T>>::mutate(&(cid, cindex), sender, |b| *b += 1);
+			<BurnedReputableNewbieTickets<T>>::mutate((cid, cindex), sender, |b| *b += 1);
 			return Ok(())
 		}
 
-		if <encointer_communities::Pallet<T>>::bootstrappers(&cid).contains(sender) &&
-			<BurnedBootstrapperNewbieTickets<T>>::get(&cid, sender) <
+		if <encointer_communities::Pallet<T>>::bootstrappers(cid).contains(sender) &&
+			<BurnedBootstrapperNewbieTickets<T>>::get(cid, sender) <
 				Self::endorsement_tickets_per_bootstrapper()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
-			<BurnedBootstrapperNewbieTickets<T>>::mutate(&cid, sender, |b| *b += 1);
+			<BurnedBootstrapperNewbieTickets<T>>::mutate(cid, sender, |b| *b += 1);
 			return Ok(())
 		}
 
@@ -1526,16 +1538,16 @@ impl<T: Config> Pallet<T> {
 		community_ceremony: CommunityCeremony,
 		participant: &T::AccountId,
 	) -> Option<ParticipantType> {
-		if <BootstrapperIndex<T>>::contains_key(community_ceremony, &participant) {
+		if <BootstrapperIndex<T>>::contains_key(community_ceremony, participant) {
 			return Some(ParticipantType::Bootstrapper)
 		}
-		if <ReputableIndex<T>>::contains_key(community_ceremony, &participant) {
+		if <ReputableIndex<T>>::contains_key(community_ceremony, participant) {
 			return Some(ParticipantType::Reputable)
 		}
-		if <EndorseeIndex<T>>::contains_key(community_ceremony, &participant) {
+		if <EndorseeIndex<T>>::contains_key(community_ceremony, participant) {
 			return Some(ParticipantType::Endorsee)
 		}
-		if <NewbieIndex<T>>::contains_key(community_ceremony, &participant) {
+		if <NewbieIndex<T>>::contains_key(community_ceremony, participant) {
 			return Some(ParticipantType::Newbie)
 		}
 		None
@@ -1555,7 +1567,7 @@ impl<T: Config> Pallet<T> {
 		let (participant_index, assignment_params) = match participant_type {
 			ParticipantType::Bootstrapper => {
 				let participant_index =
-					Self::bootstrapper_index(community_ceremony, &participant) - 1;
+					Self::bootstrapper_index(community_ceremony, participant) - 1;
 				if participant_index < assignment_count.bootstrappers {
 					(participant_index, assignment.bootstrappers_reputables)
 				} else {
@@ -1563,7 +1575,7 @@ impl<T: Config> Pallet<T> {
 				}
 			},
 			ParticipantType::Reputable => {
-				let participant_index = Self::reputable_index(community_ceremony, &participant) - 1;
+				let participant_index = Self::reputable_index(community_ceremony, participant) - 1;
 				if participant_index < assignment_count.reputables {
 					(
 						participant_index + assignment_count.bootstrappers,
@@ -1575,7 +1587,7 @@ impl<T: Config> Pallet<T> {
 			},
 
 			ParticipantType::Endorsee => {
-				let participant_index = Self::endorsee_index(community_ceremony, &participant) - 1;
+				let participant_index = Self::endorsee_index(community_ceremony, participant) - 1;
 				if participant_index < assignment_count.endorsees {
 					(participant_index, assignment.endorsees)
 				} else {
@@ -1584,7 +1596,7 @@ impl<T: Config> Pallet<T> {
 			},
 
 			ParticipantType::Newbie => {
-				let participant_index = Self::newbie_index(community_ceremony, &participant) - 1;
+				let participant_index = Self::newbie_index(community_ceremony, participant) - 1;
 				if participant_index < assignment_count.newbies {
 					(participant_index, assignment.newbies)
 				} else {
@@ -1628,7 +1640,7 @@ impl<T: Config> Pallet<T> {
 		for p in bootstrappers_reputables {
 			if p < assigned.bootstrappers {
 				//safe; small number per meetup
-				match Self::bootstrapper_registry(community_ceremony, &(p + 1)) {
+				match Self::bootstrapper_registry(community_ceremony, p + 1) {
 					Some(bs) => result.push(bs),
 					None => error!(
 						target: LOG,
@@ -1637,10 +1649,7 @@ impl<T: Config> Pallet<T> {
 				}
 			} else if p < assigned.bootstrappers + assigned.reputables {
 				//safe; small number per meetup
-				match Self::reputable_registry(
-					community_ceremony,
-					&(p - assigned.bootstrappers + 1),
-				) {
+				match Self::reputable_registry(community_ceremony, p - assigned.bootstrappers + 1) {
 					Some(r) => result.push(r),
 					None => error!(
 						target: LOG,
@@ -1656,7 +1665,7 @@ impl<T: Config> Pallet<T> {
 		for p in endorsees {
 			if p < assigned.endorsees {
 				//safe; small number per meetup
-				match Self::endorsee_registry(community_ceremony, &(p + 1)) {
+				match Self::endorsee_registry(community_ceremony, p + 1) {
 					Some(e) => result.push(e),
 					None => error!(
 						target: LOG,
@@ -1672,7 +1681,7 @@ impl<T: Config> Pallet<T> {
 		for p in newbies {
 			if p < assigned.newbies {
 				//safe; small number per meetup
-				match Self::newbie_registry(community_ceremony, &(p + 1)) {
+				match Self::newbie_registry(community_ceremony, p + 1) {
 					Some(n) => result.push(n),
 					None => error!(
 						target: LOG,
@@ -1780,7 +1789,7 @@ impl<T: Config> Pallet<T> {
 		for participant in meetup_participants.iter() {
 			let attestations = match Self::attestation_registry(
 				(&cid, cindex),
-				&Self::attestation_index((cid, cindex), &participant),
+				Self::attestation_index((cid, cindex), participant),
 			) {
 				Some(attestees) => attestees,
 				None => vec![],
@@ -1854,8 +1863,8 @@ impl<T: Config> Pallet<T> {
 			// add new set of attestees
 			<AttestationCount<T>>::insert((cid, cindex), idx);
 		}
-		<AttestationRegistry<T>>::insert((cid, cindex), &idx, &verified_attestees);
-		<AttestationIndex<T>>::insert((cid, cindex), &participant, &idx);
+		<AttestationRegistry<T>>::insert((cid, cindex), idx, &verified_attestees);
+		<AttestationIndex<T>>::insert((cid, cindex), &participant, idx);
 		let verified_count = verified_attestees.len() as u32;
 		debug!(target: LOG, "successfully registered {} attestations", verified_count);
 		Self::deposit_event(Event::AttestationsRegistered(
@@ -1871,7 +1880,7 @@ impl<T: Config> Pallet<T> {
 		let reputation_lifetime = Self::reputation_lifetime();
 		let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		for i in 0..=reputation_lifetime {
-			if Self::participant_reputation(&(*cid, cindex.saturating_sub(i)), participant)
+			if Self::participant_reputation((*cid, cindex.saturating_sub(i)), participant)
 				.is_verified()
 			{
 				return true
@@ -1887,7 +1896,7 @@ impl<T: Config> Pallet<T> {
 		let reputation_lifetime = Self::reputation_lifetime();
 		for i in 0..=reputation_lifetime {
 			let cindex = cc.1.saturating_sub(i);
-			if <Endorsees<T>>::contains_key(&(cc.0, cindex), participant) {
+			if <Endorsees<T>>::contains_key((cc.0, cindex), participant) {
 				return Some(cindex)
 			}
 		}
@@ -1897,7 +1906,7 @@ impl<T: Config> Pallet<T> {
 	#[cfg(any(test, feature = "runtime-benchmarks"))]
 	// only to be used by tests
 	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
-		<ParticipantReputation<T>>::insert(&cidcindex, account, rep);
+		<ParticipantReputation<T>>::insert(cidcindex, account, rep);
 	}
 }
 

@@ -29,7 +29,7 @@ use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::PalletString,
 	communities::{
-		consts::*, validate_demurrage, validate_nominal_income, CommunityIdentifier,
+		consts::*, validate_nominal_income, CommunityIdentifier,
 		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
 		NominalIncome as NominalIncomeType,
 	},
@@ -63,12 +63,12 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config + encointer_scheduler::Config + encointer_balances::Config
 	{
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Required origin for updating a community (though can always be Root).
-		type CommunityMaster: EnsureOrigin<Self::Origin>;
+		type CommunityMaster: EnsureOrigin<Self::RuntimeOrigin>;
 		/// Origin for non destructive actions like adding a community or location
-		type TrustableForNonDestructiveAction: EnsureOrigin<Self::Origin>;
+		type TrustableForNonDestructiveAction: EnsureOrigin<Self::RuntimeOrigin>;
 
 		type WeightInfo: WeightInfo;
 	}
@@ -78,6 +78,7 @@ pub mod pallet {
 		/// Add a new community.
 		///
 		/// May only be called from `T::TrustableForNonDestructiveAction`.
+		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::new_community(), DispatchClass::Normal, Pays::Yes))]
 		pub fn new_community(
 			origin: OriginFor<T>,
@@ -92,9 +93,7 @@ pub mod pallet {
 			community_metadata
 				.validate()
 				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
-			if let Some(d) = demurrage {
-				validate_demurrage(&d).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-			}
+
 			if let Some(i) = nominal_income {
 				validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 			}
@@ -122,18 +121,19 @@ pub mod pallet {
 
 			// insert location into cid -> geohash -> location map
 			locations.push(location);
-			<Locations<T>>::insert(&cid, geo_hash, locations);
+			<Locations<T>>::insert(cid, geo_hash, locations);
 
 			<CommunityIdentifiers<T>>::mutate(|v| v.push(cid));
 
-			<Bootstrappers<T>>::insert(&cid, &bootstrappers);
-			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
+			<Bootstrappers<T>>::insert(cid, &bootstrappers);
+			<CommunityMetadata<T>>::insert(cid, &community_metadata);
 
 			if let Some(d) = demurrage {
 				<encointer_balances::Pallet<T>>::set_demurrage(&cid, d)
+					.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			}
 			if let Some(i) = nominal_income {
-				<NominalIncome<T>>::insert(&cid, i)
+				<NominalIncome<T>>::insert(cid, i)
 			}
 
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
@@ -149,6 +149,7 @@ pub mod pallet {
 		/// May only be called from `T::TrustableForNonDestructiveAction`.
 		///
 		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
+		#[pallet::call_index(1)]
 		#[pallet::weight((<T as Config>::WeightInfo::add_location(), DispatchClass::Normal, Pays::Yes))]
 		pub fn add_location(
 			origin: OriginFor<T>,
@@ -166,12 +167,12 @@ pub mod pallet {
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 			// insert location into locations
-			let mut locations = Self::locations(&cid, &geo_hash);
+			let mut locations = Self::locations(cid, &geo_hash);
 			match locations.binary_search(&location) {
 				Ok(_) => (),
 				Err(index) => {
 					locations.insert(index, location);
-					<Locations<T>>::insert(&cid, &geo_hash, locations);
+					<Locations<T>>::insert(cid, &geo_hash, locations);
 				},
 			}
 			// check if cid is in cids_by_geohash, if not, add it
@@ -195,6 +196,7 @@ pub mod pallet {
 		/// May only be called from `T::CommunityMaster`.
 		///
 		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
+		#[pallet::call_index(2)]
 		#[pallet::weight((<T as Config>::WeightInfo::remove_location(), DispatchClass::Normal, Pays::Yes))]
 		pub fn remove_location(
 			origin: OriginFor<T>,
@@ -220,6 +222,7 @@ pub mod pallet {
 		/// Update the metadata of the community with `cid`.
 		///
 		/// May only be called from `T::CommunityMaster`.
+		#[pallet::call_index(3)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_community_metadata(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
@@ -233,7 +236,7 @@ pub mod pallet {
 				.validate()
 				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
 
-			<CommunityMetadata<T>>::insert(&cid, &community_metadata);
+			<CommunityMetadata<T>>::insert(cid, &community_metadata);
 
 			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
@@ -244,6 +247,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(4)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_demurrage(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_demurrage(
 			origin: OriginFor<T>,
@@ -253,10 +257,9 @@ pub mod pallet {
 			T::CommunityMaster::ensure_origin(origin)?;
 
 			Self::ensure_cid_exists(&cid)?;
-			validate_demurrage(&demurrage).map_err(|_| <Error<T>>::InvalidDemurrage)?;
-			Self::ensure_cid_exists(&cid)?;
 
-			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage);
+			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
+				.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
 			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
@@ -264,6 +267,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(5)]
 		#[pallet::weight((<T as Config>::WeightInfo::update_nominal_income(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_nominal_income(
 			origin: OriginFor<T>,
@@ -277,7 +281,7 @@ pub mod pallet {
 				.map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 			Self::ensure_cid_exists(&cid)?;
 
-			<NominalIncome<T>>::insert(&cid, &nominal_income);
+			<NominalIncome<T>>::insert(cid, nominal_income);
 
 			info!(target: LOG, " updated nominal income for cid: {:?}", cid);
 			Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
@@ -285,6 +289,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(6)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_min_solar_trip_time_s(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_min_solar_trip_time_s(
 			origin: OriginFor<T>,
@@ -297,6 +302,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(7)]
 		#[pallet::weight((<T as Config>::WeightInfo::set_max_speed_mps(), DispatchClass::Normal, Pays::Yes))]
 		pub fn set_max_speed_mps(
 			origin: OriginFor<T>,
@@ -309,6 +315,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(8)]
 		#[pallet::weight((<T as Config>::WeightInfo::purge_community(), DispatchClass::Normal, Pays::Yes))]
 		pub fn purge_community(
 			origin: OriginFor<T>,
@@ -437,8 +444,8 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
-			<MinSolarTripTimeS<T>>::put(&self.min_solar_trip_time_s);
-			<MaxSpeedMps<T>>::put(&self.max_speed_mps);
+			<MinSolarTripTimeS<T>>::put(self.min_solar_trip_time_s);
+			<MaxSpeedMps<T>>::put(self.max_speed_mps);
 		}
 	}
 }
@@ -446,12 +453,12 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	fn remove_location_intern(cid: CommunityIdentifier, location: Location, geo_hash: GeoHash) {
 		//remove location from locations(cid,geohash)
-		let mut locations = Self::locations(&cid, &geo_hash);
+		let mut locations = Self::locations(cid, &geo_hash);
 		let mut locations_len = 0;
 		if let Ok(index) = locations.binary_search(&location) {
 			locations.remove(index);
 			locations_len = locations.len();
-			<Locations<T>>::insert(&cid, &geo_hash, locations);
+			<Locations<T>>::insert(cid, &geo_hash, locations);
 		}
 		// if the list from above is now empty (community has no more locations in this bucket)
 		// remove cid from cids_by_geohash(geohash)
@@ -467,7 +474,7 @@ impl<T: Config> Pallet<T> {
 
 	pub fn remove_community(cid: CommunityIdentifier) {
 		info!(target: LOG, "removing community {:?}", cid);
-		for (geo_hash, locations) in <Locations<T>>::iter_prefix(&cid) {
+		for (geo_hash, locations) in <Locations<T>>::iter_prefix(cid) {
 			for location in locations {
 				Self::remove_location_intern(cid, location, geo_hash.clone());
 			}
@@ -490,7 +497,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn insert_bootstrappers(cid: CommunityIdentifier, bootstrappers: Vec<T::AccountId>) {
-		<Bootstrappers<T>>::insert(&cid, &bootstrappers);
+		<Bootstrappers<T>>::insert(cid, &bootstrappers);
 	}
 
 	fn solar_trip_time(from: &Location, to: &Location) -> u32 {
@@ -640,7 +647,7 @@ impl<T: Config> Pallet<T> {
 
 		for bucket in relevant_buckets {
 			for cid in Self::cids_by_geohash(&bucket) {
-				result.append(&mut Self::locations(&cid, &bucket).clone());
+				result.append(&mut Self::locations(cid, &bucket).clone());
 			}
 		}
 		Ok(result)
@@ -678,7 +685,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn get_locations(cid: &CommunityIdentifier) -> Vec<Location> {
-		<Locations<T>>::iter_prefix_values(&cid)
+		<Locations<T>>::iter_prefix_values(cid)
 			.reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect())
 			.unwrap()
 	}
