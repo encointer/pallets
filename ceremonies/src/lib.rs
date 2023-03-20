@@ -281,7 +281,6 @@ pub mod pallet {
 			let (cindex, meetup_index, meetup_participants, _meetup_location, _meetup_time) =
 				Self::gather_meetup_data(&cid, &sender)?;
 
-			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			ensure!(
 				attestations.len() < meetup_participants.len(),
 				Error::<T>::TooManyAttestations
@@ -677,9 +676,7 @@ pub mod pallet {
 		/// meetup time calculation failed
 		MeetupTimeCalculationError,
 		/// no valid claims were supplied
-		NoValidClaims,
-		/// the action can only be performed during REGISTERING phase
-		RegisteringPhaseRequired,
+		NoValidAttestations,
 		/// the action can only be performed during ATTESTING phase
 		AttestationPhaseRequired,
 		/// the action can only be performed during REGISTERING or ATTESTING phase
@@ -694,12 +691,8 @@ pub mod pallet {
 		WrongProofSubject,
 		/// former attendance has not been verified or has already been linked to other account
 		AttendanceUnverifiedOrAlreadyUsed,
-		/// origin not part of this meetup
-		OriginNotParticipant,
 		/// can't have more attestations than other meetup participants
 		TooManyAttestations,
-		/// can't have more claims than other meetup participants
-		TooManyClaims,
 		/// sender has run out of newbie tickets
 		NoMoreNewbieTickets,
 		/// newbie is already endorsed
@@ -732,8 +725,6 @@ pub mod pallet {
 		GetMeetupParticipantsError,
 		/// index out of bounds while validating the meetup
 		MeetupValidationIndexOutOfBounds,
-		/// Attestations beyond time tolerance
-		AttestationsBeyondTimeTolerance,
 		/// Not possible to pay rewards in attestations phase
 		EarlyRewardsNotPossible,
 		/// Only newbies can upgrade their registration
@@ -1859,7 +1850,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		if verified_attestees.is_empty() {
-			return Err(<Error<T>>::NoValidClaims)
+			return Err(<Error<T>>::NoValidAttestations)
 		}
 
 		let count = <AttestationCount<T>>::get((cid, cindex));
