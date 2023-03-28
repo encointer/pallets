@@ -91,7 +91,7 @@ where
 		at: Option<Block::Hash>,
 	) -> RpcResult<FeeDetails<NumberOrHex>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let encoded_len = encoded_xt.len() as u32;
 
@@ -102,7 +102,7 @@ where
 				Some(format!("{e:?}")),
 			))
 		})?;
-		let fee_details = api.query_fee_details(&at, uxt, encoded_len).map_err(|e| {
+		let fee_details = api.query_fee_details(at, uxt, encoded_len).map_err(|e| {
 			CallError::Custom(ErrorObject::owned(
 				Error::RuntimeError.into(),
 				"Unable to query fee details.",
@@ -123,7 +123,7 @@ where
 		Ok(FeeDetails {
 			inclusion_fee: if let Some(inclusion_fee) = fee_details.inclusion_fee {
 				let base_fee = api
-					.balance_to_asset_balance(&at, inclusion_fee.base_fee, asset_id)
+					.balance_to_asset_balance(at, inclusion_fee.base_fee, asset_id)
 					.map_err(|e| {
 						runtime_api_error_into_rpc_error(e, "Unable to query fee details")
 					})?
@@ -132,7 +132,7 @@ where
 					})?;
 
 				let len_fee = api
-					.balance_to_asset_balance(&at, inclusion_fee.len_fee, asset_id)
+					.balance_to_asset_balance(at, inclusion_fee.len_fee, asset_id)
 					.map_err(|e| {
 						runtime_api_error_into_rpc_error(e, "Unable to query fee details")
 					})?
@@ -141,7 +141,7 @@ where
 					})?;
 
 				let adjusted_weight_fee = api
-					.balance_to_asset_balance(&at, inclusion_fee.adjusted_weight_fee, asset_id)
+					.balance_to_asset_balance(at, inclusion_fee.adjusted_weight_fee, asset_id)
 					.map_err(|e| {
 						runtime_api_error_into_rpc_error(e, "Unable to query fee details")
 					})?

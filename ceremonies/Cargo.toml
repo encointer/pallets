@@ -5,7 +5,9 @@ name = "pallet-encointer-ceremonies"
 version = "1.2.0"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+    "derive",
+] }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false }
 
@@ -31,14 +33,13 @@ frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/parityte
 sp-application-crypto = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v0.9.37" }
 
 [dev-dependencies]
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 approx = "0.5.1"
 itertools = "0.10.3"
 rstest = "0.12.0"
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-keystore = { version = "0.13.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 test-utils = { path = "../test-utils" }
-
 [features]
 default = ["std"]
 std = [
@@ -63,6 +64,4 @@ std = [
 
 runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto"]
 
-try-runtime = [
-    "frame-system/try-runtime",
-]
+try-runtime = ["frame-system/try-runtime"]

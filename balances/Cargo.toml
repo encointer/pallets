@@ -1,12 +1,16 @@
 [package]
 name = "pallet-encointer-balances"
 version = "1.2.0"
-authors = ["encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>"]
+authors = [
+    "encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>",
+]
 edition = "2021"
 
 [dependencies]
 approx = { version = "0.5.1", optional = true }
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+    "derive",
+] }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false }
 
@@ -47,6 +51,4 @@ std = [
 
 runtime-benchmarks = ["frame-benchmarking", "approx"]
 
-try-runtime = [
-    "frame-system/try-runtime",
-]
+try-runtime = ["frame-system/try-runtime"]

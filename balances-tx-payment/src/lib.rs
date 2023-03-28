@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::fungibles;
+use frame_support::traits::{fungible::Balanced, fungibles};
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_transaction_payment::OnChargeTransaction;
 
@@ -45,7 +45,7 @@ where
 	T: frame_system::Config + pallet_encointer_balances::Config,
 {
 	fn handle_credit(
-		_credit: fungibles::CreditOf<AccountIdOf<T>, pallet_encointer_balances::Pallet<T>>,
+		_credit: fungibles::Credit<AccountIdOf<T>, pallet_encointer_balances::Pallet<T>>,
 	) {
 		// just doing nothing with the credit, will use the default implementation
 		// of fungibles an decrease total issuance.

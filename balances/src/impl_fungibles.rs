@@ -18,22 +18,25 @@ use super::*;
 use encointer_primitives::{balances::EncointerBalanceConverter, common::UnboundedPalletString};
 use frame_support::{
 	inherent::Vec,
-	traits::tokens::{DepositConsequence, WithdrawConsequence},
+	traits::{
+		fungibles::{DecreaseIssuance, IncreaseIssuance},
+		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
+	},
 };
 use sp_runtime::traits::{Convert, Zero};
 
 // Implementation of this trait is just to satisfy the trait bounds of the
 // `pallet-asset-tx-payment`. It is not used in our case.
-impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
-	fn name(_asset: &Self::AssetId) -> Vec<u8> {
-		UnboundedPalletString::from("Encointer").into()
+impl<T: Config> fungibles::metadata::Inspect<T::AccountId> for Pallet<T> {
+	fn name(_asset: Self::AssetId) -> Vec<u8> {
+		PalletString::from("Encointer").into()
 	}
 
-	fn symbol(_asset: &Self::AssetId) -> Vec<u8> {
-		UnboundedPalletString::from("ETR").into()
+	fn symbol(_asset: Self::AssetId) -> Vec<u8> {
+		PalletString::from("ETR").into()
 	}
 
-	fn decimals(_asset: &Self::AssetId) -> u8 {
+	fn decimals(_asset: Self::AssetId) -> u8 {
 		// Our BalanceType is I64F64 which is base2 fixpoint and therefore doesn't use decimals (which would be base10 fixpoint)
 		// but in order to comply with this trait we need to define decimals nevertheless.
 		// the smallest possible number is 2^-64 = 5.42101086242752217003726400434970855712890625 × 10^-20
@@ -72,10 +75,15 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		fungible(Pallet::<T>::balance(asset, who))
 	}
 
+	fn total_balance(asset: Self::AssetId, who: &T::AccountId) -> Self::Balance {
+		fungible(Pallet::<T>::balance(asset, who))
+	}
+
 	fn reducible_balance(
 		asset: Self::AssetId,
 		who: &T::AccountId,
-		_keep_alive: bool,
+		preservation: Preservation,
+		force: Fortitude,
 	) -> Self::Balance {
 		fungible(Pallet::<T>::balance(asset, who))
 	}
@@ -84,7 +92,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		asset: Self::AssetId,
 		who: &T::AccountId,
 		amount: Self::Balance,
-		_mint: bool,
+		provenance: Provenance,
 	) -> DepositConsequence {
 		if !<TotalIssuance<T>>::contains_key(asset) {
 			return DepositConsequence::UnknownAsset
@@ -129,25 +137,25 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		let balance = fungible(Pallet::<T>::balance(asset, who));
 
 		if balance.checked_sub(amount).is_none() {
-			return NoFunds
+			return BalanceLow
 		}
 		Success
 	}
 }
 
 impl<T: Config> fungibles::Unbalanced<T::AccountId> for Pallet<T> {
-	fn set_balance(
+	fn write_balance(
 		asset: Self::AssetId,
 		who: &T::AccountId,
 		amount: Self::Balance,
-	) -> DispatchResult {
+	) -> Result<Option<Self::Balance>, DispatchError> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		<Balance<T>>::insert(
 			asset,
 			who,
 			BalanceEntry { principal: balance_type(amount), last_update: current_block },
 		);
-		Ok(())
+		Ok(Some(amount))
 	}
 
 	fn set_total_issuance(asset: Self::AssetId, amount: Self::Balance) {
@@ -157,4 +165,11 @@ impl<T: Config> fungibles::Unbalanced<T::AccountId> for Pallet<T> {
 			BalanceEntry { principal: balance_type(amount), last_update: current_block },
 		);
 	}
+
+	fn handle_dust(dust: fungibles::Dust<T::AccountId, Self>) {}
+}
+
+impl<T: Config> fungibles::Balanced<T::AccountId> for Pallet<T> {
+	type OnDropDebt = IncreaseIssuance<T::AccountId, Self>;
+	type OnDropCredit = DecreaseIssuance<T::AccountId, Self>;
 }

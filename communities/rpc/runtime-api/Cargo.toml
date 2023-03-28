@@ -14,8 +14,4 @@ sp-std = { version = "5.0.0", default-features = false, git = "https://github.co
 
 [features]
 default = ["std"]
-std = [
-    "sp-api/std",
-    "sp-std/std",
-    "encointer-primitives/std",
-]
+std = ["sp-api/std", "sp-std/std", "encointer-primitives/std"]

@@ -6,7 +6,11 @@ version = "1.0.0"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
-jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
+jsonrpsee = { version = "0.16.2", features = [
+    "client-core",
+    "server",
+    "macros",
+] }
 log = "0.4.14"
 parking_lot = "0.12.0"
 thiserror = "1.0.31"

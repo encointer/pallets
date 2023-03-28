@@ -6,12 +6,20 @@ version = "1.2.0"
 
 [dependencies]
 bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "max-encoded-len"] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+    "derive",
+    "max-encoded-len",
+] }
 crc = "2.1.0"
 geohash = { tag = "v0.13.0", git = "https://github.com/encointer/geohash" }
 log = { version = "0.4.14", default-features = false }
-scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
-serde = { version = "1.0.136", optional = true, default-features = false, features = ["derive", "alloc"] }
+scale-info = { version = "2.0.1", default-features = false, features = [
+    "derive",
+] }
+serde = { version = "1.0.136", optional = true, default-features = false, features = [
+    "derive",
+    "alloc",
+] }
 
 # local deps
 ep-core = { path = "core", default-features = false }
@@ -30,13 +38,8 @@ test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std", "serde_derive"]
-full_crypto = [
-    "sp-core/full_crypto",
-]
-serde_derive = [
-    "ep-core/serde_derive",
-    "serde",
-]
+full_crypto = ["sp-core/full_crypto"]
+serde_derive = ["ep-core/serde_derive", "serde"]
 std = [
     "bs58/std",
     "codec/std",

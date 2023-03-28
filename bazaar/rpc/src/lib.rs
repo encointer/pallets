@@ -78,9 +78,9 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<Business<AccountId>>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		Ok(api
-			.get_businesses(&at, &cid)
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		return Ok(api
+			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
 			.into_iter()
 			.map(|(controller, bd)| Business::new(controller, bd))
@@ -93,12 +93,12 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		Ok(api
-			.get_businesses(&at, &cid)
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		return Ok(api
+			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
-			.into_iter()
-			.flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0)))
+			.iter()
+			.flat_map(|bid| api.get_offerings(at, &BusinessIdentifier::new(cid, bid.0.clone())))
 			.flatten()
 			.collect())
 	}
@@ -109,8 +109,8 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
-		Ok(api.get_offerings(&at, &bid).map_err(|e| Error::Runtime(e.into()))?)
+		Ok(api.get_offerings(at, &bid).map_err(|e| Error::Runtime(e.into()))?)
 	}
 }
