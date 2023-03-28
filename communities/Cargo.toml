@@ -15,16 +15,16 @@ encointer-balances = { package = "pallet-encointer-balances", path = "../balance
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v0.9.37" }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "master" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "master" }
 
 [dev-dependencies]
 approx = "0.5.1"
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 test-utils = {path ="../test-utils" }
 
 [features]

@@ -28,7 +28,7 @@ use polkadot_parachain::primitives::Sibling;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
 use std::cell::RefCell;
-use xcm::v1::NetworkId;
+use xcm::v3::NetworkId;
 use xcm_builder::SiblingParachainConvertsVia;
 
 // convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.

@@ -120,8 +120,8 @@ macro_rules! refresh_cache {
 	($self:ident, $at:ident) => {
 		log::info!("refreshing cache.....");
 		let api = $self.client.runtime_api();
-		let at = BlockId::hash($at.unwrap_or_else(|| $self.client.info().best_hash));
-		let cids = api.get_cids(&at).map_err(|e| Error::Runtime(e.into()))?;
+		let at = $at.unwrap_or_else(|| $self.client.info().best_hash);
+		let cids = api.get_cids(at).map_err(|e| Error::Runtime(e.into()))?;
 		let mut cid_names: Vec<CidName> = vec![];
 
 		for cid in cids.iter() {
@@ -135,7 +135,7 @@ macro_rules! refresh_cache {
 
 		for cid in cids.iter() {
 			let cache_key = &(CIDS_KEY, cid).encode()[..];
-			let loc = api.get_locations(&at, &cid).map_err(|e| Error::Runtime(e.into()))?;
+			let loc = api.get_locations(at, &cid).map_err(|e| Error::Runtime(e.into()))?;
 
 			$self.set_storage(cache_key, &loc);
 		}
@@ -204,8 +204,8 @@ where
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		Ok(api.get_all_balances(&at, &account).map_err(|e| Error::Runtime(e.into()))?)
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		Ok(api.get_all_balances(at, &account).map_err(|e| Error::Runtime(e.into()))?)
 	}
 }
 

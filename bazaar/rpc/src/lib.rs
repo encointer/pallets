@@ -82,9 +82,9 @@ where
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 		return Ok(api
-			.get_businesses(&at, &cid)
+			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
 			.iter()
 			.map(|bid| bid.1.clone())
@@ -99,12 +99,12 @@ where
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 		return Ok(api
-			.get_businesses(&at, &cid)
+			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
 			.iter()
-			.flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0.clone())))
+			.flat_map(|bid| api.get_offerings(at, &BusinessIdentifier::new(cid, bid.0.clone())))
 			.flatten()
 			.collect())
 	}
@@ -117,8 +117,8 @@ where
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
-		Ok(api.get_offerings(&at, &bid).map_err(|e| Error::Runtime(e.into()))?)
+		Ok(api.get_offerings(at, &bid).map_err(|e| Error::Runtime(e.into()))?)
 	}
 }

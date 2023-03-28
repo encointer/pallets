@@ -21,7 +21,7 @@ use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash};
 use sp_std::vec::Vec;
 use xcm::{
-	opaque::v1::{Junction::Parachain, MultiLocation},
+	opaque::v3::{Junction::Parachain, MultiLocation},
 	prelude::X1,
 };
 
