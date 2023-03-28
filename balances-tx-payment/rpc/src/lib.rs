@@ -32,7 +32,6 @@ use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::{
-	generic::BlockId,
 	traits::{Block as BlockT, MaybeDisplay},
 };
 use std::sync::Arc;
