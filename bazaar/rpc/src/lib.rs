@@ -19,7 +19,7 @@ use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use sc_rpc::DenyUnsafe;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
 use encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;

@@ -23,7 +23,7 @@ use sp_api::{
 	Decode, Encode, ProvideRuntimeApi,
 };
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
 use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
