@@ -82,8 +82,8 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 	fn reducible_balance(
 		asset: Self::AssetId,
 		who: &T::AccountId,
-		preservation: Preservation,
-		force: Fortitude,
+		_preservation: Preservation,
+		_force: Fortitude,
 	) -> Self::Balance {
 		fungible(Pallet::<T>::balance(asset, who))
 	}
@@ -92,7 +92,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		asset: Self::AssetId,
 		who: &T::AccountId,
 		amount: Self::Balance,
-		provenance: Provenance,
+		_provenance: Provenance,
 	) -> DepositConsequence {
 		if !<TotalIssuance<T>>::contains_key(asset) {
 			return DepositConsequence::UnknownAsset
@@ -166,7 +166,7 @@ impl<T: Config> fungibles::Unbalanced<T::AccountId> for Pallet<T> {
 		);
 	}
 
-	fn handle_dust(dust: fungibles::Dust<T::AccountId, Self>) {}
+	fn handle_dust(_dust: fungibles::Dust<T::AccountId, Self>) {}
 }
 
 impl<T: Config> fungibles::Balanced<T::AccountId> for Pallet<T> {
