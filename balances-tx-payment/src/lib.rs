@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::{fungibles};
+use frame_support::traits::fungibles;
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_transaction_payment::OnChargeTransaction;
 
