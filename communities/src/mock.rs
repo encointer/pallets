@@ -17,7 +17,7 @@
 //! Mock runtime for the encointer_communities module
 
 pub use crate as dut;
-use frame_support::pallet_prelude::GenesisBuild;
+use frame_support::{pallet_prelude::GenesisBuild, traits::ConstU32};
 use test_utils::*;
 
 use encointer_primitives::scheduler::CeremonyPhaseType;
@@ -48,6 +48,7 @@ impl dut::Config for TestRuntime {
 	type CommunityMaster = EnsureAlice;
 	type TrustableForNonDestructiveAction = EnsureAlice;
 	type WeightInfo = ();
+	type MaxCommunityIdentifiers = ConstU32<100000>;
 }
 
 // boilerplate

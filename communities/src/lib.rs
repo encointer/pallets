@@ -54,6 +54,8 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub (super) trait Store)]
 	#[pallet::without_storage_info]
@@ -71,6 +73,9 @@ pub mod pallet {
 		type TrustableForNonDestructiveAction: EnsureOrigin<Self::RuntimeOrigin>;
 
 		type WeightInfo: WeightInfo;
+
+		#[pallet::constant]
+		type MaxCommunityIdentifiers: Get<u32>;
 	}
 
 	#[pallet::call]
@@ -123,7 +128,8 @@ pub mod pallet {
 			locations.push(location);
 			<Locations<T>>::insert(cid, geo_hash, locations);
 
-			<CommunityIdentifiers<T>>::mutate(|v| v.push(cid));
+			CommunityIdentifiers::<T>::try_append(cid)
+				.map_err(|_| Error::<T>::TooManyCommunityIdentifiers)?;
 
 			<Bootstrappers<T>>::insert(cid, &bootstrappers);
 			<CommunityMetadata<T>>::insert(cid, &community_metadata);
@@ -378,6 +384,8 @@ pub mod pallet {
 		BadOrigin,
 		/// Locations can only be added in Registration Phase
 		RegistrationPhaseRequired,
+		/// CommunityIdentifiers BoundedVec is full
+		TooManyCommunityIdentifiers,
 	}
 
 	#[pallet::storage]
@@ -405,7 +413,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn community_identifiers)]
 	pub(super) type CommunityIdentifiers<T: Config> =
-		StorageValue<_, Vec<CommunityIdentifier>, ValueQuery>;
+		StorageValue<_, BoundedVec<CommunityIdentifier, T::MaxCommunityIdentifiers>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn community_metadata)]
@@ -676,7 +684,7 @@ impl<T: Config> Pallet<T> {
 	// The methods below are for the runtime api
 
 	pub fn get_cids() -> Vec<CommunityIdentifier> {
-		Self::community_identifiers()
+		Self::community_identifiers().to_vec()
 	}
 
 	pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
@@ -712,6 +720,8 @@ mod weights;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+mod migrations;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;

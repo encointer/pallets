@@ -1917,7 +1917,7 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 				let inactives = Self::update_inactivity_counters(
 					<encointer_scheduler::Pallet<T>>::current_ceremony_index().saturating_sub(1),
 					Self::inactivity_timeout(),
-					<encointer_communities::Pallet<T>>::community_identifiers(),
+					<encointer_communities::Pallet<T>>::community_identifiers().to_vec(),
 				);
 				for inactive in inactives {
 					Self::purge_community(inactive);
