@@ -48,7 +48,10 @@ impl dut::Config for TestRuntime {
 	type CommunityMaster = EnsureAlice;
 	type TrustableForNonDestructiveAction = EnsureAlice;
 	type WeightInfo = ();
-	type MaxCommunityIdentifiers = ConstU32<100000>;
+	type MaxCommunityIdentifiers = ConstU32<10>;
+	type MaxBootstrappers = ConstU32<10>;
+	type MaxLocationsPerGeohash = ConstU32<10>;
+	type MaxCommunityIdentifiersPerGeohash = ConstU32<10>;
 }
 
 // boilerplate
