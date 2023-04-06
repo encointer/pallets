@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::common::FromStr as CrateFromStr;
 use bs58;
 use codec::{Decode, Encode, MaxEncodedLen};
 use crc::{Crc, CRC_32_CKSUM};
@@ -32,7 +33,8 @@ use ep_core::serde::{serialize_array, serialize_fixed};
 use crate::{
 	balances::Demurrage,
 	common::{
-		validate_ascii, validate_ipfs_cid, AsByteOrNoop, IpfsCid, IpfsValidationError, PalletString,
+		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, BoundedPalletString,
+		IpfsCid, IpfsValidationError, PalletString,
 	},
 };
 
@@ -243,6 +245,22 @@ pub struct CommunityMetadata {
 	pub url: Option<PalletString>,
 }
 
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct BoundedCommunityMetadata {
+	/// utf8 encoded name
+	pub name: BoundedPalletString,
+	/// utf8 encoded abbreviation of the name
+	pub symbol: BoundedPalletString,
+	/// IPFS cid to assets necessary for community branding
+	pub assets: BoundedIpfsCid,
+	/// ipfs cid for style resources
+	pub theme: Option<BoundedIpfsCid>,
+	/// optional link to a community site
+	pub url: Option<BoundedPalletString>,
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -257,15 +275,15 @@ impl CidName {
 	}
 }
 
-impl CommunityMetadata {
+impl BoundedCommunityMetadata {
 	pub fn new(
-		name: PalletString,
-		symbol: PalletString,
-		assets: IpfsCid,
-		theme: Option<IpfsCid>,
-		url: Option<PalletString>,
-	) -> Result<CommunityMetadata, CommunityMetadataError> {
-		let meta = CommunityMetadata { name, symbol, assets, theme, url };
+		name: BoundedPalletString,
+		symbol: BoundedPalletString,
+		assets: BoundedIpfsCid,
+		theme: Option<BoundedIpfsCid>,
+		url: Option<BoundedPalletString>,
+	) -> Result<BoundedCommunityMetadata, CommunityMetadataError> {
+		let meta = BoundedCommunityMetadata { name, symbol, assets, theme, url };
 		match meta.validate() {
 			Ok(()) => Ok(meta),
 			Err(e) => Err(e),
@@ -301,7 +319,26 @@ impl CommunityMetadata {
 				return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8))
 			}
 		}
+
+		if let Some(t) = &self.theme {
+			validate_ipfs_cid(t).map_err(CommunityMetadataError::InvalidIpfsCid)?;
+		}
+
 		Ok(())
+	}
+}
+
+impl Default for BoundedCommunityMetadata {
+	/// Default implementation, which passes `self::validate()` for easy pallet testing
+	fn default() -> Self {
+		BoundedCommunityMetadata {
+			name: BoundedPalletString::from_str("Default").unwrap(),
+			symbol: BoundedPalletString::from_str("DEF").unwrap(),
+			assets: BoundedPalletString::from_str("Defau1tCidThat1s46Characters1nLength1111111111")
+				.unwrap(),
+			theme: None,
+			url: Some(BoundedPalletString::from_str("DefaultUrl").unwrap()),
+		}
 	}
 }
 
@@ -376,10 +413,11 @@ pub mod consts {
 mod tests {
 	use crate::{
 		bs58_verify::Bs58Error,
-		common::IpfsValidationError,
+		common::{FromStr as CrateFromStr, IpfsValidationError},
 		communities::{
-			validate_demurrage, validate_nominal_income, CommunityIdentifier, CommunityMetadata,
-			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, RangeError,
+			validate_demurrage, validate_nominal_income, BoundedCommunityMetadata,
+			BoundedPalletString, CommunityIdentifier, CommunityMetadataError, Degree, Demurrage,
+			Location, NominalIncome, RangeError,
 		},
 	};
 	use sp_std::str::FromStr;
@@ -400,19 +438,23 @@ mod tests {
 
 	#[test]
 	fn validate_metadata_works() {
-		assert_eq!(CommunityMetadata::default().validate(), Ok(()));
+		assert_eq!(BoundedCommunityMetadata::default().validate(), Ok(()));
 	}
 
 	#[test]
 	fn validate_metadata_fails_for_invalid_ascii() {
-		let meta = CommunityMetadata { name: "€".into(), ..Default::default() };
+		let meta = BoundedCommunityMetadata {
+			name: BoundedPalletString::from_str("€").unwrap(),
+			..Default::default()
+		};
 		assert_eq!(meta.validate(), Err(CommunityMetadataError::InvalidAscii(0)));
 	}
 
 	#[test]
 	fn validate_metadata_fails_for_invalid_assets_cid() {
-		let meta = CommunityMetadata {
-			assets: "IhaveCorrectLengthButWrongSymbols1111111111111".into(),
+		let meta = BoundedCommunityMetadata {
+			assets: BoundedPalletString::from_str("IhaveCorrectLengthButWrongSymbols1111111111111")
+				.unwrap(),
 			..Default::default()
 		};
 		assert_eq!(

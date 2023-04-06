@@ -191,11 +191,16 @@ macro_rules! impl_encointer_balances {
 #[macro_export]
 macro_rules! impl_encointer_communities {
 	($t:ident) => {
+		use sp_core::ConstU32;
 		impl encointer_communities::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CommunityMaster = EnsureAlice;
 			type TrustableForNonDestructiveAction = EnsureAlice;
 			type WeightInfo = ();
+			type MaxCommunityIdentifiers = ConstU32<10>;
+			type MaxBootstrappers = ConstU32<10>;
+			type MaxLocationsPerGeohash = ConstU32<10>;
+			type MaxCommunityIdentifiersPerGeohash = ConstU32<10>;
 		}
 	};
 }

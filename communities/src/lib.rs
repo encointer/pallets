@@ -27,9 +27,9 @@ use codec::Encode;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
-	common::PalletString,
+	common::BoundedPalletString,
 	communities::{
-		consts::*, validate_nominal_income, CommunityIdentifier,
+		consts::*, validate_nominal_income, BoundedCommunityMetadata, CommunityIdentifier,
 		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
 		NominalIncome as NominalIncomeType,
 	},
@@ -59,7 +59,6 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::generate_store(pub (super) trait Store)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -99,7 +98,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			location: Location,
 			bootstrappers: Vec<T::AccountId>,
-			community_metadata: CommunityMetadataType,
+			community_metadata: BoundedCommunityMetadata,
 			demurrage: Option<Demurrage>,
 			nominal_income: Option<NominalIncomeType>,
 		) -> DispatchResultWithPostInfo {
@@ -253,7 +252,7 @@ pub mod pallet {
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
-			community_metadata: CommunityMetadataType,
+			community_metadata: BoundedCommunityMetadata,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 
@@ -454,7 +453,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn community_metadata)]
 	pub(super) type CommunityMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, CommunityIdentifier, CommunityMetadataType, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, CommunityIdentifier, BoundedCommunityMetadata, ValueQuery>;
 
 	/// Amount of UBI to be paid for every attended ceremony.
 	#[pallet::storage]
@@ -729,7 +728,7 @@ impl<T: Config> Pallet<T> {
 		Self::community_identifiers().to_vec()
 	}
 
-	pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
+	pub fn get_name(cid: &CommunityIdentifier) -> Option<BoundedPalletString> {
 		Self::ensure_cid_exists(cid).ok()?;
 		Some(Self::community_metadata(cid).name)
 	}

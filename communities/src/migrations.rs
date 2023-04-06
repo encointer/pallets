@@ -34,6 +34,15 @@ mod v0 {
 		Vec<<T as frame_system::Config>::AccountId>,
 		ValueQuery,
 	>;
+
+	#[storage_alias]
+	pub(super) type CommunityMetadata<T: Config> = StorageMap<
+		Pallet<T>,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		CommunityMetadataType,
+		ValueQuery,
+	>;
 }
 
 pub mod v1 {
@@ -79,6 +88,8 @@ pub mod v1 {
 				ensure!(count <= T::MaxBootstrappers::get(), "too many bootstrappers");
 				bootstrappers_count = bootstrappers_count + count
 			}
+
+			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
 
 			Ok((cid_count, cids_by_geohash_count, locations_by_geohash_count, bootstrappers_count)
 				.encode())
@@ -159,11 +170,11 @@ pub mod v1 {
 #[cfg(feature = "try-runtime")]
 mod test {
 	use super::*;
-	use frame_support::assert_err;
+	use encointer_primitives::common::FromStr as PrimitivesFromStr;
+	use frame_support::{assert_err, traits::OnRuntimeUpgrade};
 	use mock::{new_test_ext, TestRuntime};
 	use sp_std::str::FromStr;
 	use test_utils::*;
-
 	#[allow(deprecated)]
 	#[test]
 	fn migration_works() {
@@ -232,6 +243,17 @@ mod test {
 			v0::Bootstrappers::<TestRuntime>::insert(
 				CommunityIdentifier::from_str("111112Fvv9d").unwrap(),
 				bootstrappers_1.clone(),
+			);
+
+			v0::CommunityMetadata::<TestRuntime>::insert(
+				CommunityIdentifier::from_str("111112Fvv9d").unwrap(),
+				CommunityMetadataType {
+					name: "AName".into(),
+					symbol: "ASY".into(),
+					assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
+					theme: None,
+					url: Some("AUrl".into()),
+				},
 			);
 
 			// Migrate.
@@ -314,6 +336,22 @@ mod test {
 					<TestRuntime as Config>::MaxLocationsPerGeohash,
 				>::try_from(bootstrappers_1)
 				.unwrap()
+			);
+
+			assert_eq!(
+				crate::CommunityMetadata::<TestRuntime>::get(
+					CommunityIdentifier::from_str("111112Fvv9d").unwrap()
+				),
+				BoundedCommunityMetadata {
+					name: BoundedPalletString::from_str("AName").unwrap(),
+					symbol: BoundedPalletString::from_str("ASY").unwrap(),
+					assets: BoundedPalletString::from_str(
+						"Defau1tCidThat1s46Characters1nLength1111111111"
+					)
+					.unwrap(),
+					theme: None,
+					url: Some(BoundedPalletString::from_str("AUrl").unwrap()),
+				}
 			);
 		});
 	}

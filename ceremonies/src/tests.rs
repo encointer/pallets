@@ -22,7 +22,7 @@ use encointer_primitives::{
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::{
-	assert_err, assert_ok,
+	assert_err, assert_ok, bounded_vec,
 	traits::{OnFinalize, OnInitialize},
 };
 use itertools::Itertools;
@@ -1652,7 +1652,7 @@ fn after_inactive_cycle_forbid_non_bootstrapper_registration() {
 		let mut cindex = 1;
 
 		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		let reputable = account_id(&AccountKeyring::Bob.pair());
 		let newbie = account_id(&AccountKeyring::Eve.pair());
 
@@ -2091,7 +2091,7 @@ fn meetup_with_only_one_newbie_works() {
 		let bootstrapper2 = account_id(&AccountKeyring::Bob.pair());
 		EncointerCommunities::insert_bootstrappers(
 			cid,
-			vec![bootstrapper.clone(), bootstrapper2.clone()],
+			bounded_vec![bootstrapper.clone(), bootstrapper2.clone()],
 		);
 
 		let reputable_pair = &AccountKeyring::Ferdie.pair();
@@ -2321,7 +2321,7 @@ fn remove_participant_from_registry_works() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
 		let bob = account_id(&AccountKeyring::Bob.pair());
@@ -2382,7 +2382,7 @@ fn remove_participant_from_registry_works_for_all_participant_types() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 
 		let newbie = account_id(&AccountKeyring::Alice.pair());
 		let reputable_pair = &AccountKeyring::Bob.pair();
@@ -2434,7 +2434,7 @@ fn remove_participant_from_registry_with_no_participants_fails() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper]);
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
 
@@ -2450,7 +2450,7 @@ fn upgrade_registration_works() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2480,7 +2480,7 @@ fn upgrade_registration_fails_if_not_registered_or_not_newbie() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2515,7 +2515,7 @@ fn upgrade_registration_fails_in_wrong_phase() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2538,7 +2538,7 @@ fn upgrade_registration_fails_with_inexistent_community() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2564,7 +2564,7 @@ fn unregister_participant_works_with_reputables() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2605,7 +2605,7 @@ fn unregister_participant_fails_with_reputables_and_wrong_reputation() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2657,7 +2657,7 @@ fn unregister_participant_works_with_newbies() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
@@ -2681,7 +2681,7 @@ fn unregister_participant_fails_in_wrong_phase() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2706,7 +2706,7 @@ fn unregister_participant_fails_with_inexistent_community() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2936,7 +2936,7 @@ fn get_participant_type_works() {
 		let mut cindex = 1;
 
 		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		let reputable_pair = &AccountKeyring::Bob.pair();
 		let reputable = account_id(reputable_pair);
 		let newbie = account_id(&AccountKeyring::Eve.pair());
@@ -2996,7 +2996,7 @@ fn get_aggregated_account_data_works() {
 		let bootstrapper2 = account_id(&AccountKeyring::Bob.pair());
 		EncointerCommunities::insert_bootstrappers(
 			cid,
-			vec![bootstrapper.clone(), bootstrapper2.clone()],
+			bounded_vec![bootstrapper.clone(), bootstrapper2.clone()],
 		);
 
 		let reputable_pair = &AccountKeyring::Ferdie.pair();
