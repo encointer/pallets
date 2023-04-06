@@ -2,7 +2,7 @@ use super::*;
 use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade};
 
 /// The log target.
-const TARGET: &'static str = "communities::migration::v1";
+const TARGET: &str = "communities::migration::v1";
 
 mod v0 {
 	use super::*;
