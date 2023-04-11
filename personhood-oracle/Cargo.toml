@@ -51,4 +51,9 @@ std = [
     "encointer-communities/std",
     "encointer-primitives/std",
     "encointer-scheduler/std",
+    ]
+
+try-runtime = [
+    "frame-executive/try-runtime",
+        "frame-system/try-runtime",
 ]

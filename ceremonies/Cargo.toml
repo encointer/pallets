@@ -58,6 +58,11 @@ std = [
   "sp-std/std",
   "frame-benchmarking/std",
   "sp-core/std",
+  #"frame-try-runtime/std"
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto", "sp-core"]
+
+try-runtime = [
+        "frame-system/try-runtime",
+]
