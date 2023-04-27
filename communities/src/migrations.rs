@@ -69,6 +69,7 @@ pub mod v1 {
 				);
 				cids_by_geohash_count = cids_by_geohash_count + count;
 			}
+			log::info!(target: TARGET, "{} cids by geohash will be migrated.", cids_by_geohash_count,);
 
 			let locations_by_geohash = v0::Locations::<T>::iter();
 			let mut locations_by_geohash_count = 0u32;
@@ -80,6 +81,7 @@ pub mod v1 {
 				);
 				locations_by_geohash_count = locations_by_geohash_count + count;
 			}
+			log::info!(target: TARGET, "{} locations by geohash will be migrated.", locations_by_geohash_count,);
 
 			let bootstrappers = v0::Bootstrappers::<T>::iter();
 			let mut bootstrappers_count = 0u32;
@@ -88,6 +90,7 @@ pub mod v1 {
 				ensure!(count <= T::MaxBootstrappers::get(), "too many bootstrappers");
 				bootstrappers_count = bootstrappers_count + count
 			}
+			log::info!(target: TARGET, "{} bootstrappers will be migrated.", bootstrappers_count,);
 
 			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
 
