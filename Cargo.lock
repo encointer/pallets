@@ -3981,31 +3981,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-personhood-oracle"
-version = "0.8.0"
-dependencies = [
- "encointer-primitives",
- "frame-support",
- "frame-system",
- "hex",
- "log",
- "pallet-encointer-balances",
- "pallet-encointer-ceremonies",
- "pallet-encointer-communities",
- "pallet-encointer-scheduler",
- "parity-scale-codec",
- "polkadot-parachain",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "test-utils",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
 name = "pallet-encointer-scheduler"
 version = "1.1.0"
 dependencies = [
@@ -4021,27 +3996,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "test-utils",
-]
-
-[[package]]
-name = "pallet-encointer-sybil-gate-template"
-version = "0.8.0"
-dependencies = [
- "encointer-primitives",
- "frame-support",
- "frame-system",
- "hex",
- "log",
- "parity-scale-codec",
- "polkadot-parachain",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "test-utils",
- "xcm",
- "xcm-executor",
 ]
 
 [[package]]
