@@ -185,7 +185,7 @@ fn attest_all(
 		RuntimeOrigin::signed(attestor),
 		cid,
 		n_participants,
-		attestees
+		BoundedVec::try_from(attestees).unwrap()
 	));
 }
 
@@ -200,7 +200,14 @@ fn fully_attest_attendees(
 			RuntimeOrigin::signed(attestor.clone()),
 			cid,
 			n_participants,
-			attendees.clone().into_iter().filter(|a| a != attestor).collect()
+			BoundedVec::try_from(
+				attendees
+					.clone()
+					.into_iter()
+					.filter(|a| a != attestor)
+					.collect::<Vec<AccountId>>()
+			)
+			.unwrap()
 		));
 	}
 }
@@ -432,7 +439,7 @@ fn attest_attendee_from_non_registered_participant_fails() {
 				RuntimeOrigin::signed(eve),
 				cid,
 				3,
-				vec![alice, ferdie],
+				bounded_vec![alice, ferdie],
 			),
 			Error::<TestRuntime>::ParticipantIsNotRegistered
 		);
@@ -489,7 +496,7 @@ fn attest_attendee_for_alien_participant_fails() {
 				RuntimeOrigin::signed(alice),
 				cid,
 				bobs_peers.len() as u32 + 1,
-				bobs_peers,
+				BoundedVec::try_from(bobs_peers).unwrap(),
 			),
 			Error::<TestRuntime>::NoValidAttestations
 		);
@@ -872,7 +879,10 @@ fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_erro
 				RuntimeOrigin::signed(account_id(p)),
 				cid,
 				i as u32,
-				attestees.into_iter().map(|pa| account_id(pa)).collect(),
+				BoundedVec::try_from(
+					attestees.into_iter().map(|pa| account_id(pa)).collect::<Vec<AccountId>>(),
+				)
+				.unwrap(),
 			)
 			.unwrap();
 		}
@@ -3085,7 +3095,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&alice)),
 			cid,
 			3,
-			vec![account_id(&alice), account_id(&ferdie)],
+			bounded_vec![account_id(&alice), account_id(&ferdie)],
 		)
 		.unwrap();
 
@@ -3105,7 +3115,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&bob)),
 			cid,
 			4,
-			vec![account_id(&alice), account_id(&ferdie)],
+			bounded_vec![account_id(&alice), account_id(&ferdie)],
 		)
 		.unwrap();
 
@@ -3134,7 +3144,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&alice)),
 			cid,
 			3,
-			vec![account_id(&bob), account_id(&ferdie)],
+			bounded_vec![account_id(&bob), account_id(&ferdie)],
 		)
 		.unwrap();
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
@@ -3144,7 +3154,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&ferdie)),
 			cid,
 			4,
-			vec![account_id(&bob), account_id(&eve)],
+			bounded_vec![account_id(&bob), account_id(&eve)],
 		)
 		.unwrap();
 
