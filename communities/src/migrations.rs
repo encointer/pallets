@@ -431,17 +431,7 @@ mod test {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
 			let locations = vec![
-				Location::new(Degree::from_num(2), Degree::from_num(2)),
-				Location::new(Degree::from_num(3), Degree::from_num(3)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
-				Location::new(Degree::from_num(4), Degree::from_num(4)),
+				Location::new(Degree::from_num(2), Degree::from_num(2)); 201
 			];
 
 			v0::Locations::<TestRuntime>::insert(

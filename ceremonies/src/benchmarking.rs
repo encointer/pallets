@@ -1,5 +1,7 @@
 use crate::*;
-use encointer_primitives::communities::{CommunityIdentifier, CommunityMetadata, Degree, Location};
+use encointer_primitives::communities::{
+	BoundedCommunityMetadata, CommunityIdentifier, Degree, Location,
+};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -50,7 +52,7 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 		RawOrigin::Root.into(),
 		location,
 		bs.clone(),
-		CommunityMetadata::default(),
+		BoundedCommunityMetadata::default(),
 		None,
 		None,
 	)
@@ -260,7 +262,7 @@ benchmarks! {
 			Some(fake_last_attendance_and_get_proof::<T>(&attestor, cid)))
 		);
 
-		let attestees =  register_users::<T>(cid, 2, 7).into_iter().map(|u| account_id::<T>(&u)).collect();
+		let attestees =  BoundedVec::try_from(register_users::<T>(cid, 2, 7).into_iter().map(|u| account_id::<T>(&u)).collect::<Vec<T::AccountId>>()).unwrap();
 
 		next_phase::<T>();
 		next_phase::<T>();
@@ -321,7 +323,7 @@ benchmarks! {
 			assert_ok!(Pallet::<T>::attest_attendees(
 				RawOrigin::Signed(attestor.clone()).into(),
 				cid, 10,
-				users.clone().into_iter().filter(|u| u!= attestor).collect()
+				BoundedVec::try_from(users.clone().into_iter().filter(|u| u!= attestor).collect::<Vec<T::AccountId>>()).unwrap()
 			));
 		}
 

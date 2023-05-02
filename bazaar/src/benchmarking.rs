@@ -1,6 +1,6 @@
 use crate::*;
 use encointer_primitives::communities::{
-	CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree, Location,
+	BoundedCommunityMetadata, CommunityIdentifier, Degree, Location,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
@@ -22,11 +22,7 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
 
 	let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
-	let community_meta: CommunityMetadataType = CommunityMetadataType {
-		name: "Default".into(),
-		symbol: "DEF".into(),
-		..Default::default()
-	};
+	let community_meta: BoundedCommunityMetadata = BoundedCommunityMetadata::default();
 	encointer_communities::Pallet::<T>::new_community(
 		RawOrigin::Root.into(),
 		location,

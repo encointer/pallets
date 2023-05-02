@@ -1,12 +1,14 @@
 use crate::{Pallet as Communities, *};
 use encointer_primitives::{
 	balances::Demurrage,
-	communities::{CommunityMetadata, Location, NominalIncome},
+	communities::{Location, NominalIncome},
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::{assert_ok, parameter_types};
 use frame_system::RawOrigin;
-use sp_std::borrow::ToOwned;
+
+use encointer_primitives::common::FromStr;
+use frame_support::bounded_vec;
 
 const NUM_LOCATIONS: u32 = 200;
 
@@ -37,14 +39,14 @@ fn get_location(i: u32) -> Location {
 fn setup_test_community<T: Config>() -> (
 	CommunityIdentifier,
 	Vec<T::AccountId>,
-	CommunityMetadata,
+	BoundedCommunityMetadata,
 	Option<Demurrage>,
 	Option<NominalIncomeType>,
 ) {
-	let bootstrappers: Vec<T::AccountId> = (0..12).map(|n| account("dummy name", n, n)).collect();
-	let mut community_metadata = CommunityMetadata::default();
-	community_metadata.name = "20charsaaaaaaaaaaaaa".into();
-	community_metadata.url = Some("19charsaaaaaaaaa.ch".into());
+	let bootstrappers: Vec<T::AccountId> = (0..10).map(|n| account("dummy name", n, n)).collect();
+	let mut community_metadata = BoundedCommunityMetadata::default();
+	community_metadata.name = BoundedPalletString::from_str("20charsaaaaaaaaaaaaa").unwrap();
+	community_metadata.url = Some(BoundedPalletString::from_str("19charsaaaaaaaaa").unwrap());
 	let demurrage = Some(Demurrage::from_num(DefaultDemurrage::get()));
 	let nominal_income = Some(NominalIncome::from_num(1_u64));
 
@@ -111,8 +113,8 @@ benchmarks! {
 
 	update_community_metadata {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
-		let mut new_community_metadata = CommunityMetadata::default();
-		let new_community_name: PalletString = "99charsaaaaaaaaaaaaa".to_owned().into();
+		let mut new_community_metadata = BoundedCommunityMetadata::default();
+		let new_community_name: BoundedPalletString = BoundedPalletString::from_str("99charsaaaaaaaaaaaaa").unwrap();
 
 		new_community_metadata.name = new_community_name.clone();
 	} : {
@@ -156,8 +158,8 @@ benchmarks! {
 		// Todo: Properly benchmark this #189
 
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
-		let mut cids = vec![CommunityIdentifier::default(); 1_000_000];
-		cids.push(cid);
+		let mut cids: BoundedVec<CommunityIdentifier, T::MaxCommunityIdentifiers> = bounded_vec![CommunityIdentifier::default(); 9];
+		cids.try_push(cid).ok();
 		CommunityIdentifiers::<T>::put(cids);
 
 	} : _(RawOrigin::Root, cid)

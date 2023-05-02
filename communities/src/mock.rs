@@ -50,7 +50,7 @@ impl dut::Config for TestRuntime {
 	type WeightInfo = ();
 	type MaxCommunityIdentifiers = ConstU32<10>;
 	type MaxBootstrappers = ConstU32<10>;
-	type MaxLocationsPerGeohash = ConstU32<10>;
+	type MaxLocationsPerGeohash = ConstU32<200>;
 	type MaxCommunityIdentifiersPerGeohash = ConstU32<10>;
 }
 
