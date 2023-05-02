@@ -430,9 +430,7 @@ mod test {
 		new_test_ext().execute_with(|| {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
-			let locations = vec![
-				Location::new(Degree::from_num(2), Degree::from_num(2)); 201
-			];
+			let locations = vec![Location::new(Degree::from_num(2), Degree::from_num(2)); 201];
 
 			v0::Locations::<TestRuntime>::insert(
 				CommunityIdentifier::from_str("111112Fvv9d").unwrap(),
