@@ -25,7 +25,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         check: [ cargo build --release,
-                 cargo test --all --features runtime-benchmarks,try-runtime,
+                 cargo test --all --features runtime-benchmarks --features try-runtime,
                  cargo fmt --all -- --check,
                  cargo clippy -- -D warnings
         ]
