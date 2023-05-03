@@ -64,6 +64,7 @@ pub struct CommunitiesRpc<Client, Block, S> {
 	storage: Arc<RwLock<S>>,
 	offchain_indexing: bool,
 	_marker: std::marker::PhantomData<Block>,
+	#[allow(unused)]
 	deny_unsafe: DenyUnsafe,
 }
 
@@ -201,8 +202,6 @@ where
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<Block>>)>> {
-		self.deny_unsafe.check_if_safe()?;
-
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		Ok(api.get_all_balances(&at, &account).map_err(|e| Error::Runtime(e.into()))?)

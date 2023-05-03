@@ -56,6 +56,7 @@ where
 pub struct BazaarRpc<Client, Block, AccountId> {
 	client: Arc<Client>,
 	_marker: std::marker::PhantomData<(Block, AccountId)>,
+	#[allow(unused)]
 	deny_unsafe: DenyUnsafe,
 }
 
@@ -79,8 +80,6 @@ where
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<BusinessData>> {
-		self.deny_unsafe.check_if_safe()?;
-
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		return Ok(api
@@ -96,8 +95,6 @@ where
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
-		self.deny_unsafe.check_if_safe()?;
-
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		return Ok(api
@@ -114,8 +111,6 @@ where
 		bid: BusinessIdentifier<AccountId>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
-		self.deny_unsafe.check_if_safe()?;
-
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 

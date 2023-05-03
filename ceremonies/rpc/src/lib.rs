@@ -63,6 +63,7 @@ where
 
 pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
 	client: Arc<Client>,
+	#[allow(unused)]
 	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
 	#[allow(unused)]
@@ -163,7 +164,6 @@ where
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<(CeremonyIndexType, CommunityReputation)>> {
-		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 
 		if !self.offchain_indexing {
@@ -196,7 +196,6 @@ where
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<AggregatedAccountData<AccountId, Moment>> {
-		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		Ok(api
