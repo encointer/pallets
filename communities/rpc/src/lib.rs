@@ -30,7 +30,6 @@ use encointer_primitives::{
 	communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier, Location},
 };
 use parking_lot::RwLock;
-use sc_rpc_api::DenyUnsafe;
 use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 
 const CIDS_KEY: &[u8; 4] = b"cids";
@@ -64,8 +63,6 @@ pub struct CommunitiesRpc<Client, Block, S> {
 	storage: Arc<RwLock<S>>,
 	offchain_indexing: bool,
 	_marker: std::marker::PhantomData<Block>,
-	#[allow(unused)]
-	deny_unsafe: DenyUnsafe,
 }
 
 impl<C, Block, S> CommunitiesRpc<C, Block, S>
@@ -73,18 +70,12 @@ where
 	S: 'static + OffchainStorage,
 {
 	/// Create new `Communities` with the given reference to the client and to the offchain storage
-	pub fn new(
-		client: Arc<C>,
-		storage: S,
-		offchain_indexing: bool,
-		deny_unsafe: DenyUnsafe,
-	) -> Self {
+	pub fn new(client: Arc<C>, storage: S, offchain_indexing: bool) -> Self {
 		CommunitiesRpc {
 			client,
 			storage: Arc::new(RwLock::new(storage)),
 			offchain_indexing,
 			_marker: Default::default(),
-			deny_unsafe,
 		}
 	}
 

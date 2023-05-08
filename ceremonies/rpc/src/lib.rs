@@ -17,7 +17,6 @@
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use parking_lot::RwLock;
-use sc_rpc::DenyUnsafe;
 use sp_api::{
 	offchain::{OffchainStorage, STORAGE_PREFIX},
 	Decode, Encode, ProvideRuntimeApi,
@@ -63,8 +62,6 @@ where
 
 pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
 	client: Arc<Client>,
-	#[allow(unused)]
-	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
 	#[allow(unused)]
 	offchain_indexing: bool,
@@ -82,16 +79,10 @@ where
 	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: Decode,
 {
 	/// Create new `Ceremonies` instance with the given reference to the client.
-	pub fn new(
-		client: Arc<Client>,
-		deny_unsafe: DenyUnsafe,
-		storage: S,
-		offchain_indexing: bool,
-	) -> Self {
+	pub fn new(client: Arc<Client>, storage: S, offchain_indexing: bool) -> Self {
 		CeremoniesRpc {
 			client,
 			_marker: Default::default(),
-			deny_unsafe,
 			storage: Arc::new(RwLock::new(storage)),
 			offchain_indexing,
 		}

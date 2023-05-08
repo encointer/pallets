@@ -16,7 +16,6 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use sc_rpc::DenyUnsafe;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -56,14 +55,12 @@ where
 pub struct BazaarRpc<Client, Block, AccountId> {
 	client: Arc<Client>,
 	_marker: std::marker::PhantomData<(Block, AccountId)>,
-	#[allow(unused)]
-	deny_unsafe: DenyUnsafe,
 }
 
 impl<Client, Block, AccountId> BazaarRpc<Client, Block, AccountId> {
 	/// Create new `Bazaar` instance with the given reference to the client.
-	pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
-		BazaarRpc { client, _marker: Default::default(), deny_unsafe }
+	pub fn new(client: Arc<Client>) -> Self {
+		BazaarRpc { client, _marker: Default::default() }
 	}
 }
 
