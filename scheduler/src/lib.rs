@@ -57,6 +57,8 @@ pub mod pallet {
 
 		/// Who to inform about ceremony phase change
 		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
+		type OnCeremonyPhaseChange2: OnCeremonyPhaseChange;
+
 		#[pallet::constant]
 		type MomentsPerDay: Get<Self::Moment>;
 
@@ -229,6 +231,7 @@ impl<T: Config> Pallet<T> {
 
 		<CurrentPhase<T>>::put(next_phase);
 		T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
+		T::OnCeremonyPhaseChange2::on_ceremony_phase_change(next_phase);
 		Self::deposit_event(Event::PhaseChangedTo(next_phase));
 		info!(target: LOG, "phase changed to: {:?}", next_phase);
 		Ok(())

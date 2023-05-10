@@ -44,6 +44,7 @@ impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type CeremonyMaster = EnsureAlice;
 	type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
+	type OnCeremonyPhaseChange2 = (); //OnCeremonyPhaseChange;
 	type MomentsPerDay = MomentsPerDay;
 	type WeightInfo = ();
 }

@@ -17,17 +17,54 @@
 //! Unit tests for the encointer_balances module.
 
 use super::*;
-use crate::mock::{EncointerReputationCommitments, RuntimeOrigin};
+use crate::mock::{
+	EncointerCeremonies, EncointerReputationCommitments, EncointerScheduler, RuntimeOrigin,
+	Timestamp,
+};
 use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityIdentifier, Degree, Location},
 	reputation_commitments::{DescriptorType, FromStr},
 };
-use frame_support::{assert_err, assert_ok};
+use frame_support::{
+	assert_err, assert_ok,
+	traits::{OnFinalize, OnInitialize},
+};
 use mock::{new_test_ext, System, TestRuntime};
 use sp_runtime::traits::{BlakeTwo256, Hash};
-use test_utils::{helpers::last_event, storage::participant_reputation, AccountId, AccountKeyring};
+use test_utils::{
+	helpers::{last_event, register_test_community},
+	storage::participant_reputation,
+	AccountId, AccountKeyring, BLOCKTIME, GENESIS_TIME,
+};
+
+pub fn set_timestamp(t: u64) {
+	let _ = pallet_timestamp::Pallet::<TestRuntime>::set(RuntimeOrigin::none(), t);
+}
+
+/// Run until a particular block.
+fn run_to_block(n: u64) {
+	while System::block_number() < n {
+		if System::block_number() > 1 {
+			System::on_finalize(System::block_number());
+		}
+		set_timestamp(GENESIS_TIME + BLOCKTIME * n);
+		Timestamp::on_finalize(System::block_number());
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+	}
+}
+
+/// Progress blocks until the phase changes
+fn run_to_next_phase() {
+	let phase = EncointerScheduler::current_phase();
+	let mut blocknr = System::block_number();
+	while phase == EncointerScheduler::current_phase() {
+		blocknr += 1;
+		run_to_block(blocknr);
+	}
+}
 
 #[test]
 fn register_purpose_works() {
@@ -61,6 +98,7 @@ fn commitments_work() {
 	new_test_ext().execute_with(|| {
 		let mut ext = new_test_ext();
 		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
 		let cid = CommunityIdentifier::default();
 		let cid2 = CommunityIdentifier::new::<AccountId>(
 			Location { lat: Degree::from_num(0.1), lon: Degree::from_num(0.1) },
@@ -76,6 +114,8 @@ fn commitments_work() {
 			Reputation::VerifiedUnlinked.encode(),
 		);
 
+		ext.insert(participant_reputation((cid, 11), &bob), Reputation::VerifiedUnlinked.encode());
+
 		ext.execute_with(|| {
 			System::set_block_number(System::block_number() + 1); // this is needed to assert events
 
@@ -88,6 +128,7 @@ fn commitments_work() {
 			));
 
 			// commit without hash
+			// alice
 			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
 				&alice.clone(),
 				cid,
@@ -95,16 +136,24 @@ fn commitments_work() {
 				0,
 				None
 			));
-			assert_eq!(
-				EncointerReputationCommitments::commitments(0, (&alice, cid, 11)),
-				None
-			);
+			assert_eq!(EncointerReputationCommitments::commitments((cid, 11), (0, &alice)), None);
 			assert_eq!(
 				last_event::<TestRuntime>(),
-				Some(
-					Event::CommitedReputation(alice.clone(), cid, 11, 0, None)
-						.into()
-				)
+				Some(Event::CommitedReputation(cid, 11, 0, alice.clone(), None).into())
+			);
+
+			// bob
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&bob.clone(),
+				cid,
+				11,
+				0,
+				None
+			));
+			assert_eq!(EncointerReputationCommitments::commitments((cid, 11), (0, &bob)), None);
+			assert_eq!(
+				last_event::<TestRuntime>(),
+				Some(Event::CommitedReputation(cid, 11, 0, bob.clone(), None).into())
 			);
 
 			// same reputation, different purpose
@@ -116,16 +165,10 @@ fn commitments_work() {
 				1,
 				None
 			));
-			assert_eq!(
-				EncointerReputationCommitments::commitments(1, (&alice, cid, 11)),
-				None
-			);
+			assert_eq!(EncointerReputationCommitments::commitments((cid, 11), (1, &alice)), None);
 			assert_eq!(
 				last_event::<TestRuntime>(),
-				Some(
-					Event::CommitedReputation(alice.clone(), cid, 11, 1, None)
-						.into()
-				)
+				Some(Event::CommitedReputation(cid, 11, 1, alice.clone(), None).into())
 			);
 
 			// commit with hash
@@ -140,21 +183,12 @@ fn commitments_work() {
 				Some(hash)
 			));
 			assert_eq!(
-				EncointerReputationCommitments::commitments(0, (&alice, cid2, 12)),
+				EncointerReputationCommitments::commitments((cid2, 12), (0, &alice)),
 				Some(hash)
 			);
 			assert_eq!(
 				last_event::<TestRuntime>(),
-				Some(
-					Event::CommitedReputation(
-						alice.clone(),
-						cid2,
-						12,
-						0,
-						Some(hash)
-					)
-					.into()
-				)
+				Some(Event::CommitedReputation(cid2, 12, 0, alice.clone(), Some(hash)).into())
 			);
 
 			// already commited
@@ -205,4 +239,161 @@ fn commitments_work() {
 			);
 		})
 	});
+}
+
+#[test]
+fn purging_works() {
+	new_test_ext().execute_with(|| {
+		let mut ext = new_test_ext();
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		//ext.insert(community_identifiers(), vec![cid, cid2].encode());
+
+		ext.insert(participant_reputation((cid, 1), &alice), Reputation::VerifiedUnlinked.encode());
+		ext.insert(
+			participant_reputation((cid2, 1), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+		ext.insert(participant_reputation((cid, 1), &bob), Reputation::VerifiedUnlinked.encode());
+		ext.insert(participant_reputation((cid2, 1), &bob), Reputation::VerifiedUnlinked.encode());
+		ext.insert(participant_reputation((cid, 2), &alice), Reputation::VerifiedUnlinked.encode());
+		ext.insert(
+			participant_reputation((cid2, 2), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+		ext.insert(participant_reputation((cid, 2), &bob), Reputation::VerifiedUnlinked.encode());
+		ext.insert(participant_reputation((cid2, 2), &bob), Reputation::VerifiedUnlinked.encode());
+
+		ext.execute_with(|| {
+			// re-register because of different ext
+			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+			// register purposes
+			assert_ok!(EncointerReputationCommitments::do_register_purpose(
+				DescriptorType::from_str("Some Description").unwrap()
+			));
+			assert_ok!(EncointerReputationCommitments::do_register_purpose(
+				DescriptorType::from_str("Some Description2").unwrap()
+			));
+
+			// commit
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&alice.clone(),
+				cid,
+				1,
+				0,
+				None
+			));
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&bob.clone(),
+				cid2,
+				1,
+				0,
+				None
+			));
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&alice.clone(),
+				cid,
+				1,
+				1,
+				None
+			));
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&bob.clone(),
+				cid,
+				1,
+				1,
+				None
+			));
+
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&alice.clone(),
+				cid2,
+				2,
+				0,
+				None
+			));
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&bob.clone(),
+				cid,
+				2,
+				0,
+				None
+			));
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&alice.clone(),
+				cid,
+				2,
+				1,
+				None
+			));
+			assert_ok!(EncointerReputationCommitments::do_commit_reputation(
+				&bob.clone(),
+				cid2,
+				2,
+				1,
+				None
+			));
+
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 1), (0, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 1), (0, &bob)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 1), (1, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 1), (1, &bob)));
+
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 2), (0, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 2), (0, &bob)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 2), (1, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 2), (1, &bob)));
+
+			let reputation_lifetime = EncointerCeremonies::reputation_lifetime();
+
+			for _ in 0..reputation_lifetime {
+				run_to_next_phase();
+				run_to_next_phase();
+				run_to_next_phase();
+			}
+
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 1), (0, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 1), (0, &bob)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 1), (1, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 1), (1, &bob)));
+
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 2), (0, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 2), (0, &bob)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 2), (1, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 2), (1, &bob)));
+
+			run_to_next_phase();
+			run_to_next_phase();
+			run_to_next_phase();
+
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (0, &alice)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid2, 1), (0, &bob)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (1, &alice)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (1, &bob)));
+
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 2), (0, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 2), (0, &bob)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 2), (1, &alice)));
+			assert!(Commitments::<TestRuntime>::contains_key((cid2, 2), (1, &bob)));
+
+			run_to_next_phase();
+			run_to_next_phase();
+			run_to_next_phase();
+
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (0, &alice)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid2, 1), (0, &bob)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (1, &alice)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (1, &bob)));
+
+			assert!(!Commitments::<TestRuntime>::contains_key((cid2, 2), (0, &alice)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 2), (0, &bob)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid, 2), (1, &alice)));
+			assert!(!Commitments::<TestRuntime>::contains_key((cid2, 2), (1, &bob)));
+		})
+	})
 }

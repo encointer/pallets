@@ -13,6 +13,8 @@ scale-info = { version = "2.0.1", default-features = false }
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false }
+encointer-scheduler = {package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false}
+encointer-communities = {package = "pallet-encointer-communities", path = "../communities", default-features = false}
 
 # substrate deps
 frame-benchmarking = { version = "4.0.0-dev",  default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
@@ -21,6 +23,7 @@ frame-system = { version = "4.0.0-dev", default-features = false,git = "https://
 sp-core = {version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-std = { version = "5.0.0", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-timestamp = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 
 [dev-dependencies]
 approx = "0.5.1"

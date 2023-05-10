@@ -145,7 +145,7 @@ pub mod pallet {
 				let _ = T::Currency::make_free_balance_be(&account_id, min);
 			}
 			<DripAmount<T>>::put(self.drip_amount);
-			
+
 			<encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
 				DescriptorType::from_str("EncointerFaucet").unwrap(),
 			)

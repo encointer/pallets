@@ -17,7 +17,7 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use encointer_primitives::balances::BalanceType;
+use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
 use test_utils::*;
 
@@ -49,7 +49,7 @@ impl dut::Config for TestRuntime {
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_encointer_scheduler!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime, EncointerCeremonies, EncointerReputationCommitments);
 impl_encointer_communities!(TestRuntime);
 impl_encointer_balances!(TestRuntime);
 impl_encointer_ceremonies!(TestRuntime);
@@ -61,6 +61,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let conf = dut::GenesisConfig {};
 	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
 
+	encointer_scheduler::GenesisConfig::<TestRuntime> {
+		current_phase: CeremonyPhaseType::Registering,
+		current_ceremony_index: 1,
+		phase_durations: vec![
+			(CeremonyPhaseType::Registering, ONE_DAY),
+			(CeremonyPhaseType::Assigning, ONE_DAY),
+			(CeremonyPhaseType::Attesting, ONE_DAY),
+		],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
 	encointer_ceremonies::GenesisConfig::<TestRuntime> {
 		ceremony_reward: BalanceType::from_num(1),
 		location_tolerance: LOCATION_TOLERANCE, // [m]
@@ -68,11 +80,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		inactivity_timeout: 12,
 		endorsement_tickets_per_bootstrapper: 50,
 		endorsement_tickets_per_reputable: 2,
-		reputation_lifetime: 6,
+		reputation_lifetime: 3,
 		meetup_time_offset: 0,
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
+
+	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
 
 	t.into()
 }

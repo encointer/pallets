@@ -20,8 +20,9 @@ use core::marker::PhantomData;
 use encointer_primitives::{
 	communities::CommunityIdentifier,
 	reputation_commitments::{DescriptorType, PurposeIdType},
-	scheduler::CeremonyIndexType,
+	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
+use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_system::{self as frame_system, ensure_signed, pallet_prelude::OriginFor};
 pub use pallet::*;
 use sp_core::H256;
@@ -42,7 +43,9 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + encointer_ceremonies::Config {
+	pub trait Config:
+		frame_system::Config + encointer_ceremonies::Config + encointer_communities::Config
+	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
@@ -102,19 +105,27 @@ pub mod pallet {
 				return Err(<Error<T>>::NoReputation)
 			}
 
-			if <Commitments<T>>::contains_key(purpose, (&account, cid, cindex)) {
+			if <Commitments<T>>::contains_key((cid, cindex), (purpose, &account)) {
 				return Err(<Error<T>>::AlreadyCommited)
 			}
 
-			<Commitments<T>>::insert(purpose, (&account, cid, cindex), commitment_hash);
+			<Commitments<T>>::insert((cid, cindex), (purpose, &account), commitment_hash);
 			Self::deposit_event(Event::CommitedReputation(
-				account.clone(),
 				cid,
 				cindex,
 				purpose,
+				account.clone(),
 				commitment_hash,
 			));
 			Ok(())
+		}
+
+		#[allow(deprecated)]
+		pub fn purge_registry(cindex: CeremonyIndexType) {
+			let cids = <encointer_communities::Pallet<T>>::community_identifiers();
+			for cid in cids.into_iter() {
+				<Commitments<T>>::remove_prefix((cid, cindex), None);
+			}
 		}
 	}
 
@@ -134,10 +145,10 @@ pub mod pallet {
 		RegisteredCommitmentPurpose(PurposeIdType, DescriptorType),
 		/// reputation commited for purpose
 		CommitedReputation(
-			T::AccountId,
 			CommunityIdentifier,
 			CeremonyIndexType,
 			PurposeIdType,
+			T::AccountId,
 			Option<H256>,
 		),
 	}
@@ -169,10 +180,29 @@ pub mod pallet {
 	pub(super) type Commitments<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		PurposeIdType,
+		(CommunityIdentifier, CeremonyIndexType),
 		Identity,
-		(T::AccountId, CommunityIdentifier, CeremonyIndexType),
+		(PurposeIdType, T::AccountId),
 		Option<H256>,
 		ValueQuery,
 	>;
+}
+
+impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
+	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
+		match new_phase {
+			CeremonyPhaseType::Assigning => {},
+			CeremonyPhaseType::Attesting => {},
+			CeremonyPhaseType::Registering => {
+				let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
+				if cindex > reputation_lifetime {
+					Self::purge_registry(
+						cindex.saturating_sub(reputation_lifetime).saturating_sub(1),
+					);
+				}
+			},
+		}
+	}
 }
