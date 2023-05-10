@@ -201,6 +201,15 @@ macro_rules! impl_encointer_communities {
 }
 
 #[macro_export]
+macro_rules! impl_encointer_reputation_commitments {
+	($t:ident) => {
+		impl encointer_reputation_commitments::Config for $t {
+			type RuntimeEvent = RuntimeEvent;
+		}
+	};
+}
+
+#[macro_export]
 macro_rules! test_runtime {
 	($t:ident, $system:ident, $scheduler:ident) => {
 		impl_frame_system!($t);

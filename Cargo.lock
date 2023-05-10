@@ -3981,6 +3981,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-faucet"
+version = "1.2.0"
+dependencies = [
+ "approx",
+ "encointer-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-encointer-reputation-commitments",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+]
+
+[[package]]
 name = "pallet-encointer-personhood-oracle"
 version = "0.8.0"
 dependencies = [
@@ -4003,6 +4022,26 @@ dependencies = [
  "test-utils",
  "xcm",
  "xcm-executor",
+]
+
+[[package]]
+name = "pallet-encointer-reputation-commitments"
+version = "1.2.0"
+dependencies = [
+ "approx",
+ "encointer-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-encointer-ceremonies",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
 ]
 
 [[package]]
