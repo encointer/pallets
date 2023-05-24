@@ -34,7 +34,7 @@ use frame_support::{
 use mock::{new_test_ext, System, TestRuntime};
 use sp_runtime::traits::{BlakeTwo256, Hash};
 use test_utils::{
-	helpers::{last_event, register_test_community},
+	helpers::{event_deposited, last_event, register_test_community},
 	storage::participant_reputation,
 	AccountId, AccountKeyring, BLOCKTIME, GENESIS_TIME,
 };
@@ -268,7 +268,8 @@ fn purging_works() {
 		ext.insert(participant_reputation((cid2, 2), &bob), Reputation::VerifiedUnlinked.encode());
 
 		ext.execute_with(|| {
-			// re-register because of different ext
+			System::set_block_number(System::block_number() + 1); // this is needed to assert events
+													  // re-register because of different ext
 			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 
@@ -371,6 +372,8 @@ fn purging_works() {
 			run_to_next_phase();
 			run_to_next_phase();
 
+			assert!(event_deposited::<TestRuntime>(Event::CommitmentRegistryPurged(1).into()));
+
 			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (0, &alice)));
 			assert!(!Commitments::<TestRuntime>::contains_key((cid2, 1), (0, &bob)));
 			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (1, &alice)));
@@ -384,6 +387,8 @@ fn purging_works() {
 			run_to_next_phase();
 			run_to_next_phase();
 			run_to_next_phase();
+
+			assert!(event_deposited::<TestRuntime>(Event::CommitmentRegistryPurged(2).into()));
 
 			assert!(!Commitments::<TestRuntime>::contains_key((cid, 1), (0, &alice)));
 			assert!(!Commitments::<TestRuntime>::contains_key((cid2, 1), (0, &bob)));

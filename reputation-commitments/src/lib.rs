@@ -126,6 +126,7 @@ pub mod pallet {
 			for cid in cids.into_iter() {
 				<Commitments<T>>::remove_prefix((cid, cindex), None);
 			}
+			Self::deposit_event(Event::CommitmentRegistryPurged(cindex));
 		}
 	}
 
@@ -151,6 +152,8 @@ pub mod pallet {
 			T::AccountId,
 			Option<H256>,
 		),
+		/// Commitment registry purged
+		CommitmentRegistryPurged(CeremonyIndexType),
 	}
 
 	#[pallet::error]
