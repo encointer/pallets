@@ -61,7 +61,7 @@ parameter_types! {
 
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
-	type FaucetMaster = EnsureAlice;
+	type ControllerOrigin = EnsureAlice;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = FaucetPalletId;
 }

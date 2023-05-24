@@ -59,7 +59,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + encointer_reputation_commitments::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId>;
-		type FaucetMaster: EnsureOrigin<Self::RuntimeOrigin>;
+		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
@@ -99,7 +99,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			drip_amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
-			T::FaucetMaster::ensure_origin(origin)?;
+			T::ControllerOrigin::ensure_origin(origin)?;
 			<DripAmount<T>>::put(drip_amount);
 			info!(target: LOG, "set drip amount to {:?}", drip_amount);
 			Self::deposit_event(Event::DripAmountUpdated(drip_amount));
