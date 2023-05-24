@@ -57,7 +57,6 @@ pub mod pallet {
 
 		/// Who to inform about ceremony phase change
 		type OnCeremonyPhaseChange: OnCeremonyPhaseChange;
-		type OnCeremonyPhaseChange2: OnCeremonyPhaseChange;
 
 		#[pallet::constant]
 		type MomentsPerDay: Get<Self::Moment>;
@@ -231,7 +230,6 @@ impl<T: Config> Pallet<T> {
 
 		<CurrentPhase<T>>::put(next_phase);
 		T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
-		T::OnCeremonyPhaseChange2::on_ceremony_phase_change(next_phase);
 		Self::deposit_event(Event::PhaseChangedTo(next_phase));
 		info!(target: LOG, "phase changed to: {:?}", next_phase);
 		Ok(())
@@ -295,12 +293,9 @@ impl<T: Config> OnTimestampSet<T::Moment> for Pallet<T> {
 }
 
 /// An event handler for when the ceremony phase changes.
+#[impl_trait_for_tuples::impl_for_tuples(30)]
 pub trait OnCeremonyPhaseChange {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType);
-}
-
-impl OnCeremonyPhaseChange for () {
-	fn on_ceremony_phase_change(_: CeremonyPhaseType) {}
 }
 
 mod weights;
