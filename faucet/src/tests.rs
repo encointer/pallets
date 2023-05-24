@@ -70,7 +70,7 @@ fn set_drip_amount_works() {
 }
 
 #[test]
-fn minting_works() {
+fn pot_balance_works() {
 	new_test_ext().execute_with(|| {
 		Balances::make_free_balance_be(&EncointerFaucet::account_id(), 101);
 		// free_balance - minimum_balance
