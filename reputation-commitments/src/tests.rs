@@ -136,7 +136,7 @@ fn commitments_work() {
 				0,
 				None
 			));
-			assert_eq!(EncointerReputationCommitments::commitments((cid, 11), (0, &alice)), None);
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 11), (0, &alice)));
 			assert_eq!(
 				last_event::<TestRuntime>(),
 				Some(Event::CommitedReputation(cid, 11, 0, alice.clone(), None).into())
@@ -150,7 +150,7 @@ fn commitments_work() {
 				0,
 				None
 			));
-			assert_eq!(EncointerReputationCommitments::commitments((cid, 11), (0, &bob)), None);
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 11), (0, &bob)));
 			assert_eq!(
 				last_event::<TestRuntime>(),
 				Some(Event::CommitedReputation(cid, 11, 0, bob.clone(), None).into())
@@ -165,7 +165,7 @@ fn commitments_work() {
 				1,
 				None
 			));
-			assert_eq!(EncointerReputationCommitments::commitments((cid, 11), (1, &alice)), None);
+			assert!(Commitments::<TestRuntime>::contains_key((cid, 11), (1, &alice)));
 			assert_eq!(
 				last_event::<TestRuntime>(),
 				Some(Event::CommitedReputation(cid, 11, 1, alice.clone(), None).into())
