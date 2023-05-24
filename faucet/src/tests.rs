@@ -30,7 +30,7 @@ use sp_runtime::DispatchError;
 use test_utils::{helpers::*, storage::*, *};
 
 #[test]
-fn purpose_id_is_stored_correclty() {
+fn purpose_id_is_stored_correctly() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(EncointerFaucet::reputation_commitments_purpose_id(), 0,);
 		assert_eq!(
