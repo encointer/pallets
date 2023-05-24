@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Unit tests for the encointer_balances module.
+//! Unit tests for the encointer_faucet module.
 
 use super::*;
 use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System};
