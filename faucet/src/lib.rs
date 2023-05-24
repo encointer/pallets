@@ -146,10 +146,11 @@ pub mod pallet {
 			}
 			<DripAmount<T>>::put(self.drip_amount);
 
-			<encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
+			let purpose_id = <encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
 				DescriptorType::from_str("EncointerFaucet").unwrap(),
 			)
 			.expect("In case of purpose registry overflow, we cannot use this pallet.");
+			<ReputationCommitmentsPurposeId<T>>::put(purpose_id);
 		}
 	}
 
