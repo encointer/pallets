@@ -44,5 +44,5 @@ std = [
     ]
 
 try-runtime = [
-        "frame-system/try-runtime",
-]
+    "frame-system/try-runtime",
+    ]
