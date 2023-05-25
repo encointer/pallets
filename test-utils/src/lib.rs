@@ -201,6 +201,15 @@ macro_rules! impl_encointer_communities {
 }
 
 #[macro_export]
+macro_rules! impl_encointer_reputation_commitments {
+	($t:ident) => {
+		impl encointer_reputation_commitments::Config for $t {
+			type RuntimeEvent = RuntimeEvent;
+		}
+	};
+}
+
+#[macro_export]
 macro_rules! test_runtime {
 	($t:ident, $system:ident, $scheduler:ident) => {
 		impl_frame_system!($t);
@@ -239,11 +248,21 @@ parameter_types! {
 
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
+	($t:ident, $ceremonies:ident, $reputationcommitments:ident) => {
+		impl encointer_scheduler::Config for $t {
+			type RuntimeEvent = RuntimeEvent;
+			type CeremonyMaster = EnsureAlice;
+			type OnCeremonyPhaseChange = ($ceremonies, $reputationcommitments); //OnCeremonyPhaseChange;
+			type MomentsPerDay = MomentsPerDay;
+			type WeightInfo = ();
+		}
+	};
+
 	($t:ident, $ceremonies:ident) => {
 		impl encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
-			type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
+			type OnCeremonyPhaseChange = ($ceremonies, ()); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
 			type WeightInfo = ();
 		}
@@ -252,7 +271,7 @@ macro_rules! impl_encointer_scheduler {
 		impl encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
-			type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
+			type OnCeremonyPhaseChange = ((), ()); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
 			type WeightInfo = ();
 		}
