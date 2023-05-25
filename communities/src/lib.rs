@@ -736,7 +736,7 @@ impl<T: Config> Pallet<T> {
 	pub fn get_locations(cid: &CommunityIdentifier) -> Vec<Location> {
 		<Locations<T>>::iter_prefix_values(cid)
 			.map(|a| a.to_vec())
-			.reduce(|a, b| a.to_vec().iter().cloned().chain(b.to_vec().iter().cloned()).collect())
+			.reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect())
 			.unwrap()
 	}
 
