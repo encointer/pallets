@@ -106,7 +106,6 @@ pub mod v1 {
 				.encode())
 		}
 
-		#[allow(deprecated)]
 		fn on_runtime_upgrade() -> Weight {
 			let weight = T::DbWeight::get().reads(1);
 			if StorageVersion::get::<Pallet<T>>() != 0 {
