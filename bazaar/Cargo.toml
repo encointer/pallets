@@ -17,8 +17,8 @@ encointer-primitives = { path = "../primitives", default-features = false }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-core = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 [dev-dependencies]
 sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
@@ -27,19 +27,19 @@ test-utils = { path = "../test-utils" }
 [features]
 default = ["std"]
 std = [
-	"codec/std",
-	"log/std",
-	"scale-info/std",
+    "codec/std",
+    "log/std",
+    "scale-info/std",
 
-	# local deps
-	"encointer-communities/std",
-	"encointer-primitives/std",
+    # local deps
+    "encointer-communities/std",
+    "encointer-primitives/std",
 
-	# substrate deps
-	"frame-support/std",
-	"frame-system/std",
-	"sp-std/std",
-	"sp-core/std",
+    # substrate deps
+    "frame-support/std",
+    "frame-system/std",
+    "sp-std/std",
+    "sp-core/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking"]

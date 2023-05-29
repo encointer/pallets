@@ -12,14 +12,14 @@ scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
-encointer-reputation-commitments = {package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false}
+encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false }
 
 # substrate deps
-frame-benchmarking = { version = "4.0.0-dev",  default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-frame-support = { version = "4.0.0-dev", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-frame-system = { version = "4.0.0-dev", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-std = { version = "5.0.0", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-runtime = { version = "7.0.0", default-features = false,git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-runtime = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 
 [dev-dependencies]
 approx = "0.5.1"
@@ -29,21 +29,21 @@ test-utils = { path = "../test-utils" }
 [features]
 default = ["std"]
 std = [
-	"codec/std",
-	"log/std",
-	"scale-info/std",
-	# local deps
-	"encointer-primitives/std",
-	"encointer-reputation-commitments/std",
-	# substrate deps
-	"frame-support/std",
-	"frame-system/std",
-	"sp-std/std",
-	"sp-runtime/std",
-	]
+    "codec/std",
+    "log/std",
+    "scale-info/std",
+    # local deps
+    "encointer-primitives/std",
+    "encointer-reputation-commitments/std",
+    # substrate deps
+    "frame-support/std",
+    "frame-system/std",
+    "sp-std/std",
+    "sp-runtime/std",
+]
 
 runtime-benchmarks = ["frame-benchmarking", "approx"]
 
 try-runtime = [
-        "frame-system/try-runtime",
+    "frame-system/try-runtime",
 ]
