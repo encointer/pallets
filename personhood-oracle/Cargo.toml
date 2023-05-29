@@ -5,23 +5,23 @@ authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
 
 [dependencies]
-log = { version = "0.4.14", default-features = false }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
-encointer-primitives = { path = "../primitives", default-features = false, features = ["sybil"]}
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["sybil"] }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 
 # polkadot deps
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.37" }
