@@ -1,5 +1,12 @@
 # Encointer Pallets
 
+This branch contains the deprecated `pallet-personhood-oracle` and `pallet-sybil-gate-template`. The demo intended to 
+demonstrate how a parachain can integrate the `pallet-sybil-gate-template` to query an accounts `personhood` confidence
+level from the Encointer Parachain via the `pallet-personhood-oracle`. However, this demo is deemed deprecated, as
+we assume that this can be done without the XCM-protocol in the future, which is way too powerful and complicated
+for a simple cross-chain storage query. We assume that beefy, will be used in the future to formulate a simple
+storage proof of another parachain, which does not need any XCM at all.
+
 [![Rust](https://github.com/encointer/pallets/actions/workflows/ci.yml/badge.svg)](https://github.com/encointer/pallets/actions/workflows/ci.yml)
 
 All application-specific pallets for [encointer](https://encointer.org)
