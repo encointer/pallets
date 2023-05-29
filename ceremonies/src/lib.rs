@@ -50,6 +50,7 @@ use frame_support::{
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
+use sp_core::bounded::BoundedSlice;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use sp_std::{cmp::max, prelude::*, vec};
 // Logger target
@@ -1799,8 +1800,8 @@ impl<T: Config> Pallet<T> {
 				(&cid, cindex),
 				Self::attestation_index((cid, cindex), participant),
 			) {
-				Some(attestees) => attestees.to_vec(),
-				None => vec![],
+				Some(attestees) => attestees,
+				None => Default::default(),
 			};
 			// convert AccountId to local index
 			let attestation_indices = attestations
@@ -1839,7 +1840,7 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		meetup_index: MeetupIndexType,
 		meetup_participants: &[T::AccountId],
-		attestations: &BoundedVec<T::AccountId, T::MaxAttestations>,
+		attestations: &[T::AccountId],
 	) -> Result<(), Error<T>> {
 		let mut verified_attestees = vec![];
 		for attestee in attestations.iter() {
@@ -1874,7 +1875,7 @@ impl<T: Config> Pallet<T> {
 		<AttestationRegistry<T>>::insert(
 			(cid, cindex),
 			idx,
-			&BoundedVec::try_from(verified_attestees.clone())
+			BoundedSlice::try_from(&verified_attestees[..])
 				.map_err(|_| Error::<T>::TooManyAttestationsInBoundedVec)?,
 		);
 		<AttestationIndex<T>>::insert((cid, cindex), &participant, idx);
