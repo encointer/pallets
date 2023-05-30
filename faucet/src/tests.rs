@@ -457,3 +457,34 @@ fn dissolve_faucet_fails_with_inexistent_faucet() {
 		);
 	})
 }
+
+#[test]
+fn set_reserve_amount_errs_with_bad_origin() {
+	new_test_ext().execute_with(|| {
+		assert_dispatch_err(
+			EncointerFaucet::set_reserve_amount(
+				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
+				1,
+			),
+			DispatchError::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn set_reserve_amount_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(EncointerFaucet::set_reserve_amount(
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
+			2
+		));
+
+		assert_eq!(EncointerFaucet::reserve_amount(), 2);
+		assert_ok!(EncointerFaucet::set_reserve_amount(
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
+			3
+		));
+
+		assert_eq!(EncointerFaucet::reserve_amount(), 3);
+	});
+}

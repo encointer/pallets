@@ -65,7 +65,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + encointer_reputation_commitments::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId>;
-
+		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
 	}
@@ -175,6 +175,38 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::call_index(3)]
+		#[pallet::weight(10_000)]
+		pub fn set_reserve_amount(
+			origin: OriginFor<T>,
+			reserve_amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			T::ControllerOrigin::ensure_origin(origin)?;
+			<ReserveAmount<T>>::put(reserve_amount);
+			info!(target: LOG, "reserve amount set to {:?} s", reserve_amount);
+			Self::deposit_event(Event::ReserveAmountUpdated(reserve_amount));
+			Ok(().into())
+		}
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub reserve_amount: BalanceOf<T>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self { reserve_amount: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			<ReserveAmount<T>>::put(self.reserve_amount);
+		}
 	}
 
 	#[pallet::event]
@@ -184,6 +216,8 @@ pub mod pallet {
 		Dripped(T::AccountId, T::AccountId, BalanceOf<T>),
 		/// faucet created
 		FaucetCreated(T::AccountId, FaucetNameType),
+		/// reserve amount updated
+		ReserveAmountUpdated(BalanceOf<T>),
 	}
 
 	#[pallet::error]
@@ -206,4 +240,8 @@ pub mod pallet {
 	#[pallet::getter(fn faucets)]
 	pub(super) type Faucets<T: Config> =
 		StorageMap<_, Identity, T::AccountId, Faucet<BalanceOf<T>>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn reserve_amount)]
+	pub(super) type ReserveAmount<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 }
