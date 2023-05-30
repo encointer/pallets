@@ -23,6 +23,7 @@ pub mod ceremonies;
 pub mod common;
 pub mod communities;
 pub mod error;
+pub mod faucet;
 pub mod reputation_commitments;
 pub mod scheduler;
 

@@ -13,17 +13,27 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
-use sp_core::{bounded::BoundedVec, ConstU32};
 
-pub type PurposeIdType = u64;
-pub type DescriptorType = BoundedVec<u8, ConstU32<128>>;
+use crate::{communities::CommunityIdentifier, reputation_commitments::PurposeIdType};
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
+use sp_core::{bounded::BoundedVec, ConstU32, MaxEncodedLen, RuntimeDebug};
+pub type WhiteListType = BoundedVec<CommunityIdentifier, ConstU32<1024>>;
+pub type FaucetNameType = BoundedVec<u8, ConstU32<64>>;
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, MaxEncodedLen, TypeInfo)]
+pub struct Faucet<Balance> {
+	pub name: FaucetNameType,
+	pub purpose_id: PurposeIdType,
+	pub whitelist: WhiteListType,
+	pub drip_amount: Balance,
+}
 
 pub trait FromStr: Sized {
 	type Err;
 	fn from_str(inp: &str) -> Result<Self, Self::Err>;
 }
-
-impl FromStr for DescriptorType {
+impl FromStr for FaucetNameType {
 	type Err = Vec<u8>;
 	fn from_str(inp: &str) -> Result<Self, Self::Err> {
 		Self::try_from(inp.as_bytes().to_vec())

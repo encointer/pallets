@@ -61,7 +61,6 @@ parameter_types! {
 
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
-	type ControllerOrigin = EnsureAlice;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = FaucetPalletId;
 }
@@ -79,9 +78,6 @@ impl_encointer_reputation_commitments!(TestRuntime);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 
-	let conf = dut::GenesisConfig { drip_amount: 100_000 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
-
 	encointer_ceremonies::GenesisConfig::<TestRuntime> {
 		ceremony_reward: BalanceType::from_num(1),
 		location_tolerance: LOCATION_TOLERANCE, // [m]
@@ -96,8 +92,4 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	t.into()
-}
-
-pub fn master() -> AccountId {
-	AccountId::from(AccountKeyring::Alice)
 }
