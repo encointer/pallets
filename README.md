@@ -19,9 +19,9 @@ a balances module that supports multiple communities and demurrage
 ## pallet-encointer-bazaar
 a registry for classifieds from community members, linking to IPFS
 
-## personhood-oracle
-a digital personhood verification oracle with XCM support. See pallet sybil-gate-example for how to use this from another parachain
-
+## ~~personhood-oracle & sybil-gate template~~ [Deprecated]
+A digital personhood verification oracle with XCM support. See the README.md on the stale demo branch for more info:
+https://github.com/encointer/pallets/tree/demo/xcm-personhood-oracle-and-sybil-gate-template#encointer-pallets
 ## Dev Hints
 
 ### Benchmarking

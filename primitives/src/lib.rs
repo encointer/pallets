@@ -26,9 +26,6 @@ pub mod error;
 pub mod reputation_commitments;
 pub mod scheduler;
 
-#[cfg(feature = "sybil")]
-pub mod sybil;
-
 pub use ep_core::*;
 
 pub use fixed;
