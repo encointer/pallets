@@ -64,7 +64,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + encointer_reputation_commitments::Config + pallet_treasury::Config
+		frame_system::Config
+		+ encointer_reputation_commitments::Config
+		+ encointer_communities::Config
+		+ pallet_treasury::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
@@ -90,6 +93,13 @@ pub mod pallet {
 			drip_amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
+
+			let all_communities = encointer_communities::Pallet::<T>::community_identifiers();
+			for cid in &whitelist {
+				if !all_communities.contains(cid) {
+					return Err(<Error<T>>::InvalidCommunityIdentifierInWhitelist.into())
+				}
+			}
 
 			// create account
 			let faucet_identifier =
@@ -300,6 +310,8 @@ pub mod pallet {
 		FaucetNotEmpty,
 		/// sender is not faucet creator
 		NotCreator,
+		/// invalid community identifier in whitelist
+		InvalidCommunityIdentifierInWhitelist,
 	}
 
 	#[pallet::storage]

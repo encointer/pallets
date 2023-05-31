@@ -3990,6 +3990,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "pallet-encointer-communities",
  "pallet-encointer-reputation-commitments",
  "pallet-treasury",
  "parity-scale-codec",
