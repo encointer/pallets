@@ -17,7 +17,7 @@
 //! Unit tests for the encointer_faucet module.
 
 use super::*;
-use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System};
+use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System, Treasury};
 use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
@@ -73,7 +73,7 @@ fn faucet_creation_works() {
 		.ok();
 
 		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
-		Balances::make_free_balance_be(&alice, 101);
+		Balances::make_free_balance_be(&alice, 114);
 		let faucet_account = new_faucet(
 			RuntimeOrigin::signed(alice.clone()),
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
@@ -82,14 +82,15 @@ fn faucet_creation_works() {
 			10,
 		);
 
-		let Faucet { name, purpose_id, whitelist, drip_amount } =
-			EncointerFaucet::faucets(&faucet_account);
+		let faucet = EncointerFaucet::faucets(&faucet_account).unwrap();
 
-		assert_eq!(name, FaucetNameType::from_str("Some Faucet Name").unwrap());
-		assert_eq!(purpose_id, 2);
-		assert_eq!(whitelist, whitelist_input);
-		assert_eq!(drip_amount, 10);
+		assert_eq!(faucet.name, FaucetNameType::from_str("Some Faucet Name").unwrap());
+		assert_eq!(faucet.purpose_id, 2);
+		assert_eq!(faucet.whitelist, whitelist_input);
+		assert_eq!(faucet.drip_amount, 10);
+		assert_eq!(faucet.creator, alice.clone());
 		assert_eq!(Balances::free_balance(&alice), 1);
+		assert_eq!(Balances::reserved_balance(&alice), 13);
 		assert_eq!(Balances::free_balance(&faucet_account), 100);
 	});
 }
@@ -107,7 +108,7 @@ fn faucet_creation_fails_with_insufficient_balance() {
 		.unwrap();
 
 		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
-		Balances::make_free_balance_be(&alice, 100);
+		Balances::make_free_balance_be(&alice, 112);
 
 		assert_err!(
 			EncointerFaucet::create_faucet(
@@ -403,6 +404,9 @@ fn dissolve_faucet_works() {
 			10,
 		);
 
+		assert_eq!(Balances::free_balance(&bob), 952);
+		assert_eq!(Balances::reserved_balance(&bob), 13);
+
 		assert_eq!(Balances::free_balance(&faucet_account), 35);
 		assert_ok!(EncointerFaucet::dissolve_faucet(
 			RuntimeOrigin::root(),
@@ -411,6 +415,8 @@ fn dissolve_faucet_works() {
 		));
 		assert_eq!(Balances::free_balance(&faucet_account), 0);
 		assert_eq!(Balances::free_balance(&alice), 35);
+		assert_eq!(Balances::free_balance(&bob), 965);
+		assert_eq!(Balances::reserved_balance(&bob), 0);
 	})
 }
 
@@ -453,6 +459,124 @@ fn dissolve_faucet_fails_with_inexistent_faucet() {
 
 		assert_err!(
 			EncointerFaucet::dissolve_faucet(RuntimeOrigin::root(), bob.clone(), alice.clone()),
+			Error::<TestRuntime>::InexsistentFaucet
+		);
+	})
+}
+
+#[test]
+fn close_faucet_works() {
+	let mut ext = new_test_ext();
+	let alice = AccountId::from(AccountKeyring::Alice);
+	let bob = AccountId::from(AccountKeyring::Bob);
+	let cid = CommunityIdentifier::default();
+
+	ext.insert(participant_reputation((cid, 12), &alice), Reputation::VerifiedUnlinked.encode());
+
+	ext.execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let whitelist_input: WhiteListType = bounded_vec![cid];
+		Balances::make_free_balance_be(&bob, 1000);
+
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			35,
+			whitelist_input.clone(),
+			20,
+		);
+
+		assert_eq!(Balances::free_balance(&bob), 952);
+		assert_eq!(Balances::reserved_balance(&bob), 13);
+
+		assert_eq!(Balances::free_balance(&faucet_account), 35);
+
+		assert_ok!(EncointerFaucet::drip(
+			RuntimeOrigin::signed(alice.clone()),
+			faucet_account.clone(),
+			cid,
+			12,
+		));
+
+		assert_ok!(EncointerFaucet::close_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			faucet_account.clone(),
+		));
+
+		assert_eq!(Balances::free_balance(&faucet_account), 0);
+		assert_eq!(Balances::free_balance(&alice), 20);
+		assert_eq!(Balances::free_balance(&bob), 965);
+		assert_eq!(Balances::free_balance(&Treasury::account_id()), 15);
+		assert_eq!(Balances::reserved_balance(&bob), 0);
+	})
+}
+
+#[test]
+fn close_faucet_fails_if_not_creator() {
+	let mut ext = new_test_ext();
+	let alice = AccountId::from(AccountKeyring::Alice);
+	let bob = AccountId::from(AccountKeyring::Bob);
+	let cid = CommunityIdentifier::default();
+
+	ext.execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let whitelist_input: WhiteListType = bounded_vec![cid];
+		Balances::make_free_balance_be(&bob, 1000);
+
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			35,
+			whitelist_input.clone(),
+			10,
+		);
+
+		assert_err!(
+			EncointerFaucet::close_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone()
+			),
+			Error::<TestRuntime>::NotCreator
+		);
+	})
+}
+
+#[test]
+fn close_faucet_fails_if_not_empty() {
+	let mut ext = new_test_ext();
+	let bob = AccountId::from(AccountKeyring::Bob);
+	let cid = CommunityIdentifier::default();
+
+	ext.execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let whitelist_input: WhiteListType = bounded_vec![cid];
+		Balances::make_free_balance_be(&bob, 1000);
+
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			35,
+			whitelist_input.clone(),
+			10,
+		);
+
+		assert_err!(
+			EncointerFaucet::close_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				faucet_account.clone()
+			),
+			Error::<TestRuntime>::FaucetNotEmpty
+		);
+	})
+}
+
+#[test]
+fn close_faucet_fails_with_inexistent_faucet() {
+	new_test_ext().execute_with(|| {
+		let bob = AccountId::from(AccountKeyring::Bob);
+
+		assert_err!(
+			EncointerFaucet::close_faucet(RuntimeOrigin::signed(bob.clone()), bob.clone()),
 			Error::<TestRuntime>::InexsistentFaucet
 		);
 	})

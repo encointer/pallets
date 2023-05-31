@@ -16,26 +16,23 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::Decode;
 use core::marker::PhantomData;
 use encointer_primitives::{
-	communities::CommunityIdentifier,
-	faucet::*,
-	reputation_commitments::{DescriptorType, PurposeIdType},
+	communities::CommunityIdentifier, faucet::*, reputation_commitments::DescriptorType,
 	scheduler::CeremonyIndexType,
 };
 use frame_support::{
-	pallet_prelude::TypeInfo,
 	traits::{
 		Currency,
 		ExistenceRequirement::{AllowDeath, KeepAlive},
-		Get,
+		Get, NamedReservableCurrency,
 	},
-	PalletId, RuntimeDebug,
+	PalletId,
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::info;
-use sp_core::{MaxEncodedLen, H256};
+use sp_core::H256;
 use sp_runtime::traits::Hash;
 use sp_std::convert::TryInto;
 
@@ -51,6 +48,10 @@ mod tests;
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
+pub type ReserveIdentifierOf<T> = <<T as Config>::Currency as NamedReservableCurrency<
+	<T as frame_system::Config>::AccountId,
+>>::ReserveIdentifier;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -62,9 +63,11 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + encointer_reputation_commitments::Config {
+	pub trait Config:
+		frame_system::Config + encointer_reputation_commitments::Config + pallet_treasury::Config
+	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		type Currency: Currency<Self::AccountId>;
+		type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
 		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
@@ -74,6 +77,8 @@ pub mod pallet {
 	impl<T: Config> Pallet<T>
 	where
 		sp_core::H256: From<<T as frame_system::Config>::Hash>,
+		T::AccountId: AsRef<[u8; 32]>,
+		ReserveIdentifierOf<T>: From<[u8; 8]>,
 	{
 		#[pallet::call_index(0)]
 		#[pallet::weight(10_000)]
@@ -88,17 +93,23 @@ pub mod pallet {
 
 			// create account
 			let faucet_identifier =
-				[T::PalletId::get().0.as_slice(), name.to_vec().as_slice()].concat();
+				[<T as Config>::PalletId::get().0.as_slice(), name.to_vec().as_slice()].concat();
 
 			let faucet_id_hash: H256 = T::Hashing::hash_of(&faucet_identifier).into();
-			let account_id = T::AccountId::decode(&mut faucet_id_hash.as_bytes())
+			let faucet_account = T::AccountId::decode(&mut faucet_id_hash.as_bytes())
 				.expect("32 bytes can always construct an AccountId32");
 
-			if <Faucets<T>>::contains_key(&account_id) {
+			if <Faucets<T>>::contains_key(&faucet_account) {
 				return Err(<Error<T>>::FaucetAlreadyExists.into())
 			}
 
-			T::Currency::transfer(&from, &account_id, amount, KeepAlive)
+			<T as Config>::Currency::reserve_named(
+				&Self::get_reserve_id(&faucet_account),
+				&from,
+				Self::reserve_amount(),
+			)?;
+
+			<T as Config>::Currency::transfer(&from, &faucet_account, amount, KeepAlive)
 				.map_err(|_| <Error<T>>::InsuffiecientBalance)?;
 
 			let purpose_id = <encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
@@ -107,11 +118,11 @@ pub mod pallet {
 			)?;
 
 			<Faucets<T>>::insert(
-				&account_id,
-				Faucet { name: name.clone(), purpose_id, whitelist, drip_amount },
+				&faucet_account,
+				Faucet { name: name.clone(), purpose_id, whitelist, drip_amount, creator: from },
 			);
 
-			Self::deposit_event(Event::FaucetCreated(account_id, name));
+			Self::deposit_event(Event::FaucetCreated(faucet_account, name));
 
 			Ok(().into())
 		}
@@ -130,7 +141,7 @@ pub mod pallet {
 				return Err(<Error<T>>::InexsistentFaucet.into())
 			}
 
-			let faucet = Self::faucets(&faucet_account);
+			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
 
 			if !faucet.whitelist.contains(&cid) {
 				return Err(<Error<T>>::CommunityNotInWhitelist.into())
@@ -144,8 +155,13 @@ pub mod pallet {
 				None,
 			)?;
 
-			T::Currency::transfer(&faucet_account, &from, faucet.drip_amount, KeepAlive)
-				.map_err(|_| <Error<T>>::FaucetEmpty)?;
+			<T as Config>::Currency::transfer(
+				&faucet_account,
+				&from,
+				faucet.drip_amount,
+				KeepAlive,
+			)
+			.map_err(|_| <Error<T>>::FaucetEmpty)?;
 
 			Self::deposit_event(Event::Dripped(faucet_account, from, faucet.drip_amount));
 
@@ -161,15 +177,18 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
-			if !<Faucets<T>>::contains_key(&faucet_account) {
-				return Err(<Error<T>>::InexsistentFaucet.into())
-			}
+			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
+
+			<T as Config>::Currency::unreserve_all_named(
+				&Self::get_reserve_id(&faucet_account),
+				&faucet.creator,
+			);
 
 			<Faucets<T>>::remove(&faucet_account);
-			T::Currency::transfer(
+			<T as Config>::Currency::transfer(
 				&faucet_account,
 				&beneficiary,
-				T::Currency::free_balance(&faucet_account),
+				<T as Config>::Currency::free_balance(&faucet_account),
 				AllowDeath,
 			)?;
 
@@ -177,6 +196,37 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
+		#[pallet::weight(10_000)]
+		pub fn close_faucet(
+			origin: OriginFor<T>,
+			faucet_account: T::AccountId,
+		) -> DispatchResultWithPostInfo {
+			let from = ensure_signed(origin)?;
+			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
+
+			ensure!(from == faucet.creator, <Error<T>>::NotCreator);
+			ensure!(
+				<T as Config>::Currency::free_balance(&faucet_account) < faucet.drip_amount,
+				<Error<T>>::FaucetNotEmpty
+			);
+
+			<T as Config>::Currency::unreserve_all_named(
+				&Self::get_reserve_id(&faucet_account),
+				&faucet.creator,
+			);
+
+			<Faucets<T>>::remove(&faucet_account);
+			<T as Config>::Currency::transfer(
+				&faucet_account,
+				&<pallet_treasury::Pallet<T>>::account_id(),
+				<T as Config>::Currency::free_balance(&faucet_account),
+				AllowDeath,
+			)?;
+
+			Ok(().into())
+		}
+
+		#[pallet::call_index(4)]
 		#[pallet::weight(10_000)]
 		pub fn set_reserve_amount(
 			origin: OriginFor<T>,
@@ -190,6 +240,18 @@ pub mod pallet {
 		}
 	}
 
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: AsRef<[u8; 32]>,
+		ReserveIdentifierOf<T>: From<[u8; 8]>,
+	{
+		fn get_reserve_id(faucet_account: &T::AccountId) -> ReserveIdentifierOf<T> {
+			let reserve_id: [u8; 8] = faucet_account.as_ref()[0..8]
+				.try_into()
+				.expect("[u8; 32] can always be converted to [u8; 8]");
+			reserve_id.into()
+		}
+	}
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub reserve_amount: BalanceOf<T>,
@@ -234,12 +296,16 @@ pub mod pallet {
 		PurposeIdCreationFailed,
 		/// cid not in whitelist
 		CommunityNotInWhitelist,
+		/// facuet is not empty
+		FaucetNotEmpty,
+		/// sender is not faucet creator
+		NotCreator,
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn faucets)]
 	pub(super) type Faucets<T: Config> =
-		StorageMap<_, Identity, T::AccountId, Faucet<BalanceOf<T>>, ValueQuery>;
+		StorageMap<_, Identity, T::AccountId, Faucet<T::AccountId, BalanceOf<T>>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn reserve_amount)]

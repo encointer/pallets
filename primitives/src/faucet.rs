@@ -22,11 +22,12 @@ pub type WhiteListType = BoundedVec<CommunityIdentifier, ConstU32<1024>>;
 pub type FaucetNameType = BoundedVec<u8, ConstU32<64>>;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, MaxEncodedLen, TypeInfo)]
-pub struct Faucet<Balance> {
+pub struct Faucet<AccountId, Balance> {
 	pub name: FaucetNameType,
 	pub purpose_id: PurposeIdType,
 	pub whitelist: WhiteListType,
 	pub drip_amount: Balance,
+	pub creator: AccountId,
 }
 
 pub trait FromStr: Sized {
