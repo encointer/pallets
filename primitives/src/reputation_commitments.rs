@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 use sp_core::{bounded::BoundedVec, ConstU32};
+use sp_std::vec::Vec;
 
 pub type PurposeIdType = u64;
 pub type DescriptorType = BoundedVec<u8, ConstU32<24>>;
