@@ -1,5 +1,5 @@
 [package]
-name = "pallet-encointer-balances"
+name = "pallet-encointer-reputation-commitments"
 version = "1.2.0"
 authors = ["encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>"]
 edition = "2021"
@@ -11,17 +11,19 @@ log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
+encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 encointer-primitives = { path = "../primitives", default-features = false }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-asset-tx-payment = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-
 
 [dev-dependencies]
 approx = "0.5.1"
@@ -36,17 +38,16 @@ std = [
     "scale-info/std",
     # local deps
     "encointer-primitives/std",
+    "encointer-ceremonies/std",
     # substrate deps
     "frame-support/std",
     "frame-system/std",
     "sp-std/std",
     "sp-runtime/std",
-    "pallet-asset-tx-payment/std",
-    "pallet-transaction-payment/std",
-	]
+]
 
 runtime-benchmarks = ["frame-benchmarking", "approx"]
 
 try-runtime = [
-        "frame-system/try-runtime",
+    "frame-system/try-runtime",
 ]

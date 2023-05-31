@@ -5,25 +5,25 @@ name = "pallet-encointer-ceremonies"
 version = "1.2.0"
 
 [dependencies]
-codec = {package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
-log = {version = "0.4.14", default-features = false}
-scale-info = {version = "2.0.1", default-features = false}
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+log = { version = "0.4.14", default-features = false }
+scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
-encointer-balances = {package = "pallet-encointer-balances", path = "../balances", default-features = false}
-encointer-ceremonies-assignment = {path = "assignment", default-features = false}
-encointer-communities = {package = "pallet-encointer-communities", path = "../communities", default-features = false}
-encointer-meetup-validation = {path = "meetup-validation", default-features = false}
-encointer-primitives = {path = "../primitives", default-features = false}
-encointer-scheduler = {package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false}
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
+encointer-ceremonies-assignment = { path = "assignment", default-features = false }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
+encointer-meetup-validation = { path = "meetup-validation", default-features = false }
+encointer-primitives = { path = "../primitives", default-features = false }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
-frame-support = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-frame-system = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-pallet-timestamp = {version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-io = {version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-runtime = {version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-std = {version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-core = {version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 
 # benchmarking
@@ -35,30 +35,30 @@ approx = "0.5.1"
 itertools = "0.10.3"
 rstest = "0.12.0"
 sp-core = {version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-io = {version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-keystore = {version = "0.13.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-test-utils = {path = "../test-utils"}
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+sp-keystore = { version = "0.13.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
 std = [
-  "codec/std",
-  "log/std",
-  "scale-info/std",
-  "encointer-balances/std",
-  "encointer-ceremonies-assignment/std",
-  "encointer-communities/std",
-  "encointer-meetup-validation/std",
-  "encointer-primitives/std",
-  "encointer-scheduler/std",
-  "frame-support/std",
-  "frame-system/std",
-  "pallet-timestamp/std",
-  "sp-io/std",
-  "sp-runtime/std",
-  "sp-std/std",
-  "frame-benchmarking/std",
-  "sp-core/std",
+    "codec/std",
+    "log/std",
+    "scale-info/std",
+    "encointer-balances/std",
+    "encointer-ceremonies-assignment/std",
+    "encointer-communities/std",
+    "encointer-meetup-validation/std",
+    "encointer-primitives/std",
+    "encointer-scheduler/std",
+    "frame-support/std",
+    "frame-system/std",
+    "pallet-timestamp/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "frame-benchmarking/std",
+    "sp-core/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto"]

@@ -17,5 +17,5 @@ default = ["std"]
 std = [
     "sp-api/std",
     "sp-std/std",
-    "encointer-primitives/std"
+    "encointer-primitives/std",
 ]
