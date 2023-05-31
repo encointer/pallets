@@ -240,6 +240,7 @@ macro_rules! impl_encointer_ceremonies {
 			type MeetupMinSize = MeetupMinSize;
 			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 			type WeightInfo = ();
+			type MaxAttestations = ConstU32<10>;
 		}
 	};
 }
