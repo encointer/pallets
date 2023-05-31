@@ -1,7 +1,5 @@
 use crate::*;
-use encointer_primitives::communities::{
-	BoundedCommunityMetadata, CommunityIdentifier, Degree, Location,
-};
+use encointer_primitives::communities::{CommunityIdentifier, CommunityMetadata, Degree, Location};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -52,7 +50,7 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 		RawOrigin::Root.into(),
 		location,
 		bs.clone(),
-		BoundedCommunityMetadata::default(),
+		CommunityMetadata::default(),
 		None,
 		None,
 	)

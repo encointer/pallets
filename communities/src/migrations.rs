@@ -1,4 +1,5 @@
 use super::*;
+use encointer_primitives::communities::UnboundedCommunityMetadata;
 use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade};
 
 /// The log target.
@@ -40,7 +41,7 @@ mod v0 {
 		Pallet<T>,
 		Blake2_128Concat,
 		CommunityIdentifier,
-		CommunityMetadataType,
+		UnboundedCommunityMetadata,
 		ValueQuery,
 	>;
 }
@@ -257,7 +258,7 @@ mod test {
 
 			v0::CommunityMetadata::<TestRuntime>::insert(
 				CommunityIdentifier::from_str("111112Fvv9d").unwrap(),
-				CommunityMetadataType {
+				UnboundedCommunityMetadata {
 					name: "AName".into(),
 					symbol: "ASY".into(),
 					assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
@@ -352,7 +353,7 @@ mod test {
 				crate::CommunityMetadata::<TestRuntime>::get(
 					CommunityIdentifier::from_str("111112Fvv9d").unwrap()
 				),
-				BoundedCommunityMetadata {
+				CommunityMetadataType {
 					name: BoundedPalletString::from_str("AName").unwrap(),
 					symbol: BoundedPalletString::from_str("ASY").unwrap(),
 					assets: BoundedPalletString::from_str(

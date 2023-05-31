@@ -232,7 +232,7 @@ impl Location {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub struct CommunityMetadata {
+pub struct UnboundedCommunityMetadata {
 	/// utf8 encoded name
 	pub name: PalletString,
 	/// utf8 encoded abbreviation of the name
@@ -248,7 +248,7 @@ pub struct CommunityMetadata {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub struct BoundedCommunityMetadata {
+pub struct CommunityMetadata {
 	/// utf8 encoded name
 	pub name: BoundedPalletString,
 	/// utf8 encoded abbreviation of the name
@@ -275,15 +275,15 @@ impl CidName {
 	}
 }
 
-impl BoundedCommunityMetadata {
+impl CommunityMetadata {
 	pub fn new(
 		name: BoundedPalletString,
 		symbol: BoundedPalletString,
 		assets: BoundedIpfsCid,
 		theme: Option<BoundedIpfsCid>,
 		url: Option<BoundedPalletString>,
-	) -> Result<BoundedCommunityMetadata, CommunityMetadataError> {
-		let meta = BoundedCommunityMetadata { name, symbol, assets, theme, url };
+	) -> Result<CommunityMetadata, CommunityMetadataError> {
+		let meta = CommunityMetadata { name, symbol, assets, theme, url };
 		match meta.validate() {
 			Ok(()) => Ok(meta),
 			Err(e) => Err(e),
@@ -328,10 +328,10 @@ impl BoundedCommunityMetadata {
 	}
 }
 
-impl Default for BoundedCommunityMetadata {
+impl Default for CommunityMetadata {
 	/// Default implementation, which passes `self::validate()` for easy pallet testing
 	fn default() -> Self {
-		BoundedCommunityMetadata {
+		CommunityMetadata {
 			name: BoundedPalletString::from_str("Default").unwrap(),
 			symbol: BoundedPalletString::from_str("DEF").unwrap(),
 			assets: BoundedPalletString::from_str("Defau1tCidThat1s46Characters1nLength1111111111")
@@ -342,10 +342,10 @@ impl Default for BoundedCommunityMetadata {
 	}
 }
 
-impl Default for CommunityMetadata {
+impl Default for UnboundedCommunityMetadata {
 	/// Default implementation, which passes `self::validate()` for easy pallet testing
 	fn default() -> Self {
-		CommunityMetadata {
+		UnboundedCommunityMetadata {
 			name: "Default".into(),
 			symbol: "DEF".into(),
 			assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
@@ -415,9 +415,9 @@ mod tests {
 		bs58_verify::Bs58Error,
 		common::{FromStr as CrateFromStr, IpfsValidationError},
 		communities::{
-			validate_demurrage, validate_nominal_income, BoundedCommunityMetadata,
-			BoundedPalletString, CommunityIdentifier, CommunityMetadataError, Degree, Demurrage,
-			Location, NominalIncome, RangeError,
+			validate_demurrage, validate_nominal_income, BoundedPalletString, CommunityIdentifier,
+			CommunityMetadata, CommunityMetadataError, Degree, Demurrage, Location, NominalIncome,
+			RangeError,
 		},
 	};
 	use sp_std::str::FromStr;
@@ -438,12 +438,12 @@ mod tests {
 
 	#[test]
 	fn validate_metadata_works() {
-		assert_eq!(BoundedCommunityMetadata::default().validate(), Ok(()));
+		assert_eq!(CommunityMetadata::default().validate(), Ok(()));
 	}
 
 	#[test]
 	fn validate_metadata_fails_for_invalid_ascii() {
-		let meta = BoundedCommunityMetadata {
+		let meta = CommunityMetadata {
 			name: BoundedPalletString::from_str("€").unwrap(),
 			..Default::default()
 		};
@@ -452,7 +452,7 @@ mod tests {
 
 	#[test]
 	fn validate_metadata_fails_for_invalid_assets_cid() {
-		let meta = BoundedCommunityMetadata {
+		let meta = CommunityMetadata {
 			assets: BoundedPalletString::from_str("IhaveCorrectLengthButWrongSymbols1111111111111")
 				.unwrap(),
 			..Default::default()

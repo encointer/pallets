@@ -139,7 +139,7 @@ fn new_community_works() {
 		let location = Location { lat: T::from_num(1i32), lon: T::from_num(1i32) };
 		assert!(EncointerCommunities::is_valid_location(&location));
 		let bs = vec![alice.clone(), bob, charlie];
-		let community_meta: BoundedCommunityMetadata = BoundedCommunityMetadata {
+		let community_meta: CommunityMetadataType = CommunityMetadataType {
 			name: BoundedPalletString::from_str("Default").unwrap(),
 			symbol: BoundedPalletString::from_str("DEF").unwrap(),
 			..Default::default()
@@ -175,7 +175,7 @@ fn two_communities_in_same_bucket_works() {
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 		let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
 		let bs2 = vec![bob, charlie, alice.clone()];
-		let community_meta: BoundedCommunityMetadata = BoundedCommunityMetadata {
+		let community_meta: CommunityMetadataType = CommunityMetadataType {
 			name: BoundedPalletString::from_str("Default").unwrap(),
 			symbol: BoundedPalletString::from_str("DEF").unwrap(),
 			..Default::default()
@@ -230,7 +230,7 @@ fn updating_community_metadata_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
-		let new_metadata = BoundedCommunityMetadata {
+		let new_metadata = CommunityMetadataType {
 			name: BoundedPalletString::from_str("New").unwrap(),
 			..Default::default()
 		};
@@ -249,7 +249,7 @@ fn updating_community_metadata_works() {
 fn updating_community_errs_with_invalid_origin() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community(None, 0.0, 0.0);
-		let new_metadata = BoundedCommunityMetadata {
+		let new_metadata = CommunityMetadataType {
 			name: BoundedPalletString::from_str("New").unwrap(),
 			..Default::default()
 		};

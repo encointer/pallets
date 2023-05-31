@@ -29,7 +29,7 @@ use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
 	common::BoundedPalletString,
 	communities::{
-		consts::*, validate_nominal_income, BoundedCommunityMetadata, CommunityIdentifier,
+		consts::*, validate_nominal_income, CommunityIdentifier,
 		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
 		NominalIncome as NominalIncomeType,
 	},
@@ -98,7 +98,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			location: Location,
 			bootstrappers: Vec<T::AccountId>,
-			community_metadata: BoundedCommunityMetadata,
+			community_metadata: CommunityMetadataType,
 			demurrage: Option<Demurrage>,
 			nominal_income: Option<NominalIncomeType>,
 		) -> DispatchResultWithPostInfo {
@@ -107,7 +107,6 @@ pub mod pallet {
 			community_metadata
 				.validate()
 				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
-
 			if let Some(i) = nominal_income {
 				validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 			}
@@ -252,7 +251,7 @@ pub mod pallet {
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
-			community_metadata: BoundedCommunityMetadata,
+			community_metadata: CommunityMetadataType,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 
@@ -453,7 +452,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn community_metadata)]
 	pub(super) type CommunityMetadata<T: Config> =
-		StorageMap<_, Blake2_128Concat, CommunityIdentifier, BoundedCommunityMetadata, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, CommunityIdentifier, CommunityMetadataType, ValueQuery>;
 
 	/// Amount of UBI to be paid for every attended ceremony.
 	#[pallet::storage]
