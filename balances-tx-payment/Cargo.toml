@@ -41,8 +41,8 @@ std = [
     "pallet-asset-tx-payment/std",
     "pallet-transaction-payment/std",
     "sp-runtime/std",
-    ]
+]
 
 try-runtime = [
     "frame-system/try-runtime",
-    ]
+]

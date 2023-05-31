@@ -43,10 +43,10 @@ std = [
     "sp-runtime/std",
     "pallet-asset-tx-payment/std",
     "pallet-transaction-payment/std",
-	]
+]
 
 runtime-benchmarks = ["frame-benchmarking", "approx"]
 
 try-runtime = [
-        "frame-system/try-runtime",
+    "frame-system/try-runtime",
 ]
