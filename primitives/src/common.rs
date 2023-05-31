@@ -32,19 +32,19 @@ use sp_std::vec::Vec;
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
 /// utf8 decode bytes into a string.
 #[cfg(not(feature = "std"))]
-pub type PalletString = Vec<u8>;
+pub type UnboundedPalletString = Vec<u8>;
 
 #[cfg(feature = "std")]
-pub type PalletString = String;
+pub type UnboundedPalletString = String;
 
-pub type BoundedPalletString = BoundedVec<u8, ConstU32<256>>;
+pub type PalletString = BoundedVec<u8, ConstU32<256>>;
 
 pub trait FromStr: Sized {
 	type Err;
 	fn from_str(inp: &str) -> Result<Self, Self::Err>;
 }
 
-impl FromStr for BoundedPalletString {
+impl FromStr for PalletString {
 	type Err = Vec<u8>;
 	fn from_str(inp: &str) -> Result<Self, Self::Err> {
 		Self::try_from(inp.as_bytes().to_vec())
@@ -55,7 +55,7 @@ pub trait AsByteOrNoop {
 	fn as_bytes_or_noop(&self) -> &[u8];
 }
 
-impl AsByteOrNoop for PalletString {
+impl AsByteOrNoop for UnboundedPalletString {
 	#[cfg(feature = "std")]
 	fn as_bytes_or_noop(&self) -> &[u8] {
 		self.as_bytes()
@@ -67,14 +67,14 @@ impl AsByteOrNoop for PalletString {
 	}
 }
 
-impl AsByteOrNoop for BoundedPalletString {
+impl AsByteOrNoop for PalletString {
 	fn as_bytes_or_noop(&self) -> &[u8] {
 		self
 	}
 }
 
-pub type IpfsCid = PalletString;
-pub type BoundedIpfsCid = BoundedPalletString;
+pub type IpfsCid = UnboundedPalletString;
+pub type BoundedIpfsCid = PalletString;
 
 pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
 	for (i, c) in bytes.iter().enumerate() {

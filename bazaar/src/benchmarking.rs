@@ -4,11 +4,11 @@ use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 use sp_std::borrow::ToOwned;
 
-fn test_url() -> PalletString {
+fn test_url() -> UnboundedPalletString {
 	"https://test.com".to_owned().into()
 }
 
-fn example_url() -> PalletString {
+fn example_url() -> UnboundedPalletString {
 	"https://example.com".to_owned().into()
 }
 

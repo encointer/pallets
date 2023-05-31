@@ -45,8 +45,8 @@ fn setup_test_community<T: Config>() -> (
 ) {
 	let bootstrappers: Vec<T::AccountId> = (0..10).map(|n| account("dummy name", n, n)).collect();
 	let mut community_metadata = CommunityMetadata::default();
-	community_metadata.name = BoundedPalletString::from_str("20charsaaaaaaaaaaaaa").unwrap();
-	community_metadata.url = Some(BoundedPalletString::from_str("19charsaaaaaaaaa").unwrap());
+	community_metadata.name = PalletString::from_str("20charsaaaaaaaaaaaaa").unwrap();
+	community_metadata.url = Some(PalletString::from_str("19charsaaaaaaaaa").unwrap());
 	let demurrage = Some(Demurrage::from_num(DefaultDemurrage::get()));
 	let nominal_income = Some(NominalIncome::from_num(1_u64));
 
@@ -114,7 +114,7 @@ benchmarks! {
 	update_community_metadata {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 		let mut new_community_metadata = CommunityMetadata::default();
-		let new_community_name: BoundedPalletString = BoundedPalletString::from_str("99charsaaaaaaaaaaaaa").unwrap();
+		let new_community_name: PalletString = PalletString::from_str("99charsaaaaaaaaaaaaa").unwrap();
 
 		new_community_metadata.name = new_community_name.clone();
 	} : {

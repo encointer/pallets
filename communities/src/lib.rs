@@ -27,7 +27,7 @@ use codec::Encode;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, BalanceType, Demurrage},
-	common::BoundedPalletString,
+	common::PalletString,
 	communities::{
 		consts::*, validate_nominal_income, CommunityIdentifier,
 		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
@@ -727,7 +727,7 @@ impl<T: Config> Pallet<T> {
 		Self::community_identifiers().to_vec()
 	}
 
-	pub fn get_name(cid: &CommunityIdentifier) -> Option<BoundedPalletString> {
+	pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
 		Self::ensure_cid_exists(cid).ok()?;
 		Some(Self::community_metadata(cid).name)
 	}

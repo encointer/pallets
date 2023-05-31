@@ -354,14 +354,14 @@ mod test {
 					CommunityIdentifier::from_str("111112Fvv9d").unwrap()
 				),
 				CommunityMetadataType {
-					name: BoundedPalletString::from_str("AName").unwrap(),
-					symbol: BoundedPalletString::from_str("ASY").unwrap(),
-					assets: BoundedPalletString::from_str(
+					name: PalletString::from_str("AName").unwrap(),
+					symbol: PalletString::from_str("ASY").unwrap(),
+					assets: PalletString::from_str(
 						"Defau1tCidThat1s46Characters1nLength1111111111"
 					)
 					.unwrap(),
 					theme: None,
-					url: Some(BoundedPalletString::from_str("AUrl").unwrap()),
+					url: Some(PalletString::from_str("AUrl").unwrap()),
 				}
 			);
 		});

@@ -29,7 +29,7 @@ use sp_std::prelude::*;
 
 use encointer_primitives::{
 	bazaar::{BusinessData, BusinessIdentifier, OfferingData, OfferingIdentifier},
-	common::PalletString,
+	common::UnboundedPalletString,
 	communities::CommunityIdentifier,
 };
 
@@ -60,7 +60,7 @@ pub mod pallet {
 		pub fn create_business(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
-			url: PalletString,
+			url: UnboundedPalletString,
 		) -> DispatchResultWithPostInfo {
 			// Check that the extrinsic was signed and get the signer
 			let sender = ensure_signed(origin)?;
@@ -87,7 +87,7 @@ pub mod pallet {
 		pub fn update_business(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
-			url: PalletString,
+			url: UnboundedPalletString,
 		) -> DispatchResultWithPostInfo {
 			// Check that the extrinsic was signed and get the signer
 			let sender = ensure_signed(origin)?;
@@ -135,7 +135,7 @@ pub mod pallet {
 		pub fn create_offering(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
-			url: PalletString,
+			url: UnboundedPalletString,
 		) -> DispatchResultWithPostInfo {
 			// Check that the extrinsic was signed and get the signer
 			let sender = ensure_signed(origin)?;
@@ -164,7 +164,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			oid: OfferingIdentifier,
-			url: PalletString,
+			url: UnboundedPalletString,
 		) -> DispatchResultWithPostInfo {
 			// Check that the extrinsic was signed and get the signer
 			let sender = ensure_signed(origin)?;

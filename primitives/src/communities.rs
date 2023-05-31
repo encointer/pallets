@@ -33,8 +33,8 @@ use ep_core::serde::{serialize_array, serialize_fixed};
 use crate::{
 	balances::Demurrage,
 	common::{
-		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, BoundedPalletString,
-		IpfsCid, IpfsValidationError, PalletString,
+		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, IpfsCid,
+		IpfsValidationError, PalletString, UnboundedPalletString,
 	},
 };
 
@@ -234,15 +234,15 @@ impl Location {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct UnboundedCommunityMetadata {
 	/// utf8 encoded name
-	pub name: PalletString,
+	pub name: UnboundedPalletString,
 	/// utf8 encoded abbreviation of the name
-	pub symbol: PalletString,
+	pub symbol: UnboundedPalletString,
 	/// IPFS cid to assets necessary for community branding
 	pub assets: IpfsCid,
 	/// ipfs cid for style resources
 	pub theme: Option<IpfsCid>,
 	/// optional link to a community site
-	pub url: Option<PalletString>,
+	pub url: Option<UnboundedPalletString>,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -250,15 +250,15 @@ pub struct UnboundedCommunityMetadata {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CommunityMetadata {
 	/// utf8 encoded name
-	pub name: BoundedPalletString,
+	pub name: PalletString,
 	/// utf8 encoded abbreviation of the name
-	pub symbol: BoundedPalletString,
+	pub symbol: PalletString,
 	/// IPFS cid to assets necessary for community branding
 	pub assets: BoundedIpfsCid,
 	/// ipfs cid for style resources
 	pub theme: Option<BoundedIpfsCid>,
 	/// optional link to a community site
-	pub url: Option<BoundedPalletString>,
+	pub url: Option<PalletString>,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -266,22 +266,22 @@ pub struct CommunityMetadata {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CidName {
 	pub cid: CommunityIdentifier,
-	pub name: PalletString,
+	pub name: UnboundedPalletString,
 }
 
 impl CidName {
-	pub fn new(cid: CommunityIdentifier, name: PalletString) -> Self {
+	pub fn new(cid: CommunityIdentifier, name: UnboundedPalletString) -> Self {
 		Self { cid, name }
 	}
 }
 
 impl CommunityMetadata {
 	pub fn new(
-		name: BoundedPalletString,
-		symbol: BoundedPalletString,
+		name: PalletString,
+		symbol: PalletString,
 		assets: BoundedIpfsCid,
 		theme: Option<BoundedIpfsCid>,
-		url: Option<BoundedPalletString>,
+		url: Option<PalletString>,
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
 		let meta = CommunityMetadata { name, symbol, assets, theme, url };
 		match meta.validate() {
@@ -332,12 +332,12 @@ impl Default for CommunityMetadata {
 	/// Default implementation, which passes `self::validate()` for easy pallet testing
 	fn default() -> Self {
 		CommunityMetadata {
-			name: BoundedPalletString::from_str("Default").unwrap(),
-			symbol: BoundedPalletString::from_str("DEF").unwrap(),
-			assets: BoundedPalletString::from_str("Defau1tCidThat1s46Characters1nLength1111111111")
+			name: PalletString::from_str("Default").unwrap(),
+			symbol: PalletString::from_str("DEF").unwrap(),
+			assets: PalletString::from_str("Defau1tCidThat1s46Characters1nLength1111111111")
 				.unwrap(),
 			theme: None,
-			url: Some(BoundedPalletString::from_str("DefaultUrl").unwrap()),
+			url: Some(PalletString::from_str("DefaultUrl").unwrap()),
 		}
 	}
 }
@@ -415,8 +415,8 @@ mod tests {
 		bs58_verify::Bs58Error,
 		common::{FromStr as CrateFromStr, IpfsValidationError},
 		communities::{
-			validate_demurrage, validate_nominal_income, BoundedPalletString, CommunityIdentifier,
-			CommunityMetadata, CommunityMetadataError, Degree, Demurrage, Location, NominalIncome,
+			validate_demurrage, validate_nominal_income, CommunityIdentifier, CommunityMetadata,
+			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, PalletString,
 			RangeError,
 		},
 	};
@@ -444,7 +444,7 @@ mod tests {
 	#[test]
 	fn validate_metadata_fails_for_invalid_ascii() {
 		let meta = CommunityMetadata {
-			name: BoundedPalletString::from_str("€").unwrap(),
+			name: PalletString::from_str("€").unwrap(),
 			..Default::default()
 		};
 		assert_eq!(meta.validate(), Err(CommunityMetadataError::InvalidAscii(0)));
@@ -453,7 +453,7 @@ mod tests {
 	#[test]
 	fn validate_metadata_fails_for_invalid_assets_cid() {
 		let meta = CommunityMetadata {
-			assets: BoundedPalletString::from_str("IhaveCorrectLengthButWrongSymbols1111111111111")
+			assets: PalletString::from_str("IhaveCorrectLengthButWrongSymbols1111111111111")
 				.unwrap(),
 			..Default::default()
 		};
