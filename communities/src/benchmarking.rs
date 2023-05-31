@@ -39,12 +39,12 @@ fn get_location(i: u32) -> Location {
 fn setup_test_community<T: Config>() -> (
 	CommunityIdentifier,
 	Vec<T::AccountId>,
-	CommunityMetadata,
+	CommunityMetadataType,
 	Option<Demurrage>,
 	Option<NominalIncomeType>,
 ) {
 	let bootstrappers: Vec<T::AccountId> = (0..10).map(|n| account("dummy name", n, n)).collect();
-	let mut community_metadata = CommunityMetadata::default();
+	let mut community_metadata = CommunityMetadataType::default();
 	community_metadata.name = PalletString::from_str("20charsaaaaaaaaaaaaa").unwrap();
 	community_metadata.url = Some(PalletString::from_str("19charsaaaaaaaaa").unwrap());
 	let demurrage = Some(Demurrage::from_num(DefaultDemurrage::get()));
@@ -113,7 +113,7 @@ benchmarks! {
 
 	update_community_metadata {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
-		let mut new_community_metadata = CommunityMetadata::default();
+		let mut new_community_metadata = CommunityMetadataType::default();
 		let new_community_name: PalletString = PalletString::from_str("99charsaaaaaaaaaaaaa").unwrap();
 
 		new_community_metadata.name = new_community_name.clone();
