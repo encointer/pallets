@@ -24,9 +24,13 @@ use encointer_primitives::{
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_system::{self as frame_system, ensure_signed, pallet_prelude::OriginFor};
+use log::info;
 pub use pallet::*;
 use sp_core::H256;
 use sp_std::convert::TryInto;
+
+// Logger target
+const LOG: &str = "encointer";
 
 #[cfg(test)]
 mod mock;
