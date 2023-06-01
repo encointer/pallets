@@ -27,7 +27,9 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessIdentifier<AccountId> {
+	/// Community identifier this business operates in.
 	pub community_identifier: CommunityIdentifier,
+	/// Controller account that has the power to manage a business and its offerings.
 	pub controller: AccountId,
 }
 
@@ -37,17 +39,37 @@ impl<AccountId> BusinessIdentifier<AccountId> {
 	}
 }
 
+/// Data structure used for organizing the pallet's storage.
 #[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessData {
+	/// Ipfs hash of the business metadata.
 	pub url: PalletString,
+	/// Strict-monotonic counter of the ID of the last offering.
 	pub last_oid: u32,
 }
 
 impl BusinessData {
 	pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
 		BusinessData { url, last_oid }
+	}
+}
+
+/// Structure that contains the [BusinessData] including its controller account.
+///
+/// Intended as a return value for RPC requests.
+#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub struct Business<AccountId> {
+	controller: AccountId,
+	business_data: BusinessData,
+}
+
+impl<AccountId> Business<AccountId> {
+	pub fn new(controller: AccountId, business_data: BusinessData) -> Self {
+		Self { controller, business_data }
 	}
 }
 
