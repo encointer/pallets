@@ -97,8 +97,8 @@ where
 		return Ok(api
 			.get_businesses(&at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
-			.iter()
-			.flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0.clone())))
+			.into_iter()
+			.flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0)))
 			.flatten()
 			.collect())
 	}
