@@ -34,8 +34,8 @@ pub struct BusinessIdentifier<AccountId> {
 }
 
 impl<AccountId> BusinessIdentifier<AccountId> {
-	pub fn new(cid: CommunityIdentifier, bid: AccountId) -> BusinessIdentifier<AccountId> {
-		BusinessIdentifier { community_identifier: cid, controller: bid }
+	pub fn new(cid: CommunityIdentifier, controller: AccountId) -> Self {
+		Self { community_identifier: cid, controller }
 	}
 }
 
@@ -51,8 +51,8 @@ pub struct BusinessData {
 }
 
 impl BusinessData {
-	pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
-		BusinessData { url, last_oid }
+	pub fn new(url: PalletString, last_oid: u32) -> Self {
+		Self { url, last_oid }
 	}
 }
 
@@ -83,7 +83,7 @@ pub struct OfferingData {
 }
 
 impl OfferingData {
-	pub fn new(url: PalletString) -> OfferingData {
-		OfferingData { url }
+	pub fn new(url: PalletString) -> Self {
+		Self { url }
 	}
 }
