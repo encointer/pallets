@@ -27,9 +27,3 @@ sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git"
 sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-
-# polkadot deps
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
