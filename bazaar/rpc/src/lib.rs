@@ -23,7 +23,7 @@ use std::sync::Arc;
 
 use encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;
 use encointer_primitives::{
-	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
+	bazaar::{Business, BusinessIdentifier, OfferingData},
 	communities::CommunityIdentifier,
 };
 
@@ -37,7 +37,7 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
-	) -> RpcResult<Vec<BusinessData>>;
+	) -> RpcResult<Vec<Business<AccountId>>>;
 	#[method(name = "encointer_bazaarGetOfferings")]
 	fn get_offerings(
 		&self,
@@ -76,14 +76,14 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> RpcResult<Vec<BusinessData>> {
+	) -> RpcResult<Vec<Business<AccountId>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		return Ok(api
+		Ok(api
 			.get_businesses(&at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
-			.iter()
-			.map(|bid| bid.1.clone())
+			.into_iter()
+			.map(|(controller, bd)| Business::new(controller, bd))
 			.collect())
 	}
 
@@ -94,11 +94,11 @@ where
 	) -> RpcResult<Vec<OfferingData>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		return Ok(api
+		Ok(api
 			.get_businesses(&at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
-			.iter()
-			.flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0.clone())))
+			.into_iter()
+			.flat_map(|bid| api.get_offerings(&at, &BusinessIdentifier::new(cid, bid.0)))
 			.flatten()
 			.collect())
 	}
