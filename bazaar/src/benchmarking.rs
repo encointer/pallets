@@ -1,15 +1,17 @@
 use crate::*;
-use encointer_primitives::communities::{CommunityIdentifier, CommunityMetadata, Degree, Location};
+use encointer_primitives::{
+	common::FromStr,
+	communities::{CommunityIdentifier, CommunityMetadata, Degree, Location},
+};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
-use sp_std::borrow::ToOwned;
 
 fn test_url() -> PalletString {
-	"https://test.com".to_owned().into()
+	PalletString::from_str("https://test.com").unwrap()
 }
 
 fn example_url() -> PalletString {
-	"https://example.com".to_owned().into()
+	PalletString::from_str("https://example.com").unwrap()
 }
 
 fn create_community<T: Config>() -> CommunityIdentifier {
