@@ -36,9 +36,9 @@ use encointer_primitives::{
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
-use frame_support::ensure;
+use frame_support::{ensure, BoundedVec};
 use log::{info, warn};
-use sp_runtime::{DispatchResult, SaturatedConversion};
+use sp_runtime::{traits::Get, DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
 
 // Logger target
@@ -54,9 +54,11 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::generate_store(pub (super) trait Store)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -71,6 +73,18 @@ pub mod pallet {
 		type TrustableForNonDestructiveAction: EnsureOrigin<Self::RuntimeOrigin>;
 
 		type WeightInfo: WeightInfo;
+
+		#[pallet::constant]
+		type MaxCommunityIdentifiers: Get<u32>;
+
+		#[pallet::constant]
+		type MaxCommunityIdentifiersPerGeohash: Get<u32>;
+
+		#[pallet::constant]
+		type MaxLocationsPerGeohash: Get<u32>;
+
+		#[pallet::constant]
+		type MaxBootstrappers: Get<u32>;
 	}
 
 	#[pallet::call]
@@ -93,7 +107,6 @@ pub mod pallet {
 			community_metadata
 				.validate()
 				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
-
 			if let Some(i) = nominal_income {
 				validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 			}
@@ -107,25 +120,33 @@ pub mod pallet {
 			// All checks done, now mutate state
 			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
-			let mut locations: Vec<Location> = Vec::new();
+			let locations: BoundedVec<Location, T::MaxLocationsPerGeohash> =
+				BoundedVec::try_from(vec![location])
+					.map_err(|_| Error::<T>::TooManyLocationsPerGeohash)?;
 
 			// insert cid into cids_by_geohash map
 			let mut cids_in_bucket = Self::cids_by_geohash(&geo_hash);
 			match cids_in_bucket.binary_search(&cid) {
 				Ok(_) => (),
 				Err(index) => {
-					cids_in_bucket.insert(index, cid);
+					cids_in_bucket
+						.try_insert(index, cid)
+						.map_err(|_| Error::<T>::TooManyCommunityIdentifiersPerGeohash)?;
 					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids_in_bucket);
 				},
 			}
 
 			// insert location into cid -> geohash -> location map
-			locations.push(location);
 			<Locations<T>>::insert(cid, geo_hash, locations);
 
-			<CommunityIdentifiers<T>>::mutate(|v| v.push(cid));
+			CommunityIdentifiers::<T>::try_append(cid)
+				.map_err(|_| Error::<T>::TooManyCommunityIdentifiers)?;
 
-			<Bootstrappers<T>>::insert(cid, &bootstrappers);
+			<Bootstrappers<T>>::insert(
+				cid,
+				&BoundedVec::try_from(bootstrappers)
+					.map_err(|_| Error::<T>::TooManyBootstrappers)?,
+			);
 			<CommunityMetadata<T>>::insert(cid, &community_metadata);
 
 			if let Some(d) = demurrage {
@@ -171,7 +192,9 @@ pub mod pallet {
 			match locations.binary_search(&location) {
 				Ok(_) => (),
 				Err(index) => {
-					locations.insert(index, location);
+					locations
+						.try_insert(index, location)
+						.map_err(|_| Error::<T>::TooManyLocationsPerGeohash)?;
 					<Locations<T>>::insert(cid, &geo_hash, locations);
 				},
 			}
@@ -180,7 +203,8 @@ pub mod pallet {
 			match cids.binary_search(&cid) {
 				Ok(_) => (),
 				Err(index) => {
-					cids.insert(index, cid);
+					cids.try_insert(index, cid)
+						.map_err(|_| Error::<T>::TooManyCommunityIdentifiersPerGeohash)?;
 					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
 				},
 			}
@@ -378,12 +402,25 @@ pub mod pallet {
 		BadOrigin,
 		/// Locations can only be added in Registration Phase
 		RegistrationPhaseRequired,
+		/// CommunityIdentifiers BoundedVec is full
+		TooManyCommunityIdentifiers,
+		/// CommunityIdentifiersPerGeohash BoundedVec is full
+		TooManyCommunityIdentifiersPerGeohash,
+		/// LocationsPerGeohash BoundedVec is full
+		TooManyLocationsPerGeohash,
+		/// Bootstrappers BoundedVec is full
+		TooManyBootstrappers,
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn cids_by_geohash)]
-	pub(super) type CommunityIdentifiersByGeohash<T: Config> =
-		StorageMap<_, Identity, GeoHash, Vec<CommunityIdentifier>, ValueQuery>;
+	pub(super) type CommunityIdentifiersByGeohash<T: Config> = StorageMap<
+		_,
+		Identity,
+		GeoHash,
+		BoundedVec<CommunityIdentifier, T::MaxCommunityIdentifiersPerGeohash>,
+		ValueQuery,
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn locations)]
@@ -393,19 +430,24 @@ pub mod pallet {
 		CommunityIdentifier,
 		Identity,
 		GeoHash,
-		Vec<Location>,
+		BoundedVec<Location, T::MaxLocationsPerGeohash>,
 		ValueQuery,
 	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn bootstrappers)]
-	pub(super) type Bootstrappers<T: Config> =
-		StorageMap<_, Blake2_128Concat, CommunityIdentifier, Vec<T::AccountId>, ValueQuery>;
+	pub(super) type Bootstrappers<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		BoundedVec<T::AccountId, T::MaxBootstrappers>,
+		ValueQuery,
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn community_identifiers)]
 	pub(super) type CommunityIdentifiers<T: Config> =
-		StorageValue<_, Vec<CommunityIdentifier>, ValueQuery>;
+		StorageValue<_, BoundedVec<CommunityIdentifier, T::MaxCommunityIdentifiers>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn community_metadata)]
@@ -496,7 +538,10 @@ impl<T: Config> Pallet<T> {
 		Self::deposit_event(Event::CommunityPurged(cid));
 	}
 
-	pub fn insert_bootstrappers(cid: CommunityIdentifier, bootstrappers: Vec<T::AccountId>) {
+	pub fn insert_bootstrappers(
+		cid: CommunityIdentifier,
+		bootstrappers: BoundedVec<T::AccountId, T::MaxBootstrappers>,
+	) {
 		<Bootstrappers<T>>::insert(cid, &bootstrappers);
 	}
 
@@ -546,7 +591,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn validate_bootstrappers(bootstrappers: &Vec<T::AccountId>) -> DispatchResult {
-		ensure!(bootstrappers.len() <= 1000, <Error<T>>::InvalidAmountBootstrappers);
+		ensure!(
+			bootstrappers.len() <= T::MaxBootstrappers::get() as usize,
+			<Error<T>>::InvalidAmountBootstrappers
+		);
 		ensure!(!bootstrappers.len() >= 3, <Error<T>>::InvalidAmountBootstrappers);
 		Ok(())
 	}
@@ -647,7 +695,7 @@ impl<T: Config> Pallet<T> {
 
 		for bucket in relevant_buckets {
 			for cid in Self::cids_by_geohash(&bucket) {
-				result.append(&mut Self::locations(cid, &bucket).clone());
+				result.append(&mut Self::locations(cid, &bucket).to_vec());
 			}
 		}
 		Ok(result)
@@ -676,7 +724,7 @@ impl<T: Config> Pallet<T> {
 	// The methods below are for the runtime api
 
 	pub fn get_cids() -> Vec<CommunityIdentifier> {
-		Self::community_identifiers()
+		Self::community_identifiers().to_vec()
 	}
 
 	pub fn get_name(cid: &CommunityIdentifier) -> Option<PalletString> {
@@ -686,6 +734,7 @@ impl<T: Config> Pallet<T> {
 
 	pub fn get_locations(cid: &CommunityIdentifier) -> Vec<Location> {
 		<Locations<T>>::iter_prefix_values(cid)
+			.map(|a| a.to_vec())
 			.reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect())
 			.unwrap()
 	}
@@ -712,6 +761,8 @@ mod weights;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+pub mod migrations;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;

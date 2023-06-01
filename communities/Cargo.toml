@@ -22,6 +22,7 @@ sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git"
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 
+
 [dev-dependencies]
 approx = "0.5.1"
 sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
@@ -45,3 +46,7 @@ std = [
     "sp-runtime/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
+
+try-runtime = [
+    "frame-system/try-runtime",
+]
