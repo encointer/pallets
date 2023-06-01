@@ -447,6 +447,11 @@ fn dissolve_faucet_works() {
 		assert_eq!(Balances::free_balance(&alice), 35);
 		assert_eq!(Balances::free_balance(&bob), 965);
 		assert_eq!(Balances::reserved_balance(&bob), 0);
+
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::FaucetDissolved(faucet_account.clone()).into())
+		);
 	})
 }
 
@@ -543,6 +548,11 @@ fn close_faucet_works() {
 			assert_eq!(Balances::free_balance(&bob), 965);
 			assert_eq!(Balances::free_balance(&Treasury::account_id()), 15);
 			assert_eq!(Balances::reserved_balance(&bob), 0);
+
+			assert_eq!(
+				last_event::<TestRuntime>(),
+				Some(Event::FaucetClosed(faucet_account.clone()).into())
+			);
 		})
 	})
 }

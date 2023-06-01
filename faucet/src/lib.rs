@@ -132,6 +132,7 @@ pub mod pallet {
 				Faucet { name: name.clone(), purpose_id, whitelist, drip_amount, creator: from },
 			);
 
+			info!(target: LOG, "faucet created: {:?}, {:?}", name, faucet_account);
 			Self::deposit_event(Event::FaucetCreated(faucet_account, name));
 
 			Ok(().into())
@@ -173,6 +174,10 @@ pub mod pallet {
 			)
 			.map_err(|_| <Error<T>>::FaucetEmpty)?;
 
+			info!(
+				target: LOG,
+				"faucet {:?} dripped {:?} to {:?}", faucet.name, faucet.drip_amount, from
+			);
 			Self::deposit_event(Event::Dripped(faucet_account, from, faucet.drip_amount));
 
 			Ok(().into())
@@ -202,6 +207,8 @@ pub mod pallet {
 				AllowDeath,
 			)?;
 
+			info!(target: LOG, "faucet dissolved {:?}", faucet_account);
+			Self::deposit_event(Event::FaucetDissolved(faucet_account));
 			Ok(().into())
 		}
 
@@ -232,6 +239,9 @@ pub mod pallet {
 				<T as Config>::Currency::free_balance(&faucet_account),
 				AllowDeath,
 			)?;
+
+			info!(target: LOG, "faucet closed {:?}", faucet_account);
+			Self::deposit_event(Event::FaucetClosed(faucet_account));
 
 			Ok(().into())
 		}
@@ -290,6 +300,10 @@ pub mod pallet {
 		FaucetCreated(T::AccountId, FaucetNameType),
 		/// reserve amount updated
 		ReserveAmountUpdated(BalanceOf<T>),
+		/// faucet dissolved
+		FaucetDissolved(T::AccountId),
+		/// faucet closed
+		FaucetClosed(T::AccountId),
 	}
 
 	#[pallet::error]
