@@ -18,7 +18,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 
-use crate::{common::UnboundedPalletString, communities::CommunityIdentifier};
+use crate::{common::PalletString, communities::CommunityIdentifier};
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -41,12 +41,12 @@ impl<AccountId> BusinessIdentifier<AccountId> {
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessData {
-	pub url: UnboundedPalletString,
+	pub url: PalletString,
 	pub last_oid: u32,
 }
 
 impl BusinessData {
-	pub fn new(url: UnboundedPalletString, last_oid: u32) -> BusinessData {
+	pub fn new(url: PalletString, last_oid: u32) -> BusinessData {
 		BusinessData { url, last_oid }
 	}
 }
@@ -57,11 +57,11 @@ pub type OfferingIdentifier = u32;
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct OfferingData {
-	pub url: UnboundedPalletString,
+	pub url: PalletString,
 }
 
 impl OfferingData {
-	pub fn new(url: UnboundedPalletString) -> OfferingData {
+	pub fn new(url: PalletString) -> OfferingData {
 		OfferingData { url }
 	}
 }
