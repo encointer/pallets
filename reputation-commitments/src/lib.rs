@@ -84,6 +84,7 @@ pub mod pallet {
 
 			<CurrentPurposeId<T>>::put(next_id);
 			<Purposes<T>>::insert(current_id, descriptor.clone());
+			info!(target: LOG, "commitment purpose registered: {:?}, {:?}", current_id, descriptor);
 			Self::deposit_event(Event::RegisteredCommitmentPurpose(current_id, descriptor));
 			Ok(current_id)
 		}
@@ -110,6 +111,14 @@ pub mod pallet {
 			}
 
 			<Commitments<T>>::insert((cid, cindex), (purpose, &account), commitment_hash);
+			info!(
+				target: LOG,
+				"{:?} commited reputation for cid {:?} at cindex {:?} for purposed id {:?}",
+				account.clone(),
+				cid,
+				cindex,
+				purpose
+			);
 			Self::deposit_event(Event::CommitedReputation(
 				cid,
 				cindex,
@@ -126,6 +135,7 @@ pub mod pallet {
 			for cid in cids.into_iter() {
 				<Commitments<T>>::remove_prefix((cid, cindex), None);
 			}
+			info!(target: LOG, "commitment registry purged at cindex {:?}", cindex);
 			Self::deposit_event(Event::CommitmentRegistryPurged(cindex));
 		}
 	}
