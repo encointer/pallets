@@ -17,11 +17,8 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use crate::frame_system::Config;
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{
-	pallet_prelude::GenesisBuild, traits::tokens::fungibles::metadata::Inspect as MetadaInspect,
-};
+use frame_support::pallet_prelude::GenesisBuild;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;

@@ -16,43 +16,11 @@
 
 use super::*;
 use crate::fungibles::{DecreaseIssuance, IncreaseIssuance};
-use encointer_primitives::{
-	balances::EncointerBalanceConverter,
-	common::{FromStr, PalletString},
-};
-use frame_support::traits::{
-	fungible::Inspect,
-	tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
+use encointer_primitives::balances::EncointerBalanceConverter;
+use frame_support::traits::tokens::{
+	DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
 };
 use sp_runtime::traits::{Convert, Zero};
-
-// Implementation of this trait is just to satisfy the trait bounds of the
-// `pallet-asset-tx-payment`. It is not used in our case.
-impl<T: Config> fungibles::metadata::Inspect<T::AccountId> for Pallet<T> {
-	fn name(_asset: Self::AssetId) -> Vec<u8> {
-		PalletString::from_str("Encointer")
-			.expect("Hardcoded string conversion should never fail; qed")
-			.into()
-	}
-
-	fn symbol(_asset: Self::AssetId) -> Vec<u8> {
-		PalletString::from_str("ETR")
-			.expect("Hardcoded string conversion should never fail; qed")
-			.into()
-	}
-
-	fn decimals(_asset: Self::AssetId) -> u8 {
-		// Our BalanceType is I64F64 which is base2 fixpoint and therefore doesn't use decimals (which would be base10 fixpoint)
-		// but in order to comply with this trait we need to define decimals nevertheless.
-		// the smallest possible number is 2^-64 = 5.42101086242752217003726400434970855712890625 × 10^-20
-		// and an upper bound is 2^63 + 1 = 9.223372036854775809 × 10^18
-		// so we chose 18 decimals and lose some precision but can prevent overflows that way.
-		// due to demurrage, that lost precision is meaningless anyway
-		18u8
-	}
-}
-
-//impl<T: Config> frame_support::traits::fungible::Inspect<T::AccountId> for Pallet<T> {}
 
 pub(crate) fn fungible(balance: BalanceType) -> u128 {
 	EncointerBalanceConverter::convert(balance)

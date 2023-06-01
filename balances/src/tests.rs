@@ -26,7 +26,7 @@ use encointer_primitives::{
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	traits::{
-		fungibles::{metadata::Inspect as MetadaInspect, Inspect},
+		fungibles::Inspect,
 		tokens::{fungibles::Unbalanced, DepositConsequence, WithdrawConsequence},
 		OnInitialize,
 	},
@@ -384,25 +384,9 @@ fn transfer_removes_account_if_source_below_existential_deposit() {
 mod impl_fungibles {
 	use super::*;
 	use crate::impl_fungibles::fungible;
-	use frame_support::traits::{
-		fungible::Inspect, tokens::fungibles::metadata::Inspect as MetadaInspect,
-	};
+	use frame_support::traits::fungible::Inspect;
 
 	type AccountId = <TestRuntime as frame_system::Config>::AccountId;
-
-	#[test]
-	fn name_symbol_and_decimals_work() {
-		new_test_ext().execute_with(|| {
-			let cid = CommunityIdentifier::default();
-			assert_eq!(EncointerBalances::name(cid.clone()), "Encointer".as_bytes());
-			assert_eq!(
-				//<EncointerBalances as Inspect<AccountId>>::symbol(cid.clone()),
-				<EncointerBalances as MetadaInspect<_>>::symbol(cid.clone()),
-				"ETR".as_bytes().to_vec()
-			);
-			assert_eq!(<EncointerBalances as MetadaInspect<_>>::decimals(cid), 18);
-		})
-	}
 
 	#[test]
 	fn total_issuance_and_balance_works() {
