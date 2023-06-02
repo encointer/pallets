@@ -58,35 +58,35 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn transfer() -> Weight {
-		Weight::from_ref_time(88_000_000)
+		Weight::from_parts(88_000_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	fn transfer_all() -> Weight {
-		Weight::from_ref_time(111_000_000)
+		Weight::from_parts(111_000_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(5))
 			.saturating_add(T::DbWeight::get().writes(4))
 	}
 
 	fn set_fee_conversion_factor() -> Weight {
-		Weight::from_ref_time(16_300_000).saturating_add(T::DbWeight::get().writes(1))
+		Weight::from_parts(16_300_000, 0u64).saturating_add(T::DbWeight::get().writes(1))
 	}
 }
 
 // For tests
 impl WeightInfo for () {
 	fn transfer() -> Weight {
-		Weight::from_ref_time(88_000_000)
+		Weight::from_parts(88_000_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 	fn transfer_all() -> Weight {
-		Weight::from_ref_time(111_000_000)
+		Weight::from_parts(111_000_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(5))
 			.saturating_add(RocksDbWeight::get().writes(4))
 	}
 
 	fn set_fee_conversion_factor() -> Weight {
-		Weight::from_ref_time(16_300_000).saturating_add(RocksDbWeight::get().writes(1))
+		Weight::from_parts(16_300_000, 0u64).saturating_add(RocksDbWeight::get().writes(1))
 	}
 }

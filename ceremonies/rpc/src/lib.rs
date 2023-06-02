@@ -22,7 +22,7 @@ use sp_api::{
 	Decode, Encode, ProvideRuntimeApi,
 };
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
 use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
@@ -116,8 +116,8 @@ where
 		self.storage.write().set(STORAGE_PREFIX, key, &val.encode());
 	}
 
-	pub fn resolve_at(&self, at: Option<<Block as BlockT>::Hash>) -> BlockId<Block> {
-		BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash))
+	pub fn resolve_at(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
+		at.unwrap_or_else(|| self.client.info().best_hash)
 	}
 	pub fn refresh_reputation_cache(
 		&self,
@@ -127,8 +127,7 @@ where
 	) -> RpcResult<ReputationCacheValue> {
 		let api = self.client.runtime_api();
 		let at = self.resolve_at(at);
-		let reputation =
-			api.get_reputations(&at, &account).map_err(|e| Error::Runtime(e.into()))?;
+		let reputation = api.get_reputations(at, &account).map_err(|e| Error::Runtime(e.into()))?;
 		let cache_key = &reputation_cache_key(&account);
 
 		let reputation_cache_value = ReputationCacheValue { ceremony_info, reputation };
@@ -165,7 +164,7 @@ where
 
 		let cache_key = &reputation_cache_key(&account);
 		let ceremony_info = api
-			.get_ceremony_info(&(self.resolve_at(at)))
+			.get_ceremony_info(self.resolve_at(at))
 			.map_err(|e| Error::Runtime(e.into()))?;
 
 		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
@@ -188,9 +187,9 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<AggregatedAccountData<AccountId, Moment>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 		Ok(api
-			.get_aggregated_account_data(&at, cid, &account)
+			.get_aggregated_account_data(at, cid, &account)
 			.map_err(|e| Error::Runtime(e.into()))?)
 	}
 }

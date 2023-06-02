@@ -39,7 +39,6 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -52,7 +51,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(10_000)]
+		#[pallet::weight({10_000})]
 		pub fn register_purpose(
 			origin: OriginFor<T>,
 			descriptor: DescriptorType,
@@ -63,7 +62,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(10_000)]
+		#[pallet::weight({10_000})]
 		pub fn commit_reputation(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,

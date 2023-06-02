@@ -61,32 +61,32 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn create_business() -> Weight {
-		Weight::from_ref_time(67_200_000)
+		Weight::from_parts(67_200_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn update_business() -> Weight {
-		Weight::from_ref_time(64_500_000)
+		Weight::from_parts(64_500_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn delete_business() -> Weight {
-		Weight::from_ref_time(71_700_000)
+		Weight::from_parts(71_700_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn create_offering() -> Weight {
-		Weight::from_ref_time(74_100_000)
+		Weight::from_parts(74_100_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	fn update_offering() -> Weight {
-		Weight::from_ref_time(63_200_000)
+		Weight::from_parts(63_200_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	fn delete_offering() -> Weight {
-		Weight::from_ref_time(61_100_000)
+		Weight::from_parts(61_100_000, 0u64)
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -95,32 +95,32 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 // For tests
 impl WeightInfo for () {
 	fn create_business() -> Weight {
-		Weight::from_ref_time(67_200_000)
+		Weight::from_parts(67_200_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(2))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn update_business() -> Weight {
-		Weight::from_ref_time(64_500_000)
+		Weight::from_parts(64_500_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn delete_business() -> Weight {
-		Weight::from_ref_time(71_700_000)
+		Weight::from_parts(71_700_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn create_offering() -> Weight {
-		Weight::from_ref_time(74_100_000)
+		Weight::from_parts(74_100_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	fn update_offering() -> Weight {
-		Weight::from_ref_time(63_200_000)
+		Weight::from_parts(63_200_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
 	fn delete_offering() -> Weight {
-		Weight::from_ref_time(61_100_000)
+		Weight::from_parts(61_100_000, 0u64)
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}
