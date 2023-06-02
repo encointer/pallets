@@ -16,6 +16,7 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+use sc_rpc::DenyUnsafe;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -55,12 +56,13 @@ where
 pub struct BazaarRpc<Client, Block, AccountId> {
 	client: Arc<Client>,
 	_marker: std::marker::PhantomData<(Block, AccountId)>,
+	deny_unsafe: DenyUnsafe,
 }
 
 impl<Client, Block, AccountId> BazaarRpc<Client, Block, AccountId> {
 	/// Create new `Bazaar` instance with the given reference to the client.
-	pub fn new(client: Arc<Client>) -> Self {
-		BazaarRpc { client, _marker: Default::default() }
+	pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
+		BazaarRpc { client, _marker: Default::default(), deny_unsafe }
 	}
 }
 
@@ -77,6 +79,8 @@ where
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<BusinessData>> {
+		self.deny_unsafe.check_if_safe()?;
+
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		return Ok(api
@@ -92,6 +96,8 @@ where
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
+		self.deny_unsafe.check_if_safe()?;
+
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		return Ok(api
@@ -108,6 +114,8 @@ where
 		bid: BusinessIdentifier<AccountId>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
+		self.deny_unsafe.check_if_safe()?;
+
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 

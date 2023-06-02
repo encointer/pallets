@@ -17,6 +17,7 @@
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use parking_lot::RwLock;
+use sc_rpc::DenyUnsafe;
 use sp_api::{
 	offchain::{OffchainStorage, STORAGE_PREFIX},
 	Decode, Encode, ProvideRuntimeApi,
@@ -62,6 +63,7 @@ where
 
 pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
 	client: Arc<Client>,
+	deny_unsafe: DenyUnsafe,
 	storage: Arc<RwLock<S>>,
 	#[allow(unused)]
 	offchain_indexing: bool,
@@ -79,10 +81,16 @@ where
 	encointer_primitives::ceremonies::AggregatedAccountData<AccountId, Moment>: Decode,
 {
 	/// Create new `Ceremonies` instance with the given reference to the client.
-	pub fn new(client: Arc<Client>, storage: S, offchain_indexing: bool) -> Self {
+	pub fn new(
+		client: Arc<Client>,
+		deny_unsafe: DenyUnsafe,
+		storage: S,
+		offchain_indexing: bool,
+	) -> Self {
 		CeremoniesRpc {
 			client,
 			_marker: Default::default(),
+			deny_unsafe,
 			storage: Arc::new(RwLock::new(storage)),
 			offchain_indexing,
 		}
@@ -155,6 +163,7 @@ where
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<(CeremonyIndexType, CommunityReputation)>> {
+		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 
 		if !self.offchain_indexing {
@@ -187,6 +196,7 @@ where
 		account: AccountId,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<AggregatedAccountData<AccountId, Moment>> {
+		self.deny_unsafe.check_if_safe()?;
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		Ok(api
