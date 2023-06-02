@@ -24,12 +24,9 @@ use frame_support::{
 	traits::{EitherOfDiverse, Get},
 };
 use frame_system::{EnsureRoot, EnsureSignedBy};
-use polkadot_parachain::primitives::Sibling;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
 use std::cell::RefCell;
-use xcm::v1::NetworkId;
-use xcm_builder::SiblingParachainConvertsVia;
 
 // convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.
 pub use sp_keyring::AccountKeyring;
@@ -191,11 +188,25 @@ macro_rules! impl_encointer_balances {
 #[macro_export]
 macro_rules! impl_encointer_communities {
 	($t:ident) => {
+		use sp_core::ConstU32;
 		impl encointer_communities::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CommunityMaster = EnsureAlice;
 			type TrustableForNonDestructiveAction = EnsureAlice;
 			type WeightInfo = ();
+			type MaxCommunityIdentifiers = ConstU32<10>;
+			type MaxBootstrappers = ConstU32<10>;
+			type MaxLocationsPerGeohash = ConstU32<10>;
+			type MaxCommunityIdentifiersPerGeohash = ConstU32<10>;
+		}
+	};
+}
+
+#[macro_export]
+macro_rules! impl_encointer_reputation_commitments {
+	($t:ident) => {
+		impl encointer_reputation_commitments::Config for $t {
+			type RuntimeEvent = RuntimeEvent;
 		}
 	};
 }
@@ -229,6 +240,7 @@ macro_rules! impl_encointer_ceremonies {
 			type MeetupMinSize = MeetupMinSize;
 			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 			type WeightInfo = ();
+			type MaxAttestations = ConstU32<10>;
 		}
 	};
 }
@@ -239,11 +251,21 @@ parameter_types! {
 
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
+	($t:ident, $ceremonies:ident, $reputationcommitments:ident) => {
+		impl encointer_scheduler::Config for $t {
+			type RuntimeEvent = RuntimeEvent;
+			type CeremonyMaster = EnsureAlice;
+			type OnCeremonyPhaseChange = ($ceremonies, $reputationcommitments); //OnCeremonyPhaseChange;
+			type MomentsPerDay = MomentsPerDay;
+			type WeightInfo = ();
+		}
+	};
+
 	($t:ident, $ceremonies:ident) => {
 		impl encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
-			type OnCeremonyPhaseChange = $ceremonies; //OnCeremonyPhaseChange;
+			type OnCeremonyPhaseChange = ($ceremonies, ()); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
 			type WeightInfo = ();
 		}
@@ -252,18 +274,12 @@ macro_rules! impl_encointer_scheduler {
 		impl encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
-			type OnCeremonyPhaseChange = (); //OnCeremonyPhaseChange;
+			type OnCeremonyPhaseChange = ((), ()); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
 			type WeightInfo = ();
 		}
 	};
 }
-
-parameter_types! {
-	pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
-}
-
-pub type LocationConverter = SiblingParachainConvertsVia<Sibling, AccountId>;
 
 ord_parameter_types! {
 	pub const Alice: AccountId32 = AccountId32::new([212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125]);

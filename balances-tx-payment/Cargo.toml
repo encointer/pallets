@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 
+encointer-primitives = { path = "../primitives", default-features = false }
 pallet-encointer-balances = { path = "../balances", default-features = false }
 pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false }
-encointer-primitives = { path = "../primitives", default-features = false }
 
 # substrate dependencies
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
@@ -16,6 +16,7 @@ frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/sub
 pallet-asset-tx-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
@@ -40,4 +41,8 @@ std = [
     "pallet-asset-tx-payment/std",
     "pallet-transaction-payment/std",
     "sp-runtime/std",
+]
+
+try-runtime = [
+    "frame-system/try-runtime",
 ]

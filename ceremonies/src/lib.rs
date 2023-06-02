@@ -45,10 +45,12 @@ use frame_support::{
 	ensure,
 	sp_std::cmp::min,
 	traits::{Get, Randomness},
+	BoundedVec,
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
+use sp_core::bounded::BoundedSlice;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};
 use sp_std::{cmp::max, prelude::*, vec};
 // Logger target
@@ -65,9 +67,11 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::generate_store(pub (super) trait Store)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -94,6 +98,9 @@ pub mod pallet {
 		// Divisor used to determine the ratio of newbies allowed in relation to other participants
 		#[pallet::constant]
 		type MeetupNewbieLimitDivider: Get<u64>;
+
+		#[pallet::constant]
+		type MaxAttestations: Get<u32>;
 
 		type WeightInfo: WeightInfo;
 	}
@@ -266,7 +273,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
 			number_of_participants_vote: u32,
-			attestations: Vec<T::AccountId>,
+			attestations: BoundedVec<T::AccountId, T::MaxAttestations>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
@@ -281,7 +288,6 @@ pub mod pallet {
 			let (cindex, meetup_index, meetup_participants, _meetup_location, _meetup_time) =
 				Self::gather_meetup_data(&cid, &sender)?;
 
-			ensure!(meetup_participants.contains(&sender), Error::<T>::OriginNotParticipant);
 			ensure!(
 				attestations.len() < meetup_participants.len(),
 				Error::<T>::TooManyAttestations
@@ -677,9 +683,7 @@ pub mod pallet {
 		/// meetup time calculation failed
 		MeetupTimeCalculationError,
 		/// no valid claims were supplied
-		NoValidClaims,
-		/// the action can only be performed during REGISTERING phase
-		RegisteringPhaseRequired,
+		NoValidAttestations,
 		/// the action can only be performed during ATTESTING phase
 		AttestationPhaseRequired,
 		/// the action can only be performed during REGISTERING or ATTESTING phase
@@ -694,12 +698,8 @@ pub mod pallet {
 		WrongProofSubject,
 		/// former attendance has not been verified or has already been linked to other account
 		AttendanceUnverifiedOrAlreadyUsed,
-		/// origin not part of this meetup
-		OriginNotParticipant,
 		/// can't have more attestations than other meetup participants
 		TooManyAttestations,
-		/// can't have more claims than other meetup participants
-		TooManyClaims,
 		/// sender has run out of newbie tickets
 		NoMoreNewbieTickets,
 		/// newbie is already endorsed
@@ -732,8 +732,6 @@ pub mod pallet {
 		GetMeetupParticipantsError,
 		/// index out of bounds while validating the meetup
 		MeetupValidationIndexOutOfBounds,
-		/// Attestations beyond time tolerance
-		AttestationsBeyondTimeTolerance,
 		/// Not possible to pay rewards in attestations phase
 		EarlyRewardsNotPossible,
 		/// Only newbies can upgrade their registration
@@ -744,6 +742,8 @@ pub mod pallet {
 		ReputationMustBeLinked,
 		/// Meetup Index > Meetup Count or < 1
 		InvalidMeetupIndex,
+		/// BoundedVec bound reached
+		TooManyAttestationsInBoundedVec,
 	}
 
 	#[pallet::storage]
@@ -942,7 +942,7 @@ pub mod pallet {
 		CommunityCeremony,
 		Blake2_128Concat,
 		AttestationIndexType,
-		Vec<T::AccountId>,
+		BoundedVec<T::AccountId, T::MaxAttestations>,
 		OptionQuery,
 	>;
 
@@ -1801,7 +1801,7 @@ impl<T: Config> Pallet<T> {
 				Self::attestation_index((cid, cindex), participant),
 			) {
 				Some(attestees) => attestees,
-				None => vec![],
+				None => Default::default(),
 			};
 			// convert AccountId to local index
 			let attestation_indices = attestations
@@ -1855,11 +1855,11 @@ impl<T: Config> Pallet<T> {
 				);
 				continue
 			};
-			verified_attestees.insert(0, attestee.clone());
+			verified_attestees.insert(0, attestee.clone())
 		}
 
 		if verified_attestees.is_empty() {
-			return Err(<Error<T>>::NoValidClaims)
+			return Err(<Error<T>>::NoValidAttestations)
 		}
 
 		let count = <AttestationCount<T>>::get((cid, cindex));
@@ -1872,7 +1872,12 @@ impl<T: Config> Pallet<T> {
 			// add new set of attestees
 			<AttestationCount<T>>::insert((cid, cindex), idx);
 		}
-		<AttestationRegistry<T>>::insert((cid, cindex), idx, &verified_attestees);
+		<AttestationRegistry<T>>::insert(
+			(cid, cindex),
+			idx,
+			BoundedSlice::try_from(&verified_attestees[..])
+				.map_err(|_| Error::<T>::TooManyAttestationsInBoundedVec)?,
+		);
 		<AttestationIndex<T>>::insert((cid, cindex), &participant, idx);
 		let verified_count = verified_attestees.len() as u32;
 		debug!(target: LOG, "successfully registered {} attestations", verified_count);
@@ -1926,7 +1931,7 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 				let inactives = Self::update_inactivity_counters(
 					<encointer_scheduler::Pallet<T>>::current_ceremony_index().saturating_sub(1),
 					Self::inactivity_timeout(),
-					<encointer_communities::Pallet<T>>::community_identifiers(),
+					<encointer_communities::Pallet<T>>::community_identifiers().to_vec(),
 				);
 				for inactive in inactives {
 					Self::purge_community(inactive);
@@ -1956,3 +1961,5 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+pub mod migrations;

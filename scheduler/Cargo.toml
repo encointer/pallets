@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false }
 
@@ -17,8 +18,9 @@ frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/parityte
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v0.9.37" }
+
 
 [dev-dependencies]
 sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
@@ -27,14 +29,18 @@ test-utils = { path = "../test-utils" }
 [features]
 default = ["std"]
 std = [
-	"codec/std",
-	"log/std",
-	"scale-info/std",
-	"encointer-primitives/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-timestamp/std",
-	"sp-std/std",
-	"sp-runtime/std",
+    "codec/std",
+    "log/std",
+    "scale-info/std",
+    "encointer-primitives/std",
+    "frame-support/std",
+    "frame-system/std",
+    "pallet-timestamp/std",
+    "sp-std/std",
+    "sp-runtime/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
+
+try-runtime = [
+    "frame-system/try-runtime",
+]

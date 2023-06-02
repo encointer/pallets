@@ -8,10 +8,10 @@ edition = "2021"
 log = "0.4.14"
 
 # local deps
-encointer-primitives = { path = "../primitives" }
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances" }
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies" }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities" }
+encointer-primitives = { path = "../primitives" }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler" }
 
 # substrate deps
@@ -25,11 +25,5 @@ sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.gi
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
-
-# polkadot deps
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.37" }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
