@@ -153,10 +153,6 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 
-			if !<Faucets<T>>::contains_key(&faucet_account) {
-				return Err(<Error<T>>::InexsistentFaucet.into())
-			}
-
 			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
 
 			if !faucet.whitelist.contains(&cid) {
