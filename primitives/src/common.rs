@@ -16,12 +16,14 @@
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::RuntimeDebug;
+use sp_core::{ConstU32, RuntimeDebug};
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
 use crate::bs58_verify::{Bs58Error, Bs58verify};
+
+use sp_core::bounded::BoundedVec;
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
@@ -30,16 +32,30 @@ use sp_std::vec::Vec;
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
 /// utf8 decode bytes into a string.
 #[cfg(not(feature = "std"))]
-pub type PalletString = Vec<u8>;
+pub type UnboundedPalletString = Vec<u8>;
 
 #[cfg(feature = "std")]
-pub type PalletString = String;
+pub type UnboundedPalletString = String;
+
+pub type PalletString = BoundedVec<u8, ConstU32<256>>;
+
+pub trait FromStr: Sized {
+	type Err;
+	fn from_str(inp: &str) -> Result<Self, Self::Err>;
+}
+
+impl FromStr for PalletString {
+	type Err = Vec<u8>;
+	fn from_str(inp: &str) -> Result<Self, Self::Err> {
+		Self::try_from(inp.as_bytes().to_vec())
+	}
+}
 
 pub trait AsByteOrNoop {
 	fn as_bytes_or_noop(&self) -> &[u8];
 }
 
-impl AsByteOrNoop for PalletString {
+impl AsByteOrNoop for UnboundedPalletString {
 	#[cfg(feature = "std")]
 	fn as_bytes_or_noop(&self) -> &[u8] {
 		self.as_bytes()
@@ -51,7 +67,14 @@ impl AsByteOrNoop for PalletString {
 	}
 }
 
-pub type IpfsCid = PalletString;
+impl AsByteOrNoop for PalletString {
+	fn as_bytes_or_noop(&self) -> &[u8] {
+		self
+	}
+}
+
+pub type IpfsCid = UnboundedPalletString;
+pub type BoundedIpfsCid = PalletString;
 
 pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
 	for (i, c) in bytes.iter().enumerate() {
@@ -66,7 +89,7 @@ pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
 // string length: 46 bs58 characters (bs58 -> 1 byte/char)
 pub const MAX_HASH_SIZE: usize = 46;
 
-pub fn validate_ipfs_cid(cid: &IpfsCid) -> Result<(), IpfsValidationError> {
+pub fn validate_ipfs_cid(cid: &BoundedIpfsCid) -> Result<(), IpfsValidationError> {
 	if cid.len() != MAX_HASH_SIZE {
 		return Err(IpfsValidationError::InvalidLength(cid.len() as u8))
 	}

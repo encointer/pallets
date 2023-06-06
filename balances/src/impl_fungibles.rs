@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use encointer_primitives::{balances::EncointerBalanceConverter, common::PalletString};
+use encointer_primitives::{balances::EncointerBalanceConverter, common::UnboundedPalletString};
 use frame_support::{
 	inherent::Vec,
 	traits::tokens::{DepositConsequence, WithdrawConsequence},
@@ -26,11 +26,11 @@ use sp_runtime::traits::{Convert, Zero};
 // `pallet-asset-tx-payment`. It is not used in our case.
 impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
 	fn name(_asset: &Self::AssetId) -> Vec<u8> {
-		PalletString::from("Encointer").into()
+		UnboundedPalletString::from("Encointer").into()
 	}
 
 	fn symbol(_asset: &Self::AssetId) -> Vec<u8> {
-		PalletString::from("ETR").into()
+		UnboundedPalletString::from("ETR").into()
 	}
 
 	fn decimals(_asset: &Self::AssetId) -> u8 {
