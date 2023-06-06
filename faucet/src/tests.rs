@@ -17,37 +17,650 @@
 //! Unit tests for the encointer_faucet module.
 
 use super::*;
-use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System};
+use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System, Treasury};
 use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
-	communities::{Degree, Location},
-	reputation_commitments::{DescriptorType, FromStr},
+	faucet::FromStr,
+	reputation_commitments::{DescriptorType, FromStr as DescriptorFromStr},
 };
-use frame_support::{assert_err, assert_ok};
-use mock::{master, new_test_ext, RuntimeOrigin, TestRuntime};
-use sp_runtime::DispatchError;
+use frame_support::{assert_err, assert_ok, bounded_vec};
+use mock::{new_test_ext, RuntimeOrigin, TestRuntime};
+use sp_runtime::{AccountId32, DispatchError};
 use test_utils::{helpers::*, storage::*, *};
 
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+fn new_faucet(
+	origin: RuntimeOrigin,
+	name: FaucetNameType,
+	amount: BalanceOf<TestRuntime>,
+	whitelist: WhiteListType,
+	drip_amount: BalanceOf<TestRuntime>,
+) -> AccountId32 {
+	assert_ok!(EncointerFaucet::create_faucet(origin, name, amount, whitelist, drip_amount));
+
+	if let mock::RuntimeEvent::EncointerFaucet(Event::FaucetCreated(faucet_account, _)) =
+		last_event::<TestRuntime>().unwrap()
+	{
+		return faucet_account
+	} else {
+		panic!("Faucet not found");
+	}
+}
 #[test]
-fn purpose_id_is_stored_correctly() {
+fn faucet_creation_works() {
 	new_test_ext().execute_with(|| {
-		assert!(ReputationCommitmentsPurposeId::<TestRuntime>::exists());
-		assert_eq!(EncointerFaucet::reputation_commitments_purpose_id(), 0,);
-		assert_eq!(
-			EncointerReputationCommitments::purposes(0),
-			DescriptorType::from_str("EncointerFaucet").unwrap(),
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		// insert some purposes
+		EncointerReputationCommitments::do_register_purpose(
+			DescriptorType::from_str("Some Description").unwrap(),
+		)
+		.ok();
+		EncointerReputationCommitments::do_register_purpose(
+			DescriptorType::from_str("Some Description 2").unwrap(),
+		)
+		.ok();
+
+		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+		Balances::make_free_balance_be(&alice, 114);
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(alice.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			100,
+			whitelist_input.clone(),
+			10,
+		);
+
+		let faucet = EncointerFaucet::faucets(&faucet_account).unwrap();
+
+		assert_eq!(faucet.name, FaucetNameType::from_str("Some Faucet Name").unwrap());
+		assert_eq!(faucet.purpose_id, 2);
+		assert_eq!(faucet.whitelist, whitelist_input);
+		assert_eq!(faucet.drip_amount, 10);
+		assert_eq!(faucet.creator, alice.clone());
+		assert_eq!(Balances::free_balance(&alice), 1);
+		assert_eq!(Balances::reserved_balance(&alice), 13);
+		assert_eq!(Balances::free_balance(&faucet_account), 100);
+	});
+}
+
+#[test]
+fn faucet_creation_fails_with_insufficient_balance() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+		Balances::make_free_balance_be(&alice, 112);
+
+		assert_err!(
+			EncointerFaucet::create_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				100,
+				whitelist_input.clone(),
+				10
+			),
+			Error::<TestRuntime>::InsuffiecientBalance
 		);
 	});
 }
 
 #[test]
-fn set_drip_amount_errs_with_bad_origin() {
+fn faucet_creation_fails_with_duplicate() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+		Balances::make_free_balance_be(&alice, 100);
+
+		assert_ok!(EncointerFaucet::create_faucet(
+			RuntimeOrigin::signed(alice.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			10,
+			whitelist_input.clone(),
+			2
+		));
+
+		assert_ok!(EncointerFaucet::create_faucet(
+			RuntimeOrigin::signed(alice.clone()),
+			FaucetNameType::from_str("Some Faucet Name 2").unwrap(),
+			10,
+			whitelist_input.clone(),
+			2
+		));
+
+		assert_err!(
+			EncointerFaucet::create_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				10,
+				whitelist_input.clone(),
+				2
+			),
+			Error::<TestRuntime>::FaucetAlreadyExists
+		);
+	});
+}
+
+#[test]
+fn faucet_creation_fails_with_too_small_drip_amount() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+		Balances::make_free_balance_be(&alice, 100);
+
+		assert_err!(
+			EncointerFaucet::create_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				10,
+				whitelist_input.clone(),
+				1
+			),
+			Error::<TestRuntime>::DripAmountTooSmall
+		);
+	});
+}
+
+#[test]
+fn faucet_creation_fails_with_invalid_cid() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let cid = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+		let cid2 = CommunityIdentifier::default();
+
+		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+
+		assert_err!(
+			EncointerFaucet::create_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				10,
+				whitelist_input.clone(),
+				1
+			),
+			Error::<TestRuntime>::InvalidCommunityIdentifierInWhitelist
+		);
+	});
+}
+
+#[test]
+fn dripping_works() {
+	new_test_ext().execute_with(|| {
+		let mut ext = new_test_ext();
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+
+		ext.insert(participant_reputation((cid, 12), &bob), Reputation::VerifiedUnlinked.encode());
+
+		ext.execute_with(|| {
+			// re-register because of different ext
+			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+			System::set_block_number(System::block_number() + 1); // this is needed to assert events
+
+			let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+			Balances::make_free_balance_be(&alice, 1000);
+
+			let faucet_account1 = new_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				100,
+				whitelist_input.clone(),
+				10,
+			);
+
+			let faucet_account2 = new_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				FaucetNameType::from_str("Some Faucet Name 2").unwrap(),
+				100,
+				whitelist_input.clone(),
+				9,
+			);
+
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(bob.clone()),
+				faucet_account1.clone(),
+				cid,
+				12,
+			));
+			assert_eq!(Balances::free_balance(&bob), 10);
+			assert_eq!(Balances::free_balance(&faucet_account1), 90);
+			assert_eq!(
+				last_event::<TestRuntime>(),
+				Some(Event::Dripped(faucet_account1.clone(), bob.clone(), 10).into())
+			);
+
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(bob.clone()),
+				faucet_account2.clone(),
+				cid,
+				12,
+			));
+			assert_eq!(Balances::free_balance(&bob), 19);
+			assert_eq!(Balances::free_balance(&faucet_account2), 91);
+			assert_eq!(
+				last_event::<TestRuntime>(),
+				Some(Event::Dripped(faucet_account2.clone(), bob.clone(), 9).into())
+			);
+
+			assert_err!(
+				EncointerFaucet::drip(
+					RuntimeOrigin::signed(bob.clone()),
+					faucet_account1.clone(),
+					cid,
+					12
+				),
+				encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommited
+			);
+
+			assert_err!(
+				EncointerFaucet::drip(
+					RuntimeOrigin::signed(bob.clone()),
+					faucet_account1.clone(),
+					cid,
+					13
+				),
+				encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
+			);
+
+			assert_err!(
+				EncointerFaucet::drip(
+					RuntimeOrigin::signed(bob.clone()),
+					faucet_account1.clone(),
+					cid2,
+					12
+				),
+				encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
+			);
+		})
+	})
+}
+
+#[test]
+fn faucet_empty_works() {
+	new_test_ext().execute_with(|| {
+		let mut ext = new_test_ext();
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+		ext.insert(
+			participant_reputation((cid, 12), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+		ext.insert(
+			participant_reputation((cid, 13), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+		ext.insert(
+			participant_reputation((cid2, 12), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+		ext.insert(
+			participant_reputation((cid2, 13), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+
+		ext.execute_with(|| {
+			// re-register because of different ext
+			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+			System::set_block_number(System::block_number() + 1); // this is needed to assert events
+			let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+			Balances::make_free_balance_be(&bob, 1000);
+
+			let faucet_account = new_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				35,
+				whitelist_input.clone(),
+				10,
+			);
+
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone(),
+				cid,
+				12,
+			));
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone(),
+				cid,
+				13,
+			));
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone(),
+				cid2,
+				12,
+			));
+			assert_eq!(Balances::free_balance(&alice), 30);
+			assert_eq!(Balances::free_balance(&faucet_account), 5);
+
+			assert_err!(
+				EncointerFaucet::drip(
+					RuntimeOrigin::signed(alice.clone()),
+					faucet_account.clone(),
+					cid2,
+					13
+				),
+				Error::<TestRuntime>::FaucetEmpty
+			);
+			assert_eq!(Balances::free_balance(&alice), 30);
+			assert_eq!(Balances::free_balance(&faucet_account), 5);
+		})
+	})
+}
+
+#[test]
+fn dripping_fails_when_cid_not_whitelisted() {
+	new_test_ext().execute_with(|| {
+		let mut ext = new_test_ext();
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+		ext.insert(
+			participant_reputation((cid, 12), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+		ext.insert(
+			participant_reputation((cid2, 13), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+
+		ext.execute_with(|| {
+			System::set_block_number(System::block_number() + 1); // this is needed to assert events
+													  // re-register because of different ext
+			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+			let whitelist_input: WhiteListType = bounded_vec![cid];
+			Balances::make_free_balance_be(&bob, 1000);
+
+			let faucet_account = new_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				35,
+				whitelist_input.clone(),
+				10,
+			);
+
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone(),
+				cid,
+				12,
+			));
+			assert_err!(
+				EncointerFaucet::drip(
+					RuntimeOrigin::signed(alice.clone()),
+					faucet_account.clone(),
+					cid2,
+					13,
+				),
+				Error::<TestRuntime>::CommunityNotInWhitelist
+			);
+		})
+	})
+}
+
+#[test]
+fn dripping_fails_with_inexistent_faucet() {
+	new_test_ext().execute_with(|| {
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+
+		assert_err!(
+			EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), bob.clone(), cid, 13,),
+			Error::<TestRuntime>::InexsistentFaucet
+		);
+	})
+}
+
+#[test]
+fn dissolve_faucet_works() {
+	let mut ext = new_test_ext();
+	let alice = AccountId::from(AccountKeyring::Alice);
+	let bob = AccountId::from(AccountKeyring::Bob);
+
+	ext.execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let whitelist_input: WhiteListType = bounded_vec![cid];
+		Balances::make_free_balance_be(&bob, 1000);
+
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			35,
+			whitelist_input.clone(),
+			10,
+		);
+
+		assert_eq!(Balances::free_balance(&bob), 952);
+		assert_eq!(Balances::reserved_balance(&bob), 13);
+
+		assert_eq!(Balances::free_balance(&faucet_account), 35);
+		assert_ok!(EncointerFaucet::dissolve_faucet(
+			RuntimeOrigin::root(),
+			faucet_account.clone(),
+			alice.clone()
+		));
+		assert_eq!(Balances::free_balance(&faucet_account), 0);
+		assert_eq!(Balances::free_balance(&alice), 35);
+		assert_eq!(Balances::free_balance(&bob), 965);
+		assert_eq!(Balances::reserved_balance(&bob), 0);
+
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::FaucetDissolved(faucet_account.clone()).into())
+		);
+	})
+}
+
+#[test]
+fn dissolve_faucet_fails_if_not_root() {
+	let mut ext = new_test_ext();
+	let alice = AccountId::from(AccountKeyring::Alice);
+	let bob = AccountId::from(AccountKeyring::Bob);
+
+	ext.execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let whitelist_input: WhiteListType = bounded_vec![cid];
+		Balances::make_free_balance_be(&bob, 1000);
+
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			35,
+			whitelist_input.clone(),
+			10,
+		);
+
+		assert_err!(
+			EncointerFaucet::dissolve_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				faucet_account.clone(),
+				alice.clone()
+			),
+			DispatchError::BadOrigin
+		);
+	})
+}
+
+#[test]
+fn dissolve_faucet_fails_with_inexistent_faucet() {
+	new_test_ext().execute_with(|| {
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+
+		assert_err!(
+			EncointerFaucet::dissolve_faucet(RuntimeOrigin::root(), bob.clone(), alice.clone()),
+			Error::<TestRuntime>::InexsistentFaucet
+		);
+	})
+}
+
+#[test]
+fn close_faucet_works() {
+	new_test_ext().execute_with(|| {
+		let mut ext = new_test_ext();
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+
+		ext.insert(
+			participant_reputation((cid, 12), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+
+		ext.execute_with(|| {
+			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+			System::set_block_number(System::block_number() + 1); // this is needed to assert events
+			let whitelist_input: WhiteListType = bounded_vec![cid];
+			Balances::make_free_balance_be(&bob, 1000);
+
+			let faucet_account = new_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				35,
+				whitelist_input.clone(),
+				12,
+			);
+
+			assert_eq!(Balances::free_balance(&bob), 952);
+			assert_eq!(Balances::reserved_balance(&bob), 13);
+
+			assert_eq!(Balances::free_balance(&faucet_account), 35);
+
+			// after one drip the faucet balance is 23
+			// 23 < 24 (2 * drip_amount)
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone(),
+				cid,
+				12,
+			));
+
+			assert_ok!(EncointerFaucet::close_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				faucet_account.clone(),
+			));
+
+			assert_eq!(Balances::free_balance(&faucet_account), 0);
+			assert_eq!(Balances::free_balance(&alice), 12);
+			assert_eq!(Balances::free_balance(&bob), 965);
+			assert_eq!(Balances::free_balance(&Treasury::account_id()), 23);
+			assert_eq!(Balances::reserved_balance(&bob), 0);
+
+			assert_eq!(
+				last_event::<TestRuntime>(),
+				Some(Event::FaucetClosed(faucet_account.clone()).into())
+			);
+		})
+	})
+}
+
+#[test]
+fn close_faucet_fails_if_not_creator() {
+	let mut ext = new_test_ext();
+	let alice = AccountId::from(AccountKeyring::Alice);
+	let bob = AccountId::from(AccountKeyring::Bob);
+
+	ext.execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let whitelist_input: WhiteListType = bounded_vec![cid];
+		Balances::make_free_balance_be(&bob, 1000);
+
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			35,
+			whitelist_input.clone(),
+			10,
+		);
+
+		assert_err!(
+			EncointerFaucet::close_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone()
+			),
+			Error::<TestRuntime>::NotCreator
+		);
+	})
+}
+
+#[test]
+fn close_faucet_fails_if_not_empty() {
+	let mut ext = new_test_ext();
+	let bob = AccountId::from(AccountKeyring::Bob);
+
+	ext.execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let whitelist_input: WhiteListType = bounded_vec![cid];
+		Balances::make_free_balance_be(&bob, 1000);
+
+		let faucet_account = new_faucet(
+			RuntimeOrigin::signed(bob.clone()),
+			FaucetNameType::from_str("Some Faucet Name").unwrap(),
+			35,
+			whitelist_input.clone(),
+			10,
+		);
+
+		assert_err!(
+			EncointerFaucet::close_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				faucet_account.clone()
+			),
+			Error::<TestRuntime>::FaucetNotEmpty
+		);
+	})
+}
+
+#[test]
+fn close_faucet_fails_with_inexistent_faucet() {
+	new_test_ext().execute_with(|| {
+		let bob = AccountId::from(AccountKeyring::Bob);
+
+		assert_err!(
+			EncointerFaucet::close_faucet(RuntimeOrigin::signed(bob.clone()), bob.clone()),
+			Error::<TestRuntime>::InexsistentFaucet
+		);
+	})
+}
+
+#[test]
+fn set_reserve_amount_errs_with_bad_origin() {
 	new_test_ext().execute_with(|| {
 		assert_dispatch_err(
-			EncointerFaucet::set_drip_amount(
+			EncointerFaucet::set_reserve_amount(
 				RuntimeOrigin::signed(AccountKeyring::Bob.into()),
-				10000u64,
+				1,
 			),
 			DispatchError::BadOrigin,
 		);
@@ -55,100 +668,19 @@ fn set_drip_amount_errs_with_bad_origin() {
 }
 
 #[test]
-fn set_drip_amount_works() {
+fn set_reserve_amount_works() {
 	new_test_ext().execute_with(|| {
-		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		assert_ok!(EncointerFaucet::set_reserve_amount(
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
+			2
+		));
 
-		assert_ok!(EncointerFaucet::set_drip_amount(RuntimeOrigin::signed(master()), 1001u64));
+		assert_eq!(EncointerFaucet::reserve_amount(), 2);
+		assert_ok!(EncointerFaucet::set_reserve_amount(
+			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
+			3
+		));
 
-		assert_eq!(EncointerFaucet::drip_amount(), 1001u64);
-		assert_ok!(EncointerFaucet::set_drip_amount(RuntimeOrigin::signed(master()), 1337u64));
-
-		assert_eq!(EncointerFaucet::drip_amount(), 1337u64);
-
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::DripAmountUpdated(1337u64).into()));
+		assert_eq!(EncointerFaucet::reserve_amount(), 3);
 	});
-}
-
-#[test]
-fn pot_balance_works() {
-	new_test_ext().execute_with(|| {
-		Balances::make_free_balance_be(&EncointerFaucet::account_id(), 101);
-		// free_balance - minimum_balance
-		assert_eq!(EncointerFaucet::pot(), 100);
-	});
-}
-
-#[test]
-fn dripping_works() {
-	let mut ext = new_test_ext();
-	let alice = AccountId::from(AccountKeyring::Alice);
-	let cid = CommunityIdentifier::default();
-	let cid2 = CommunityIdentifier::new::<AccountId>(
-		Location { lat: Degree::from_num(0.1), lon: Degree::from_num(0.1) },
-		vec![],
-	)
-	.unwrap();
-	ext.insert(participant_reputation((cid, 12), &alice), Reputation::VerifiedUnlinked.encode());
-
-	ext.execute_with(|| {
-		System::set_block_number(System::block_number() + 1); // this is needed to assert events
-		Balances::make_free_balance_be(&EncointerFaucet::account_id(), 1000);
-		assert_ok!(EncointerFaucet::set_drip_amount(RuntimeOrigin::signed(master()), 101u64));
-
-		assert_ok!(EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid, 12,));
-		assert_eq!(Balances::free_balance(&alice), 101);
-		assert_eq!(EncointerFaucet::pot(), 898);
-
-		assert_eq!(last_event::<TestRuntime>(), Some(Event::Dripped(alice.clone(), 101).into()));
-
-		assert_err!(
-			EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid, 12),
-			encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommited
-		);
-
-		assert_err!(
-			EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid, 13),
-			encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
-		);
-
-		assert_err!(
-			EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid2, 12),
-			encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
-		);
-	})
-}
-
-#[test]
-fn faucet_empty_works() {
-	let mut ext = new_test_ext();
-	let alice = AccountId::from(AccountKeyring::Alice);
-	let cid = CommunityIdentifier::default();
-	let cid2 = CommunityIdentifier::new::<AccountId>(
-		Location { lat: Degree::from_num(0.1), lon: Degree::from_num(0.1) },
-		vec![],
-	)
-	.unwrap();
-	ext.insert(participant_reputation((cid, 12), &alice), Reputation::VerifiedUnlinked.encode());
-	ext.insert(participant_reputation((cid, 13), &alice), Reputation::VerifiedUnlinked.encode());
-	ext.insert(participant_reputation((cid2, 12), &alice), Reputation::VerifiedUnlinked.encode());
-	ext.insert(participant_reputation((cid2, 13), &alice), Reputation::VerifiedUnlinked.encode());
-
-	ext.execute_with(|| {
-		Balances::make_free_balance_be(&EncointerFaucet::account_id(), 35);
-		assert_ok!(EncointerFaucet::set_drip_amount(RuntimeOrigin::signed(master()), 10u64));
-
-		assert_ok!(EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid, 12,));
-		assert_ok!(EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid, 13,));
-		assert_ok!(EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid2, 12,));
-		assert_eq!(Balances::free_balance(&alice), 30);
-		assert_eq!(EncointerFaucet::pot(), 4);
-
-		assert_err!(
-			EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), cid2, 13),
-			Error::<TestRuntime>::FaucetEmpty
-		);
-		assert_eq!(Balances::free_balance(&alice), 30);
-		assert_eq!(EncointerFaucet::pot(), 4);
-	})
 }

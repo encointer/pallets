@@ -17,10 +17,10 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::ConstU64, PalletId};
-use test_utils::*;
-
 use encointer_primitives::balances::BalanceType;
+use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::ConstU64, PalletId};
+use sp_runtime::Permill;
+use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -40,12 +40,37 @@ frame_support::construct_runtime!(
 		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EncointerReputationCommitments:encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
 	}
 );
 
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const Burn: Permill = Permill::from_percent(50);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+}
+impl pallet_treasury::Config for TestRuntime {
+	type PalletId = TreasuryPalletId;
+	type Currency = pallet_balances::Pallet<TestRuntime>;
+	type ApproveOrigin = EnsureAlice;
+	type RejectOrigin = EnsureAlice;
+	type RuntimeEvent = RuntimeEvent;
+	type OnSlash = ();
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ConstU64<1>;
+	type ProposalBondMaximum = ();
+	type SpendPeriod = ConstU64<2>;
+	type Burn = Burn;
+	type BurnDestination = (); // Just gets burned.
+	type WeightInfo = ();
+	type SpendFunds = ();
+	type MaxApprovals = ConstU32<100>;
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u64>;
+}
+
 impl pallet_balances::Config for TestRuntime {
 	type MaxLocks = ();
-	type MaxReserves = ();
+	type MaxReserves = ConstU32<1000>;
 	type ReserveIdentifier = [u8; 8];
 	type Balance = u64;
 	type RuntimeEvent = RuntimeEvent;
@@ -79,7 +104,7 @@ impl_encointer_reputation_commitments!(TestRuntime);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 
-	let conf = dut::GenesisConfig { drip_amount: 100_000 };
+	let conf = dut::GenesisConfig { reserve_amount: 13 };
 	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
 
 	encointer_ceremonies::GenesisConfig::<TestRuntime> {
@@ -95,9 +120,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	t.into()
-}
+	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
 
-pub fn master() -> AccountId {
-	AccountId::from(AccountKeyring::Alice)
+	t.into()
 }

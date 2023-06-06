@@ -11,6 +11,7 @@ log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false }
 
 # local deps
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 encointer-primitives = { path = "../primitives", default-features = false }
 encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false }
 
@@ -18,6 +19,7 @@ encointer-reputation-commitments = { package = "pallet-encointer-reputation-comm
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
+pallet-treasury = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.37" }
 sp-core = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-runtime = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
 sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.37" }
@@ -34,6 +36,7 @@ std = [
     "log/std",
     "scale-info/std",
     # local deps
+    "encointer-communities/std",
     "encointer-primitives/std",
     "encointer-reputation-commitments/std",
     # substrate deps
@@ -41,6 +44,7 @@ std = [
     "frame-system/std",
     "sp-std/std",
     "sp-runtime/std",
+    "pallet-treasury/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "approx"]
