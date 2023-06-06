@@ -547,7 +547,7 @@ fn close_faucet_works() {
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				35,
 				whitelist_input.clone(),
-				20,
+				12,
 			);
 
 			assert_eq!(Balances::free_balance(&bob), 952);
@@ -555,6 +555,8 @@ fn close_faucet_works() {
 
 			assert_eq!(Balances::free_balance(&faucet_account), 35);
 
+			// after one drip the faucet balance is 23
+			// 23 < 24 (2 * drip_amount)
 			assert_ok!(EncointerFaucet::drip(
 				RuntimeOrigin::signed(alice.clone()),
 				faucet_account.clone(),
@@ -568,9 +570,9 @@ fn close_faucet_works() {
 			));
 
 			assert_eq!(Balances::free_balance(&faucet_account), 0);
-			assert_eq!(Balances::free_balance(&alice), 20);
+			assert_eq!(Balances::free_balance(&alice), 12);
 			assert_eq!(Balances::free_balance(&bob), 965);
-			assert_eq!(Balances::free_balance(&Treasury::account_id()), 15);
+			assert_eq!(Balances::free_balance(&Treasury::account_id()), 23);
 			assert_eq!(Balances::reserved_balance(&bob), 0);
 
 			assert_eq!(

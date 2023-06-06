@@ -33,7 +33,7 @@ use frame_support::{
 use frame_system::{self as frame_system, ensure_signed};
 use log::info;
 use sp_core::H256;
-use sp_runtime::traits::Hash;
+use sp_runtime::{traits::Hash, SaturatedConversion, Saturating};
 use sp_std::convert::TryInto;
 
 // Logger target
@@ -224,7 +224,8 @@ pub mod pallet {
 
 			ensure!(from == faucet.creator, <Error<T>>::NotCreator);
 			ensure!(
-				<T as Config>::Currency::free_balance(&faucet_account) < faucet.drip_amount,
+				<T as Config>::Currency::free_balance(&faucet_account) <
+					faucet.drip_amount.saturating_mul(2u32.saturated_into()),
 				<Error<T>>::FaucetNotEmpty
 			);
 
