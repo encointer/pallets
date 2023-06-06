@@ -19,7 +19,6 @@
 use crate as dut;
 use encointer_primitives::balances::BalanceType;
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::ConstU64, PalletId};
-use sp_core::ConstU32;
 use sp_runtime::Permill;
 use test_utils::*;
 
