@@ -101,6 +101,11 @@ pub mod pallet {
 				}
 			}
 
+			ensure!(
+				drip_amount > <T as Config>::Currency::minimum_balance(),
+				<Error<T>>::DripAmountTooSmall
+			);
+
 			// create account
 			let faucet_identifier =
 				[<T as Config>::PalletId::get().0.as_slice(), name.to_vec().as_slice()].concat();
@@ -326,6 +331,8 @@ pub mod pallet {
 		NotCreator,
 		/// invalid community identifier in whitelist
 		InvalidCommunityIdentifierInWhitelist,
+		/// drip amount too small
+		DripAmountTooSmall,
 	}
 
 	#[pallet::storage]

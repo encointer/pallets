@@ -130,7 +130,7 @@ fn faucet_creation_fails_with_duplicate() {
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
 			10,
 			whitelist_input.clone(),
-			1
+			2
 		));
 
 		assert_ok!(EncointerFaucet::create_faucet(
@@ -138,8 +138,32 @@ fn faucet_creation_fails_with_duplicate() {
 			FaucetNameType::from_str("Some Faucet Name 2").unwrap(),
 			10,
 			whitelist_input.clone(),
-			1
+			2
 		));
+
+		assert_err!(
+			EncointerFaucet::create_faucet(
+				RuntimeOrigin::signed(alice.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				10,
+				whitelist_input.clone(),
+				2
+			),
+			Error::<TestRuntime>::FaucetAlreadyExists
+		);
+	});
+}
+
+#[test]
+fn faucet_creation_fails_with_too_small_drip_amount() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		let whitelist_input: WhiteListType = bounded_vec![cid, cid2];
+		Balances::make_free_balance_be(&alice, 100);
 
 		assert_err!(
 			EncointerFaucet::create_faucet(
@@ -149,7 +173,7 @@ fn faucet_creation_fails_with_duplicate() {
 				whitelist_input.clone(),
 				1
 			),
-			Error::<TestRuntime>::FaucetAlreadyExists
+			Error::<TestRuntime>::DripAmountTooSmall
 		);
 	});
 }
