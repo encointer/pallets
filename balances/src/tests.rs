@@ -27,7 +27,7 @@ use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	traits::{
 		tokens::{
-			fungibles::{Inspect, InspectMetadata, Unbalanced},
+			fungibles::{Inspect, Unbalanced},
 			DepositConsequence, WithdrawConsequence,
 		},
 		OnInitialize,
@@ -126,7 +126,8 @@ fn transfer_should_create_new_account() {
 		let alice = AccountKeyring::Alice.to_account_id();
 
 		// does not exist on chain
-		let zoltan: AccountId32 = sr25519::Pair::from_entropy(&[9u8; 32], None).0.public().into();
+		let zoltan: AccountId32 =
+			sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap().public().into();
 		let cid = CommunityIdentifier::default();
 		let amount = BalanceType::from_num(9.999);
 
@@ -175,7 +176,8 @@ fn transfer_does_not_create_new_account_if_below_ed() {
 		let alice = AccountKeyring::Alice.to_account_id();
 
 		// does not exist on chain
-		let zoltan: AccountId32 = sr25519::Pair::from_entropy(&[9u8; 32], None).0.public().into();
+		let zoltan: AccountId32 =
+			sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap().public().into();
 		let cid = CommunityIdentifier::default();
 		let amount = BalanceType::from_num(0.0000000001);
 
@@ -196,7 +198,8 @@ fn if_account_does_not_exist_in_community_transfer_errs_with_no_account_error() 
 		let alice = AccountKeyring::Alice.to_account_id();
 
 		// does not exist on chain
-		let zoltan: AccountId32 = sr25519::Pair::from_entropy(&[9u8; 32], None).0.public().into();
+		let zoltan: AccountId32 =
+			sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap().public().into();
 		let cid = CommunityIdentifier::default();
 		let amount = BalanceType::from_num(0.0000000001);
 
@@ -383,6 +386,9 @@ fn transfer_removes_account_if_source_below_existential_deposit() {
 mod impl_fungibles {
 	use super::*;
 	use crate::impl_fungibles::fungible;
+	use frame_support::traits::{
+		fungible::Inspect, tokens::fungibles::metadata::Inspect as MetadaInspect, PalletInfoAccess,
+	};
 
 	type AccountId = <TestRuntime as frame_system::Config>::AccountId;
 
@@ -390,9 +396,13 @@ mod impl_fungibles {
 	fn name_symbol_and_decimals_work() {
 		new_test_ext().execute_with(|| {
 			let cid = CommunityIdentifier::default();
-			assert_eq!(EncointerBalances::name(&cid), "Encointer".as_bytes().to_vec());
-			assert_eq!(EncointerBalances::symbol(&cid), "ETR".as_bytes().to_vec());
-			assert_eq!(EncointerBalances::decimals(&cid), 18);
+			assert_eq!(EncointerBalances::name(), "Encointer".as_ref());
+			assert_eq!(
+				//<EncointerBalances as Inspect<AccountId>>::symbol(cid.clone()),
+				<EncointerBalances as MetadaInspect<_>>::symbol(cid.clone()),
+				"ETR".as_bytes().to_vec()
+			);
+			assert_eq!(<EncointerBalances as MetadaInspect<_>>::decimals(cid), 18);
 		})
 	}
 
@@ -403,7 +413,7 @@ mod impl_fungibles {
 			let alice = AccountKeyring::Alice.to_account_id();
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
 			assert!(almost_eq(
-				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
+				<EncointerBalances as Inspect<AccountId>>::balance(&alice),
 				50_100_000_000_000_000_000u128,
 				10000
 			));
@@ -555,7 +565,11 @@ mod impl_fungibles {
 				10000
 			));
 
-			assert_ok!(EncointerBalances::set_balance(cid, &alice, 20_000_000_000_000_000_000u128));
+			assert_ok!(EncointerBalances::force_set_balance(
+				cid,
+				&alice,
+				20_000_000_000_000_000_000u128
+			));
 
 			assert!(almost_eq(
 				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),

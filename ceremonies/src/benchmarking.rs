@@ -394,12 +394,12 @@ impl_benchmark_test_suite!(Pallet, crate::benchmarking::new_test_ext(), crate::m
 
 #[cfg(test)]
 fn new_test_ext() -> sp_io::TestExternalities {
-	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
+	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
 	use sp_std::sync::Arc;
 
 	let mut ext = crate::mock::new_test_ext();
 
-	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
+	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
 }
