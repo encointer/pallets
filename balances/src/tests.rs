@@ -383,8 +383,10 @@ fn transfer_removes_account_if_source_below_existential_deposit() {
 
 mod impl_fungibles {
 	use super::*;
-	use crate::impl_fungibles::fungible;
-	use frame_support::traits::fungible::Inspect;
+	use crate::impl_fungibles::{
+		fungible, DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
+	};
+	use fungibles::Inspect;
 
 	type AccountId = <TestRuntime as frame_system::Config>::AccountId;
 
@@ -395,7 +397,7 @@ mod impl_fungibles {
 			let alice = AccountKeyring::Alice.to_account_id();
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50.1)));
 			assert!(almost_eq(
-				<EncointerBalances as Inspect<AccountId>>::balance(&alice),
+				<EncointerBalances as Inspect<AccountId>>::balance(cid, &alice),
 				50_100_000_000_000_000_000u128,
 				10000
 			));
@@ -407,7 +409,7 @@ mod impl_fungibles {
 			));
 
 			assert!(almost_eq(
-				<EncointerBalances as Inspect<AccountId>>::total_issuance(),
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
 				50_100_000_000_000_000_000u128,
 				10000
 			));
@@ -418,7 +420,7 @@ mod impl_fungibles {
 	fn minimum_balance_works() {
 		new_test_ext().execute_with(|| {
 			let cid = CommunityIdentifier::default();
-			assert_eq!(EncointerBalances::minimum_balance(cid), 0);
+			assert_eq!(Pallet::<TestRuntime>::minimum_balance(cid), 0);
 		})
 	}
 
