@@ -6,7 +6,7 @@ version = "1.2.0"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
-  "derive",
+    "derive",
 ] }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.0.1", default-features = false }
@@ -45,16 +45,16 @@ test-utils = { path = "../test-utils" }
 [features]
 default = ["std"]
 std = [
-  "encointer-meetup-validation/std",
-  "encointer-primitives/std",
-  "encointer-scheduler/std",
-  "frame-system/std",
-  "pallet-timestamp/std",
-  "sp-io/std",
-  "sp-runtime/std",
-  "sp-std/std",
-  "frame-benchmarking/std",
-  "sp-core/std",
+    "encointer-meetup-validation/std",
+    "encointer-primitives/std",
+    "encointer-scheduler/std",
+    "frame-system/std",
+    "pallet-timestamp/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "frame-benchmarking/std",
+    "sp-core/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto"]

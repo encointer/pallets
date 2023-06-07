@@ -28,7 +28,7 @@ sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
 
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
 xcm = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
