@@ -18,7 +18,9 @@
 
 use crate as dut;
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::pallet_prelude::GenesisBuild;
+use frame_support::{
+	pallet_prelude::GenesisBuild, traits::tokens::fungibles::metadata::Inspect as MetadaInspect,
+};
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -50,6 +52,8 @@ impl dut::Config for TestRuntime {
 	type WeightInfo = ();
 	type CeremonyMaster = EnsureAlice;
 }
+
+//impl MetadaInspect<AccountId> for TestRuntime {}
 
 // boilerplate
 impl_frame_system!(TestRuntime);

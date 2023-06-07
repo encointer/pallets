@@ -59,7 +59,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -84,8 +83,8 @@ pub mod pallet {
 		ReserveIdentifierOf<T>: From<[u8; 8]>,
 	{
 		#[pallet::call_index(0)]
-		#[pallet::weight(10_000)]
-		pub fn create_faucet(
+		#[pallet::weight({10_000})]
+		pub fn drip(
 			origin: OriginFor<T>,
 			name: FaucetNameType,
 			amount: BalanceOf<T>,
@@ -144,8 +143,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(10_000)]
-		pub fn drip(
+		#[pallet::weight({10_000})]
+		pub fn set_drip_amount(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
 			cid: CommunityIdentifier,

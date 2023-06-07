@@ -15,25 +15,26 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use encointer_primitives::{balances::EncointerBalanceConverter, common::UnboundedPalletString};
-use frame_support::{
-	inherent::Vec,
-	traits::{
-		fungibles::{DecreaseIssuance, IncreaseIssuance},
-		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
-	},
+use encointer_primitives::{
+	balances::EncointerBalanceConverter,
+	common::{FromStr, PalletString},
+};
+use frame_support::traits::tokens::{
+	DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
 };
 use sp_runtime::traits::{Convert, Zero};
 
-// Implementation of this trait is just to satisfy the trait bounds of the
-// `pallet-asset-tx-payment`. It is not used in our case.
 impl<T: Config> fungibles::metadata::Inspect<T::AccountId> for Pallet<T> {
 	fn name(_asset: Self::AssetId) -> Vec<u8> {
-		PalletString::from("Encointer").into()
+		PalletString::from_str("Encointer")
+			.expect("Hardcoded string conversion should never fail; qed")
+			.into()
 	}
 
 	fn symbol(_asset: Self::AssetId) -> Vec<u8> {
-		PalletString::from("ETR").into()
+		PalletString::from_str("ETR")
+			.expect("Hardcoded string conversion should never fail; qed")
+			.into()
 	}
 
 	fn decimals(_asset: Self::AssetId) -> u8 {
@@ -137,9 +138,9 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		let balance = fungible(Pallet::<T>::balance(asset, who));
 
 		if balance.checked_sub(amount).is_none() {
-			return BalanceLow
+			return WithdrawConsequence::BalanceLow
 		}
-		Success
+		WithdrawConsequence::Success
 	}
 }
 

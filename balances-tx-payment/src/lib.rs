@@ -16,7 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::traits::fungibles;
+use frame_support::traits::{fungible::Balanced, fungibles};
 use pallet_asset_tx_payment::HandleCredit;
 use pallet_transaction_payment::OnChargeTransaction;
 
@@ -43,6 +43,8 @@ impl<T> HandleCredit<<T as frame_system::Config>::AccountId, pallet_encointer_ba
 	for BurnCredit
 where
 	T: frame_system::Config + pallet_encointer_balances::Config,
+	pallet_encointer_balances::Pallet<T>:
+		frame_support::traits::fungibles::Balanced<<T as frame_system::Config>::AccountId>,
 {
 	fn handle_credit(
 		_credit: fungibles::Credit<AccountIdOf<T>, pallet_encointer_balances::Pallet<T>>,
