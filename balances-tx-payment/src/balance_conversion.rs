@@ -18,6 +18,7 @@ use crate::{AssetBalanceOf, AssetIdOf, BalanceOf};
 use core::marker::PhantomData;
 use encointer_primitives::{balances::EncointerBalanceConverter, communities::CommunityIdentifier};
 //use frame_support::traits::tokens::BalanceConversion;
+use frame_support::traits::tokens::ConversionToAssetBalance;
 use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_ceremonies::{Config as CeremoniesConfig, Pallet as CeremoniesPallet};
 use sp_runtime::traits::Convert;
@@ -52,7 +53,7 @@ pub fn apply_fee_conversion_factor(
 
 pub struct BalanceToCommunityBalance<T>(PhantomData<T>);
 
-impl<T> BalanceConversion<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>
+impl<T> ConversionToAssetBalance<BalanceOf<T>, AssetIdOf<T>, AssetBalanceOf<T>>
 	for BalanceToCommunityBalance<T>
 where
 	T: CeremoniesConfig + pallet_asset_tx_payment::Config,
