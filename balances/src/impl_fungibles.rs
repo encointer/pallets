@@ -17,10 +17,11 @@
 use super::*;
 use crate::fungibles::{DecreaseIssuance, IncreaseIssuance};
 use encointer_primitives::balances::EncointerBalanceConverter;
-use frame_support::traits::tokens::{
+use sp_runtime::traits::{Convert, Zero};
+
+pub use frame_support::traits::tokens::{
 	DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
 };
-use sp_runtime::traits::{Convert, Zero};
 
 pub(crate) fn fungible(balance: BalanceType) -> u128 {
 	EncointerBalanceConverter::convert(balance)
