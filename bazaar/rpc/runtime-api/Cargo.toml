@@ -9,9 +9,9 @@ edition = "2021"
 encointer-primitives = { path = "../../../primitives", default-features = false }
 
 # substrate deps
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
 
 [features]
 default = ["std"]

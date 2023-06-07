@@ -15,15 +15,20 @@ encointer-primitives = { path = "../primitives" }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler" }
 
 # substrate deps
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-frame-support-test = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+frame-support-test = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+
+xcm = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", rev = "32b91380421d73e979d39f2325e1e0b5e23b83c7" }

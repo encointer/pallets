@@ -16,15 +16,15 @@ encointer-communities = { package = "pallet-encointer-communities", path = "../c
 encointer-primitives = { path = "../primitives", default-features = false }
 
 # substrate deps
-frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-core = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-core = { version = "7.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-std = { version = "5.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
 
 
 [dev-dependencies]
-sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
 test-utils = { path = "../test-utils" }
 
 [features]

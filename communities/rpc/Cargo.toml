@@ -5,7 +5,11 @@ name = "pallet-encointer-communities-rpc"
 version = "1.2.0"
 
 [dependencies]
-jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
+jsonrpsee = { version = "0.16.2", features = [
+    "client-core",
+    "server",
+    "macros",
+] }
 log = "0.4.14"
 parking_lot = "0.12.0"
 thiserror = "1.0.31"
@@ -16,11 +20,11 @@ encointer-primitives = { path = "../../primitives" }
 encointer-rpc = { path = "../../rpc" }
 
 # substrate deps
-sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
+sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }
 
 [dev-dependencies]
-sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.git", rev = "905861780ee0f6556d915a70a7a49371fc1fad2c" }

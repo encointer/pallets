@@ -27,12 +27,12 @@ use sp_runtime::traits::{Convert, Zero};
 
 // Implementation of this trait is just to satisfy the trait bounds of the
 // `pallet-asset-tx-payment`. It is not used in our case.
-impl<T: Config> fungibles::InspectMetadata<T::AccountId> for Pallet<T> {
-	fn name(_asset: &Self::AssetId) -> Vec<u8> {
+impl<T: Config> fungibles::metadata::Inspect<T::AccountId> for Pallet<T> {
+	fn name(_asset: Self::AssetId) -> Vec<u8> {
 		UnboundedPalletString::from("Encointer").into()
 	}
 
-	fn symbol(_asset: &Self::AssetId) -> Vec<u8> {
+	fn symbol(_asset: Self::AssetId) -> Vec<u8> {
 		UnboundedPalletString::from("ETR").into()
 	}
 

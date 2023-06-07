@@ -86,23 +86,24 @@ where
 			.map(|(controller, bd)| Business::new(controller, bd))
 			.collect())
 	}
-
 	fn get_offerings(
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 		Ok(api
-			.get_businesses(&at, &cid)
+			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
 			.into_iter()
+			.flat_map(|bid| api.get_offerings(at, &BusinessIdentifier::new(cid, bid.0)))
 			.flatten()
 			.collect())
 	}
 
 	fn get_offerings_for_business(
+		&self,
 		bid: BusinessIdentifier<AccountId>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
