@@ -17,7 +17,7 @@
 use crate::{AssetBalanceOf, AssetIdOf, BalanceOf};
 use core::marker::PhantomData;
 use encointer_primitives::{balances::EncointerBalanceConverter, communities::CommunityIdentifier};
-use frame_support::traits::tokens::BalanceConversion;
+//use frame_support::traits::tokens::BalanceConversion;
 use pallet_encointer_balances::Pallet as BalancesPallet;
 use pallet_encointer_ceremonies::{Config as CeremoniesConfig, Pallet as CeremoniesPallet};
 use sp_runtime::traits::Convert;
