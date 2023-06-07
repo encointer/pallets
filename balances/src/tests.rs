@@ -387,7 +387,7 @@ mod impl_fungibles {
 	use super::*;
 	use crate::impl_fungibles::fungible;
 	use frame_support::traits::{
-		fungible::Inspect, tokens::fungibles::metadata::Inspect as MetadaInspect, PalletInfoAccess,
+		fungible::Inspect, tokens::fungibles::metadata::Inspect as MetadaInspect,
 	};
 
 	type AccountId = <TestRuntime as frame_system::Config>::AccountId;
@@ -396,7 +396,7 @@ mod impl_fungibles {
 	fn name_symbol_and_decimals_work() {
 		new_test_ext().execute_with(|| {
 			let cid = CommunityIdentifier::default();
-			assert_eq!(EncointerBalances::name(), "Encointer".as_ref());
+			assert_eq!(EncointerBalances::name(cid.clone()), "Encointer".as_bytes());
 			assert_eq!(
 				//<EncointerBalances as Inspect<AccountId>>::symbol(cid.clone()),
 				<EncointerBalances as MetadaInspect<_>>::symbol(cid.clone()),
