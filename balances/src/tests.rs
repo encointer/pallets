@@ -26,10 +26,8 @@ use encointer_primitives::{
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
 	traits::{
-		tokens::{
-			fungibles::{Inspect, Unbalanced},
-			DepositConsequence, WithdrawConsequence,
-		},
+		fungibles::{metadata::Inspect as MetadaInspect, Inspect},
+		tokens::{fungibles::Unbalanced, DepositConsequence, WithdrawConsequence},
 		OnInitialize,
 	},
 };
@@ -425,7 +423,7 @@ mod impl_fungibles {
 			));
 
 			assert!(almost_eq(
-				<EncointerBalances as Inspect<AccountId>>::total_issuance(cid),
+				<EncointerBalances as Inspect<AccountId>>::total_issuance(),
 				50_100_000_000_000_000_000u128,
 				10000
 			));

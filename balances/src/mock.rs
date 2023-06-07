@@ -17,6 +17,7 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
+use crate::frame_system::Config;
 use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{
 	pallet_prelude::GenesisBuild, traits::tokens::fungibles::metadata::Inspect as MetadaInspect,
@@ -41,7 +42,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>, Config},
 	}
 );
 
@@ -52,8 +53,6 @@ impl dut::Config for TestRuntime {
 	type WeightInfo = ();
 	type CeremonyMaster = EnsureAlice;
 }
-
-//impl MetadaInspect<AccountId> for TestRuntime {}
 
 // boilerplate
 impl_frame_system!(TestRuntime);
