@@ -4,14 +4,9 @@ name = "encointer-meetup-validation"
 version = "1.2.0"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
-  "derive",
-] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.0.1", default-features = false }
-serde = { version = "1.0.136", default-features = false, features = [
-  "derive",
-  "alloc",
-] }
+serde = { version = "1.0.136", default-features = false, features = ["derive", "alloc"] }
 
 # local deps
 encointer-primitives = { path = "../../primitives", default-features = false }
@@ -27,10 +22,10 @@ sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.gi
 [features]
 default = ["std"]
 std = [
-  "encointer-primitives/std",
-  "sp-std/std",
-  "sp-runtime/std",
-  "codec/std",
-  "scale-info/std",
-  "serde/std",
+    "encointer-primitives/std",
+    "sp-std/std",
+    "sp-runtime/std",
+    "codec/std",
+    "scale-info/std",
+    "serde/std",
 ]

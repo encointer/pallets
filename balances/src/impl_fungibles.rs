@@ -15,13 +15,12 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
-use encointer_primitives::{balances::EncointerBalanceConverter, common::PalletString};
-use frame_support::{
-	inherent::Vec,
-	traits::{
-		fungibles::{DecreaseIssuance, IncreaseIssuance},
-		tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
-	},
+use encointer_primitives::{
+	balances::EncointerBalanceConverter,
+	common::{FromStr, PalletString},
+};
+use frame_support::traits::tokens::{
+	DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
 };
 use sp_runtime::traits::{Convert, Zero};
 
@@ -29,11 +28,16 @@ use sp_runtime::traits::{Convert, Zero};
 // `pallet-asset-tx-payment`. It is not used in our case.
 impl<T: Config> fungibles::metadata::Inspect<T::AccountId> for Pallet<T> {
 	fn name(_asset: Self::AssetId) -> Vec<u8> {
-		PalletString::from("Encointer").into()
+		PalletString::from_str("Encointer")
+			.expect("Hardcoded string conversion should never fail; qed")
+			.into()
 	}
 
 	fn symbol(_asset: Self::AssetId) -> Vec<u8> {
-		PalletString::from("ETR").into()
+		PalletString::from_str("ETR")
+			.expect("Hardcoded string conversion should never fail; qed")
+			.into()
+>>>>>>> szp/polkadot-v0.9.42
 	}
 
 	fn decimals(_asset: Self::AssetId) -> u8 {
@@ -92,7 +96,7 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		asset: Self::AssetId,
 		who: &T::AccountId,
 		amount: Self::Balance,
-		_provenance: Provenance,
+		_mint: Provenance,
 	) -> DepositConsequence {
 		if !<TotalIssuance<T>>::contains_key(asset) {
 			return DepositConsequence::UnknownAsset
@@ -137,9 +141,9 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		let balance = fungible(Pallet::<T>::balance(asset, who));
 
 		if balance.checked_sub(amount).is_none() {
-			return BalanceLow
+			return WithdrawConsequence::BalanceLow
 		}
-		Success
+		WithdrawConsequence::Success
 	}
 }
 
@@ -148,7 +152,7 @@ impl<T: Config> fungibles::Unbalanced<T::AccountId> for Pallet<T> {
 		asset: Self::AssetId,
 		who: &T::AccountId,
 		amount: Self::Balance,
-	) -> Result<Option<Self::Balance>, DispatchError> {
+	) -> Result<Option<Self::Balance>, sp_runtime::DispatchError> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 		<Balance<T>>::insert(
 			asset,

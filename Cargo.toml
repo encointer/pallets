@@ -14,12 +14,12 @@ members = [
   'communities',
   'communities/rpc',
   'communities/rpc/runtime-api',
-  #'personhood-oracle',
+  'faucet',
   'primitives',
   'primitives/core',
+  'reputation-commitments',
   'rpc',
   'scheduler',
-  #'sybil-gate-template',
   'test-utils',
 ]
 

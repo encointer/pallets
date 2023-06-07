@@ -22,7 +22,7 @@ use encointer_primitives::{
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::{
-	assert_err, assert_ok,
+	assert_err, assert_ok, bounded_vec,
 	traits::{OnFinalize, OnInitialize},
 };
 use itertools::Itertools;
@@ -169,7 +169,7 @@ fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519
 	let mut participants = Vec::with_capacity(amount);
 	for population_counter in 1..=amount {
 		let entropy = U256::from(current_popuplation_size + population_counter);
-		participants.push(sr25519::Pair::from_entropy(&entropy.encode()[..], None).0);
+		participants.push(sr25519::Pair::from_seed_slice(&entropy.encode()[..]).unwrap());
 	}
 	participants
 }
@@ -185,7 +185,7 @@ fn attest_all(
 		RuntimeOrigin::signed(attestor),
 		cid,
 		n_participants,
-		attestees
+		BoundedVec::try_from(attestees).unwrap()
 	));
 }
 
@@ -200,7 +200,14 @@ fn fully_attest_attendees(
 			RuntimeOrigin::signed(attestor.clone()),
 			cid,
 			n_participants,
-			attendees.clone().into_iter().filter(|a| a != attestor).collect()
+			BoundedVec::try_from(
+				attendees
+					.clone()
+					.into_iter()
+					.filter(|a| a != attestor)
+					.collect::<Vec<AccountId>>()
+			)
+			.unwrap()
 		));
 	}
 }
@@ -432,7 +439,7 @@ fn attest_attendee_from_non_registered_participant_fails() {
 				RuntimeOrigin::signed(eve),
 				cid,
 				3,
-				vec![alice, ferdie],
+				bounded_vec![alice, ferdie],
 			),
 			Error::<TestRuntime>::ParticipantIsNotRegistered
 		);
@@ -489,7 +496,7 @@ fn attest_attendee_for_alien_participant_fails() {
 				RuntimeOrigin::signed(alice),
 				cid,
 				bobs_peers.len() as u32 + 1,
-				bobs_peers,
+				BoundedVec::try_from(bobs_peers).unwrap(),
 			),
 			Error::<TestRuntime>::NoValidAttestations
 		);
@@ -730,7 +737,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 
 		for i in 0..50 {
 			let n: u8 = i + 13;
-			let pair = sr25519::Pair::from_entropy(&[n; 32], None).0;
+			let pair = sr25519::Pair::from_seed_slice(&[n; 32]).unwrap();
 			register_as_reputable(&pair.clone(), cid).ok();
 			all_participants.push(pair);
 		}
@@ -872,7 +879,10 @@ fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_erro
 				RuntimeOrigin::signed(account_id(p)),
 				cid,
 				i as u32,
-				attestees.into_iter().map(|pa| account_id(pa)).collect(),
+				BoundedVec::try_from(
+					attestees.into_iter().map(|pa| account_id(pa)).collect::<Vec<AccountId>>(),
+				)
+				.unwrap(),
 			)
 			.unwrap();
 		}
@@ -917,7 +927,7 @@ fn claim_rewards_can_be_called_by_non_participant() {
 		let eve = AccountKeyring::Eve.to_account_id();
 		let ferdie = AccountKeyring::Ferdie.to_account_id();
 
-		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
+		let yran = sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap();
 
 		let cindex = EncointerScheduler::current_ceremony_index();
 		register_alice_bob_ferdie(cid);
@@ -1139,11 +1149,11 @@ fn register_with_reputation_works() {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 
 		// a non-bootstrapper
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-		let zoran_new = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
+		let zoran = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
+		let zoran_new = sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap();
 
 		// another non-bootstrapper
-		let yuri = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let yuri = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
 
 		let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -1254,7 +1264,7 @@ fn endorsing_newbie_for_next_ceremony_works_after_registering_phase() {
 
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 		// a newbie
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let zoran = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			RuntimeOrigin::signed(alice.clone()),
 			cid,
@@ -1264,7 +1274,7 @@ fn endorsing_newbie_for_next_ceremony_works_after_registering_phase() {
 
 		run_to_next_phase();
 
-		let bogdan = sr25519::Pair::from_entropy(&[99u8; 32], None).0;
+		let bogdan = sr25519::Pair::from_seed_slice(&[99u8; 32]).unwrap();
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			RuntimeOrigin::signed(alice),
 			cid,
@@ -1282,7 +1292,7 @@ fn endorsing_newbie_twice_fails() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		// a newbie
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let zoran = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			RuntimeOrigin::signed(alice.clone()),
 			cid,
@@ -1308,8 +1318,8 @@ fn endorsing_two_newbies_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		// a newbie
-		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let yran = sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap();
+		let zoran = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			RuntimeOrigin::signed(alice.clone()),
 			cid,
@@ -1332,7 +1342,7 @@ fn endorsement_survives_idle_cycle() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 
 		// a newbie
-		let zoran = account_id(&sr25519::Pair::from_entropy(&[9u8; 32], None).0);
+		let zoran = account_id(&sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap());
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			RuntimeOrigin::signed(alice.clone()),
 			cid,
@@ -1357,7 +1367,7 @@ fn endorsing_works_after_subject_has_already_registered() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		// a newbie
-		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let yran = account_id(&sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap());
 
 		assert!(EncointerBalances::issue(cid, &alice, NominalIncome::from_num(1)).is_ok());
 		assert_ok!(register(yran.clone(), cid, None));
@@ -1379,7 +1389,7 @@ fn endorsing_works_after_subject_has_already_registered() {
 fn endorse_newbie_works_for_reputables() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
-		let reputable = account_id(&sr25519::Pair::from_entropy(&[10u8; 32], None).0);
+		let reputable = account_id(&sr25519::Pair::from_seed_slice(&[10u8; 32]).unwrap());
 
 		let cindex = EncointerScheduler::current_ceremony_index();
 
@@ -1390,9 +1400,9 @@ fn endorse_newbie_works_for_reputables() {
 		);
 
 		// a newbie
-		let yran = sr25519::Pair::from_entropy(&[8u8; 32], None).0;
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
-		let bob = sr25519::Pair::from_entropy(&[10u8; 32], None).0;
+		let yran = sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap();
+		let zoran = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
+		let bob = sr25519::Pair::from_seed_slice(&[10u8; 32]).unwrap();
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			RuntimeOrigin::signed(reputable.clone()),
 			cid,
@@ -1428,7 +1438,7 @@ fn endorse_newbie_fails_if_already_endorsed_in_previous_ceremony() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 
 		// a newbie
-		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let yran = account_id(&sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap());
 		assert_ok!(EncointerCeremonies::endorse_newcomer(
 			RuntimeOrigin::signed(alice.clone()),
 			cid,
@@ -1451,8 +1461,8 @@ fn endorse_newbie_fails_if_sender_has_no_reputation_and_is_not_bootstrapper() {
 	new_test_ext().execute_with(|| {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 
-		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
-		let zoran = sr25519::Pair::from_entropy(&[9u8; 32], None).0;
+		let yran = account_id(&sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap());
+		let zoran = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
 		assert_err!(
 			EncointerCeremonies::endorse_newcomer(
 				RuntimeOrigin::signed(account_id(&zoran)),
@@ -1468,7 +1478,7 @@ fn endorse_newbie_fails_if_sender_has_no_reputation_and_is_not_bootstrapper() {
 fn registering_in_attestation_phase_works() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let yran = account_id(&sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap());
 		let cindex = EncointerScheduler::current_ceremony_index();
 		assert!(EncointerBalances::issue(cid, &yran, NominalIncome::from_num(1)).is_ok());
 
@@ -1484,7 +1494,7 @@ fn registering_in_attestation_phase_works() {
 fn registering_in_assigning_phase_fails() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let yran = account_id(&sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap());
 		assert!(EncointerBalances::issue(cid, &yran, NominalIncome::from_num(1)).is_ok());
 
 		run_to_next_phase();
@@ -1500,7 +1510,7 @@ fn registering_in_assigning_phase_fails() {
 fn registering_endorsee_removes_endorsement() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
-		let yran = account_id(&sr25519::Pair::from_entropy(&[8u8; 32], None).0);
+		let yran = account_id(&sr25519::Pair::from_seed_slice(&[8u8; 32]).unwrap());
 		let cindex = EncointerScheduler::current_ceremony_index();
 		assert!(EncointerBalances::issue(cid, &yran, NominalIncome::from_num(1)).is_ok());
 
@@ -1652,7 +1662,7 @@ fn after_inactive_cycle_forbid_non_bootstrapper_registration() {
 		let mut cindex = 1;
 
 		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		let reputable = account_id(&AccountKeyring::Bob.pair());
 		let newbie = account_id(&AccountKeyring::Eve.pair());
 
@@ -2091,7 +2101,7 @@ fn meetup_with_only_one_newbie_works() {
 		let bootstrapper2 = account_id(&AccountKeyring::Bob.pair());
 		EncointerCommunities::insert_bootstrappers(
 			cid,
-			vec![bootstrapper.clone(), bootstrapper2.clone()],
+			bounded_vec![bootstrapper.clone(), bootstrapper2.clone()],
 		);
 
 		let reputable_pair = &AccountKeyring::Ferdie.pair();
@@ -2321,7 +2331,7 @@ fn remove_participant_from_registry_works() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
 		let bob = account_id(&AccountKeyring::Bob.pair());
@@ -2382,7 +2392,7 @@ fn remove_participant_from_registry_works_for_all_participant_types() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 
 		let newbie = account_id(&AccountKeyring::Alice.pair());
 		let reputable_pair = &AccountKeyring::Bob.pair();
@@ -2434,7 +2444,7 @@ fn remove_participant_from_registry_with_no_participants_fails() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper]);
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
 
@@ -2450,7 +2460,7 @@ fn upgrade_registration_works() {
 
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2480,7 +2490,7 @@ fn upgrade_registration_fails_if_not_registered_or_not_newbie() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2515,7 +2525,7 @@ fn upgrade_registration_fails_in_wrong_phase() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2538,7 +2548,7 @@ fn upgrade_registration_fails_with_inexistent_community() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2564,7 +2574,7 @@ fn unregister_participant_works_with_reputables() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2605,7 +2615,7 @@ fn unregister_participant_fails_with_reputables_and_wrong_reputation() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2657,7 +2667,7 @@ fn unregister_participant_works_with_newbies() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let alice = account_id(&AccountKeyring::Alice.pair());
@@ -2681,7 +2691,7 @@ fn unregister_participant_fails_in_wrong_phase() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2706,7 +2716,7 @@ fn unregister_participant_fails_with_inexistent_community() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		let bootstrapper = account_id(&AccountKeyring::Ferdie.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		assert!(EncointerBalances::issue(cid, &bootstrapper, NominalIncome::from_num(1)).is_ok());
 
 		let a = AccountKeyring::Alice.pair();
@@ -2936,7 +2946,7 @@ fn get_participant_type_works() {
 		let mut cindex = 1;
 
 		let bootstrapper = account_id(&AccountKeyring::Alice.pair());
-		EncointerCommunities::insert_bootstrappers(cid, vec![bootstrapper.clone()]);
+		EncointerCommunities::insert_bootstrappers(cid, bounded_vec![bootstrapper.clone()]);
 		let reputable_pair = &AccountKeyring::Bob.pair();
 		let reputable = account_id(reputable_pair);
 		let newbie = account_id(&AccountKeyring::Eve.pair());
@@ -2996,7 +3006,7 @@ fn get_aggregated_account_data_works() {
 		let bootstrapper2 = account_id(&AccountKeyring::Bob.pair());
 		EncointerCommunities::insert_bootstrappers(
 			cid,
-			vec![bootstrapper.clone(), bootstrapper2.clone()],
+			bounded_vec![bootstrapper.clone(), bootstrapper2.clone()],
 		);
 
 		let reputable_pair = &AccountKeyring::Ferdie.pair();
@@ -3085,7 +3095,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&alice)),
 			cid,
 			3,
-			vec![account_id(&alice), account_id(&ferdie)],
+			bounded_vec![account_id(&alice), account_id(&ferdie)],
 		)
 		.unwrap();
 
@@ -3105,7 +3115,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&bob)),
 			cid,
 			4,
-			vec![account_id(&alice), account_id(&ferdie)],
+			bounded_vec![account_id(&alice), account_id(&ferdie)],
 		)
 		.unwrap();
 
@@ -3134,7 +3144,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&alice)),
 			cid,
 			3,
-			vec![account_id(&bob), account_id(&ferdie)],
+			bounded_vec![account_id(&bob), account_id(&ferdie)],
 		)
 		.unwrap();
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
@@ -3144,7 +3154,7 @@ fn attest_attendees_works() {
 			RuntimeOrigin::signed(account_id(&ferdie)),
 			cid,
 			4,
-			vec![account_id(&bob), account_id(&eve)],
+			bounded_vec![account_id(&bob), account_id(&eve)],
 		)
 		.unwrap();
 

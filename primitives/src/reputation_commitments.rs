@@ -13,19 +13,20 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
+use sp_core::{bounded::BoundedVec, ConstU32};
+use sp_std::vec::Vec;
 
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(test, feature(assert_matches))]
+pub type PurposeIdType = u64;
+pub type DescriptorType = BoundedVec<u8, ConstU32<24>>;
 
-pub mod balances;
-pub mod bazaar;
-pub mod ceremonies;
-pub mod common;
-pub mod communities;
-pub mod error;
-pub mod reputation_commitments;
-pub mod scheduler;
+pub trait FromStr: Sized {
+	type Err;
+	fn from_str(inp: &str) -> Result<Self, Self::Err>;
+}
 
-pub use ep_core::*;
-
-pub use fixed;
+impl FromStr for DescriptorType {
+	type Err = Vec<u8>;
+	fn from_str(inp: &str) -> Result<Self, Self::Err> {
+		Self::try_from(inp.as_bytes().to_vec())
+	}
+}

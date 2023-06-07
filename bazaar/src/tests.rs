@@ -17,10 +17,9 @@
 //! Unit tests for the tokens module.
 
 use super::*;
+use encointer_primitives::{common::FromStr, communities::CommunityIdentifier};
 use frame_support::assert_err;
 use mock::{new_test_ext, EncointerBazaar, RuntimeOrigin, System, TestRuntime};
-
-use encointer_primitives::communities::CommunityIdentifier;
 use test_utils::{
 	helpers::{last_event, register_test_community},
 	*,
@@ -38,16 +37,16 @@ fn bob() -> AccountId {
 	AccountKeyring::Bob.into()
 }
 
-fn url() -> String {
-	"https://encointer.org".to_string()
+fn url() -> PalletString {
+	PalletString::from_str("https://encointer.org").unwrap()
 }
 
-fn url1() -> String {
-	"https://substrate.dev".to_string()
+fn url1() -> PalletString {
+	PalletString::from_str("https://substrate.dev").unwrap()
 }
 
-fn url2() -> String {
-	"https://polkadot.network".to_string()
+fn url2() -> PalletString {
+	PalletString::from_str("https://polkadot.network").unwrap()
 }
 
 #[test]

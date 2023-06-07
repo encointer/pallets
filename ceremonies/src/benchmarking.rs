@@ -260,7 +260,7 @@ benchmarks! {
 			Some(fake_last_attendance_and_get_proof::<T>(&attestor, cid)))
 		);
 
-		let attestees =  register_users::<T>(cid, 2, 7).into_iter().map(|u| account_id::<T>(&u)).collect();
+		let attestees =  BoundedVec::try_from(register_users::<T>(cid, 2, 7).into_iter().map(|u| account_id::<T>(&u)).collect::<Vec<T::AccountId>>()).unwrap();
 
 		next_phase::<T>();
 		next_phase::<T>();
@@ -321,7 +321,7 @@ benchmarks! {
 			assert_ok!(Pallet::<T>::attest_attendees(
 				RawOrigin::Signed(attestor.clone()).into(),
 				cid, 10,
-				users.clone().into_iter().filter(|u| u!= attestor).collect()
+				BoundedVec::try_from(users.clone().into_iter().filter(|u| u!= attestor).collect::<Vec<T::AccountId>>()).unwrap()
 			));
 		}
 
@@ -394,12 +394,12 @@ impl_benchmark_test_suite!(Pallet, crate::benchmarking::new_test_ext(), crate::m
 
 #[cfg(test)]
 fn new_test_ext() -> sp_io::TestExternalities {
-	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
+	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
 	use sp_std::sync::Arc;
 
 	let mut ext = crate::mock::new_test_ext();
 
-	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
+	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
 }

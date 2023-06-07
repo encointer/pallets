@@ -8,10 +8,10 @@ edition = "2021"
 log = "0.4.14"
 
 # local deps
-encointer-primitives = { path = "../primitives" }
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances" }
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies" }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities" }
+encointer-primitives = { path = "../primitives" }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler" }
 
 # substrate deps

@@ -16,7 +16,6 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use sc_rpc::DenyUnsafe;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
@@ -24,7 +23,7 @@ use std::sync::Arc;
 
 use encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;
 use encointer_primitives::{
-	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
+	bazaar::{Business, BusinessIdentifier, OfferingData},
 	communities::CommunityIdentifier,
 };
 
@@ -38,7 +37,7 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<BlockHash>,
-	) -> RpcResult<Vec<BusinessData>>;
+	) -> RpcResult<Vec<Business<AccountId>>>;
 	#[method(name = "encointer_bazaarGetOfferings")]
 	fn get_offerings(
 		&self,
@@ -56,13 +55,12 @@ where
 pub struct BazaarRpc<Client, Block, AccountId> {
 	client: Arc<Client>,
 	_marker: std::marker::PhantomData<(Block, AccountId)>,
-	deny_unsafe: DenyUnsafe,
 }
 
 impl<Client, Block, AccountId> BazaarRpc<Client, Block, AccountId> {
 	/// Create new `Bazaar` instance with the given reference to the client.
-	pub fn new(client: Arc<Client>, deny_unsafe: DenyUnsafe) -> Self {
-		BazaarRpc { client, _marker: Default::default(), deny_unsafe }
+	pub fn new(client: Arc<Client>) -> Self {
+		BazaarRpc { client, _marker: Default::default() }
 	}
 }
 
@@ -78,16 +76,14 @@ where
 		&self,
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> RpcResult<Vec<BusinessData>> {
-		self.deny_unsafe.check_if_safe()?;
-
+	) -> RpcResult<Vec<Business<AccountId>>> {
 		let api = self.client.runtime_api();
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
-		return Ok(api
+		Ok(api
 			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
-			.iter()
-			.map(|bid| bid.1.clone())
+			.into_iter()
+			.map(|(controller, bd)| Business::new(controller, bd))
 			.collect())
 	}
 
@@ -96,15 +92,13 @@ where
 		cid: CommunityIdentifier,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
-		self.deny_unsafe.check_if_safe()?;
-
 		let api = self.client.runtime_api();
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
-		return Ok(api
+		Ok(api
 			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
-			.iter()
-			.flat_map(|bid| api.get_offerings(at, &BusinessIdentifier::new(cid, bid.0.clone())))
+			.into_iter()
+			.flat_map(|bid| api.get_offerings(at, &BusinessIdentifier::new(cid, bid.0)))
 			.flatten()
 			.collect())
 	}
@@ -114,8 +108,6 @@ where
 		bid: BusinessIdentifier<AccountId>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<OfferingData>> {
-		self.deny_unsafe.check_if_safe()?;
-
 		let api = self.client.runtime_api();
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 

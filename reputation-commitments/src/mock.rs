@@ -17,20 +17,12 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{
-	pallet_prelude::GenesisBuild, traits::tokens::fungibles::metadata::Inspect as MetadaInspect,
-};
+use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
+use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
-
-frame_support::parameter_types! {
-	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
-	/// 0.000005
-	pub const ExistentialDeposit: BalanceType = BalanceType::from_bits(0x0000000000000000000053e2d6238da4_i128);
-}
 
 frame_support::construct_runtime!(
 	pub enum TestRuntime where
@@ -41,35 +33,61 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerReputationCommitments: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
+		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
+		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
+parameter_types! {}
+
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
-	type DefaultDemurrage = DefaultDemurrage;
-	type ExistentialDeposit = ExistentialDeposit;
-	type WeightInfo = ();
-	type CeremonyMaster = EnsureAlice;
 }
-
-//impl MetadaInspect<AccountId> for TestRuntime {}
 
 // boilerplate
 impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
-impl_encointer_scheduler!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime, EncointerCeremonies, EncointerReputationCommitments);
+impl_encointer_communities!(TestRuntime);
+impl_encointer_balances!(TestRuntime);
+impl_encointer_ceremonies!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
 
-	let conf = dut::GenesisConfig { fee_conversion_factor: 100_000 };
+	let conf = dut::GenesisConfig {};
+	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+
+	encointer_scheduler::GenesisConfig::<TestRuntime> {
+		current_phase: CeremonyPhaseType::Registering,
+		current_ceremony_index: 1,
+		phase_durations: vec![
+			(CeremonyPhaseType::Registering, ONE_DAY),
+			(CeremonyPhaseType::Assigning, ONE_DAY),
+			(CeremonyPhaseType::Attesting, ONE_DAY),
+		],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	encointer_ceremonies::GenesisConfig::<TestRuntime> {
+		ceremony_reward: BalanceType::from_num(1),
+		location_tolerance: LOCATION_TOLERANCE, // [m]
+		time_tolerance: TIME_TOLERANCE,         // [ms]
+		inactivity_timeout: 12,
+		endorsement_tickets_per_bootstrapper: 50,
+		endorsement_tickets_per_reputable: 2,
+		reputation_lifetime: 3,
+		meetup_time_offset: 0,
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
 	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
 
 	t.into()
-}
-
-pub fn master() -> AccountId {
-	AccountId::from(AccountKeyring::Alice)
 }
