@@ -15,12 +15,14 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use crate::fungibles::{DecreaseIssuance, IncreaseIssuance};
 use encointer_primitives::{
 	balances::EncointerBalanceConverter,
 	common::{FromStr, PalletString},
 };
-use frame_support::traits::tokens::{
-	DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence,
+use frame_support::traits::{
+	fungible::Inspect,
+	tokens::{DepositConsequence, Fortitude, Preservation, Provenance, WithdrawConsequence},
 };
 use sp_runtime::traits::{Convert, Zero};
 
@@ -37,7 +39,6 @@ impl<T: Config> fungibles::metadata::Inspect<T::AccountId> for Pallet<T> {
 		PalletString::from_str("ETR")
 			.expect("Hardcoded string conversion should never fail; qed")
 			.into()
->>>>>>> szp/polkadot-v0.9.42
 	}
 
 	fn decimals(_asset: Self::AssetId) -> u8 {
@@ -50,6 +51,8 @@ impl<T: Config> fungibles::metadata::Inspect<T::AccountId> for Pallet<T> {
 		18u8
 	}
 }
+
+//impl<T: Config> frame_support::traits::fungible::Inspect<T::AccountId> for Pallet<T> {}
 
 pub(crate) fn fungible(balance: BalanceType) -> u128 {
 	EncointerBalanceConverter::convert(balance)

@@ -27,8 +27,6 @@ use frame_system::{EnsureRoot, EnsureSignedBy};
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
 use std::cell::RefCell;
-use xcm::v3::NetworkId;
-use xcm_builder::SiblingParachainConvertsVia;
 
 // convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.
 pub use sp_keyring::AccountKeyring;
