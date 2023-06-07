@@ -32,6 +32,8 @@ use sp_std::convert::TryInto;
 // Logger target
 const LOG: &str = "encointer";
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]

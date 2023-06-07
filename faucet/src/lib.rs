@@ -40,6 +40,8 @@ use sp_std::convert::TryInto;
 const LOG: &str = "encointer";
 
 pub use pallet::*;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
