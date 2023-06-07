@@ -79,7 +79,7 @@ where
 	) -> RpcResult<Vec<Business<AccountId>>> {
 		let api = self.client.runtime_api();
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
-		return Ok(api
+		Ok(api
 			.get_businesses(at, &cid)
 			.map_err(|e| Error::Runtime(e.into()))?
 			.into_iter()
