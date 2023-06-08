@@ -16,13 +16,13 @@
 
 //! Helper functions to manipulate the storage, to get a specific state in the tests
 
-use sp_io::hashing::{twox_128, blake2_128};
-use frame_support::pallet_prelude::Encode;
 use crate::ceremonies::CommunityCeremony;
+use frame_support::pallet_prelude::Encode;
+use sp_io::hashing::{blake2_128, twox_128};
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
- 
+
 pub type StorageKey = Vec<u8>;
 
 pub fn current_ceremony_index() -> StorageKey {

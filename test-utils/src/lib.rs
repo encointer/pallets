@@ -35,13 +35,13 @@ pub use sp_keyring::AccountKeyring;
 pub use encointer_balances;
 pub use encointer_ceremonies;
 pub use encointer_communities;
+pub use encointer_primitives::storage;
 pub use encointer_scheduler;
 pub use frame_support_test;
 pub use frame_system;
 pub use pallet_balances;
 pub use pallet_timestamp;
 pub use sp_runtime;
-pub use encointer_primitives::storage;
 
 pub use sp_core::H256;
 pub use sp_runtime::traits::{BlakeTwo256, Verify};
