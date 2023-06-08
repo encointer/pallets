@@ -8,7 +8,6 @@ use frame_support::{assert_ok, parameter_types};
 use frame_system::RawOrigin;
 
 use encointer_primitives::common::FromStr;
-use frame_support::bounded_vec;
 
 const NUM_LOCATIONS: u32 = 200;
 
@@ -158,7 +157,7 @@ benchmarks! {
 		// Todo: Properly benchmark this #189
 
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
-		let mut cids: BoundedVec<CommunityIdentifier, T::MaxCommunityIdentifiers> = bounded_vec![CommunityIdentifier::default(); 9];
+		let mut cids: BoundedVec<CommunityIdentifier, T::MaxCommunityIdentifiers> = BoundedVec::try_from(vec![CommunityIdentifier::default(); 9]).unwrap();
 		cids.try_push(cid).ok();
 		CommunityIdentifiers::<T>::put(cids);
 

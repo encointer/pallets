@@ -4,7 +4,7 @@ use encointer_primitives::{ceremonies::Reputation, reputation_commitments::FromS
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 use sp_runtime::traits::{BlakeTwo256, Hash};
-use test_utils::storage::participant_reputation;
+use encointer_primitives::storage::participant_reputation;
 
 benchmarks! {
 	register_purpose {

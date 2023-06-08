@@ -16,11 +16,13 @@
 
 //! Helper functions to manipulate the storage, to get a specific state in the tests
 
-use sp_core::twox_128;
-
-use encointer_primitives::ceremonies::CommunityCeremony;
+use sp_io::hashing::{twox_128, blake2_128};
 use frame_support::pallet_prelude::Encode;
+use crate::ceremonies::CommunityCeremony;
 
+#[cfg(not(feature = "std"))]
+use sp_std::vec::Vec;
+ 
 pub type StorageKey = Vec<u8>;
 
 pub fn current_ceremony_index() -> StorageKey {
@@ -54,8 +56,8 @@ where
 	K: Encode,
 	Q: Encode,
 {
-	let mut bytes = sp_core::twox_128(module.as_bytes()).to_vec();
-	bytes.extend(&sp_core::twox_128(storage_key_name.as_bytes())[..]);
+	let mut bytes = twox_128(module.as_bytes()).to_vec();
+	bytes.extend(&twox_128(storage_key_name.as_bytes())[..]);
 	bytes.extend(key_hash(&key1));
 	bytes.extend(key_hash(&key2));
 	bytes
@@ -64,5 +66,5 @@ where
 pub fn key_hash<K: Encode>(key: &K) -> StorageKey {
 	let encoded_key = key.encode();
 	let x: &[u8] = encoded_key.as_slice();
-	sp_core::blake2_128(x).iter().chain(x.iter()).cloned().collect::<Vec<_>>()
+	blake2_128(x).iter().chain(x.iter()).cloned().collect::<Vec<_>>()
 }

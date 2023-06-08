@@ -6,9 +6,13 @@ use encointer_primitives::{
 	faucet::FromStr,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
-use frame_support::bounded_vec;
 use frame_system::RawOrigin;
-use test_utils::storage::participant_reputation;
+use encointer_primitives::storage::participant_reputation;
+use frame_support::BoundedVec;
+use frame_benchmarking::vec;
+
+#[cfg(not(feature = "std"))]
+use sp_std::vec::Vec;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -56,7 +60,7 @@ benchmarks! {
 		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
 		let amount: BalanceOf<T> = 100u32.into();
 		let drip_amount: BalanceOf<T> = 10u32.into();
-		let whitelist = bounded_vec![cid, cid, cid, cid, cid, cid, cid, cid, cid, cid];
+		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 	}: _(RawOrigin::Signed(zoran), faucet_name, amount, whitelist, drip_amount)
 	verify {
@@ -75,7 +79,7 @@ benchmarks! {
 		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
 		let amount: BalanceOf<T> = 100u32.into();
 		let drip_amount: BalanceOf<T> = 10u32.into();
-		let whitelist = bounded_vec![cid, cid, cid, cid, cid, cid, cid, cid, cid, cid];
+		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, whitelist, drip_amount).ok();
 		let faucet_account = <Faucets<T>>::iter().next().unwrap().0;
@@ -97,7 +101,7 @@ benchmarks! {
 		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
 		let amount: BalanceOf<T> = 100u32.into();
 		let drip_amount: BalanceOf<T> = 10u32.into();
-		let whitelist = bounded_vec![cid, cid, cid, cid, cid, cid, cid, cid, cid, cid];
+		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, whitelist, drip_amount).ok();
 		let faucet_account = <Faucets<T>>::iter().next().unwrap().0;
@@ -121,7 +125,7 @@ benchmarks! {
 		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
 		let amount: BalanceOf<T> = 25u32.into();
 		let drip_amount: BalanceOf<T> = 10u32.into();
-		let whitelist = bounded_vec![cid, cid, cid, cid, cid, cid, cid, cid, cid, cid];
+		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran.clone()).into(), faucet_name, amount, whitelist, drip_amount).ok();
 		let faucet_account = <Faucets<T>>::iter().next().unwrap().0;

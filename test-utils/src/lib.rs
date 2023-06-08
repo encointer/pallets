@@ -41,12 +41,12 @@ pub use frame_system;
 pub use pallet_balances;
 pub use pallet_timestamp;
 pub use sp_runtime;
+pub use encointer_primitives::storage;
 
 pub use sp_core::H256;
 pub use sp_runtime::traits::{BlakeTwo256, Verify};
 
 pub mod helpers;
-pub mod storage;
 
 pub const NONE: u64 = 0;
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
