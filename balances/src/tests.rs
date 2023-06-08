@@ -403,7 +403,12 @@ mod impl_fungibles {
 			));
 
 			assert!(almost_eq(
-				<EncointerBalances as Inspect<AccountId>>::reducible_balance(cid, &alice, false),
+				<EncointerBalances as Inspect<AccountId>>::reducible_balance(
+					cid,
+					&alice,
+					Preservation::Expendable,
+					Fortitude::Force
+				),
 				50_100_000_000_000_000_000u128,
 				10000
 			));
@@ -435,7 +440,7 @@ mod impl_fungibles {
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
 
 			assert!(
-				EncointerBalances::can_deposit(wrong_cid, &alice, 10, true) ==
+				EncointerBalances::can_deposit(wrong_cid, &alice, 10, Provenance::Minted) ==
 					DepositConsequence::UnknownAsset
 			);
 
@@ -455,7 +460,7 @@ mod impl_fungibles {
 					cid,
 					&ferdie,
 					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
-					true
+					Provenance::Minted
 				) == DepositConsequence::Overflow
 			);
 
@@ -484,7 +489,7 @@ mod impl_fungibles {
 					cid,
 					&alice,
 					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
-					true
+					Provenance::Minted
 				) == DepositConsequence::Overflow
 			);
 
@@ -493,7 +498,7 @@ mod impl_fungibles {
 					cid,
 					&alice,
 					fungible(BalanceType::from_num(1)),
-					true
+					Provenance::Minted
 				) == DepositConsequence::Success
 			);
 		})
@@ -526,7 +531,7 @@ mod impl_fungibles {
 
 			assert!(
 				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(2))) ==
-					WithdrawConsequence::NoFunds
+					WithdrawConsequence::BalanceLow
 			);
 
 			assert!(
@@ -549,7 +554,7 @@ mod impl_fungibles {
 				10000
 			));
 
-			assert_ok!(EncointerBalances::force_set_balance(
+			assert_ok!(EncointerBalances::write_balance(
 				cid,
 				&alice,
 				20_000_000_000_000_000_000u128
