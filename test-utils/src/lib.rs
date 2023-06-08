@@ -207,6 +207,7 @@ macro_rules! impl_encointer_reputation_commitments {
 	($t:ident) => {
 		impl encointer_reputation_commitments::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
+			type WeightInfo = ();
 		}
 	};
 }

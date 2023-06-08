@@ -44,6 +44,7 @@ parameter_types! {}
 
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
 }
 
 // boilerplate

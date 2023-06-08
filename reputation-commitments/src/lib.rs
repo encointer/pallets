@@ -28,6 +28,7 @@ use log::info;
 pub use pallet::*;
 use sp_core::H256;
 use sp_std::convert::TryInto;
+pub use weights::WeightInfo;
 
 // Logger target
 const LOG: &str = "encointer";
@@ -39,6 +40,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+mod weights;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -53,12 +55,13 @@ pub mod pallet {
 		frame_system::Config + encointer_ceremonies::Config + encointer_communities::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::register_purpose(), DispatchClass::Normal, Pays::Yes))]
 		pub fn register_purpose(
 			origin: OriginFor<T>,
 			descriptor: DescriptorType,
@@ -69,7 +72,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(10_000)]
+		#[pallet::weight((<T as Config>::WeightInfo::commit_reputation(), DispatchClass::Normal, Pays::Yes))]
 		pub fn commit_reputation(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
