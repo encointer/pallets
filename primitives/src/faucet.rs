@@ -20,6 +20,7 @@ use scale_info::TypeInfo;
 use sp_core::{bounded::BoundedVec, ConstU32, MaxEncodedLen, RuntimeDebug};
 pub type WhiteListType = BoundedVec<CommunityIdentifier, ConstU32<1024>>;
 pub type FaucetNameType = BoundedVec<u8, ConstU32<64>>;
+use scale_info::prelude::vec::Vec;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, MaxEncodedLen, TypeInfo)]
 pub struct Faucet<AccountId, Balance> {
