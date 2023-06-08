@@ -84,7 +84,7 @@ pub mod pallet {
 	{
 		#[pallet::call_index(0)]
 		#[pallet::weight({10_000})]
-		pub fn drip(
+		pub fn create_faucet(
 			origin: OriginFor<T>,
 			name: FaucetNameType,
 			amount: BalanceOf<T>,
@@ -141,10 +141,9 @@ pub mod pallet {
 
 			Ok(().into())
 		}
-
 		#[pallet::call_index(1)]
 		#[pallet::weight({10_000})]
-		pub fn set_drip_amount(
+		pub fn drip(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
 			cid: CommunityIdentifier,
@@ -184,7 +183,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(10_000)]
+		#[pallet::weight({10_000})]
 		pub fn dissolve_faucet(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
@@ -213,7 +212,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight(10_000)]
+		#[pallet::weight({10_000})]
 		pub fn close_faucet(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
@@ -248,7 +247,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		#[pallet::weight(10_000)]
+		#[pallet::weight({10_000})]
 		pub fn set_reserve_amount(
 			origin: OriginFor<T>,
 			reserve_amount: BalanceOf<T>,
