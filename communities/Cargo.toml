@@ -30,8 +30,6 @@ sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate.gi
 test-utils = { path = "../test-utils" }
 
 [features]
-
-
 try-runtime = ["frame-system/try-runtime"]
 default = ["std"]
 std = [
