@@ -1571,6 +1571,7 @@ dependencies = [
  "encointer-primitives",
  "frame-support",
  "parity-scale-codec",
+ "scale-info",
  "sp-api",
  "sp-std",
 ]
