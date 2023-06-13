@@ -61,10 +61,10 @@ benchmarks! {
 		let cid = create_community::<T>();
 		let zoran = account("zoran", 1, 1);
 		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 200_000_000u32.into());
-		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
+		let faucet_name = FaucetNameType::from_str("SomeFaucetNameWith64Charsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").unwrap();
 		let amount: BalanceOf<T> = 100_000_000u32.into();
 		let drip_amount: BalanceOf<T> = 10_000u32.into();
-		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
+		let whitelist = BoundedVec::try_from(vec![cid; 1024]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 	}: _(RawOrigin::Signed(zoran), faucet_name, amount, whitelist, drip_amount)
 	verify {
