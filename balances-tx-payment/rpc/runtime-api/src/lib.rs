@@ -19,12 +19,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use core::fmt;
+use frame_support::pallet_prelude::TypeInfo;
 use sp_api::{Decode, Encode};
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
 /// Error type of this RPC api.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum Error {
 	/// The call to runtime failed.
 	RuntimeError,
