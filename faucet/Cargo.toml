@@ -39,6 +39,7 @@ std = [
     "codec/std",
     "log/std",
     "scale-info/std",
+    "approx/std",
     # local deps
     "encointer-communities/std",
     "encointer-primitives/std",
@@ -48,6 +49,7 @@ std = [
     "frame-system/std",
     "sp-std/std",
     "sp-runtime/std",
+    "sp-core/std",
     "pallet-treasury/std",
 ]
 

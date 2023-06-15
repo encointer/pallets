@@ -93,6 +93,7 @@ impl dut::Config for TestRuntime {
 	type ControllerOrigin = EnsureAlice;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = FaucetPalletId;
+	type WeightInfo = ();
 }
 
 // boilerplate

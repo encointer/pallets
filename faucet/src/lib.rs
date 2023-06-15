@@ -35,15 +35,20 @@ use log::info;
 use sp_core::H256;
 use sp_runtime::{traits::Hash, SaturatedConversion, Saturating};
 use sp_std::convert::TryInto;
+pub use weights::WeightInfo;
 
 // Logger target
 const LOG: &str = "encointer";
 
 pub use pallet::*;
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+
+mod weights;
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -71,6 +76,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
 		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+		type WeightInfo: WeightInfo;
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
 	}
@@ -83,7 +89,7 @@ pub mod pallet {
 		ReserveIdentifierOf<T>: From<[u8; 8]>,
 	{
 		#[pallet::call_index(0)]
-		#[pallet::weight({10_000})]
+		#[pallet::weight((<T as Config>::WeightInfo::create_faucet(), DispatchClass::Normal, Pays::Yes))]
 		pub fn create_faucet(
 			origin: OriginFor<T>,
 			name: FaucetNameType,
@@ -142,7 +148,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 		#[pallet::call_index(1)]
-		#[pallet::weight({10_000})]
+		#[pallet::weight((<T as Config>::WeightInfo::drip(), DispatchClass::Normal, Pays::Yes))]
 		pub fn drip(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
@@ -183,7 +189,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight({10_000})]
+		#[pallet::weight((<T as Config>::WeightInfo::dissolve_faucet(), DispatchClass::Normal, Pays::Yes))]
 		pub fn dissolve_faucet(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
@@ -212,7 +218,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight({10_000})]
+		#[pallet::weight((<T as Config>::WeightInfo::close_faucet(), DispatchClass::Normal, Pays::Yes))]
 		pub fn close_faucet(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,

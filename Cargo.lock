@@ -1608,6 +1608,7 @@ dependencies = [
  "bs58",
  "crc 2.1.0",
  "ep-core",
+ "frame-support",
  "geohash",
  "log",
  "parity-scale-codec",

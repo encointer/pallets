@@ -35,6 +35,7 @@ pub use sp_keyring::AccountKeyring;
 pub use encointer_balances;
 pub use encointer_ceremonies;
 pub use encointer_communities;
+pub use encointer_primitives::storage;
 pub use encointer_scheduler;
 pub use frame_support_test;
 pub use frame_system;
@@ -46,7 +47,6 @@ pub use sp_core::H256;
 pub use sp_runtime::traits::{BlakeTwo256, Verify};
 
 pub mod helpers;
-pub mod storage;
 
 pub const NONE: u64 = 0;
 pub const GENESIS_TIME: u64 = 1_585_058_843_000;
@@ -207,6 +207,7 @@ macro_rules! impl_encointer_reputation_commitments {
 	($t:ident) => {
 		impl encointer_reputation_commitments::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
+			type WeightInfo = ();
 		}
 	};
 }
