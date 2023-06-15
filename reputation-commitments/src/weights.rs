@@ -58,12 +58,12 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn register_purpose() -> Weight {
-		(Weight::from_ref_time(54_000_000))
+		(Weight::from_parts(54_000_000, 0))
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
 	fn commit_reputation() -> Weight {
-		(Weight::from_ref_time(79_000_000))
+		(Weight::from_parts(79_000_000, 0))
 			.saturating_add(T::DbWeight::get().reads(3))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -72,12 +72,12 @@ impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 // For tests
 impl WeightInfo for () {
 	fn register_purpose() -> Weight {
-		(Weight::from_ref_time(54_000_000))
+		(Weight::from_parts(54_000_000, 0))
 			.saturating_add(RocksDbWeight::get().reads(1))
 			.saturating_add(RocksDbWeight::get().writes(2))
 	}
 	fn commit_reputation() -> Weight {
-		(Weight::from_ref_time(79_000_000))
+		(Weight::from_parts(79_000_000, 0))
 			.saturating_add(RocksDbWeight::get().reads(3))
 			.saturating_add(RocksDbWeight::get().writes(1))
 	}

@@ -21,7 +21,7 @@ limitations under the License.
 //! * SSD
 //!
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2023-06-08, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
+//! DATE: 2023-06-15, STEPS: `50`, REPEAT: 20, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("dev"), DB CACHE: 1024
 
 // Executed Command:
@@ -61,53 +61,53 @@ pub trait WeightInfo {
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn create_faucet() -> Weight {
-		(Weight::from_ref_time(176_000_000))
+		Weight::from_parts(226_000_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
 	fn drip() -> Weight {
-		(Weight::from_ref_time(209_000_000))
+		Weight::from_parts(224_000_000, 0)
 			.saturating_add(T::DbWeight::get().reads(6))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	fn dissolve_faucet() -> Weight {
-		(Weight::from_ref_time(176_000_000))
+		Weight::from_parts(174_000_000, 0)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	fn close_faucet() -> Weight {
-		(Weight::from_ref_time(171_000_000))
+		Weight::from_parts(196_000_000, 0)
 			.saturating_add(T::DbWeight::get().reads(4))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
 	fn set_reserve_amount() -> Weight {
-		(Weight::from_ref_time(52_000_000)).saturating_add(T::DbWeight::get().writes(1))
+		Weight::from_parts(31_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
 	}
 }
 
 // For tests
 impl WeightInfo for () {
 	fn create_faucet() -> Weight {
-		(Weight::from_ref_time(176_000_000))
+		Weight::from_parts(226_000_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().writes(5))
 	}
 	fn drip() -> Weight {
-		(Weight::from_ref_time(209_000_000))
+		Weight::from_parts(224_000_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(6))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 	fn dissolve_faucet() -> Weight {
-		(Weight::from_ref_time(176_000_000))
+		Weight::from_parts(174_000_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 	fn close_faucet() -> Weight {
-		(Weight::from_ref_time(171_000_000))
+		Weight::from_parts(196_000_000, 0)
 			.saturating_add(RocksDbWeight::get().reads(4))
 			.saturating_add(RocksDbWeight::get().writes(3))
 	}
 	fn set_reserve_amount() -> Weight {
-		(Weight::from_ref_time(52_000_000)).saturating_add(RocksDbWeight::get().writes(1))
+		Weight::from_parts(31_000_000, 0).saturating_add(RocksDbWeight::get().writes(1))
 	}
 }
