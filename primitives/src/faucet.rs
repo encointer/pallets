@@ -29,7 +29,7 @@ pub type FaucetNameType = BoundedVec<u8, ConstU32<64>>;
 pub struct Faucet<AccountId, Balance> {
 	pub name: FaucetNameType,
 	pub purpose_id: PurposeIdType,
-	pub whitelist: WhiteListType,
+	pub whitelist: Option<WhiteListType>,
 	pub drip_amount: Balance,
 	pub creator: AccountId,
 }

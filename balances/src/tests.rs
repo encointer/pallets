@@ -25,11 +25,7 @@ use encointer_primitives::{
 };
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
-	traits::{
-		fungibles::Inspect,
-		tokens::{fungibles::Unbalanced, DepositConsequence, WithdrawConsequence},
-		OnInitialize,
-	},
+	traits::{tokens::fungibles::Unbalanced, OnInitialize},
 };
 use mock::{master, new_test_ext, EncointerBalances, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::{app_crypto::Pair, testing::sr25519, AccountId32, DispatchError};
