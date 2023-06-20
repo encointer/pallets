@@ -66,7 +66,7 @@ benchmarks! {
 		let drip_amount: BalanceOf<T> = 10_000u32.into();
 		let whitelist = BoundedVec::try_from(vec![cid; 1024]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
-	}: _(RawOrigin::Signed(zoran), faucet_name, amount, whitelist, drip_amount)
+	}: _(RawOrigin::Signed(zoran), faucet_name, amount, Some(whitelist), drip_amount)
 	verify {
 		assert!(<Faucets<T>>::iter().next().is_some());
 	}
@@ -85,7 +85,7 @@ benchmarks! {
 		let drip_amount: BalanceOf<T> = 10_000u32.into();
 		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
-		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, whitelist, drip_amount).ok();
+		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, Some(whitelist), drip_amount).ok();
 		let faucet_account = <Faucets<T>>::iter().next().unwrap().0;
 
 	}: _(RawOrigin::Signed(dripper.clone()), faucet_account, cid, cindex)
@@ -107,7 +107,7 @@ benchmarks! {
 		let drip_amount: BalanceOf<T> = 10_000u32.into();
 		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
-		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, whitelist, drip_amount).ok();
+		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, Some(whitelist), drip_amount).ok();
 		let faucet_account = <Faucets<T>>::iter().next().unwrap().0;
 		FaucetPallet::<T>::drip(RawOrigin::Signed(dripper.clone()).into(), faucet_account.clone(), cid, cindex).ok();
 
@@ -131,7 +131,7 @@ benchmarks! {
 		let drip_amount: BalanceOf<T> = 10_000_000u32.into();
 		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
-		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran.clone()).into(), faucet_name, amount, whitelist, drip_amount).ok();
+		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran.clone()).into(), faucet_name, amount, Some(whitelist), drip_amount).ok();
 		let faucet_account = <Faucets<T>>::iter().next().unwrap().0;
 		FaucetPallet::<T>::drip(RawOrigin::Signed(dripper.clone()).into(), faucet_account.clone(), cid, cindex).ok();
 		assert_eq!(<T as pallet::Config>::Currency::free_balance(&faucet_account), 15_000_000u32.into());

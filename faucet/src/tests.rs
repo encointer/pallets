@@ -36,7 +36,7 @@ fn new_faucet(
 	origin: RuntimeOrigin,
 	name: FaucetNameType,
 	amount: BalanceOf<TestRuntime>,
-	whitelist: WhiteListType,
+	whitelist: Option<WhiteListType>,
 	drip_amount: BalanceOf<TestRuntime>,
 ) -> AccountId32 {
 	assert_ok!(EncointerFaucet::create_faucet(origin, name, amount, whitelist, drip_amount));
@@ -73,7 +73,7 @@ fn faucet_creation_works() {
 			RuntimeOrigin::signed(alice.clone()),
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
 			100,
-			whitelist_input.clone(),
+			Some(whitelist_input.clone()),
 			10,
 		);
 
@@ -81,7 +81,7 @@ fn faucet_creation_works() {
 
 		assert_eq!(faucet.name, FaucetNameType::from_str("Some Faucet Name").unwrap());
 		assert_eq!(faucet.purpose_id, 2);
-		assert_eq!(faucet.whitelist, whitelist_input);
+		assert_eq!(faucet.whitelist, Some(whitelist_input));
 		assert_eq!(faucet.drip_amount, 10);
 		assert_eq!(faucet.creator, alice.clone());
 		assert_eq!(Balances::free_balance(&alice), 1);
@@ -106,7 +106,7 @@ fn faucet_creation_fails_with_insufficient_balance() {
 				RuntimeOrigin::signed(alice.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				100,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				10
 			),
 			Error::<TestRuntime>::InsuffiecientBalance
@@ -129,7 +129,7 @@ fn faucet_creation_fails_with_duplicate() {
 			RuntimeOrigin::signed(alice.clone()),
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
 			10,
-			whitelist_input.clone(),
+			Some(whitelist_input.clone()),
 			2
 		));
 
@@ -137,7 +137,7 @@ fn faucet_creation_fails_with_duplicate() {
 			RuntimeOrigin::signed(alice.clone()),
 			FaucetNameType::from_str("Some Faucet Name 2").unwrap(),
 			10,
-			whitelist_input.clone(),
+			Some(whitelist_input.clone()),
 			2
 		));
 
@@ -146,7 +146,7 @@ fn faucet_creation_fails_with_duplicate() {
 				RuntimeOrigin::signed(alice.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				10,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				2
 			),
 			Error::<TestRuntime>::FaucetAlreadyExists
@@ -170,7 +170,7 @@ fn faucet_creation_fails_with_too_small_drip_amount() {
 				RuntimeOrigin::signed(alice.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				10,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				1
 			),
 			Error::<TestRuntime>::DripAmountTooSmall
@@ -193,7 +193,7 @@ fn faucet_creation_fails_with_invalid_cid() {
 				RuntimeOrigin::signed(alice.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				10,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				1
 			),
 			Error::<TestRuntime>::InvalidCommunityIdentifierInWhitelist
@@ -224,7 +224,7 @@ fn dripping_works() {
 				RuntimeOrigin::signed(alice.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				100,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				10,
 			);
 
@@ -232,7 +232,7 @@ fn dripping_works() {
 				RuntimeOrigin::signed(alice.clone()),
 				FaucetNameType::from_str("Some Faucet Name 2").unwrap(),
 				100,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				9,
 			);
 
@@ -332,7 +332,7 @@ fn faucet_empty_works() {
 				RuntimeOrigin::signed(bob.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				35,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				10,
 			);
 
@@ -401,7 +401,7 @@ fn dripping_fails_when_cid_not_whitelisted() {
 				RuntimeOrigin::signed(bob.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				35,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				10,
 			);
 
@@ -439,6 +439,54 @@ fn dripping_fails_with_inexistent_faucet() {
 }
 
 #[test]
+fn dripping_works_with_whitelist_bypass() {
+	new_test_ext().execute_with(|| {
+		let mut ext = new_test_ext();
+		let alice = AccountId::from(AccountKeyring::Alice);
+		let bob = AccountId::from(AccountKeyring::Bob);
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+		ext.insert(
+			participant_reputation((cid, 12), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+		ext.insert(
+			participant_reputation((cid2, 13), &alice),
+			Reputation::VerifiedUnlinked.encode(),
+		);
+
+		ext.execute_with(|| {
+			System::set_block_number(System::block_number() + 1); // this is needed to assert events
+													  // re-register because of different ext
+			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+			Balances::make_free_balance_be(&bob, 1000);
+
+			let faucet_account = new_faucet(
+				RuntimeOrigin::signed(bob.clone()),
+				FaucetNameType::from_str("Some Faucet Name").unwrap(),
+				35,
+				None,
+				10,
+			);
+
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone(),
+				cid,
+				12,
+			));
+			assert_ok!(EncointerFaucet::drip(
+				RuntimeOrigin::signed(alice.clone()),
+				faucet_account.clone(),
+				cid2,
+				13,
+			));
+		})
+	})
+}
+
+#[test]
 fn dissolve_faucet_works() {
 	let mut ext = new_test_ext();
 	let alice = AccountId::from(AccountKeyring::Alice);
@@ -454,7 +502,7 @@ fn dissolve_faucet_works() {
 			RuntimeOrigin::signed(bob.clone()),
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
 			35,
-			whitelist_input.clone(),
+			Some(whitelist_input.clone()),
 			10,
 		);
 
@@ -495,7 +543,7 @@ fn dissolve_faucet_fails_if_not_root() {
 			RuntimeOrigin::signed(bob.clone()),
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
 			35,
-			whitelist_input.clone(),
+			Some(whitelist_input.clone()),
 			10,
 		);
 
@@ -546,7 +594,7 @@ fn close_faucet_works() {
 				RuntimeOrigin::signed(bob.clone()),
 				FaucetNameType::from_str("Some Faucet Name").unwrap(),
 				35,
-				whitelist_input.clone(),
+				Some(whitelist_input.clone()),
 				12,
 			);
 
@@ -599,7 +647,7 @@ fn close_faucet_fails_if_not_creator() {
 			RuntimeOrigin::signed(bob.clone()),
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
 			35,
-			whitelist_input.clone(),
+			Some(whitelist_input.clone()),
 			10,
 		);
 
@@ -628,7 +676,7 @@ fn close_faucet_fails_if_not_empty() {
 			RuntimeOrigin::signed(bob.clone()),
 			FaucetNameType::from_str("Some Faucet Name").unwrap(),
 			35,
-			whitelist_input.clone(),
+			Some(whitelist_input.clone()),
 			10,
 		);
 

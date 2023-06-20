@@ -94,15 +94,17 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			name: FaucetNameType,
 			amount: BalanceOf<T>,
-			whitelist: WhiteListType,
+			whitelist: Option<WhiteListType>,
 			drip_amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 
 			let all_communities = encointer_communities::Pallet::<T>::community_identifiers();
-			for cid in &whitelist {
-				if !all_communities.contains(cid) {
-					return Err(<Error<T>>::InvalidCommunityIdentifierInWhitelist.into())
+			if let Some(wl) = whitelist.clone() {
+				for cid in &wl {
+					if !all_communities.contains(cid) {
+						return Err(<Error<T>>::InvalidCommunityIdentifierInWhitelist.into())
+					}
 				}
 			}
 
@@ -159,8 +161,10 @@ pub mod pallet {
 
 			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
 
-			if !faucet.whitelist.contains(&cid) {
-				return Err(<Error<T>>::CommunityNotInWhitelist.into())
+			if let Some(wl) = faucet.whitelist {
+				if !wl.contains(&cid) {
+					return Err(<Error<T>>::CommunityNotInWhitelist.into())
+				}
 			}
 
 			<encointer_reputation_commitments::Pallet<T>>::do_commit_reputation(
