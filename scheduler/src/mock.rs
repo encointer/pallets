@@ -22,7 +22,6 @@ use sp_runtime::BuildStorage;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 pub fn master() -> AccountId {
 	AccountId::from(AccountKeyring::Alice)

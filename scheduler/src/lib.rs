@@ -26,7 +26,7 @@
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
 	dispatch::{DispatchClass, DispatchResult},
-	traits::{Get, OnTimestampSet, GenesisBuild},
+	traits::{Get, OnTimestampSet},
 };
 use log::{info, warn};
 use sp_runtime::traits::{CheckedDiv, One, Saturating, Zero};
@@ -111,6 +111,7 @@ pub mod pallet {
 	pub(super) type PhaseDurations<T: Config> =
 		StorageMap<_, Blake2_128Concat, CeremonyPhaseType, T::Moment, ValueQuery>;
 
+	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>
 	where
@@ -119,24 +120,12 @@ pub mod pallet {
 		pub current_ceremony_index: CeremonyIndexType,
 		pub current_phase: CeremonyPhaseType,
 		pub phase_durations: Vec<(CeremonyPhaseType, T::Moment)>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T>
-	where
-		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
-	{
-		fn default() -> Self {
-			Self {
-				current_ceremony_index: Default::default(),
-				current_phase: CeremonyPhaseType::Registering,
-				phase_durations: Default::default(),
-			}
-		}
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
 	where
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
