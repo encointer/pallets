@@ -26,7 +26,7 @@
 use encointer_primitives::scheduler::{CeremonyIndexType, CeremonyPhaseType};
 use frame_support::{
 	dispatch::{DispatchClass, DispatchResult},
-	traits::{Get, OnTimestampSet},
+	traits::{Get, OnTimestampSet, GenesisBuild},
 };
 use log::{info, warn};
 use sp_runtime::traits::{CheckedDiv, One, Saturating, Zero};

@@ -25,7 +25,7 @@ use encointer_primitives::{
 use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
-	traits::{tokens::fungibles, Get},
+	traits::{tokens::fungibles, Get, GenesisBuild},
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::{debug, info};
