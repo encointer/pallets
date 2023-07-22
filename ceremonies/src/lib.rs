@@ -87,7 +87,7 @@ pub mod pallet {
 
 		type Public: IdentifyAccount<AccountId = Self::AccountId>;
 		type Signature: Verify<Signer = Self::Public> + Member + Decode + Encode + TypeInfo;
-		type RandomnessSource: Randomness<Self::Hash, Self::BlockNumber>;
+		type RandomnessSource: Randomness<Self::Hash, BlockNumberFor<Self>>;
 		// Target number of participants per meetup
 		#[pallet::constant]
 		type MeetupSizeTarget: Get<u64>;
@@ -429,11 +429,11 @@ pub mod pallet {
 						},
 						MeetupValidationError::NoDependableVote => {
 							debug!(
-							target: LOG,
-							"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
-							meetup_index,
-							cid
-						);
+								target: LOG,
+								"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
+								meetup_index,
+								cid
+							);
 							(
 								Err(<Error<T>>::VotesNotDependable.into()),
 								MeetupResult::VotesNotDependable,
@@ -1032,6 +1032,7 @@ pub mod pallet {
 	#[pallet::getter(fn meetup_time_offset)]
 	pub(super) type MeetupTimeOffset<T: Config> = StorageValue<_, MeetupTimeOffsetType, ValueQuery>;
 
+	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>
 	where
@@ -1046,29 +1047,12 @@ pub mod pallet {
 		pub endorsement_tickets_per_reputable: EndorsementTicketsType,
 		pub reputation_lifetime: ReputationLifetimeType,
 		pub meetup_time_offset: MeetupTimeOffsetType,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T>
-	where
-		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
-	{
-		fn default() -> Self {
-			Self {
-				ceremony_reward: Default::default(),
-				location_tolerance: Default::default(),
-				time_tolerance: Default::default(),
-				inactivity_timeout: Default::default(),
-				endorsement_tickets_per_bootstrapper: Default::default(),
-				endorsement_tickets_per_reputable: Default::default(),
-				reputation_lifetime: Default::default(),
-				meetup_time_offset: Default::default(),
-			}
-		}
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
 	where
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{

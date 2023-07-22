@@ -84,7 +84,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn last_ceremony_block)]
-	pub(super) type LastCeremonyBlock<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+	pub(super) type LastCeremonyBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForCurrentPhase() -> CeremonyPhaseType {

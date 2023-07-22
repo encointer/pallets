@@ -37,6 +37,7 @@ use encointer_primitives::{
 	scheduler::CeremonyPhaseType,
 };
 use frame_support::{ensure, BoundedVec};
+use frame_system::pallet_prelude::BlockNumberFor;
 use log::{info, warn};
 use sp_runtime::{traits::Get, DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
@@ -467,22 +468,17 @@ pub mod pallet {
 	#[pallet::getter(fn max_speed_mps)]
 	pub(super) type MaxSpeedMps<T: Config> = StorageValue<_, MaxSpeedMpsType, ValueQuery>;
 
+	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
-	pub struct GenesisConfig {
+	pub struct GenesisConfig<T> {
 		pub min_solar_trip_time_s: MinSolarTripTimeType,
 		pub max_speed_mps: MaxSpeedMpsType,
-	}
-
-	#[cfg(feature = "std")]
-	#[allow(clippy::derivable_impls)]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { min_solar_trip_time_s: Default::default(), max_speed_mps: Default::default() }
-		}
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			<MinSolarTripTimeS<T>>::put(self.min_solar_trip_time_s);
 			<MaxSpeedMps<T>>::put(self.max_speed_mps);
@@ -739,8 +735,8 @@ impl<T: Config> Pallet<T> {
 
 	pub fn get_all_balances(
 		account: &T::AccountId,
-	) -> Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> {
-		let mut balances: Vec<(CommunityIdentifier, BalanceEntry<T::BlockNumber>)> = vec![];
+	) -> Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<T>>)> {
+		let mut balances: Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<T>>)> = vec![];
 		for cid in Self::community_identifiers().into_iter() {
 			if encointer_balances::Balance::<T>::contains_key(cid, account.clone()) {
 				balances.push((

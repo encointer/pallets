@@ -18,7 +18,7 @@
 
 use crate as dut;
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::pallet_prelude::GenesisBuild;
+use sp_runtime::BuildStorage;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -31,15 +31,12 @@ frame_support::parameter_types! {
 }
 
 frame_support::construct_runtime!(
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
-		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>, Config},
+		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
 );
 
@@ -58,10 +55,11 @@ impl_encointer_scheduler!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
-	let conf = dut::GenesisConfig { fee_conversion_factor: 100_000 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+	dut::GenesisConfig::<TestRuntime> { fee_conversion_factor: 100_000, ..Default::default() }
+		.assimilate_storage(&mut t)
+		.unwrap();
 
 	t.into()
 }
