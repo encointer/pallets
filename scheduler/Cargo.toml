@@ -10,7 +10,7 @@ codec = { package = "parity-scale-codec", version = "3.6.1", default-features = 
 ] }
 impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log = { version = "0.4.14", default-features = false }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"]}
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false }
