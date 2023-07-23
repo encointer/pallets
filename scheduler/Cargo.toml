@@ -13,7 +13,7 @@ log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
 
 # local deps
-encointer-primitives = { path = "../primitives", default-features = false }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"] }
 
 # substrate deps
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v1.0.0" }

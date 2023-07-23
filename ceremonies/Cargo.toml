@@ -16,7 +16,7 @@ encointer-balances = { package = "pallet-encointer-balances", path = "../balance
 encointer-ceremonies-assignment = { path = "assignment", default-features = false }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 encointer-meetup-validation = { path = "meetup-validation", default-features = false }
-encointer-primitives = { path = "../primitives", default-features = false }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"] }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps

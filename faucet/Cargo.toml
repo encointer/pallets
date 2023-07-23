@@ -16,7 +16,7 @@ scale-info = { version = "2.5.0", default-features = false }
 
 # local deps
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
-encointer-primitives = { path = "../primitives", default-features = false }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"] }
 encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false }
 
 # substrate deps
