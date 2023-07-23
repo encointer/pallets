@@ -8,7 +8,7 @@ edition = "2021"
 approx = { version = "0.5.1", optional = true }
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-scale-info = { version = "2.0.1", default-features = false }
+scale-info = { version = "2.5.0", default-features = false }
 
 # local deps
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false }
@@ -46,7 +46,6 @@ std = [
     "sp-std/std",
     "sp-runtime/std",
     "sp-core/std",
-    "sp-runtime/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "approx"]
