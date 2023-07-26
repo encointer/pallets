@@ -1,5 +1,5 @@
 use super::*;
-use encointer_primitives::communities::UnboundedCommunityMetadata;
+
 use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade};
 
 /// The log target.
@@ -7,6 +7,59 @@ const TARGET: &str = "communities::migration::v1";
 
 mod v0 {
 	use super::*;
+
+	pub trait AsByteOrNoop {
+		fn as_bytes_or_noop(&self) -> &[u8];
+	}
+
+	#[cfg(not(feature = "std"))]
+	pub type UnboundedPalletString = Vec<u8>;
+
+	#[cfg(feature = "std")]
+	pub type UnboundedPalletString = String;
+
+	impl AsByteOrNoop for UnboundedPalletString {
+		#[cfg(feature = "std")]
+		fn as_bytes_or_noop(&self) -> &[u8] {
+			self.as_bytes()
+		}
+
+		#[cfg(not(feature = "std"))]
+		fn as_bytes_or_noop(&self) -> &[u8] {
+			self
+		}
+	}
+
+	pub type IpfsCid = UnboundedPalletString;
+
+	#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+	#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+	#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+	pub struct UnboundedCommunityMetadata {
+		/// utf8 encoded name
+		pub name: UnboundedPalletString,
+		/// utf8 encoded abbreviation of the name
+		pub symbol: UnboundedPalletString,
+		/// IPFS cid to assets necessary for community branding
+		pub assets: IpfsCid,
+		/// ipfs cid for style resources
+		pub theme: Option<IpfsCid>,
+		/// optional link to a community site
+		pub url: Option<UnboundedPalletString>,
+	}
+
+	impl Default for UnboundedCommunityMetadata {
+		/// Default implementation, which passes `self::validate()` for easy pallet testing
+		fn default() -> Self {
+			UnboundedCommunityMetadata {
+				name: "Default".into(),
+				symbol: "DEF".into(),
+				assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
+				theme: None,
+				url: Some("DefaultUrl".into()),
+			}
+		}
+	}
 
 	#[storage_alias]
 	pub type CommunityIdentifiers<T: Config> =
@@ -48,6 +101,32 @@ mod v0 {
 
 pub mod v1 {
 	use super::*;
+	use encointer_primitives::common::BoundedIpfsCid;
+
+	#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+	#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+	#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+	pub struct CommunityMetadataV1 {
+		/// utf8 encoded name
+		pub name: PalletString,
+		/// utf8 encoded abbreviation of the name
+		pub symbol: PalletString,
+		/// IPFS cid to assets necessary for community branding
+		pub assets: BoundedIpfsCid,
+		/// ipfs cid for style resources
+		pub theme: Option<BoundedIpfsCid>,
+		/// optional link to a community site
+		pub url: Option<PalletString>,
+	}
+
+	#[storage_alias]
+	pub(super) type CommunityMetadata<T: Config> = StorageMap<
+		Pallet<T>,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		CommunityMetadataV1,
+		ValueQuery,
+	>;
 
 	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
 
@@ -177,10 +256,56 @@ pub mod v1 {
 	}
 }
 
+pub mod v2 {
+	use super::*;
+
+	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
+
+	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for Migration<T> {
+		#[cfg(feature = "try-runtime")]
+		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0, "can only upgrade from version 0");
+
+			// TODO
+			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
+
+			Ok(vec![])
+		}
+
+		fn on_runtime_upgrade() -> Weight {
+			let weight = T::DbWeight::get().reads(1);
+			if StorageVersion::get::<Pallet<T>>() != 0 {
+				log::warn!(
+					target: TARGET,
+					"skipping on_runtime_upgrade: executed on wrong storage version.\
+				Expected version 0"
+				);
+				return weight
+			}
+
+			//TODO
+			// we do not actually migrate any data, because it seems that the storage representation of Vec and BoundedVec is the same.
+			// as long as we check the bounds in pre_upgrade, we should be fine.
+
+			StorageVersion::new(1).put::<Pallet<T>>();
+			weight.saturating_add(T::DbWeight::get().reads_writes(1, 2))
+		}
+
+		#[cfg(feature = "try-runtime")]
+		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1, "must upgrade");
+			//TODO
+			Ok(())
+		}
+	}
+}
+
 #[cfg(test)]
 #[cfg(feature = "try-runtime")]
 mod test {
 	use super::*;
+	use crate::migrations::{v0::UnboundedCommunityMetadata, v1::CommunityMetadataV1};
+
 	use encointer_primitives::common::FromStr as PrimitivesFromStr;
 	use frame_support::{assert_err, traits::OnRuntimeUpgrade};
 	use mock::{new_test_ext, TestRuntime};
@@ -353,7 +478,7 @@ mod test {
 				crate::CommunityMetadata::<TestRuntime>::get(
 					CommunityIdentifier::from_str("111112Fvv9d").unwrap()
 				),
-				CommunityMetadataType {
+				CommunityMetadataV1 {
 					name: PalletString::from_str("AName").unwrap(),
 					symbol: PalletString::from_str("ASY").unwrap(),
 					assets: PalletString::from_str(

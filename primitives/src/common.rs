@@ -31,11 +31,6 @@ use sp_std::vec::Vec;
 /// Substrate runtimes provide no string type. Hence, for arbitrary data of varying length the
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
 /// utf8 decode bytes into a string.
-#[cfg(not(feature = "std"))]
-pub type UnboundedPalletString = Vec<u8>;
-
-#[cfg(feature = "std")]
-pub type UnboundedPalletString = String;
 
 pub type PalletString = BoundedVec<u8, ConstU32<256>>;
 
@@ -55,25 +50,12 @@ pub trait AsByteOrNoop {
 	fn as_bytes_or_noop(&self) -> &[u8];
 }
 
-impl AsByteOrNoop for UnboundedPalletString {
-	#[cfg(feature = "std")]
-	fn as_bytes_or_noop(&self) -> &[u8] {
-		self.as_bytes()
-	}
-
-	#[cfg(not(feature = "std"))]
-	fn as_bytes_or_noop(&self) -> &[u8] {
-		self
-	}
-}
-
 impl AsByteOrNoop for PalletString {
 	fn as_bytes_or_noop(&self) -> &[u8] {
 		self
 	}
 }
 
-pub type IpfsCid = UnboundedPalletString;
 pub type BoundedIpfsCid = PalletString;
 
 pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {

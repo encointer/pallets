@@ -34,8 +34,8 @@ use ep_core::serde::{serialize_array, serialize_fixed};
 use crate::{
 	balances::Demurrage,
 	common::{
-		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, IpfsCid,
-		IpfsValidationError, PalletString, UnboundedPalletString,
+		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, IpfsValidationError,
+		PalletString,
 	},
 };
 
@@ -272,22 +272,6 @@ pub enum CommunityRules {
 	BeeDance,
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub struct UnboundedCommunityMetadata {
-	/// utf8 encoded name
-	pub name: UnboundedPalletString,
-	/// utf8 encoded abbreviation of the name
-	pub symbol: UnboundedPalletString,
-	/// IPFS cid to assets necessary for community branding
-	pub assets: IpfsCid,
-	/// ipfs cid for style resources
-	pub theme: Option<IpfsCid>,
-	/// optional link to a community site
-	pub url: Option<UnboundedPalletString>,
-}
-
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -313,11 +297,11 @@ pub struct CommunityMetadata {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CidName {
 	pub cid: CommunityIdentifier,
-	pub name: UnboundedPalletString,
+	pub name: PalletString,
 }
 
 impl CidName {
-	pub fn new(cid: CommunityIdentifier, name: UnboundedPalletString) -> Self {
+	pub fn new(cid: CommunityIdentifier, name: PalletString) -> Self {
 		Self { cid, name }
 	}
 }
@@ -390,19 +374,6 @@ impl Default for CommunityMetadata {
 			url: Some(PalletString::from_str("DefaultUrl").unwrap()),
 			announcement_signer: None,
 			rules: CommunityRules::default(),
-		}
-	}
-}
-
-impl Default for UnboundedCommunityMetadata {
-	/// Default implementation, which passes `self::validate()` for easy pallet testing
-	fn default() -> Self {
-		UnboundedCommunityMetadata {
-			name: "Default".into(),
-			symbol: "DEF".into(),
-			assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
-			theme: None,
-			url: Some("DefaultUrl".into()),
 		}
 	}
 }
