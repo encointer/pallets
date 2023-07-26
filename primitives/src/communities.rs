@@ -234,13 +234,13 @@ impl Location {
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum AnnouncementSigner {
-	substrate(MultiSigner),
-	bip340([u8; 32]),
+	Substrate(MultiSigner),
+	Bip340([u8; 32]),
 }
 
 impl Default for AnnouncementSigner {
 	fn default() -> Self {
-		AnnouncementSigner::bip340([0u8; 32])
+		AnnouncementSigner::Bip340([0u8; 32])
 	}
 }
 impl MaxEncodedLen for AnnouncementSigner {
