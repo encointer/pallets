@@ -249,6 +249,29 @@ impl MaxEncodedLen for AnnouncementSigner {
 	}
 }
 
+#[derive(
+	Encode,
+	Decode,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum CommunityRules {
+	#[default]
+	LoCo,
+	LoCoLight,
+	BeeDance,
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -281,6 +304,8 @@ pub struct CommunityMetadata {
 	pub url: Option<PalletString>,
 	/// optional pubkey for the signer of authorized announcements to the community
 	pub announcement_signer: Option<AnnouncementSigner>,
+	/// rule set to be followed by community
+	pub rules: CommunityRules,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -305,8 +330,10 @@ impl CommunityMetadata {
 		theme: Option<BoundedIpfsCid>,
 		url: Option<PalletString>,
 		announcement_signer: Option<AnnouncementSigner>,
+		rules: CommunityRules,
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
-		let meta = CommunityMetadata { name, symbol, assets, theme, url, announcement_signer };
+		let meta =
+			CommunityMetadata { name, symbol, assets, theme, url, announcement_signer, rules };
 		match meta.validate() {
 			Ok(()) => Ok(meta),
 			Err(e) => Err(e),
@@ -362,6 +389,7 @@ impl Default for CommunityMetadata {
 			theme: None,
 			url: Some(PalletString::from_str("DefaultUrl").unwrap()),
 			announcement_signer: None,
+			rules: CommunityRules::default(),
 		}
 	}
 }
