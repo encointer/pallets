@@ -230,17 +230,7 @@ impl Location {
 	}
 }
 
-#[derive(
-Encode,
-Decode,
-Clone,
-PartialEq,
-Eq,
-RuntimeDebug,
-PartialOrd,
-Ord,
-TypeInfo,
-)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, PartialOrd, Ord, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum AnnouncementSigner {
