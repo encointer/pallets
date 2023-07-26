@@ -26,6 +26,7 @@ use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::MultiSigner;
 
 #[cfg(feature = "serde_derive")]
 use ep_core::serde::{serialize_array, serialize_fixed};
@@ -229,6 +230,35 @@ impl Location {
 	}
 }
 
+#[derive(
+Encode,
+Decode,
+Clone,
+PartialEq,
+Eq,
+RuntimeDebug,
+PartialOrd,
+Ord,
+TypeInfo,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum AnnouncementSigner {
+	substrate(MultiSigner),
+	bip340([u8; 32]),
+}
+
+impl Default for AnnouncementSigner {
+	fn default() -> Self {
+		AnnouncementSigner::bip340([0u8; 32])
+	}
+}
+impl MaxEncodedLen for AnnouncementSigner {
+	fn max_encoded_len() -> usize {
+		34
+	}
+}
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -259,6 +289,8 @@ pub struct CommunityMetadata {
 	pub theme: Option<BoundedIpfsCid>,
 	/// optional link to a community site
 	pub url: Option<PalletString>,
+	/// optional pubkey for the signer of authorized announcements to the community
+	pub announcement_signer: Option<AnnouncementSigner>,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -282,8 +314,9 @@ impl CommunityMetadata {
 		assets: BoundedIpfsCid,
 		theme: Option<BoundedIpfsCid>,
 		url: Option<PalletString>,
+		announcement_signer: Option<AnnouncementSigner>,
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
-		let meta = CommunityMetadata { name, symbol, assets, theme, url };
+		let meta = CommunityMetadata { name, symbol, assets, theme, url, announcement_signer };
 		match meta.validate() {
 			Ok(()) => Ok(meta),
 			Err(e) => Err(e),
@@ -338,6 +371,7 @@ impl Default for CommunityMetadata {
 				.unwrap(),
 			theme: None,
 			url: Some(PalletString::from_str("DefaultUrl").unwrap()),
+			announcement_signer: None,
 		}
 	}
 }
