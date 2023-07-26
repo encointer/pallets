@@ -103,7 +103,9 @@ pub mod v1 {
 	use super::*;
 	use encointer_primitives::common::BoundedIpfsCid;
 
-	#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+	#[derive(
+		Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	)]
 	#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 	#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 	pub struct CommunityMetadataV1 {
@@ -258,6 +260,12 @@ pub mod v1 {
 
 pub mod v2 {
 	use super::*;
+	use crate::migrations::{v0::UnboundedCommunityMetadata, v1::CommunityMetadataV1};
+	use encointer_primitives::{
+		common::FromStr,
+		communities::{AnnouncementSigner, CommunityRules},
+	};
+	use scale_info::named_type_params;
 
 	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
 
@@ -283,9 +291,29 @@ pub mod v2 {
 				return weight
 			}
 
-			//TODO
-			// we do not actually migrate any data, because it seems that the storage representation of Vec and BoundedVec is the same.
-			// as long as we check the bounds in pre_upgrade, we should be fine.
+			CommunityMetadata::<T>::translate::<UnboundedCommunityMetadata, _>(
+				|k: CommunityIdentifier, meta: UnboundedCommunityMetadata| {
+					info!(target: TARGET, "     Migrating community metadata for {:?}...", k);
+
+					// here we just transcode because it seems that the storage representation of Vec and BoundedVec is the same.
+					// as long as we check the bounds in pre_upgrade, we should be fine.
+					let meta_v1 = CommunityMetadataV1::decode(&mut meta.encode().as_ref())
+						.unwrap_or_default();
+
+					Some(
+						CommunityMetadataType::new(
+							meta_v1.name,
+							meta_v1.symbol,
+							meta_v1.assets,
+							meta_v1.theme,
+							meta_v1.url,
+							Some(AnnouncementSigner::default()),
+							CommunityRules::default(),
+						)
+						.unwrap_or_default(),
+					)
+				},
+			);
 
 			StorageVersion::new(1).put::<Pallet<T>>();
 			weight.saturating_add(T::DbWeight::get().reads_writes(1, 2))
@@ -304,9 +332,8 @@ pub mod v2 {
 #[cfg(feature = "try-runtime")]
 mod test {
 	use super::*;
-	use crate::migrations::{v0::UnboundedCommunityMetadata, v1::CommunityMetadataV1};
-
-	use encointer_primitives::common::FromStr as PrimitivesFromStr;
+	use crate::migrations::v0::UnboundedCommunityMetadata;
+	use encointer_primitives::{common::FromStr as PrimitivesFromStr, communities::CommunityRules};
 	use frame_support::{assert_err, traits::OnRuntimeUpgrade};
 	use mock::{new_test_ext, TestRuntime};
 	use sp_std::str::FromStr;
@@ -478,7 +505,7 @@ mod test {
 				crate::CommunityMetadata::<TestRuntime>::get(
 					CommunityIdentifier::from_str("111112Fvv9d").unwrap()
 				),
-				CommunityMetadataV1 {
+				CommunityMetadataType {
 					name: PalletString::from_str("AName").unwrap(),
 					symbol: PalletString::from_str("ASY").unwrap(),
 					assets: PalletString::from_str(
@@ -487,6 +514,8 @@ mod test {
 					.unwrap(),
 					theme: None,
 					url: Some(PalletString::from_str("AUrl").unwrap()),
+					announcement_signer: None,
+					rules: CommunityRules::default(),
 				}
 			);
 		});
