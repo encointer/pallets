@@ -229,6 +229,30 @@ impl Location {
 	}
 }
 
+#[derive(
+Encode,
+Decode,
+Copy,
+Clone,
+PartialEq,
+Eq,
+Default,
+RuntimeDebug,
+PartialOrd,
+Ord,
+TypeInfo,
+MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum CommunityRules {
+	#[default]
+	LoCo,
+	LoCoLight,
+	BeeDance,
+}
+
+
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -259,6 +283,8 @@ pub struct CommunityMetadata {
 	pub theme: Option<BoundedIpfsCid>,
 	/// optional link to a community site
 	pub url: Option<PalletString>,
+	/// rule set to be followed by community
+	pub rules: CommunityRules,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -282,8 +308,9 @@ impl CommunityMetadata {
 		assets: BoundedIpfsCid,
 		theme: Option<BoundedIpfsCid>,
 		url: Option<PalletString>,
+		rules: CommunityRules
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
-		let meta = CommunityMetadata { name, symbol, assets, theme, url };
+		let meta = CommunityMetadata { name, symbol, assets, theme, url, rules };
 		match meta.validate() {
 			Ok(()) => Ok(meta),
 			Err(e) => Err(e),
@@ -338,6 +365,7 @@ impl Default for CommunityMetadata {
 				.unwrap(),
 			theme: None,
 			url: Some(PalletString::from_str("DefaultUrl").unwrap()),
+			rules: CommunityRules::default(),
 		}
 	}
 }
