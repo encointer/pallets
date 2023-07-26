@@ -46,6 +46,20 @@ impl FromStr for PalletString {
 	}
 }
 
+pub trait FromCropping: Sized {
+	fn from_cropping(data: Vec<u8>) -> Self;
+}
+
+impl FromCropping for PalletString {
+	fn from_cropping(data: Vec<u8>) -> Self {
+		if data.len() <= Self::bound() {
+			Self::try_from(data.clone()).expect("can't be too long")
+		} else {
+			Self::try_from(data[..Self::bound()].to_vec()).expect("can't be too long now")
+		}
+	}
+}
+
 pub trait AsByteOrNoop {
 	fn as_bytes_or_noop(&self) -> &[u8];
 }
@@ -84,4 +98,17 @@ pub enum IpfsValidationError {
 	/// Invalid length supplied. Should be 46. Is: \[length\]
 	InvalidLength(u8),
 	InvalidBase58(Bs58Error),
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn pallet_string_cropping_works() {
+		let data = vec![1u8; 22];
+		assert_eq!(PalletString::from_cropping(data.clone()), data);
+		let data = vec![1u8; 300];
+		assert_eq!(PalletString::from_cropping(data.clone()), data[..256].to_vec());
+	}
 }

@@ -262,7 +262,7 @@ pub mod v2 {
 	use super::*;
 	use crate::migrations::{v0::UnboundedCommunityMetadata, v1::CommunityMetadataV1};
 	use encointer_primitives::{
-		common::FromStr,
+		common::{BoundedIpfsCid, FromCropping, FromStr},
 		communities::{AnnouncementSigner, CommunityRules},
 	};
 	use scale_info::named_type_params;
@@ -272,7 +272,7 @@ pub mod v2 {
 	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for Migration<T> {
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0, "can only upgrade from version 0");
+			assert!(StorageVersion::get::<Pallet<T>>() < 2, "can only upgrade from version 0 or 1");
 
 			// TODO
 			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
@@ -282,11 +282,11 @@ pub mod v2 {
 
 		fn on_runtime_upgrade() -> Weight {
 			let weight = T::DbWeight::get().reads(1);
-			if StorageVersion::get::<Pallet<T>>() != 0 {
+			if StorageVersion::get::<Pallet<T>>() >= 2 {
 				log::warn!(
 					target: TARGET,
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
-				Expected version 0"
+				Expected version 0 or 1"
 				);
 				return weight
 			}
@@ -295,33 +295,25 @@ pub mod v2 {
 				|k: CommunityIdentifier, meta: UnboundedCommunityMetadata| {
 					info!(target: TARGET, "     Migrating community metadata for {:?}...", k);
 
-					// here we just transcode because it seems that the storage representation of Vec and BoundedVec is the same.
-					// as long as we check the bounds in pre_upgrade, we should be fine.
-					let meta_v1 = CommunityMetadataV1::decode(&mut meta.encode().as_ref())
-						.unwrap_or_default();
-
-					Some(
-						CommunityMetadataType::new(
-							meta_v1.name,
-							meta_v1.symbol,
-							meta_v1.assets,
-							meta_v1.theme,
-							meta_v1.url,
-							Some(AnnouncementSigner::default()),
-							CommunityRules::default(),
-						)
-						.unwrap_or_default(),
-					)
+					Some(CommunityMetadataType {
+						name: PalletString::from_cropping(meta.name.into()),
+						symbol: PalletString::from_cropping(meta.symbol.into()),
+						assets: BoundedIpfsCid::from_cropping(meta.assets.into()),
+						theme: meta.theme.map(|theme| BoundedIpfsCid::from_cropping(theme.into())),
+						url: meta.url.map(|url| PalletString::from_cropping(url.into())),
+						announcement_signer: Some(AnnouncementSigner::default()),
+						rules: CommunityRules::default(),
+					})
 				},
 			);
 
-			StorageVersion::new(1).put::<Pallet<T>>();
+			StorageVersion::new(2).put::<Pallet<T>>();
 			weight.saturating_add(T::DbWeight::get().reads_writes(1, 2))
 		}
 
 		#[cfg(feature = "try-runtime")]
 		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1, "must upgrade");
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 2, "must upgrade");
 			//TODO
 			Ok(())
 		}
