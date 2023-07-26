@@ -230,18 +230,18 @@ impl Location {
 }
 
 #[derive(
-Encode,
-Decode,
-Copy,
-Clone,
-PartialEq,
-Eq,
-Default,
-RuntimeDebug,
-PartialOrd,
-Ord,
-TypeInfo,
-MaxEncodedLen,
+	Encode,
+	Decode,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -251,7 +251,6 @@ pub enum CommunityRules {
 	LoCoLight,
 	BeeDance,
 }
-
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
@@ -308,7 +307,7 @@ impl CommunityMetadata {
 		assets: BoundedIpfsCid,
 		theme: Option<BoundedIpfsCid>,
 		url: Option<PalletString>,
-		rules: CommunityRules
+		rules: CommunityRules,
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
 		let meta = CommunityMetadata { name, symbol, assets, theme, url, rules };
 		match meta.validate() {
