@@ -154,9 +154,9 @@ pub mod v2 {
 	use crate::migrations::v0::UnboundedCommunityMetadata;
 	use sp_runtime::Saturating;
 
-	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
+	pub struct MigrateV0orV1toV2<T>(sp_std::marker::PhantomData<T>);
 
-	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for Migration<T> {
+	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for MigrateV0orV1toV2<T> {
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
 			let current_version = Pallet::<T>::current_storage_version();
@@ -417,9 +417,9 @@ mod test {
 			);
 
 			// Migrate.
-			let state = v2::Migration::<TestRuntime>::pre_upgrade().unwrap();
-			let _weight = v2::Migration::<TestRuntime>::on_runtime_upgrade();
-			v2::Migration::<TestRuntime>::post_upgrade(state).unwrap();
+			let state = v2::MigrateV0orV1toV2::<TestRuntime>::pre_upgrade().unwrap();
+			let _weight = v2::MigrateV0orV1toV2::<TestRuntime>::on_runtime_upgrade();
+			v2::MigrateV0orV1toV2::<TestRuntime>::post_upgrade(state).unwrap();
 
 			// Check that all values got migrated.
 
@@ -539,9 +539,9 @@ mod test {
 			);
 
 			// Migrate.
-			let state = v2::Migration::<TestRuntime>::pre_upgrade().unwrap();
-			let _weight = v2::Migration::<TestRuntime>::on_runtime_upgrade();
-			v2::Migration::<TestRuntime>::post_upgrade(state).unwrap();
+			let state = v2::MigrateV0orV1toV2::<TestRuntime>::pre_upgrade().unwrap();
+			let _weight = v2::MigrateV0orV1toV2::<TestRuntime>::on_runtime_upgrade();
+			v2::MigrateV0orV1toV2::<TestRuntime>::post_upgrade(state).unwrap();
 
 			// Check that all values got migrated.
 			assert_eq!(
@@ -586,7 +586,7 @@ mod test {
 
 			v0::CommunityIdentifiers::<TestRuntime>::put(cids);
 			// Migrate.
-			let state = v2::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::MigrateV0orV1toV2::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many cids");
 		});
 	}
@@ -616,7 +616,7 @@ mod test {
 				cids,
 			);
 			// Migrate.
-			let state = v2::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::MigrateV0orV1toV2::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many cids per geohash");
 		});
 	}
@@ -635,7 +635,7 @@ mod test {
 				locations,
 			);
 			// Migrate.
-			let state = v2::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::MigrateV0orV1toV2::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many locations per geohash");
 		});
 	}
@@ -664,7 +664,7 @@ mod test {
 				bootstrappers.clone(),
 			);
 			// Migrate.
-			let state = v2::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::MigrateV0orV1toV2::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many bootstrappers");
 		});
 	}
