@@ -301,7 +301,7 @@ pub mod v2 {
 						assets: BoundedIpfsCid::from_cropping(meta.assets.into()),
 						theme: meta.theme.map(|theme| BoundedIpfsCid::from_cropping(theme.into())),
 						url: meta.url.map(|url| PalletString::from_cropping(url.into())),
-						announcement_signer: Some(AnnouncementSigner::default()),
+						announcement_signer: None,
 						rules: CommunityRules::default(),
 					})
 				},
@@ -412,9 +412,9 @@ mod test {
 			);
 
 			// Migrate.
-			let state = v1::Migration::<TestRuntime>::pre_upgrade().unwrap();
-			let _weight = v1::Migration::<TestRuntime>::on_runtime_upgrade();
-			v1::Migration::<TestRuntime>::post_upgrade(state).unwrap();
+			let state = v2::Migration::<TestRuntime>::pre_upgrade().unwrap();
+			let _weight = v2::Migration::<TestRuntime>::on_runtime_upgrade();
+			v2::Migration::<TestRuntime>::post_upgrade(state).unwrap();
 
 			// Check that all values got migrated.
 
