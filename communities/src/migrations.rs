@@ -119,7 +119,7 @@ mod v0 {
 
 pub mod v1 {
 	use super::*;
-	use encointer_primitives::common::BoundedIpfsCid;
+	use encointer_primitives::{common::BoundedIpfsCid, communities::CommunityRules};
 
 	#[derive(
 		Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
@@ -139,6 +139,20 @@ pub mod v1 {
 		pub url: Option<PalletString>,
 	}
 
+	impl CommunityMetadataV1 {
+		pub fn migrate_to_v2(self) -> CommunityMetadataType {
+			CommunityMetadataType {
+				name: self.name,
+				symbol: self.symbol,
+				assets: self.assets,
+				theme: self.theme,
+				url: self.url,
+				announcement_signer: None,
+				rules: CommunityRules::default(),
+			}
+		}
+	}
+
 	#[storage_alias]
 	pub(super) type CommunityMetadata<T: Config> = StorageMap<
 		Pallet<T>,
@@ -151,7 +165,7 @@ pub mod v1 {
 
 pub mod v2 {
 	use super::*;
-	use crate::migrations::v0::UnboundedCommunityMetadata;
+	use crate::migrations::{v0::UnboundedCommunityMetadata, v1::CommunityMetadataV1};
 	use sp_runtime::Saturating;
 
 	pub struct MigrateV0orV1toV2<T>(sp_std::marker::PhantomData<T>);
@@ -252,14 +266,29 @@ pub mod v2 {
 				);
 				return T::DbWeight::get().reads(1)
 			}
-
-			CommunityMetadata::<T>::translate::<UnboundedCommunityMetadata, _>(
-				|k: CommunityIdentifier, meta: UnboundedCommunityMetadata| {
-					info!(target: TARGET, "     Migrating community metadata for {:?}...", k);
-					translated.saturating_inc();
-					Some(meta.migrate_to_v2())
-				},
-			);
+			if onchain_version == StorageVersion::new(0) {
+				CommunityMetadata::<T>::translate::<UnboundedCommunityMetadata, _>(
+					|k: CommunityIdentifier, meta: UnboundedCommunityMetadata| {
+						info!(
+							target: TARGET,
+							"     Migrating community metadata from v0 to v2 for {:?}...", k
+						);
+						translated.saturating_inc();
+						Some(meta.migrate_to_v2())
+					},
+				);
+			} else if onchain_version == StorageVersion::new(1) {
+				CommunityMetadata::<T>::translate::<CommunityMetadataV1, _>(
+					|k: CommunityIdentifier, meta: CommunityMetadataV1| {
+						info!(
+							target: TARGET,
+							"     Migrating community metadata from v1 to v2 for {:?}...", k
+						);
+						translated.saturating_inc();
+						Some(meta.migrate_to_v2())
+					},
+				);
+			};
 
 			StorageVersion::new(2).put::<Pallet<T>>();
 			T::DbWeight::get().reads_writes(translated, translated + 1)
