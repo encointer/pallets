@@ -14,18 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, DecodeLength, Encode, MaxEncodedLen};
+use crate::bs58_verify::{Bs58Error, Bs58verify};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::traits::Len;
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_core::{ConstU32, RuntimeDebug};
-use sp_std::{ops::Index, slice::SliceIndex};
-use std::ops::RangeTo;
-
-use crate::bs58_verify::{Bs58Error, Bs58verify};
-
-use sp_core::bounded::BoundedVec;
+use sp_core::{bounded::BoundedVec, ConstU32, RuntimeDebug};
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
