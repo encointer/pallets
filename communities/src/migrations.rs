@@ -325,17 +325,21 @@ pub mod v2 {
 #[cfg(feature = "try-runtime")]
 mod test {
 	use super::*;
-	use crate::migrations::v0::UnboundedCommunityMetadata;
-	use encointer_primitives::{common::FromStr as PrimitivesFromStr, communities::CommunityRules};
+	use crate::migrations::{v0::UnboundedCommunityMetadata, v1::CommunityMetadataV1};
+	use encointer_primitives::{
+		common::{BoundedIpfsCid, FromStr as PrimitivesFromStr},
+		communities::CommunityRules,
+	};
 	use frame_support::{assert_err, traits::OnRuntimeUpgrade};
 	use mock::{new_test_ext, TestRuntime};
 	use sp_std::str::FromStr;
 	use test_utils::*;
 	#[allow(deprecated)]
 	#[test]
-	fn migration_works() {
+	fn migration_v0_to_v2_works() {
 		new_test_ext().execute_with(|| {
-			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
+			StorageVersion::new(0).put::<Pallet<TestRuntime>>();
+
 			// Insert some values into the v0 storage:
 
 			let cids = vec![
@@ -514,9 +518,55 @@ mod test {
 		});
 	}
 
+	#[test]
+	fn migration_v1_to_v2_works() {
+		new_test_ext().execute_with(|| {
+			StorageVersion::new(1).put::<Pallet<TestRuntime>>();
+			// Insert some values into the v0 storage:
+
+			v1::CommunityMetadata::<TestRuntime>::insert(
+				CommunityIdentifier::from_str("111112Fvv9d").unwrap(),
+				CommunityMetadataV1 {
+					name: PalletString::from_str("AName").unwrap(),
+					symbol: PalletString::from_str("ASY").unwrap(),
+					assets: BoundedIpfsCid::from_str(
+						"Defau1tCidThat1s46Characters1nLength1111111111",
+					)
+					.unwrap(),
+					theme: None,
+					url: Some(PalletString::from_str("AUrl").unwrap()),
+				},
+			);
+
+			// Migrate.
+			let state = v2::Migration::<TestRuntime>::pre_upgrade().unwrap();
+			let _weight = v2::Migration::<TestRuntime>::on_runtime_upgrade();
+			v2::Migration::<TestRuntime>::post_upgrade(state).unwrap();
+
+			// Check that all values got migrated.
+			assert_eq!(
+				crate::CommunityMetadata::<TestRuntime>::get(
+					CommunityIdentifier::from_str("111112Fvv9d").unwrap()
+				),
+				CommunityMetadataType {
+					name: PalletString::from_str("AName").unwrap(),
+					symbol: PalletString::from_str("ASY").unwrap(),
+					assets: PalletString::from_str(
+						"Defau1tCidThat1s46Characters1nLength1111111111"
+					)
+					.unwrap(),
+					theme: None,
+					url: Some(PalletString::from_str("AUrl").unwrap()),
+					announcement_signer: None,
+					rules: CommunityRules::default(),
+				}
+			);
+		});
+	}
+
 	#[allow(deprecated)]
 	#[test]
-	fn migration_fails_with_too_many_cids() {
+	fn migration_v0_to_v2_fails_with_too_many_cids() {
 		new_test_ext().execute_with(|| {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
@@ -543,7 +593,7 @@ mod test {
 
 	#[allow(deprecated)]
 	#[test]
-	fn migration_fails_with_too_many_cids_per_geohash() {
+	fn migration_v0_to_v2_fails_with_too_many_cids_per_geohash() {
 		new_test_ext().execute_with(|| {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
@@ -573,7 +623,7 @@ mod test {
 
 	#[allow(deprecated)]
 	#[test]
-	fn migration_fails_with_too_many_locations() {
+	fn migration_v0_to_v2_fails_with_too_many_locations() {
 		new_test_ext().execute_with(|| {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
@@ -592,7 +642,7 @@ mod test {
 
 	#[allow(deprecated)]
 	#[test]
-	fn migration_fails_with_too_many_bootstrappers() {
+	fn migration_v0_to_v2_fails_with_too_many_bootstrappers() {
 		new_test_ext().execute_with(|| {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
