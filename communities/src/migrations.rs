@@ -7,6 +7,10 @@ const TARGET: &str = "communities::migration::v1";
 
 mod v0 {
 	use super::*;
+	use encointer_primitives::{
+		common::{BoundedIpfsCid, FromCropping},
+		communities::CommunityRules,
+	};
 
 	pub trait AsByteOrNoop {
 		fn as_bytes_or_noop(&self) -> &[u8];
@@ -57,6 +61,20 @@ mod v0 {
 				assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
 				theme: None,
 				url: Some("DefaultUrl".into()),
+			}
+		}
+	}
+
+	impl UnboundedCommunityMetadata {
+		pub fn migrate_to_v2(self) -> CommunityMetadataType {
+			CommunityMetadataType {
+				name: PalletString::from_cropping(self.name.into()),
+				symbol: PalletString::from_cropping(self.symbol.into()),
+				assets: BoundedIpfsCid::from_cropping(self.assets.into()),
+				theme: self.theme.map(|theme| BoundedIpfsCid::from_cropping(theme.into())),
+				url: self.url.map(|url| PalletString::from_cropping(url.into())),
+				announcement_signer: None,
+				rules: CommunityRules::default(),
 			}
 		}
 	}
@@ -129,17 +147,35 @@ pub mod v1 {
 		CommunityMetadataV1,
 		ValueQuery,
 	>;
+}
+
+pub mod v2 {
+	use super::*;
+	use crate::migrations::v0::UnboundedCommunityMetadata;
+	use sp_runtime::Saturating;
 
 	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
 
 	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for Migration<T> {
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0, "can only upgrade from version 0");
+			let current_version = Pallet::<T>::current_storage_version();
+			let onchain_version = Pallet::<T>::on_chain_storage_version();
+			ensure!(
+				onchain_version < 2 && current_version == 2,
+				"only migration from v0 or v1 to v2 is supported"
+			);
 
 			let cid_count = v0::CommunityIdentifiers::<T>::get().len() as u32;
 			log::info!(target: TARGET, "{} cids will be migrated.", cid_count,);
 			ensure!(cid_count <= T::MaxCommunityIdentifiers::get(), "too many cids");
+
+			let cmeta_count = v0::CommunityMetadata::<T>::iter().count() as u32;
+			log::info!(
+				target: TARGET,
+				"{} community metadata entried will be migrated.",
+				cmeta_count,
+			);
 
 			let cids_by_geohash = v0::CommunityIdentifiersByGeohash::<T>::iter();
 			let mut cids_by_geohash_count = 0u32;
@@ -184,42 +220,69 @@ pub mod v1 {
 
 			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
 
-			Ok((cid_count, cids_by_geohash_count, locations_by_geohash_count, bootstrappers_count)
+			Ok((
+				cid_count,
+				cmeta_count,
+				cids_by_geohash_count,
+				locations_by_geohash_count,
+				bootstrappers_count,
+			)
 				.encode())
 		}
 
+		/// migration from 0 or 1 actually performs the same
+		/// 0->1 was a noop as long as no values exceeded bounds
+		/// there is no problem if we enforce bounds again if the onchain_version is already v1
 		fn on_runtime_upgrade() -> Weight {
-			let weight = T::DbWeight::get().reads(1);
-			if StorageVersion::get::<Pallet<T>>() != 0 {
+			let current_version = Pallet::<T>::current_storage_version();
+			let onchain_version = Pallet::<T>::on_chain_storage_version();
+
+			log::info!(
+				target: TARGET,
+				"Running migration with current storage version {:?} / onchain {:?}",
+				current_version,
+				onchain_version
+			);
+
+			let mut translated = 0u64;
+			if onchain_version >= current_version {
 				log::warn!(
 					target: TARGET,
-					"skipping on_runtime_upgrade: executed on wrong storage version.\
-				Expected version 0"
+					"skipping on_runtime_upgrade: executed on wrong storage version."
 				);
-				return weight
+				return T::DbWeight::get().reads(1)
 			}
 
-			// we do not actually migrate any data, because it seems that the storage representation of Vec and BoundedVec is the same.
-			// as long as we check the bounds in pre_upgrade, we should be fine.
+			CommunityMetadata::<T>::translate::<UnboundedCommunityMetadata, _>(
+				|k: CommunityIdentifier, meta: UnboundedCommunityMetadata| {
+					info!(target: TARGET, "     Migrating community metadata for {:?}...", k);
+					translated.saturating_inc();
+					Some(meta.migrate_to_v2())
+				},
+			);
 
-			StorageVersion::new(1).put::<Pallet<T>>();
-			weight.saturating_add(T::DbWeight::get().reads_writes(1, 2))
+			StorageVersion::new(2).put::<Pallet<T>>();
+			T::DbWeight::get().reads_writes(translated, translated + 1)
 		}
 
 		#[cfg(feature = "try-runtime")]
 		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1, "must upgrade");
+			assert_eq!(Pallet::<T>::on_chain_storage_version(), 2, "must upgrade");
 
 			let (
 				old_cids_count,
+				old_cmeta_count,
 				old_cids_by_geohash_count,
 				old_locations_by_geohash_count,
 				old_bootstrappers_count,
-			): (u32, u32, u32, u32) =
+			): (u32, u32, u32, u32, u32) =
 				Decode::decode(&mut &state[..]).expect("pre_upgrade provides a valid state; qed");
 
 			let new_cids_count = crate::CommunityIdentifiers::<T>::get().len() as u32;
 			assert_eq!(old_cids_count, new_cids_count, "must migrate all community identifiers");
+
+			let new_cmeta_count = crate::CommunityMetadata::<T>::iter().count() as u32;
+			assert_eq!(old_cmeta_count, new_cmeta_count, "must migrate all community metadata");
 
 			let new_cids_by_geohash_count =
 				CommunityIdentifiersByGeohash::<T>::iter().fold(0, |acc, x| acc + x.1.len()) as u32;
@@ -253,68 +316,6 @@ pub mod v1 {
 			);
 			log::info!(target: TARGET, "{} locations migrated", new_locations_by_geohash_count);
 			log::info!(target: TARGET, "{} bootstrappers migrated", new_bootstrappers_count);
-			Ok(())
-		}
-	}
-}
-
-pub mod v2 {
-	use super::*;
-	use crate::migrations::{v0::UnboundedCommunityMetadata, v1::CommunityMetadataV1};
-	use encointer_primitives::{
-		common::{BoundedIpfsCid, FromCropping, FromStr},
-		communities::{AnnouncementSigner, CommunityRules},
-	};
-	use scale_info::named_type_params;
-
-	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
-
-	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for Migration<T> {
-		#[cfg(feature = "try-runtime")]
-		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-			assert!(StorageVersion::get::<Pallet<T>>() < 2, "can only upgrade from version 0 or 1");
-
-			// TODO
-			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
-
-			Ok(vec![])
-		}
-
-		fn on_runtime_upgrade() -> Weight {
-			let weight = T::DbWeight::get().reads(1);
-			if StorageVersion::get::<Pallet<T>>() >= 2 {
-				log::warn!(
-					target: TARGET,
-					"skipping on_runtime_upgrade: executed on wrong storage version.\
-				Expected version 0 or 1"
-				);
-				return weight
-			}
-
-			CommunityMetadata::<T>::translate::<UnboundedCommunityMetadata, _>(
-				|k: CommunityIdentifier, meta: UnboundedCommunityMetadata| {
-					info!(target: TARGET, "     Migrating community metadata for {:?}...", k);
-
-					Some(CommunityMetadataType {
-						name: PalletString::from_cropping(meta.name.into()),
-						symbol: PalletString::from_cropping(meta.symbol.into()),
-						assets: BoundedIpfsCid::from_cropping(meta.assets.into()),
-						theme: meta.theme.map(|theme| BoundedIpfsCid::from_cropping(theme.into())),
-						url: meta.url.map(|url| PalletString::from_cropping(url.into())),
-						announcement_signer: None,
-						rules: CommunityRules::default(),
-					})
-				},
-			);
-
-			StorageVersion::new(2).put::<Pallet<T>>();
-			weight.saturating_add(T::DbWeight::get().reads_writes(1, 2))
-		}
-
-		#[cfg(feature = "try-runtime")]
-		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
-			assert_eq!(StorageVersion::get::<Pallet<T>>(), 2, "must upgrade");
-			//TODO
 			Ok(())
 		}
 	}
@@ -535,7 +536,7 @@ mod test {
 
 			v0::CommunityIdentifiers::<TestRuntime>::put(cids);
 			// Migrate.
-			let state = v1::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::Migration::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many cids");
 		});
 	}
@@ -565,7 +566,7 @@ mod test {
 				cids,
 			);
 			// Migrate.
-			let state = v1::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::Migration::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many cids per geohash");
 		});
 	}
@@ -584,7 +585,7 @@ mod test {
 				locations,
 			);
 			// Migrate.
-			let state = v1::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::Migration::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many locations per geohash");
 		});
 	}
@@ -613,7 +614,7 @@ mod test {
 				bootstrappers.clone(),
 			);
 			// Migrate.
-			let state = v1::Migration::<TestRuntime>::pre_upgrade();
+			let state = v2::Migration::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many bootstrappers");
 		});
 	}
