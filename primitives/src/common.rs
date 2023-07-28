@@ -43,20 +43,6 @@ impl FromStr for PalletString {
 	}
 }
 
-pub trait FromCropping: Sized {
-	fn from_cropping(data: Vec<u8>) -> Self;
-}
-
-impl FromCropping for PalletString {
-	fn from_cropping(data: Vec<u8>) -> Self {
-		if data.len() <= Self::bound() {
-			Self::try_from(data).expect("can't be too long")
-		} else {
-			Self::try_from(data[..Self::bound()].to_vec()).expect("can't be too long now")
-		}
-	}
-}
-
 pub trait AsByteOrNoop {
 	fn as_bytes_or_noop(&self) -> &[u8];
 }

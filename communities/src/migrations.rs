@@ -7,10 +7,7 @@ const TARGET: &str = "communities::migration::v1";
 
 mod v0 {
 	use super::*;
-	use encointer_primitives::{
-		common::{BoundedIpfsCid, FromCropping},
-		communities::CommunityRules,
-	};
+	use encointer_primitives::{common::BoundedIpfsCid, communities::CommunityRules};
 
 	pub trait AsByteOrNoop {
 		fn as_bytes_or_noop(&self) -> &[u8];
@@ -68,11 +65,11 @@ mod v0 {
 	impl UnboundedCommunityMetadata {
 		pub fn migrate_to_v2(self) -> CommunityMetadataType {
 			CommunityMetadataType {
-				name: PalletString::from_cropping(self.name.into()),
-				symbol: PalletString::from_cropping(self.symbol.into()),
-				assets: BoundedIpfsCid::from_cropping(self.assets.into()),
-				theme: self.theme.map(|theme| BoundedIpfsCid::from_cropping(theme.into())),
-				url: self.url.map(|url| PalletString::from_cropping(url.into())),
+				name: PalletString::truncate_from(self.name.into()),
+				symbol: PalletString::truncate_from(self.symbol.into()),
+				assets: BoundedIpfsCid::truncate_from(self.assets.into()),
+				theme: self.theme.map(|theme| BoundedIpfsCid::truncate_from(theme.into())),
+				url: self.url.map(|url| PalletString::truncate_from(url.into())),
 				announcement_signer: None,
 				rules: CommunityRules::default(),
 			}
