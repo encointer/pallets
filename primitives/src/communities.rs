@@ -26,7 +26,6 @@ use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::MultiSigner;
 
 #[cfg(feature = "serde_derive")]
 use ep_core::serde::{serialize_array, serialize_fixed};
@@ -230,23 +229,13 @@ impl Location {
 	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, PartialOrd, Ord, TypeInfo)]
+#[derive(
+	Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, PartialOrd, Ord, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum AnnouncementSigner {
-	Substrate(MultiSigner),
 	Bip340([u8; 32]),
-}
-
-impl Default for AnnouncementSigner {
-	fn default() -> Self {
-		AnnouncementSigner::Bip340([0u8; 32])
-	}
-}
-impl MaxEncodedLen for AnnouncementSigner {
-	fn max_encoded_len() -> usize {
-		34
-	}
 }
 
 #[derive(
