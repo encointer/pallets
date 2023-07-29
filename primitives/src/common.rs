@@ -90,8 +90,8 @@ mod tests {
 	#[test]
 	fn pallet_string_cropping_works() {
 		let data = vec![1u8; 22];
-		assert_eq!(PalletString::from_cropping(data.clone()), data);
+		assert_eq!(PalletString::truncate_from(data.clone()), data);
 		let data = vec![1u8; 300];
-		assert_eq!(PalletString::from_cropping(data.clone()), data[..256].to_vec());
+		assert_eq!(PalletString::truncate_from(data.clone()), data[..256].to_vec());
 	}
 }
