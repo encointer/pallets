@@ -84,7 +84,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn last_ceremony_block)]
-	pub(super) type LastCeremonyBlock<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+	pub(super) type LastCeremonyBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForCurrentPhase() -> CeremonyPhaseType {
@@ -111,6 +111,7 @@ pub mod pallet {
 	pub(super) type PhaseDurations<T: Config> =
 		StorageMap<_, Blake2_128Concat, CeremonyPhaseType, T::Moment, ValueQuery>;
 
+	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config>
 	where
@@ -119,30 +120,18 @@ pub mod pallet {
 		pub current_ceremony_index: CeremonyIndexType,
 		pub current_phase: CeremonyPhaseType,
 		pub phase_durations: Vec<(CeremonyPhaseType, T::Moment)>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T>
-	where
-		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
-	{
-		fn default() -> Self {
-			Self {
-				current_ceremony_index: Default::default(),
-				current_phase: CeremonyPhaseType::Registering,
-				phase_durations: Default::default(),
-			}
-		}
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T>
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
 	where
 		<T as pallet_timestamp::Config>::Moment: MaybeSerializeDeserialize,
 	{
 		fn build(&self) {
 			<CurrentCeremonyIndex<T>>::put(self.current_ceremony_index);
-			<CurrentPhase<T>>::put(&self.current_phase);
+			<CurrentPhase<T>>::put(self.current_phase);
 
 			self.phase_durations.iter().for_each(|(k, v)| {
 				<PhaseDurations<T>>::insert(k, v);

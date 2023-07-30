@@ -282,20 +282,17 @@ pub mod pallet {
 			reserve_id.into()
 		}
 	}
+
+	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub reserve_amount: BalanceOf<T>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self { reserve_amount: Default::default() }
-		}
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			<ReserveAmount<T>>::put(self.reserve_amount);
 		}

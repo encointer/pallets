@@ -27,7 +27,7 @@ use frame_support::{
 	ensure,
 	traits::{tokens::fungibles, Get},
 };
-use frame_system::{self as frame_system, ensure_signed};
+use frame_system::{self as frame_system, ensure_signed, pallet_prelude::BlockNumberFor};
 use log::{debug, info};
 use sp_runtime::DispatchError;
 use sp_std::convert::TryInto;
@@ -126,8 +126,9 @@ pub mod pallet {
 		}
 	}
 
+	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
-	pub struct GenesisConfig {
+	pub struct GenesisConfig<T> {
 		/// Example parameter tuning for the fee-conversion
 		///
 		/// [CC]:	1 Unit of Community Currency
@@ -142,18 +143,12 @@ pub mod pallet {
 		///
 		/// FCF = 0.01 / (20 * 5*10^-12 [KKSM]) = 0.01 / (20 * 5 * 10e-12) = 100_000
 		pub fee_conversion_factor: FeeConversionFactorType,
-	}
-
-	#[cfg(feature = "std")]
-	#[allow(clippy::derivable_impls)]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { fee_conversion_factor: Default::default() }
-		}
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			<FeeConversionFactor<T>>::put(self.fee_conversion_factor);
 		}
@@ -190,7 +185,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		CommunityIdentifier,
-		BalanceEntry<T::BlockNumber>,
+		BalanceEntry<BlockNumberFor<T>>,
 		ValueQuery,
 	>;
 
@@ -202,7 +197,7 @@ pub mod pallet {
 		CommunityIdentifier,
 		Blake2_128Concat,
 		T::AccountId,
-		BalanceEntry<T::BlockNumber>,
+		BalanceEntry<BlockNumberFor<T>>,
 		ValueQuery,
 	>;
 
@@ -226,7 +221,7 @@ impl<T: Config> Pallet<T> {
 	fn balance_entry_updated(
 		community_id: CommunityIdentifier,
 		who: &T::AccountId,
-	) -> BalanceEntry<T::BlockNumber> {
+	) -> BalanceEntry<BlockNumberFor<T>> {
 		let entry = <Balance<T>>::get(community_id, who);
 		Self::apply_demurrage(entry, Self::demurrage(&community_id))
 	}
@@ -238,7 +233,7 @@ impl<T: Config> Pallet<T> {
 	/// get total_issuance and apply demurrage. This is not a noop! It changes state.
 	fn total_issuance_entry_updated(
 		community_id: CommunityIdentifier,
-	) -> BalanceEntry<T::BlockNumber> {
+	) -> BalanceEntry<BlockNumberFor<T>> {
 		let entry = <TotalIssuance<T>>::get(community_id);
 		Self::apply_demurrage(entry, Self::demurrage(&community_id))
 	}
@@ -248,9 +243,9 @@ impl<T: Config> Pallet<T> {
 	///   balance_now = balance_last_written
 	///     * exp(-1* demurrage_rate_per_block * number_of_blocks_since_last_written)
 	pub(crate) fn apply_demurrage(
-		entry: BalanceEntry<T::BlockNumber>,
+		entry: BalanceEntry<BlockNumberFor<T>>,
 		demurrage: Demurrage,
-	) -> BalanceEntry<T::BlockNumber> {
+	) -> BalanceEntry<BlockNumberFor<T>> {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
 		entry.apply_demurrage(demurrage, current_block)

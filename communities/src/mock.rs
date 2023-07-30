@@ -17,21 +17,17 @@
 //! Mock runtime for the encointer_communities module
 
 pub use crate as dut;
-use frame_support::{pallet_prelude::GenesisBuild, traits::ConstU32};
+use encointer_primitives::scheduler::CeremonyPhaseType;
+use frame_support::traits::ConstU32;
+use sp_runtime::BuildStorage;
 use test_utils::*;
 
-use encointer_primitives::scheduler::CeremonyPhaseType;
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: dut::{Pallet, Call, Storage, Event<T>},
@@ -62,7 +58,7 @@ impl_encointer_balances!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
 	encointer_scheduler::GenesisConfig::<TestRuntime> {
 		current_phase: CeremonyPhaseType::Registering,
@@ -72,12 +68,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			(CeremonyPhaseType::Assigning, ONE_DAY),
 			(CeremonyPhaseType::Attesting, ONE_DAY),
 		],
+		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	let conf = dut::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+	dut::GenesisConfig::<TestRuntime> {
+		min_solar_trip_time_s: 1,
+		max_speed_mps: 83,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	t.into()
 }
