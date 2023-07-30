@@ -14,16 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::bs58_verify::{Bs58Error, Bs58verify};
 use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::traits::Len;
 use scale_info::TypeInfo;
-use sp_core::{ConstU32, RuntimeDebug};
-
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-
-use crate::bs58_verify::{Bs58Error, Bs58verify};
-
-use sp_core::bounded::BoundedVec;
+use sp_core::{bounded::BoundedVec, ConstU32, RuntimeDebug};
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
@@ -31,11 +28,6 @@ use sp_std::vec::Vec;
 /// Substrate runtimes provide no string type. Hence, for arbitrary data of varying length the
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
 /// utf8 decode bytes into a string.
-#[cfg(not(feature = "std"))]
-pub type UnboundedPalletString = Vec<u8>;
-
-#[cfg(feature = "std")]
-pub type UnboundedPalletString = String;
 
 pub type PalletString = BoundedVec<u8, ConstU32<256>>;
 
@@ -55,25 +47,12 @@ pub trait AsByteOrNoop {
 	fn as_bytes_or_noop(&self) -> &[u8];
 }
 
-impl AsByteOrNoop for UnboundedPalletString {
-	#[cfg(feature = "std")]
-	fn as_bytes_or_noop(&self) -> &[u8] {
-		self.as_bytes()
-	}
-
-	#[cfg(not(feature = "std"))]
-	fn as_bytes_or_noop(&self) -> &[u8] {
-		self
-	}
-}
-
 impl AsByteOrNoop for PalletString {
 	fn as_bytes_or_noop(&self) -> &[u8] {
 		self
 	}
 }
 
-pub type IpfsCid = UnboundedPalletString;
 pub type BoundedIpfsCid = PalletString;
 
 pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
@@ -102,4 +81,17 @@ pub enum IpfsValidationError {
 	/// Invalid length supplied. Should be 46. Is: \[length\]
 	InvalidLength(u8),
 	InvalidBase58(Bs58Error),
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn pallet_string_cropping_works() {
+		let data = vec![1u8; 22];
+		assert_eq!(PalletString::truncate_from(data.clone()), data);
+		let data = vec![1u8; 300];
+		assert_eq!(PalletString::truncate_from(data.clone()), data[..256].to_vec());
+	}
 }

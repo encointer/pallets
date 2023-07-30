@@ -33,8 +33,8 @@ use ep_core::serde::{serialize_array, serialize_fixed};
 use crate::{
 	balances::Demurrage,
 	common::{
-		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, IpfsCid,
-		IpfsValidationError, PalletString, UnboundedPalletString,
+		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, IpfsValidationError,
+		PalletString,
 	},
 };
 
@@ -229,20 +229,36 @@ impl Location {
 	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(
+	Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, PartialOrd, Ord, TypeInfo, MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub struct UnboundedCommunityMetadata {
-	/// utf8 encoded name
-	pub name: UnboundedPalletString,
-	/// utf8 encoded abbreviation of the name
-	pub symbol: UnboundedPalletString,
-	/// IPFS cid to assets necessary for community branding
-	pub assets: IpfsCid,
-	/// ipfs cid for style resources
-	pub theme: Option<IpfsCid>,
-	/// optional link to a community site
-	pub url: Option<UnboundedPalletString>,
+pub enum AnnouncementSigner {
+	Bip340([u8; 32]),
+}
+
+#[derive(
+	Encode,
+	Decode,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
+pub enum CommunityRules {
+	#[default]
+	LoCo,
+	LoCoLight,
+	BeeDance,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -259,6 +275,10 @@ pub struct CommunityMetadata {
 	pub theme: Option<BoundedIpfsCid>,
 	/// optional link to a community site
 	pub url: Option<PalletString>,
+	/// optional pubkey for the signer of authorized announcements to the community
+	pub announcement_signer: Option<AnnouncementSigner>,
+	/// rule set to be followed by community
+	pub rules: CommunityRules,
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -266,11 +286,11 @@ pub struct CommunityMetadata {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CidName {
 	pub cid: CommunityIdentifier,
-	pub name: UnboundedPalletString,
+	pub name: PalletString,
 }
 
 impl CidName {
-	pub fn new(cid: CommunityIdentifier, name: UnboundedPalletString) -> Self {
+	pub fn new(cid: CommunityIdentifier, name: PalletString) -> Self {
 		Self { cid, name }
 	}
 }
@@ -282,8 +302,11 @@ impl CommunityMetadata {
 		assets: BoundedIpfsCid,
 		theme: Option<BoundedIpfsCid>,
 		url: Option<PalletString>,
+		announcement_signer: Option<AnnouncementSigner>,
+		rules: CommunityRules,
 	) -> Result<CommunityMetadata, CommunityMetadataError> {
-		let meta = CommunityMetadata { name, symbol, assets, theme, url };
+		let meta =
+			CommunityMetadata { name, symbol, assets, theme, url, announcement_signer, rules };
 		match meta.validate() {
 			Ok(()) => Ok(meta),
 			Err(e) => Err(e),
@@ -338,19 +361,8 @@ impl Default for CommunityMetadata {
 				.unwrap(),
 			theme: None,
 			url: Some(PalletString::from_str("DefaultUrl").unwrap()),
-		}
-	}
-}
-
-impl Default for UnboundedCommunityMetadata {
-	/// Default implementation, which passes `self::validate()` for easy pallet testing
-	fn default() -> Self {
-		UnboundedCommunityMetadata {
-			name: "Default".into(),
-			symbol: "DEF".into(),
-			assets: "Defau1tCidThat1s46Characters1nLength1111111111".into(),
-			theme: None,
-			url: Some("DefaultUrl".into()),
+			announcement_signer: None,
+			rules: CommunityRules::default(),
 		}
 	}
 }
