@@ -15,6 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::*;
+use encointer_primitives::common::{FromStr, PalletString};
 use sp_core::offchain::storage::InMemOffchainStorage;
 
 #[test]
@@ -24,7 +25,8 @@ fn caching_works() {
 	let communities: CommunitiesRpc<_, (), _> =
 		CommunitiesRpc::new(Arc::new(client), storage, true);
 
-	let cid_names = vec![CidName::new(Default::default(), "hello world".into())];
+	let cid_names =
+		vec![CidName::new(Default::default(), PalletString::from_str("hello world").unwrap())];
 
 	assert!(communities.cache_dirty());
 	communities.set_storage(CIDS_KEY, &cid_names);

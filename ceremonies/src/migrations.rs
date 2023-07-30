@@ -22,9 +22,9 @@ mod v0 {
 pub mod v1 {
 	use super::*;
 
-	pub struct Migration<T>(sp_std::marker::PhantomData<T>);
+	pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
 
-	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for Migration<T> {
+	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for MigrateToV1<T> {
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
 			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0, "can only upgrade from version 0");
@@ -123,9 +123,9 @@ mod test {
 			v0::AttestationRegistry::<TestRuntime>::insert((cids[1], 2), 3, attestations_2.clone());
 
 			// Migrate.
-			let state = v1::Migration::<TestRuntime>::pre_upgrade().unwrap();
-			let _weight = v1::Migration::<TestRuntime>::on_runtime_upgrade();
-			v1::Migration::<TestRuntime>::post_upgrade(state).unwrap();
+			let state = v1::MigrateToV1::<TestRuntime>::pre_upgrade().unwrap();
+			let _weight = v1::MigrateToV1::<TestRuntime>::on_runtime_upgrade();
+			v1::MigrateToV1::<TestRuntime>::post_upgrade(state).unwrap();
 
 			// Check that all values got migrated.
 
@@ -201,7 +201,7 @@ mod test {
 				attestations,
 			);
 			// Migrate.
-			let state = v1::Migration::<TestRuntime>::pre_upgrade();
+			let state = v1::MigrateToV1::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many attestations");
 		});
 	}
