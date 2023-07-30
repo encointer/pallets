@@ -87,21 +87,20 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_frame_system {
 	($t:ident) => {
-		use sp_runtime::traits::IdentityLookup;
+		use sp_runtime::{generic, traits::IdentityLookup};
 		impl frame_system::Config for $t {
 			type BaseCallFilter = frame_support::traits::Everything;
 			type BlockWeights = ();
 			type BlockLength = ();
+			type Block = generic::Block<Header, UncheckedExtrinsic>;
 			type DbWeight = ();
 			type RuntimeOrigin = RuntimeOrigin;
-			type Index = u64;
+			type Nonce = u64;
 			type RuntimeCall = RuntimeCall;
-			type BlockNumber = BlockNumber;
 			type Hash = H256;
 			type Hashing = BlakeTwo256;
 			type AccountId = AccountId;
 			type Lookup = IdentityLookup<Self::AccountId>;
-			type Header = Header;
 			type RuntimeEvent = RuntimeEvent;
 			type BlockHashCount = BlockHashCount;
 			type Version = ();
@@ -162,6 +161,7 @@ macro_rules! impl_balances {
 			type MaxLocks = ();
 			type MaxReserves = ();
 			type ReserveIdentifier = [u8; 8];
+			type RuntimeHoldReason = ();
 		}
 	};
 }

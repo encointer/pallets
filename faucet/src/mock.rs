@@ -18,20 +18,16 @@
 
 use crate as dut;
 use encointer_primitives::balances::BalanceType;
-use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::ConstU64, PalletId};
-use sp_runtime::Permill;
+use frame_support::{parameter_types, traits::ConstU64, PalletId};
+use sp_runtime::{BuildStorage, Permill};
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerFaucet: dut::{Pallet, Call, Storage, Event<T>},
@@ -40,7 +36,7 @@ frame_support::construct_runtime!(
 		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
 		EncointerReputationCommitments:encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
-		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
@@ -78,10 +74,10 @@ impl pallet_balances::Config for TestRuntime {
 	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = System;
 	type WeightInfo = ();
-	type HoldIdentifier = ();
 	type FreezeIdentifier = ();
 	type MaxHolds = ();
 	type MaxFreezes = ();
+	type RuntimeHoldReason = ();
 }
 
 parameter_types! {
@@ -107,10 +103,11 @@ impl_encointer_reputation_commitments!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
-	let conf = dut::GenesisConfig { reserve_amount: 13 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+	dut::GenesisConfig::<TestRuntime> { reserve_amount: 13, ..Default::default() }
+		.assimilate_storage(&mut t)
+		.unwrap();
 
 	encointer_ceremonies::GenesisConfig::<TestRuntime> {
 		ceremony_reward: BalanceType::from_num(1),
@@ -121,12 +118,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		endorsement_tickets_per_reputable: 2,
 		reputation_lifetime: 6,
 		meetup_time_offset: 0,
+		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+	encointer_communities::GenesisConfig::<TestRuntime> {
+		min_solar_trip_time_s: 1,
+		max_speed_mps: 83,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	t.into()
 }

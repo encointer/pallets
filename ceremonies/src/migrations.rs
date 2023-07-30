@@ -26,7 +26,7 @@ pub mod v1 {
 
 	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for MigrateToV1<T> {
 		#[cfg(feature = "try-runtime")]
-		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
 			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0, "can only upgrade from version 0");
 
 			let attestations = v0::AttestationRegistry::<T>::iter();
@@ -60,7 +60,7 @@ pub mod v1 {
 		}
 
 		#[cfg(feature = "try-runtime")]
-		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+		fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::DispatchError> {
 			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1, "must upgrade");
 
 			let old_attestation_count: u32 =

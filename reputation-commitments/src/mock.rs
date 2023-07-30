@@ -18,19 +18,16 @@
 
 use crate as dut;
 use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
-use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
+use frame_support::parameter_types;
+use sp_runtime::BuildStorage;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerReputationCommitments: dut::{Pallet, Call, Storage, Event<T>},
@@ -57,10 +54,7 @@ impl_encointer_ceremonies!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
-
-	let conf = dut::GenesisConfig {};
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
 	encointer_scheduler::GenesisConfig::<TestRuntime> {
 		current_phase: CeremonyPhaseType::Registering,
@@ -70,6 +64,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			(CeremonyPhaseType::Assigning, ONE_DAY),
 			(CeremonyPhaseType::Attesting, ONE_DAY),
 		],
+		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
@@ -83,12 +78,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		endorsement_tickets_per_reputable: 2,
 		reputation_lifetime: 3,
 		meetup_time_offset: 0,
+		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+	encointer_communities::GenesisConfig::<TestRuntime> {
+		min_solar_trip_time_s: 1,
+		max_speed_mps: 83,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	t.into()
 }

@@ -148,15 +148,6 @@ pub mod pallet {
 		}
 	}
 
-	#[pallet::genesis_config]
-	#[derive(Default)]
-	pub struct GenesisConfig {}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
-		fn build(&self) {}
-	}
-
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
