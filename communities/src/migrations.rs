@@ -169,7 +169,7 @@ pub mod v2 {
 
 	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for MigrateV0orV1toV2<T> {
 		#[cfg(feature = "try-runtime")]
-		fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
+		fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
 			let current_version = Pallet::<T>::current_storage_version();
 			let onchain_version = Pallet::<T>::on_chain_storage_version();
 			ensure!(
@@ -292,7 +292,7 @@ pub mod v2 {
 		}
 
 		#[cfg(feature = "try-runtime")]
-		fn post_upgrade(state: Vec<u8>) -> Result<(), &'static str> {
+		fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::DispatchError> {
 			assert_eq!(Pallet::<T>::on_chain_storage_version(), 2, "must upgrade");
 
 			let (
