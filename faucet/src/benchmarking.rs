@@ -60,10 +60,10 @@ benchmarks! {
 	create_faucet {
 		let cid = create_community::<T>();
 		let zoran = account("zoran", 1, 1);
-		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 200_000_000u32.into());
+		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 200_000_000_000_000u64.saturated_into());
 		let faucet_name = FaucetNameType::from_str("SomeFaucetNameWith64Charsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").unwrap();
-		let amount: BalanceOf<T> = 100_000_000u32.into();
-		let drip_amount: BalanceOf<T> = 10_000u32.into();
+		let amount: BalanceOf<T> = 100_000_000_000_000u64.saturated_into();
+		let drip_amount: BalanceOf<T> = 10_000_000_000_000u64.saturated_into();
 		let whitelist = BoundedVec::try_from(vec![cid; 1024]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 	}: _(RawOrigin::Signed(zoran), faucet_name, amount, Some(whitelist), drip_amount)
@@ -79,10 +79,10 @@ benchmarks! {
 		let dripper = account::<T::AccountId>("dripper", 2, 2);
 
 		frame_support::storage::unhashed::put_raw(&participant_reputation((cid, cindex), &dripper), &Reputation::VerifiedUnlinked.encode());
-		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 200_000_000u32.into());
+		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 200_000_000_000_000u64.saturated_into());
 		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
-		let amount: BalanceOf<T> = 100_000_000u32.into();
-		let drip_amount: BalanceOf<T> = 10_000u32.into();
+		let amount: BalanceOf<T> = 100_000_000_000_000u64.saturated_into();
+		let drip_amount: BalanceOf<T> = 10_000_000_000_000u64.saturated_into();
 		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, Some(whitelist), drip_amount).ok();
@@ -90,7 +90,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(dripper.clone()), faucet_account, cid, cindex)
 	verify {
-		assert_eq!(<T as pallet::Config>::Currency::free_balance(&dripper), 10_000u32.into());
+		assert_eq!(<T as pallet::Config>::Currency::free_balance(&dripper), 10_000_000_000_000u64.saturated_into());
 	}
 
 	dissolve_faucet {
@@ -101,10 +101,10 @@ benchmarks! {
 		let beneficiary = account::<T::AccountId>("beneficiary", 3, 3);
 
 		frame_support::storage::unhashed::put_raw(&participant_reputation((cid, cindex), &dripper), &Reputation::VerifiedUnlinked.encode());
-		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 200_000_000u32.into());
+		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 200_000_000_000_000u64.saturated_into());
 		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
-		let amount: BalanceOf<T> = 100_000_000u32.into();
-		let drip_amount: BalanceOf<T> = 10_000u32.into();
+		let amount: BalanceOf<T> = 100_000_000_000_000u64.saturated_into();
+		let drip_amount: BalanceOf<T> = 10_000_000_000_000u64.saturated_into();
 		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran).into(), faucet_name, amount, Some(whitelist), drip_amount).ok();
@@ -113,7 +113,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Root, faucet_account, beneficiary.clone())
 	verify {
-		assert_eq!(<T as pallet::Config>::Currency::free_balance(&beneficiary), 99_990_000u32.into());
+		assert_eq!(<T as pallet::Config>::Currency::free_balance(&beneficiary), 90_000_000_000_000u64.saturated_into());
 	}
 
 
@@ -125,25 +125,25 @@ benchmarks! {
 		let beneficiary = account::<T::AccountId>("beneficiary", 3, 3);
 
 		frame_support::storage::unhashed::put_raw(&participant_reputation((cid, cindex), &dripper), &Reputation::VerifiedUnlinked.encode());
-		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 100_000_000u32.into());
+		<T as pallet::Config>::Currency::make_free_balance_be(&zoran, 100_000_000_000_000u64.saturated_into());
 		let faucet_name = FaucetNameType::from_str("Some Faucet Name").unwrap();
-		let amount: BalanceOf<T> = 25_000_000u32.into();
-		let drip_amount: BalanceOf<T> = 10_000_000u32.into();
+		let amount: BalanceOf<T> = 25_000_000_000_000u64.saturated_into();
+		let drip_amount: BalanceOf<T> = 10_000_000_000_000u64.saturated_into();
 		let whitelist = BoundedVec::try_from(vec![cid; 10]).unwrap();
 		assert!(<Faucets<T>>::iter().next().is_none());
 		FaucetPallet::<T>::create_faucet(RawOrigin::Signed(zoran.clone()).into(), faucet_name, amount, Some(whitelist), drip_amount).ok();
 		let faucet_account = <Faucets<T>>::iter().next().unwrap().0;
 		FaucetPallet::<T>::drip(RawOrigin::Signed(dripper.clone()).into(), faucet_account.clone(), cid, cindex).ok();
-		assert_eq!(<T as pallet::Config>::Currency::free_balance(&faucet_account), 15_000_000u32.into());
+		assert_eq!(<T as pallet::Config>::Currency::free_balance(&faucet_account), 15_000_000_000_000u64.saturated_into());
 	}: _(RawOrigin::Signed(zoran), faucet_account.clone())
 	verify {
-		assert_eq!(<T as pallet::Config>::Currency::free_balance(&faucet_account), 0u32.into());
+		assert_eq!(<T as pallet::Config>::Currency::free_balance(&faucet_account), 0u64.saturated_into());
 	}
 
 	set_reserve_amount {
-	}: _(RawOrigin::Root, 1337u32.into())
+	}: _(RawOrigin::Root, 1337u64.saturated_into())
 	verify {
-		assert_eq!(<ReserveAmount<T>>::get(), 1337u32.into());
+		assert_eq!(<ReserveAmount<T>>::get(), 1337u64.saturated_into());
 	}
 }
 
