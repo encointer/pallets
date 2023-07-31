@@ -31,6 +31,11 @@ benchmarks! {
 		let balance_bob: f64 = Pallet::<T>::balance(cid, &bob).lossy_into();
 		assert_abs_diff_eq!(balance_bob, 12f64, epsilon= 0.0001);
 	}
+
+	set_fee_conversion_factor {
+		let alice: T::AccountId = account("alice", 1, 1);
+		let f : FeeConversionFactorType = 1;
+	}: _(RawOrigin::Root, f)
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::TestRuntime);
