@@ -103,7 +103,9 @@ pub fn assignment_fn_inverse(
 	let mut max_index = assignment_params.m.saturating_sub(meetup_index) / assignment_count;
 	let mut result: Vec<ParticipantIndexType> = Vec::with_capacity(max_index as usize);
 	// ceil
-	if (assignment_params.m as i64 - meetup_index as i64).rem_euclid(assignment_count as i64) != 0 {
+	if (assignment_params.m.saturating_sub(meetup_index) as i64).rem_euclid(assignment_count as i64) !=
+		0
+	{
 		max_index += 1; //safe; m prime below num_participants
 	}
 

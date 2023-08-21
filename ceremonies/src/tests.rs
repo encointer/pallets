@@ -3234,3 +3234,80 @@ fn is_endorsed_works() {
 		assert_eq!(EncointerCeremonies::is_endorsed(&alice, &(cid, 9)), None);
 	});
 }
+
+#[test]
+fn participants_assigned_mateches_participants_registered() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = EncointerScheduler::current_ceremony_index();
+
+		let alice = account_id(&AccountKeyring::Alice.pair());
+
+		let bootstrappers: Vec<AccountId> = vec![alice];
+		let reputables: Vec<AccountId> =
+			add_population(28, 10).iter().map(|b| account_id(b)).collect();
+		let endorsees: Vec<AccountId> =
+			add_population(2, 100).iter().map(|b| account_id(b)).collect();
+		let newbies: Vec<AccountId> =
+			add_population(15, 200).iter().map(|b| account_id(b)).collect();
+
+		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 1, bootstrappers[0].clone());
+
+		for i in 0..reputables.len() {
+			ReputableRegistry::<TestRuntime>::insert(
+				(cid, cindex),
+				(i + 1) as u64,
+				reputables[i].clone(),
+			);
+		}
+
+		for i in 0..endorsees.len() {
+			EndorseeRegistry::<TestRuntime>::insert(
+				(cid, cindex),
+				(i + 1) as u64,
+				endorsees[i].clone(),
+			);
+		}
+
+		for i in 0..newbies.len() {
+			NewbieRegistry::<TestRuntime>::insert(
+				(cid, cindex),
+				(i + 1) as u64,
+				newbies[i].clone(),
+			);
+		}
+
+		AssignmentCounts::<TestRuntime>::insert(
+			(cid, cindex),
+			AssignmentCount { bootstrappers: 1, reputables: 28, endorsees: 2, newbies: 15 },
+		);
+
+		MeetupCount::<TestRuntime>::insert((cid, cindex), 5);
+
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: AssignmentParams { m: 29, s1: 17, s2: 15 },
+				endorsees: AssignmentParams { m: 2, s1: 1, s2: 1 },
+				newbies: AssignmentParams { m: 13, s1: 9, s2: 6 },
+				locations: AssignmentParams { m: 11, s1: 3, s2: 11 },
+			},
+		);
+
+		let mut all_participants = [bootstrappers, reputables, endorsees, newbies].concat();
+
+		let mut all_assigned = [
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 1).unwrap(),
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 2).unwrap(),
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 3).unwrap(),
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 4).unwrap(),
+			EncointerCeremonies::get_meetup_participants((cid, cindex), 5).unwrap(),
+		]
+		.concat();
+
+		all_assigned.sort();
+		all_participants.sort();
+
+		assert_eq!(all_assigned, all_participants);
+	});
+}
