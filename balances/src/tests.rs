@@ -397,8 +397,10 @@ fn transfer_all_native_wont_remove_account_with_remaining_community_balance() {
 			Balances::minimum_balance() * 100,
 		));
 		assert!(frame_system::Account::<TestRuntime>::contains_key(&alice));
+		assert_eq!(System::account(&alice).providers, 1);
 		// issue CC
 		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
+		assert_eq!(System::account(&alice).sufficients, 1);
 		assert!(EncointerBalanceStorage::<TestRuntime>::contains_key(cid, &alice));
 
 		// create bob account by sending him some CC
@@ -410,10 +412,13 @@ fn transfer_all_native_wont_remove_account_with_remaining_community_balance() {
 		));
 		assert!(frame_system::Account::<TestRuntime>::contains_key(&bob));
 		assert!(EncointerBalanceStorage::<TestRuntime>::contains_key(cid, bob.clone()));
+		assert_eq!(System::account(&bob).sufficients, 1);
 
 		// reap Alice native but keep CC, so Alice should stay alive
-		assert_ok!(Balances::transfer_all(Some(alice.clone()).into(), bob.clone(), false));
+		assert_ok!(Balances::transfer_all(Some(alice.clone()).into(), charlie.clone(), false));
 		assert!(frame_system::Account::<TestRuntime>::contains_key(&alice));
+		assert_eq!(System::account(&alice).providers, 0);
+		assert_eq!(System::account(&alice).sufficients, 1);
 
 		// reap Bob's CC so his account should be killed
 		assert_ok!(EncointerBalances::transfer_all(Some(bob.clone()).into(), charlie.clone(), cid));
