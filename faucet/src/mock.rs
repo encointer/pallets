@@ -64,22 +64,6 @@ impl pallet_treasury::Config for TestRuntime {
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u64>;
 }
 
-impl pallet_balances::Config for TestRuntime {
-	type MaxLocks = ();
-	type MaxReserves = ConstU32<1000>;
-	type ReserveIdentifier = [u8; 8];
-	type Balance = u64;
-	type RuntimeEvent = RuntimeEvent;
-	type DustRemoval = ();
-	type ExistentialDeposit = ConstU64<1>;
-	type AccountStore = System;
-	type WeightInfo = ();
-	type FreezeIdentifier = ();
-	type MaxHolds = ();
-	type MaxFreezes = ();
-	type RuntimeHoldReason = ();
-}
-
 parameter_types! {
 	pub const FaucetPalletId: PalletId = PalletId(*b"faucetId");
 }
@@ -94,6 +78,7 @@ impl dut::Config for TestRuntime {
 
 // boilerplate
 impl_frame_system!(TestRuntime);
+impl_balances!(TestRuntime, System);
 impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_encointer_scheduler!(TestRuntime);
 impl_encointer_balances!(TestRuntime);
