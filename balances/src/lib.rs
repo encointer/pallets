@@ -322,8 +322,8 @@ impl<T: Config> Pallet<T> {
 		who: &T::AccountId,
 		amount: BalanceType,
 	) -> DispatchResult {
-		if !Balance::<T>::contains_key(community_id, &who) {
-			Self::new_account(&who)?;
+		if !Balance::<T>::contains_key(community_id, who) {
+			Self::new_account(who)?;
 		}
 		let mut entry_who = Self::balance_entry_updated(community_id, who);
 		let mut entry_tot = Self::total_issuance_entry_updated(community_id);
