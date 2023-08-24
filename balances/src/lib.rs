@@ -322,6 +322,9 @@ impl<T: Config> Pallet<T> {
 		who: &T::AccountId,
 		amount: BalanceType,
 	) -> DispatchResult {
+		if !Balance::<T>::contains_key(community_id, who) {
+			Self::new_account(who)?;
+		}
 		let mut entry_who = Self::balance_entry_updated(community_id, who);
 		let mut entry_tot = Self::total_issuance_entry_updated(community_id);
 		ensure!(
@@ -332,6 +335,7 @@ impl<T: Config> Pallet<T> {
 		entry_tot.principal += amount;
 		<TotalIssuance<T>>::insert(community_id, entry_tot);
 		<Balance<T>>::insert(community_id, who, entry_who);
+
 		Self::deposit_event(Event::Issued(community_id, who.clone(), amount));
 		debug!(target: LOG, "issue {:?} for {:?}", amount, who);
 		Ok(())

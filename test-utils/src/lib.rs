@@ -19,14 +19,10 @@
 //extern crate node_primitives;
 
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{
-	ord_parameter_types, parameter_types,
-	traits::{EitherOfDiverse, Get},
-};
+use frame_support::{ord_parameter_types, parameter_types, traits::EitherOfDiverse};
 use frame_system::{EnsureRoot, EnsureSignedBy};
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
-use std::cell::RefCell;
 
 // convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.
 pub use sp_keyring::AccountKeyring;
@@ -56,9 +52,6 @@ pub const TIME_TOLERANCE: u64 = 600000; // [ms]
 pub const LOCATION_TOLERANCE: u32 = 1000; // [m]
 pub const ZERO: BalanceType = BalanceType::from_bits(0x0);
 
-thread_local! {
-	static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
-}
 /// The signature type used by accounts/transactions.
 pub type Signature = MultiSignature;
 /// An identifier for an account on this system.
@@ -69,13 +62,6 @@ pub type BlockNumber = u64;
 pub type Balance = u64;
 
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-
-pub struct ExistentialDeposit;
-impl Get<u64> for ExistentialDeposit {
-	fn get() -> u64 {
-		EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
-	}
-}
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -155,13 +141,16 @@ macro_rules! impl_balances {
 			type Balance = Balance;
 			type RuntimeEvent = RuntimeEvent;
 			type DustRemoval = ();
-			type ExistentialDeposit = ExistentialDeposit;
+			type ExistentialDeposit = frame_support::traits::ConstU64<1>;
 			type AccountStore = System;
 			type WeightInfo = ();
 			type MaxLocks = ();
-			type MaxReserves = ();
+			type MaxReserves = frame_support::traits::ConstU32<1000>;
 			type ReserveIdentifier = [u8; 8];
 			type RuntimeHoldReason = ();
+			type FreezeIdentifier = ();
+			type MaxHolds = frame_support::traits::ConstU32<0>;
+			type MaxFreezes = frame_support::traits::ConstU32<0>;
 		}
 	};
 }

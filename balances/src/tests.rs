@@ -16,8 +16,8 @@
 
 //! Unit tests for the encointer_balances module.
 
-use super::*;
-use crate::mock::DefaultDemurrage;
+use super::{Balance as EncointerBalanceStorage, *};
+use crate::mock::{Balances, DefaultDemurrage};
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use encointer_primitives::{
 	communities::CommunityIdentifier,
@@ -25,7 +25,7 @@ use encointer_primitives::{
 };
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
-	traits::{tokens::fungibles::Unbalanced, OnInitialize},
+	traits::{tokens::fungibles::Unbalanced, Currency, OnInitialize},
 };
 use mock::{master, new_test_ext, EncointerBalances, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::{app_crypto::Pair, testing::sr25519, AccountId32, DispatchError};
@@ -305,7 +305,7 @@ fn transfer_all_works() {
 
 		System::set_block_number(3);
 
-		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
+		assert!(!EncointerBalanceStorage::<TestRuntime>::contains_key(cid, alice));
 
 		let balance: f64 = EncointerBalances::balance(cid, &bob).lossy_into();
 		let demurrage_factor: f64 =
@@ -341,7 +341,7 @@ fn remove_account_works() {
 			BalanceType::from_num(50)
 		));
 		EncointerBalances::remove_account(cid, &alice).ok();
-		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
+		assert!(!EncointerBalanceStorage::<TestRuntime>::contains_key(cid, alice));
 	})
 }
 
@@ -363,7 +363,7 @@ fn transfer_removes_account_if_source_below_existential_deposit() {
 			BalanceType::from_num(20)
 		));
 
-		assert!(Balance::<TestRuntime>::contains_key(cid, alice.clone()));
+		assert!(EncointerBalanceStorage::<TestRuntime>::contains_key(cid, alice.clone()));
 		let balance: f64 = EncointerBalances::balance(cid, &alice).lossy_into();
 		assert_eq!(balance, 30.0);
 
@@ -373,7 +373,65 @@ fn transfer_removes_account_if_source_below_existential_deposit() {
 			cid,
 			BalanceType::from_num(30)
 		));
-		assert!(!Balance::<TestRuntime>::contains_key(cid, alice));
+		assert!(!EncointerBalanceStorage::<TestRuntime>::contains_key(cid, alice));
+	})
+}
+
+#[test]
+fn transfer_all_native_wont_remove_account_with_remaining_community_balance() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(0);
+		System::on_initialize(System::block_number());
+
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		let charlie = AccountKeyring::Charlie.to_account_id();
+		let cid = CommunityIdentifier::default();
+		assert!(!frame_system::Account::<TestRuntime>::contains_key(&alice));
+		assert!(!frame_system::Account::<TestRuntime>::contains_key(&bob));
+		assert!(!frame_system::Account::<TestRuntime>::contains_key(&charlie));
+		// issue native
+		assert_ok!(Balances::force_set_balance(
+			RuntimeOrigin::root(),
+			alice.clone(),
+			Balances::minimum_balance() * 100,
+		));
+		assert!(frame_system::Account::<TestRuntime>::contains_key(&alice));
+		assert_eq!(System::account(&alice).providers, 1);
+		// issue CC
+		assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
+		assert_eq!(System::account(&alice).sufficients, 1);
+		assert!(EncointerBalanceStorage::<TestRuntime>::contains_key(cid, &alice));
+
+		// create bob account by sending him some CC
+		assert_ok!(EncointerBalances::transfer(
+			Some(alice.clone()).into(),
+			bob.clone(),
+			cid,
+			BalanceType::from_num(20)
+		));
+		assert!(frame_system::Account::<TestRuntime>::contains_key(&bob));
+		assert!(EncointerBalanceStorage::<TestRuntime>::contains_key(cid, bob.clone()));
+		assert_eq!(System::account(&bob).sufficients, 1);
+
+		// reap Alice native but keep CC, so Alice should stay alive
+		assert_ok!(Balances::transfer_all(Some(alice.clone()).into(), charlie.clone(), false));
+		assert!(frame_system::Account::<TestRuntime>::contains_key(&alice));
+		assert_eq!(System::account(&alice).providers, 0);
+		assert_eq!(System::account(&alice).sufficients, 1);
+
+		// reap Bob's CC so his account should be killed
+		assert_ok!(EncointerBalances::transfer_all(Some(bob.clone()).into(), charlie.clone(), cid));
+		assert!(!frame_system::Account::<TestRuntime>::contains_key(&bob));
+		assert!(!EncointerBalanceStorage::<TestRuntime>::contains_key(cid, &bob));
+
+		// reap Alice CC so her account should be killed
+		assert_ok!(EncointerBalances::transfer_all(
+			Some(alice.clone()).into(),
+			charlie.clone(),
+			cid
+		));
+		assert!(!frame_system::Account::<TestRuntime>::contains_key(&alice));
 	})
 }
 
