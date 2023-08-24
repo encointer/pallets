@@ -3236,7 +3236,8 @@ fn is_endorsed_works() {
 }
 
 #[test]
-fn participants_assigned_mateches_participants_registered() {
+fn participants_assigned_matches_participants_registered() {
+	// according to https://github.com/encointer/encointer-wallet-flutter/issues/1459
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 		let cindex = EncointerScheduler::current_ceremony_index();
