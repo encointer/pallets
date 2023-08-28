@@ -18,7 +18,6 @@ members = [
     'faucet',
     'primitives',
     'primitives/core',
-    'proposals',
     'reputation-commitments',
     'rpc',
     'scheduler',

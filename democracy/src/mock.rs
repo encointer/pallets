@@ -16,8 +16,9 @@
 
 use crate as dut;
 use encointer_primitives::balances::BalanceType;
-use frame_support::{pallet_prelude::GenesisBuild, parameter_types};
-use sp_runtime::traits::{ConstU128, ConstU32, ConstU64};
+use frame_support::{ parameter_types};
+use sp_runtime::traits::{ConstU128, ConstU64};
+use sp_runtime::BuildStorage;
 
 use test_utils::*;
 
@@ -30,13 +31,13 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
-		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
-		EncointerDemocracy: dut::{Pallet, Call, Storage, Config, Event<T>},
+		EncointerDemocracy: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
@@ -45,7 +46,7 @@ frame_support::construct_runtime!(
 // }
 
 impl dut::Config for TestRuntime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type MaxReputationVecLength = ConstU32<10>;
 	type ConfirmationPeriod = ConstU64<10>;
 	type ProposalLifetime = ConstU64<40>;
@@ -62,10 +63,11 @@ impl_encointer_ceremonies!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
-	let conf = encointer_communities::GenesisConfig { min_solar_trip_time_s: 1, max_speed_mps: 83 };
-	GenesisBuild::<TestRuntime>::assimilate_storage(&conf, &mut t).unwrap();
+	dut::GenesisConfig::<TestRuntime> { proposal_count: 0, ..Default::default() }
+		.assimilate_storage(&mut t)
+		.unwrap();
 
 	encointer_ceremonies::GenesisConfig::<TestRuntime> {
 		ceremony_reward: BalanceType::from_num(1),
@@ -76,6 +78,15 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		endorsement_tickets_per_reputable: 2,
 		reputation_lifetime: 6,
 		meetup_time_offset: 0,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	encointer_communities::GenesisConfig::<TestRuntime> {
+		min_solar_trip_time_s: 1,
+		max_speed_mps: 83,
+		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

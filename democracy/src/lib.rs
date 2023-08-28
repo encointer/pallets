@@ -41,21 +41,20 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config + encointer_scheduler::Config + encointer_ceremonies::Config
 	{
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		#[pallet::constant]
 		type MaxReputationVecLength: Get<u32>;
 		#[pallet::constant]
-		type ConfirmationPeriod: Get<Self::BlockNumber>;
+		type ConfirmationPeriod: Get<BlockNumberFor<Self>>;
 		#[pallet::constant]
-		type ProposalLifetime: Get<Self::BlockNumber>;
+		type ProposalLifetime: Get<BlockNumberFor<Self>>;
 		#[pallet::constant]
 		type MinTurnout: Get<u128>;
 	}
@@ -79,7 +78,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
 	pub(super) type Proposals<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<T::BlockNumber>, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<BlockNumberFor<T>>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn proposal_count)]
@@ -105,23 +104,18 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn cancelled_at_block)]
 	pub(super) type CancelledAtBlock<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::BlockNumber, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, BlockNumberFor<T>, ValueQuery>;
 
+	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
-	pub struct GenesisConfig {
+	pub struct GenesisConfig<T:Config> {
 		pub proposal_count: ProposalIdType,
-	}
-
-	#[cfg(feature = "std")]
-	#[allow(clippy::derivable_impls)]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { proposal_count: 0u128 }
-		}
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			<ProposalCount<T>>::put(&self.proposal_count);
 		}
@@ -129,6 +123,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(0)]
 		#[pallet::weight(10000)]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
@@ -151,6 +146,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::call_index(1)]
 		#[pallet::weight(10000)]
 		pub fn vote(
 			origin: OriginFor<T>,

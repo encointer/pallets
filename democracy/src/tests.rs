@@ -24,9 +24,10 @@ use encointer_primitives::{
 	democracy::{ProposalAction, ProposalActionIdentifier, ProposalState, Tally, Vote},
 };
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use mock::{new_test_ext, EncointerDemocracy, Origin, System, TestRuntime};
+use mock::{new_test_ext, EncointerDemocracy, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::BoundedVec;
 use test_utils::{helpers::register_test_community, *};
+use frame_system::{pallet_prelude::BlockNumberFor};
 
 fn create_cid() -> CommunityIdentifier {
 	return register_test_community::<TestRuntime>(None, 0.0, 0.0)
@@ -40,7 +41,7 @@ fn bob() -> AccountId {
 	AccountKeyring::Bob.into()
 }
 
-type BlockNumber = <TestRuntime as frame_system::Config>::BlockNumber;
+type BlockNumber = BlockNumberFor<TestRuntime>;
 
 fn advance_n_blocks(n: u64) {
 	for _ in 0..n {
@@ -58,7 +59,7 @@ fn proposal_submission_works() {
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
-			Origin::signed(alice()),
+			RuntimeOrigin::signed(alice()),
 			proposal_action.clone()
 		));
 		assert_eq!(EncointerDemocracy::proposal_count(), 1);
@@ -219,7 +220,7 @@ fn voting_works() {
 
 		assert_err!(
 			EncointerDemocracy::vote(
-				Origin::signed(alice.clone()),
+				RuntimeOrigin::signed(alice.clone()),
 				1,
 				Vote::Aye,
 				BoundedVec::try_from(vec![(cid, 1), (cid, 2), (cid, 3)]).unwrap()
@@ -228,12 +229,12 @@ fn voting_works() {
 		);
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			proposal_action.clone()
 		));
 
 		assert_ok!(EncointerDemocracy::vote(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			1,
 			Vote::Aye,
 			BoundedVec::try_from(vec![(cid, 1), (cid, 2), (cid, 3)]).unwrap()
@@ -248,7 +249,7 @@ fn voting_works() {
 		EncointerCeremonies::fake_reputation((cid2, 6), &alice, Reputation::VerifiedLinked);
 
 		assert_ok!(EncointerDemocracy::vote(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			1,
 			Vote::Nay,
 			// 3 is invalid because already used
@@ -317,7 +318,7 @@ fn update_proposal_state_works_with_cancelled_proposal() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
-		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal_action));
+		assert_ok!(EncointerDemocracy::submit_proposal(RuntimeOrigin::signed(alice()), proposal_action));
 
 		CancelledAtBlock::<TestRuntime>::insert(ProposalActionIdentifier::SetInactivityTimeout, 3);
 
@@ -336,7 +337,7 @@ fn update_proposal_state_works_with_too_old_proposal() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
-		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal_action));
+		assert_ok!(EncointerDemocracy::submit_proposal(RuntimeOrigin::signed(alice()), proposal_action));
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
@@ -357,7 +358,7 @@ fn update_proposal_state_works() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
-		assert_ok!(EncointerDemocracy::submit_proposal(Origin::signed(alice()), proposal_action));
+		assert_ok!(EncointerDemocracy::submit_proposal(RuntimeOrigin::signed(alice()), proposal_action));
 
 		assert_ok!(EncointerDemocracy::update_proposal_state(1));
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
