@@ -108,7 +108,7 @@ pub mod pallet {
 
 	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
-	pub struct GenesisConfig<T:Config> {
+	pub struct GenesisConfig<T: Config> {
 		pub proposal_count: ProposalIdType,
 		#[serde(skip)]
 		pub _config: sp_std::marker::PhantomData<T>,
@@ -130,6 +130,7 @@ pub mod pallet {
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
 			let _sender = ensure_signed(origin)?;
+			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			let current_proposal_id = Self::proposal_count();
 			let next_proposal_id = current_proposal_id
 				.checked_add(1u128)
@@ -137,6 +138,7 @@ pub mod pallet {
 			let current_block = frame_system::Pallet::<T>::block_number();
 			let proposal = Proposal {
 				start: current_block,
+				start_cindex: cindex,
 				state: ProposalState::Ongoing,
 				action: proposal_action,
 			};
@@ -194,14 +196,24 @@ pub mod pallet {
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
 		/// 3. originate in the correct community (for Community AccessPolicy)
+		/// 4. are within proposal.start_cindex - reputation_lifetime and proposal.start_cindex - 2
 		pub fn valid_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,
 			reputations: &ReputationVecOf<T>,
 			maybe_cid: Option<CommunityIdentifier>,
 		) -> Result<ReputationVecOf<T>, Error<T>> {
+			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 			let mut valid_reputations = Vec::<CommunityCeremony>::new();
+			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+
 			for community_ceremony in reputations {
+				if community_ceremony.1 < proposal.start_cindex - reputation_lifetime ||
+					community_ceremony.1 > proposal.start_cindex - 2
+				{
+					continue
+				}
+
 				if let Some(cid) = maybe_cid {
 					if community_ceremony.0 != cid {
 						continue

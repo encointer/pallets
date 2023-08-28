@@ -5,6 +5,7 @@ use crate::{
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
+use crate::scheduler::CeremonyIndexType;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
@@ -95,6 +96,7 @@ impl<BlockNumber: std::cmp::PartialEq> ProposalState<BlockNumber> {
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct Proposal<BlockNumber> {
 	pub start: BlockNumber,
+	pub start_cindex: CeremonyIndexType,
 	pub action: ProposalAction,
 	pub state: ProposalState<BlockNumber>,
 }

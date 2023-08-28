@@ -15,11 +15,12 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate as dut;
-use encointer_primitives::balances::BalanceType;
-use frame_support::{ parameter_types};
-use sp_runtime::traits::{ConstU128, ConstU64};
-use sp_runtime::BuildStorage;
-
+use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
+use frame_support::parameter_types;
+use sp_runtime::{
+	traits::{ConstU128, ConstU64},
+	BuildStorage,
+};
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -69,6 +70,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.assimilate_storage(&mut t)
 		.unwrap();
 
+	encointer_scheduler::GenesisConfig::<TestRuntime> {
+		current_ceremony_index: 7,
+		phase_durations: vec![
+			(CeremonyPhaseType::Registering, ONE_DAY),
+			(CeremonyPhaseType::Assigning, ONE_DAY),
+			(CeremonyPhaseType::Attesting, ONE_DAY),
+		],
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
 	encointer_ceremonies::GenesisConfig::<TestRuntime> {
 		ceremony_reward: BalanceType::from_num(1),
 		location_tolerance: LOCATION_TOLERANCE, // [m]
@@ -76,7 +89,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		inactivity_timeout: 12,
 		endorsement_tickets_per_bootstrapper: 50,
 		endorsement_tickets_per_reputable: 2,
-		reputation_lifetime: 6,
+		reputation_lifetime: 5,
 		meetup_time_offset: 0,
 		..Default::default()
 	}
