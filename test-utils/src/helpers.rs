@@ -17,7 +17,7 @@
 use crate::AccountId;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
-use sp_core::{sr25519, Pair};
+use sp_core::{sr25519, Encode, Pair, U256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DispatchError;
 
@@ -112,4 +112,14 @@ pub fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: Dispatc
 pub fn almost_eq(a: u128, b: u128, delta: u128) -> bool {
 	let diff = if a > b { a - b } else { b - a };
 	diff < delta
+}
+
+/// Creates new key pairs. It implicitly assumes that the i-th key was created with entropy = i.
+pub fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519::Pair> {
+	let mut participants = Vec::with_capacity(amount);
+	for population_counter in 1..=amount {
+		let entropy = U256::from(current_popuplation_size + population_counter);
+		participants.push(sr25519::Pair::from_seed_slice(&entropy.encode()[..]).unwrap());
+	}
+	participants
 }

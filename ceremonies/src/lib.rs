@@ -907,15 +907,20 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// Accounts that have been endorsed by a reputable or a bootstrapper.
-	///
-	/// This is not the same as `EndorseeRegistry`, which contains the `Endorsees` who
-	/// have registered for a meetup.
 	#[pallet::storage]
 	#[pallet::getter(fn reputation_count)]
 	pub(super) type ReputationCount<T: Config> =
 		StorageMap<_, Blake2_128Concat, CommunityCeremony, ReputationCountType, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn global_reputation_count)]
+	pub(super) type GlobalReputationCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CeremonyIndexType, ReputationCountType, ValueQuery>;
+
+	/// Accounts that have been endorsed by a reputable or a bootstrapper.
+	///
+	/// This is not the same as `EndorseeRegistry`, which contains the `Endorsees` who
+	/// have registered for a meetup.
 	#[pallet::storage]
 	#[pallet::getter(fn endorsees)]
 	pub(super) type Endorsees<T: Config> = StorageDoubleMap<
@@ -1316,6 +1321,7 @@ impl<T: Config> Pallet<T> {
 
 		<ParticipantReputation<T>>::remove_prefix(cc, None);
 		<ReputationCount<T>>::remove(cc);
+		<GlobalReputationCount<T>>::remove(cc.1);
 
 		<Endorsees<T>>::remove_prefix(cc, None);
 		<EndorseesCount<T>>::remove(cc);
@@ -1761,6 +1767,7 @@ impl<T: Config> Pallet<T> {
 					Reputation::VerifiedUnlinked,
 				);
 				<ReputationCount<T>>::mutate((&cid, cindex), |b| *b += 1); // safe, as reputation_count is limited by the number of locations available on earth
+				<GlobalReputationCount<T>>::mutate(cindex, |b| *b += 1); // safe, as reputation_count is limited by the number of locations available on earth
 			}
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
@@ -1922,8 +1929,9 @@ impl<T: Config> Pallet<T> {
 	#[cfg(any(test, feature = "runtime-benchmarks", feature = "mocks"))]
 	// only to be used by tests
 	pub fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
-		<ParticipantReputation<T>>::insert(&cidcindex, account, rep);
-		<ReputationCount<T>>::mutate(&cidcindex, |b| *b += 1);
+		<ParticipantReputation<T>>::insert(cidcindex, account, rep);
+		<ReputationCount<T>>::mutate(cidcindex, |b| *b += 1);
+		<GlobalReputationCount<T>>::mutate(cidcindex.1, |b| *b += 1);
 	}
 }
 

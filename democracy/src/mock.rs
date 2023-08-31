@@ -16,7 +16,6 @@
 
 use crate as dut;
 use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
-use frame_support::parameter_types;
 use sp_runtime::{
 	traits::{ConstU128, ConstU64},
 	BuildStorage,
@@ -24,13 +23,9 @@ use sp_runtime::{
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
-type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 frame_support::construct_runtime!(
-	pub enum TestRuntime where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum TestRuntime
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
@@ -51,7 +46,7 @@ impl dut::Config for TestRuntime {
 	type MaxReputationVecLength = ConstU32<10>;
 	type ConfirmationPeriod = ConstU64<10>;
 	type ProposalLifetime = ConstU64<40>;
-	type MinTurnout = ConstU128<20>;
+	type MinTurnout = ConstU128<20>; // 2%
 }
 
 // boilerplate

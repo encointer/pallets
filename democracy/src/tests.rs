@@ -17,11 +17,7 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use crate::mock::{EncointerCeremonies, EncointerScheduler};
-
-use crate::mock::Timestamp;
-
-use frame_support::traits::OnFinalize;
+use crate::mock::EncointerCeremonies;
 
 use encointer_primitives::{
 	ceremonies::Reputation,
@@ -32,7 +28,10 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use frame_system::pallet_prelude::BlockNumberFor;
 use mock::{new_test_ext, EncointerDemocracy, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::BoundedVec;
-use test_utils::{helpers::register_test_community, *};
+use test_utils::{
+	helpers::{account_id, add_population, register_test_community},
+	*,
+};
 
 fn create_cid() -> CommunityIdentifier {
 	return register_test_community::<TestRuntime>(None, 0.0, 0.0)
@@ -423,8 +422,21 @@ fn update_proposal_state_works() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
+		let alice = alice();
+		let cid = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		// make sure electorate is 100
+		let pairs = add_population(100, 0);
+		for p in pairs {
+			EncointerCeremonies::fake_reputation(
+				(cid, 5),
+				&account_id(&p),
+				Reputation::VerifiedLinked,
+			);
+		}
+
 		assert_ok!(EncointerDemocracy::submit_proposal(
-			RuntimeOrigin::signed(alice()),
+			RuntimeOrigin::signed(alice),
 			proposal_action
 		));
 
@@ -463,5 +475,81 @@ fn update_proposal_state_works() {
 		// proposal is enacted
 		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), true);
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);
+	});
+}
+
+#[test]
+fn test_get_electorate_works() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+		let alice = alice();
+		let bob = bob();
+
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 3), &bob, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 4), &bob, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 5), &bob, Reputation::VerifiedLinked);
+
+		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action
+		));
+
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action
+		));
+
+		assert_eq!(EncointerDemocracy::get_electorate(1).unwrap(), 5);
+		assert_eq!(EncointerDemocracy::get_electorate(2).unwrap(), 2);
+	});
+}
+
+#[test]
+fn is_passing_works() {
+	new_test_ext().execute_with(|| {
+		let alice = alice();
+		let cid = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		// electorate is 100
+		let pairs = add_population(100, 0);
+		for p in pairs {
+			EncointerCeremonies::fake_reputation(
+				(cid, 5),
+				&account_id(&p),
+				Reputation::VerifiedLinked,
+			);
+		}
+
+		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action
+		));
+
+		// turnout below threshold
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 1, ayes: 1 });
+		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), false);
+
+		// low turnout, 60 % approval
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 10, ayes: 6 });
+		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), false);
+
+		// low turnout 90 % approval
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 10, ayes: 9 });
+		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), true);
+
+		// high turnout, 60 % approval
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 60 });
+		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), true);
+
+		// high turnout 90 % approval
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 90 });
+		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), true);
 	});
 }

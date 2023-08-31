@@ -31,13 +31,13 @@ use mock::{
 	EncointerScheduler, RuntimeOrigin, System, TestProofOfAttendance, TestRuntime, Timestamp,
 };
 use rstest::*;
-use sp_core::{sr25519, Pair, H256, U256};
+use sp_core::{sr25519, Pair, H256};
 use sp_runtime::{traits::BlakeTwo256, DispatchError};
 use std::{ops::Rem, str::FromStr};
 use test_utils::{
 	helpers::{
-		account_id, assert_dispatch_err, bootstrappers, event_at_index, event_deposited,
-		get_num_events, last_event, register_test_community,
+		account_id, add_population, assert_dispatch_err, bootstrappers, event_at_index,
+		event_deposited, get_num_events, last_event, register_test_community,
 	},
 	*,
 };
@@ -162,16 +162,6 @@ fn register_charlie_dave_eve(cid: CommunityIdentifier) {
 	assert_ok!(register(account_id(&AccountKeyring::Charlie.pair()), cid, None));
 	assert_ok!(register(account_id(&AccountKeyring::Dave.pair()), cid, None));
 	assert_ok!(register(account_id(&AccountKeyring::Eve.pair()), cid, None));
-}
-
-/// Creates new key pairs. It implicitly assumes that the i-th key was created with entropy = i.
-fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr25519::Pair> {
-	let mut participants = Vec::with_capacity(amount);
-	for population_counter in 1..=amount {
-		let entropy = U256::from(current_popuplation_size + population_counter);
-		participants.push(sr25519::Pair::from_seed_slice(&entropy.encode()[..]).unwrap());
-	}
-	participants
 }
 
 /// Shorthand for attesting all attendees.
@@ -601,6 +591,7 @@ fn claim_rewards_works() {
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 3).into()));
 
 		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 3);
+		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 3);
 
 		for sender in vec![alice.clone(), bob.clone(), charlie.clone()].iter() {
 			let result: f64 = EncointerBalances::balance(cid, sender).lossy_into();
@@ -718,6 +709,76 @@ fn claim_rewards_works_with_one_missing_attestation() {
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
 		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 6);
+	});
+}
+
+#[test]
+fn global_reputation_count_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cid2 = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let alice = AccountKeyring::Alice.to_account_id();
+		let bob = AccountKeyring::Bob.to_account_id();
+		let charlie = AccountKeyring::Charlie.to_account_id();
+		let dave = AccountKeyring::Dave.to_account_id();
+		let eve = AccountKeyring::Eve.to_account_id();
+		let ferdie = AccountKeyring::Ferdie.to_account_id();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		register_alice_bob_ferdie(cid);
+		register_charlie_dave_eve(cid2);
+
+		Assignments::<TestRuntime>::insert(
+			(cid, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 1, s1: 1, s2: 1 },
+			},
+		);
+
+		Assignments::<TestRuntime>::insert(
+			(cid2, cindex),
+			Assignment {
+				bootstrappers_reputables: Default::default(),
+				endorsees: Default::default(),
+				newbies: Default::default(),
+				locations: AssignmentParams { m: 1, s1: 1, s2: 1 },
+			},
+		);
+
+		run_to_next_phase();
+		// Assigning
+		run_to_next_phase();
+		// Attesting
+		let all_participants1 = vec![alice.clone(), bob, ferdie];
+		let all_participants2 = vec![dave.clone(), eve, charlie];
+
+		for p in all_participants1.clone().into_iter() {
+			let mut attestees = all_participants1.clone();
+			// remove self
+			let i = attestees.iter().position(|a| a == &p).unwrap();
+			attestees.remove(i);
+			attest_all(p, attestees, cid, 3);
+		}
+		for p in all_participants2.clone().into_iter() {
+			let mut attestees = all_participants2.clone();
+			// remove self
+			let i = attestees.iter().position(|a| a == &p).unwrap();
+			attestees.remove(i);
+			attest_all(p, attestees, cid2, 3);
+		}
+
+		run_to_next_phase();
+		// Registering
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
+		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(dave), cid2, None).ok();
+
+		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 3);
+		assert_eq!(EncointerCeremonies::reputation_count(&(cid2, cindex)), 3);
+		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 6);
 	});
 }
 
@@ -970,6 +1031,7 @@ fn claim_rewards_can_be_called_by_non_participant() {
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
 		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 6);
 	});
 }
 
@@ -1054,6 +1116,7 @@ fn early_rewards_with_one_noshow_works() {
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 5).into()));
 		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 5);
+		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 5);
 	})
 }
 
@@ -1829,6 +1892,7 @@ fn grow_population_and_removing_community_works() {
 			);
 
 			assert_eq!(ReputationCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert_eq!(GlobalReputationCount::<TestRuntime>::contains_key(cindex), false);
 
 			assert_eq!(Endorsees::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
 			assert_eq!(EndorseesCount::<TestRuntime>::contains_key((cid, cindex)), false);

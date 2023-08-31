@@ -20,12 +20,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use encointer_primitives::{
-	ceremonies::CommunityCeremony,
+	ceremonies::{CommunityCeremony, ReputationCountType},
 	communities::CommunityIdentifier,
 	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
+	fixed::{transcendental::sqrt, types::U64F64},
+	scheduler::CeremonyIndexType,
 };
-use frame_support::traits::Get;
 
+use frame_support::traits::Get;
 // Logger target
 //const LOG: &str = "encointer";
 
@@ -56,7 +58,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type ProposalLifetime: Get<BlockNumberFor<Self>>;
 		#[pallet::constant]
-		type MinTurnout: Get<u128>;
+		type MinTurnout: Get<u128>; // in permill
 	}
 
 	#[pallet::event]
@@ -73,6 +75,7 @@ pub mod pallet {
 		VoteCountOverflow,
 		BoundedVecError,
 		ProposalCannotBeUpdated,
+		AQBError,
 	}
 
 	#[pallet::storage]
@@ -117,7 +120,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			<ProposalCount<T>>::put(&self.proposal_count);
+			<ProposalCount<T>>::put(self.proposal_count);
 		}
 	}
 
@@ -192,6 +195,14 @@ pub mod pallet {
 		}
 	}
 	impl<T: Config> Pallet<T> {
+		fn relevant_cindexes(
+			proposal_id: ProposalIdType,
+		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
+			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			return Ok(((proposal.start_cindex - reputation_lifetime)..=(proposal.start_cindex - 2))
+				.collect::<Vec<CeremonyIndexType>>())
+		}
 		/// Returns the reputations that
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
@@ -203,14 +214,10 @@ pub mod pallet {
 			reputations: &ReputationVecOf<T>,
 			maybe_cid: Option<CommunityIdentifier>,
 		) -> Result<ReputationVecOf<T>, Error<T>> {
-			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 			let mut valid_reputations = Vec::<CommunityCeremony>::new();
-			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
 			for community_ceremony in reputations {
-				if community_ceremony.1 < proposal.start_cindex - reputation_lifetime ||
-					community_ceremony.1 > proposal.start_cindex - 2
-				{
+				if !Self::relevant_cindexes(proposal_id)?.contains(&community_ceremony.1) {
 					continue
 				}
 
@@ -279,16 +286,76 @@ pub mod pallet {
 			Ok(enacted)
 		}
 
+		pub fn get_electorate(
+			proposal_id: ProposalIdType,
+		) -> Result<ReputationCountType, Error<T>> {
+			let relevant_cindexes = Self::relevant_cindexes(proposal_id)?;
+			match Self::proposals(proposal_id)
+				.ok_or(Error::<T>::InexistentProposal)?
+				.action
+				.get_access_policy()
+			{
+				ProposalAccessPolicy::Community(cid) => Ok(relevant_cindexes
+					.into_iter()
+					.map(|cindex| {
+						<encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
+					})
+					.sum()),
+				ProposalAccessPolicy::Global => Ok(relevant_cindexes
+					.into_iter()
+					.map(|cindex| {
+						<encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
+					})
+					.sum()),
+			}
+		}
+
+		fn positive_turnout_bias(e: u128, t: u128, a: u128) -> Result<bool, Error<T>> {
+			// electorate e
+			// turnout t
+			// approval a
+
+			// let nays n = t - a
+			// approved if n / sqrt(t) < a / sqrt(e)
+			// <==>
+			// a > sqrt(e) * sqrt(t) / (sqrt(e) / sqrt(t) + 1)
+
+			let sqrt_e =
+				sqrt::<U64F64, U64F64>(U64F64::from_num(e)).map_err(|_| <Error<T>>::AQBError)?;
+			let sqrt_t =
+				sqrt::<U64F64, U64F64>(U64F64::from_num(t)).map_err(|_| <Error<T>>::AQBError)?;
+			let one = U64F64::from_num(1);
+
+			Ok(U64F64::from_num(a) >
+				sqrt_e
+					.checked_mul(sqrt_t)
+					.ok_or(<Error<T>>::AQBError)?
+					.checked_div(
+						sqrt_e
+							.checked_div(sqrt_t)
+							.ok_or(<Error<T>>::AQBError)?
+							.checked_add(one)
+							.ok_or(<Error<T>>::AQBError)?,
+					)
+					.ok_or(<Error<T>>::AQBError)?)
+		}
+
 		pub fn is_passing(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
 			let tally = Self::tallies(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			if tally.turnout < T::MinTurnout::get() {
+			let electorate = Self::get_electorate(proposal_id)?;
+
+			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
+			if turnout_permill < T::MinTurnout::get() {
 				return Ok(false)
 			}
-			// TODO replace with AQB
-			if tally.ayes < tally.turnout / 2 {
-				return Ok(false)
+			let positive_turnout_bias =
+				Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes);
+			if let Ok(passing) = positive_turnout_bias {
+				if passing {
+					return Ok(true)
+				}
 			}
-			Ok(true)
+			Ok(false)
 		}
 		fn enact_proposal(_proposal_id: ProposalIdType) -> Result<(), Error<T>> {
 			Self::deposit_event(Event::ProposalEnacted);
