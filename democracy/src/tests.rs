@@ -127,6 +127,7 @@ fn proposal_submission_fails_if_proposal_in_enactment_queue() {
 fn valid_reputations_works_with_different_reputations() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 		let alice = alice();
 
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
@@ -140,7 +141,6 @@ fn valid_reputations_works_with_different_reputations() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 4)]).unwrap(),
-			None
 		)
 		.unwrap()
 		.is_empty());
@@ -150,31 +150,28 @@ fn valid_reputations_works_with_different_reputations() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 5)]).unwrap(),
-			None
 		)
 		.unwrap()
 		.is_empty());
 
-		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedUnlinked);
+		EncointerCeremonies::fake_reputation((cid2, 4), &alice, Reputation::VerifiedUnlinked);
 		assert_eq!(
 			EncointerDemocracy::valid_reputations(
 				1,
 				&alice,
-				&BoundedVec::try_from(vec![(cid, 3)]).unwrap(),
-				None
+				&BoundedVec::try_from(vec![(cid2, 4)]).unwrap(),
 			)
 			.unwrap()
 			.len(),
 			1
 		);
 
-		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked);
 		assert_eq!(
 			EncointerDemocracy::valid_reputations(
 				1,
 				&alice,
-				&BoundedVec::try_from(vec![(cid, 2)]).unwrap(),
-				None
+				&BoundedVec::try_from(vec![(cid2, 3)]).unwrap(),
 			)
 			.unwrap()
 			.len(),
@@ -184,15 +181,14 @@ fn valid_reputations_works_with_different_reputations() {
 		let valid_reputations = EncointerDemocracy::valid_reputations(
 			1,
 			&alice,
-			&BoundedVec::try_from(vec![(cid, 5), (cid, 4), (cid, 3), (cid, 2)]).unwrap(),
-			None,
+			&BoundedVec::try_from(vec![(cid, 5), (cid, 4), (cid2, 4), (cid2, 3)]).unwrap(),
 		)
 		.unwrap();
 		assert_eq!(valid_reputations.len(), 2);
 
-		assert_eq!(valid_reputations.first().unwrap().1, 3);
+		assert_eq!(valid_reputations.first().unwrap(), &(cid2, 4u32));
 
-		assert_eq!(valid_reputations.last().unwrap().1, 2);
+		assert_eq!(valid_reputations.last().unwrap(), &(cid2, 3u32));
 	});
 }
 
@@ -218,7 +214,6 @@ fn valid_reputations_works_with_used_reputations() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 5), (cid, 4)]).unwrap(),
-			None,
 		)
 		.unwrap();
 		assert_eq!(valid_reputations.len(), 1);
@@ -244,7 +239,6 @@ fn valid_reputations_works_with_inexistent_reputations() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 4), (cid, 5)]).unwrap(),
-			None,
 		)
 		.unwrap();
 		assert_eq!(valid_reputations.len(), 1);
@@ -259,7 +253,8 @@ fn valid_reputations_works_with_cids() {
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 		let alice = alice();
 
-		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action
@@ -272,11 +267,10 @@ fn valid_reputations_works_with_cids() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 5), (cid2, 5)]).unwrap(),
-			Some(cid2),
 		)
 		.unwrap();
 		assert_eq!(valid_reputations.len(), 1);
-		assert_eq!(valid_reputations.first().unwrap(), &(cid2, 5u32));
+		assert_eq!(valid_reputations.first().unwrap(), &(cid, 5u32));
 	});
 }
 
@@ -300,7 +294,6 @@ fn valid_reputations_fails_with_invalid_cindex() {
 			1,
 			&alice,
 			&BoundedVec::try_from(vec![(cid, 1), (cid, 4), (cid, 6)]).unwrap(),
-			Some(cid),
 		)
 		.unwrap();
 		assert_eq!(valid_reputations.len(), 1);
@@ -316,18 +309,18 @@ fn voting_works() {
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 
 		let proposal_action =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
+			ProposalAction::SetInactivityTimeout(InactivityTimeoutType::from(100u32));
 
-		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::Unverified);
-		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::Unverified);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
 
 		assert_err!(
 			EncointerDemocracy::vote(
 				RuntimeOrigin::signed(alice.clone()),
 				1,
 				Vote::Aye,
-				BoundedVec::try_from(vec![(cid, 1), (cid, 2), (cid, 3)]).unwrap()
+				BoundedVec::try_from(vec![(cid, 3), (cid, 4), (cid, 5)]).unwrap()
 			),
 			Error::<TestRuntime>::InexistentProposal
 		);
@@ -341,32 +334,29 @@ fn voting_works() {
 			RuntimeOrigin::signed(alice.clone()),
 			1,
 			Vote::Aye,
-			BoundedVec::try_from(vec![(cid, 1), (cid, 2), (cid, 3)]).unwrap()
+			BoundedVec::try_from(vec![(cid, 3), (cid, 4), (cid, 5)]).unwrap()
 		));
 
 		let mut tally = EncointerDemocracy::tallies(1).unwrap();
 		assert_eq!(tally.turnout, 2);
 		assert_eq!(tally.ayes, 2);
 
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::Unverified);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 4), &alice, Reputation::Unverified);
+		EncointerCeremonies::fake_reputation((cid2, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
 		EncointerCeremonies::fake_reputation((cid2, 6), &alice, Reputation::VerifiedLinked);
 
 		assert_ok!(EncointerDemocracy::vote(
 			RuntimeOrigin::signed(alice.clone()),
 			1,
 			Vote::Nay,
-			// 3 is invalid because already used
-			// 4 is invalid because unverified
-			// 6 and 7 is invalid because of wrong cid
-			// 8 is invalid because it does not exist
 			BoundedVec::try_from(vec![
-				(cid, 3),
-				(cid, 4),
-				(cid, 5),
-				(cid2, 6),
-				(cid2, 7),
-				(cid, 8)
+				(cid, 2),  // invalid beacuse out of range
+				(cid, 3),  // invalid beacuse already used
+				(cid2, 4), // invlaid because unverified
+				(cid2, 5), // valid
+				(cid2, 6), // invlaid because out of range
+				(cid2, 3), // invlalid non-existent
 			])
 			.unwrap()
 		));

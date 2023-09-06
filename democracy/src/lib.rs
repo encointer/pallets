@@ -21,7 +21,6 @@
 
 use encointer_primitives::{
 	ceremonies::{CommunityCeremony, ReputationCountType},
-	communities::CommunityIdentifier,
 	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -60,6 +59,8 @@ pub mod pallet {
 		type ConfirmationPeriod: Get<BlockNumberFor<Self>>;
 		#[pallet::constant]
 		type ProposalLifetime: Get<BlockNumberFor<Self>>;
+		#[pallet::constant]
+		type ProposalLifetimeCycles: Get<u32>; // ceil of the proposal lifetime in cycles
 		#[pallet::constant]
 		type MinTurnout: Get<u128>; // in permill
 	}
@@ -173,16 +174,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let maybe_cid = match Self::proposals(proposal_id)
-				.ok_or(Error::<T>::InexistentProposal)?
-				.action
-				.get_access_policy()
-			{
-				ProposalAccessPolicy::Community(cid) => Some(cid),
-				_ => None,
-			};
-			let valid_reputations =
-				Self::valid_reputations(proposal_id, &sender, &reputations, maybe_cid)?;
+			let valid_reputations = Self::valid_reputations(proposal_id, &sender, &reputations)?;
 			let num_votes = valid_reputations.len() as u128;
 
 			let ayes = match vote {
@@ -212,21 +204,33 @@ pub mod pallet {
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
 			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			Ok(((proposal.start_cindex - reputation_lifetime)..=(proposal.start_cindex - 2))
+			Ok(((proposal
+				.start_cindex
+				.saturating_sub(reputation_lifetime)
+				.saturating_add(T::ProposalLifetimeCycles::get()))..=
+				(proposal.start_cindex.saturating_sub(2)))
 				.collect::<Vec<CeremonyIndexType>>())
 		}
 		/// Returns the reputations that
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
 		/// 3. originate in the correct community (for Community AccessPolicy)
-		/// 4. are within proposal.start_cindex - reputation_lifetime and proposal.start_cindex - 2
+		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and proposal.start_cindex - 2
 		pub fn valid_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,
 			reputations: &ReputationVecOf<T>,
-			maybe_cid: Option<CommunityIdentifier>,
 		) -> Result<ReputationVecOf<T>, Error<T>> {
 			let mut valid_reputations = Vec::<CommunityCeremony>::new();
+
+			let maybe_cid = match Self::proposals(proposal_id)
+				.ok_or(Error::<T>::InexistentProposal)?
+				.action
+				.get_access_policy()
+			{
+				ProposalAccessPolicy::Community(cid) => Some(cid),
+				_ => None,
+			};
 
 			for community_ceremony in reputations {
 				if !Self::relevant_cindexes(proposal_id)?.contains(&community_ceremony.1) {
@@ -375,7 +379,7 @@ pub mod pallet {
 
 			match proposal.action {
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
-					let _  = <encointer_communities::Pallet<T>>::do_update_nominal_income(
+					let _ = <encointer_communities::Pallet<T>>::do_update_nominal_income(
 						cid,
 						nominal_income,
 					);
