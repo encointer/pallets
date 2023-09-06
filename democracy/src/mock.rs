@@ -54,7 +54,7 @@ impl_frame_system!(TestRuntime);
 impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
-impl_encointer_scheduler!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime, EncointerDemocracy);
 impl_encointer_ceremonies!(TestRuntime);
 
 // genesis values

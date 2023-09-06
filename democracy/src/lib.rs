@@ -24,9 +24,9 @@ use encointer_primitives::{
 	communities::CommunityIdentifier,
 	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
 	fixed::{transcendental::sqrt, types::U64F64},
-	scheduler::CeremonyIndexType,
+	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
-
+use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::traits::Get;
 // Logger target
 //const LOG: &str = "encointer";
@@ -47,7 +47,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + encointer_scheduler::Config + encointer_ceremonies::Config
+		frame_system::Config
+		+ encointer_scheduler::Config
+		+ encointer_ceremonies::Config
+		+ encointer_communities::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -64,7 +67,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		ProposalEnacted,
+		ProposalEnacted(ProposalIdType),
 	}
 
 	#[pallet::error]
@@ -76,6 +79,7 @@ pub mod pallet {
 		BoundedVecError,
 		ProposalCannotBeUpdated,
 		AQBError,
+		ProposalWaitingForEnactment,
 	}
 
 	#[pallet::storage]
@@ -109,6 +113,11 @@ pub mod pallet {
 	pub(super) type CancelledAtBlock<T: Config> =
 		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, BlockNumberFor<T>, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn enactment_queue)]
+	pub(super) type EnactmentQueue<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, ProposalIdType, OptionQuery>;
+
 	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -127,11 +136,14 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(10000)]
+		#[pallet::weight({10000})]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
+			if Self::enactment_queue(proposal_action.get_identifier()).is_some() {
+				return Err(Error::<T>::ProposalWaitingForEnactment.into())
+			}
 			let _sender = ensure_signed(origin)?;
 			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			let current_proposal_id = Self::proposal_count();
@@ -152,7 +164,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight(10000)]
+		#[pallet::weight({10000})]
 		pub fn vote(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -200,7 +212,7 @@ pub mod pallet {
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
 			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			return Ok(((proposal.start_cindex - reputation_lifetime)..=(proposal.start_cindex - 2))
+			Ok(((proposal.start_cindex - reputation_lifetime)..=(proposal.start_cindex - 2))
 				.collect::<Vec<CeremonyIndexType>>())
 		}
 		/// Returns the reputations that
@@ -263,7 +275,7 @@ pub mod pallet {
 						// confirmed longer than period
 						if current_block - since > T::ConfirmationPeriod::get() {
 							proposal.state = ProposalState::Approved;
-							Self::enact_proposal(proposal_id)?;
+							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
 							<CancelledAtBlock<T>>::insert(
 								proposal_action_identifier,
 								current_block,
@@ -357,9 +369,46 @@ pub mod pallet {
 			}
 			Ok(false)
 		}
-		fn enact_proposal(_proposal_id: ProposalIdType) -> Result<(), Error<T>> {
-			Self::deposit_event(Event::ProposalEnacted);
-			todo!();
+		pub fn enact_proposal(proposal_id: ProposalIdType) -> Result<(), Error<T>> {
+			let mut proposal =
+				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+
+			match proposal.action {
+				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
+					let _  = <encointer_communities::Pallet<T>>::do_update_nominal_income(
+						cid,
+						nominal_income,
+					);
+				},
+
+				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
+					let _ = <encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
+						inactivity_timeout,
+					);
+				},
+			};
+
+			proposal.state = ProposalState::Enacted;
+			<Proposals<T>>::insert(proposal_id, proposal);
+			Self::deposit_event(Event::ProposalEnacted(proposal_id));
+			Ok(())
+		}
+	}
+}
+
+impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
+	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
+		match new_phase {
+			CeremonyPhaseType::Assigning => {},
+			CeremonyPhaseType::Attesting => {},
+			CeremonyPhaseType::Registering => {
+				// safe as EnactmentQueue has one key per ProposalActionType and those are bounded
+				<EnactmentQueue<T>>::iter().for_each(|p| {
+					let _ = Self::enact_proposal(p.1);
+				});
+				// remove all keys from the map
+				<EnactmentQueue<T>>::translate::<ProposalIdType, _>(|_, _| None);
+			},
 		}
 	}
 }

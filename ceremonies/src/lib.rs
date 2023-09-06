@@ -509,10 +509,7 @@ pub mod pallet {
 			inactivity_timeout: InactivityTimeoutType,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
-			<InactivityTimeout<T>>::put(inactivity_timeout);
-			info!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
-			Self::deposit_event(Event::InactivityTimeoutUpdated(inactivity_timeout));
-			Ok(().into())
+			Self::do_set_inactivity_timeout(inactivity_timeout)
 		}
 
 		#[pallet::call_index(7)]
@@ -1080,6 +1077,15 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn do_set_inactivity_timeout(
+		inactivity_timeout: InactivityTimeoutType,
+	) -> DispatchResultWithPostInfo {
+		<InactivityTimeout<T>>::put(inactivity_timeout);
+		info!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
+		Self::deposit_event(Event::InactivityTimeoutUpdated(inactivity_timeout));
+		Ok(().into())
+	}
+
 	pub fn get_reputations(
 		account: &T::AccountId,
 	) -> Vec<(CeremonyIndexType, CommunityReputation)> {

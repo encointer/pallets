@@ -84,6 +84,7 @@ pub enum ProposalState<BlockNumber> {
 	Confirming { since: BlockNumber },
 	Approved,
 	Cancelled,
+	Enacted,
 }
 
 impl<BlockNumber: std::cmp::PartialEq> ProposalState<BlockNumber> {
