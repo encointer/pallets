@@ -1,70 +1,60 @@
 [package]
 authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
-name = "pallet-encointer-ceremonies"
+name = "pallet-encointer-democracy"
 version = "1.2.0"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
-    "derive",
-] }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.5.0", default-features = false }
 
 # local deps
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
-encointer-ceremonies-assignment = { path = "assignment", default-features = false }
+encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
-encointer-meetup-validation = { path = "meetup-validation", default-features = false }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"] }
+encointer-primitives = { path = "../primitives", default-features = false }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
 
 # substrate deps
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
 frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
 pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
-sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
 sp-io = { version = "23.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
 sp-runtime = { version = "24.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
 sp-std = { version = "8.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
 
 # benchmarking
-
-
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v1.0.0" }
-sp-application-crypto = { version = "23.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v1.0.0" }
+sp-application-crypto = { version = "23.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
+sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0", default-features = false, optional = true }
+
 [dev-dependencies]
 approx = "0.5.1"
+encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false, features = ["mocks"] }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
 itertools = "0.10.3"
 rstest = "0.12.0"
-sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
 sp-io = { version = "23.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 sp-keystore = { version = "0.27.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
 test-utils = { path = "../test-utils" }
+
 [features]
 default = ["std"]
 std = [
     "codec/std",
     "log/std",
-    "scale-info/std",
-    "encointer-balances/std",
-    "encointer-ceremonies-assignment/std",
-    "encointer-communities/std",
-    "encointer-meetup-validation/std",
-    "encointer-primitives/std",
-    "encointer-scheduler/std",
     "frame-support/std",
     "frame-system/std",
-    "pallet-timestamp/std",
-    "sp-io/std",
-    "sp-runtime/std",
+    "scale-info/std",
     "sp-std/std",
+    "pallet-timestamp/std",
+    "encointer-balances/std",
+    "encointer-communities/std",
+    "encointer-primitives/std",
+    "encointer-scheduler/std",
     "frame-benchmarking/std",
+    "sp-io/std",
     "sp-core/std",
 ]
 
-runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto"]
-
-try-runtime = ["frame-system/try-runtime"]
-
-mocks = []
+runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto", "sp-core"]

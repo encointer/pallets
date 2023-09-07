@@ -22,6 +22,7 @@ pub mod bazaar;
 pub mod ceremonies;
 pub mod common;
 pub mod communities;
+pub mod democracy;
 pub mod error;
 pub mod faucet;
 pub mod reputation_commitments;

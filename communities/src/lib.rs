@@ -36,7 +36,7 @@ use encointer_primitives::{
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
 };
-use frame_support::{ensure, BoundedVec};
+use frame_support::{ensure, pallet_prelude::DispatchResultWithPostInfo, BoundedVec};
 use frame_system::pallet_prelude::BlockNumberFor;
 use log::{info, warn};
 use sp_runtime::{traits::Get, DispatchResult, SaturatedConversion};
@@ -298,18 +298,7 @@ pub mod pallet {
 			nominal_income: NominalIncomeType,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
-
-			Self::ensure_cid_exists(&cid)?;
-			validate_nominal_income(&nominal_income)
-				.map_err(|_| <Error<T>>::InvalidNominalIncome)?;
-			Self::ensure_cid_exists(&cid)?;
-
-			<NominalIncome<T>>::insert(cid, nominal_income);
-
-			info!(target: LOG, " updated nominal income for cid: {:?}", cid);
-			Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
-
-			Ok(().into())
+			Self::do_update_nominal_income(cid, nominal_income)
 		}
 
 		#[pallet::call_index(6)]
@@ -487,6 +476,21 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn do_update_nominal_income(
+		cid: CommunityIdentifier,
+		nominal_income: NominalIncomeType,
+	) -> DispatchResultWithPostInfo {
+		Self::ensure_cid_exists(&cid)?;
+		validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
+		Self::ensure_cid_exists(&cid)?;
+
+		<NominalIncome<T>>::insert(cid, nominal_income);
+
+		info!(target: LOG, " updated nominal income for cid: {:?}", cid);
+		Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
+
+		Ok(().into())
+	}
 	fn remove_location_intern(cid: CommunityIdentifier, location: Location, geo_hash: GeoHash) {
 		//remove location from locations(cid,geohash)
 		let mut locations = Self::locations(cid, &geo_hash);

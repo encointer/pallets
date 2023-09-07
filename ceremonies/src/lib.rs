@@ -509,10 +509,7 @@ pub mod pallet {
 			inactivity_timeout: InactivityTimeoutType,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
-			<InactivityTimeout<T>>::put(inactivity_timeout);
-			info!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
-			Self::deposit_event(Event::InactivityTimeoutUpdated(inactivity_timeout));
-			Ok(().into())
+			Self::do_set_inactivity_timeout(inactivity_timeout)
 		}
 
 		#[pallet::call_index(7)]
@@ -907,6 +904,16 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn reputation_count)]
+	pub(super) type ReputationCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CommunityCeremony, ReputationCountType, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn global_reputation_count)]
+	pub(super) type GlobalReputationCount<T: Config> =
+		StorageMap<_, Blake2_128Concat, CeremonyIndexType, ReputationCountType, ValueQuery>;
+
 	/// Accounts that have been endorsed by a reputable or a bootstrapper.
 	///
 	/// This is not the same as `EndorseeRegistry`, which contains the `Endorsees` who
@@ -1070,6 +1077,15 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn do_set_inactivity_timeout(
+		inactivity_timeout: InactivityTimeoutType,
+	) -> DispatchResultWithPostInfo {
+		<InactivityTimeout<T>>::put(inactivity_timeout);
+		info!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
+		Self::deposit_event(Event::InactivityTimeoutUpdated(inactivity_timeout));
+		Ok(().into())
+	}
+
 	pub fn get_reputations(
 		account: &T::AccountId,
 	) -> Vec<(CeremonyIndexType, CommunityReputation)> {
@@ -1310,6 +1326,8 @@ impl<T: Config> Pallet<T> {
 		Assignments::<T>::remove(cc);
 
 		<ParticipantReputation<T>>::remove_prefix(cc, None);
+		<ReputationCount<T>>::remove(cc);
+		<GlobalReputationCount<T>>::remove(cc.1);
 
 		<Endorsees<T>>::remove_prefix(cc, None);
 		<EndorseesCount<T>>::remove(cc);
@@ -1742,6 +1760,7 @@ impl<T: Config> Pallet<T> {
 		participants_indices: Vec<usize>,
 	) -> Result<(), Error<T>> {
 		let reward = Self::nominal_income(&cid);
+		let mut reputation_count = 0;
 		for i in &participants_indices {
 			let participant = &meetup_participants
 				.get(*i)
@@ -1754,9 +1773,12 @@ impl<T: Config> Pallet<T> {
 					participant,
 					Reputation::VerifiedUnlinked,
 				);
+				reputation_count += 1;
 			}
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
+		<ReputationCount<T>>::mutate((&cid, cindex), |b| *b += reputation_count); // safe, as reputation_count is limited by the number of locations available on earth
+		<GlobalReputationCount<T>>::mutate(cindex, |b| *b += reputation_count); // safe, as reputation_count is limited by the number of locations available on earth
 
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, MeetupResult::Ok);
 		info!(target: LOG, "issuing rewards completed");
@@ -1900,10 +1922,24 @@ impl<T: Config> Pallet<T> {
 		None
 	}
 
-	#[cfg(any(test, feature = "runtime-benchmarks"))]
+	pub fn validate_reputation(
+		account_id: &T::AccountId,
+		cid: &CommunityIdentifier,
+		cindex: CeremonyIndexType,
+	) -> bool {
+		let current_cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+		if cindex < current_cindex.saturating_sub(Self::reputation_lifetime()) {
+			return false
+		}
+		<ParticipantReputation<T>>::get((*cid, cindex), account_id).is_verified()
+	}
+
+	#[cfg(any(test, feature = "runtime-benchmarks", feature = "mocks"))]
 	// only to be used by tests
-	fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
+	pub fn fake_reputation(cidcindex: CommunityCeremony, account: &T::AccountId, rep: Reputation) {
 		<ParticipantReputation<T>>::insert(cidcindex, account, rep);
+		<ReputationCount<T>>::mutate(cidcindex, |b| *b += 1);
+		<GlobalReputationCount<T>>::mutate(cidcindex.1, |b| *b += 1);
 	}
 }
 
