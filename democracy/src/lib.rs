@@ -68,18 +68,26 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		ProposalEnacted(ProposalIdType),
+		///  proposal enacted
+		ProposalEnacted { proposal_id: ProposalIdType },
 	}
 
 	#[pallet::error]
 	#[derive(PartialEq, Eq)]
 	pub enum Error<T> {
+		/// proposal id out of bounds
 		ProposalIdOutOfBounds,
+		/// inexistent proposal
 		InexistentProposal,
+		/// vote count overflow
 		VoteCountOverflow,
+		/// bounded vec error
 		BoundedVecError,
+		/// proposal cannot be updated
 		ProposalCannotBeUpdated,
+		/// error when computing adaptive quorum biasing
 		AQBError,
+		/// cannot submit new proposal as a proposal of the same type is waiting for enactment
 		ProposalWaitingForEnactment,
 	}
 
@@ -414,7 +422,7 @@ pub mod pallet {
 
 			proposal.state = ProposalState::Enacted;
 			<Proposals<T>>::insert(proposal_id, proposal);
-			Self::deposit_event(Event::ProposalEnacted(proposal_id));
+			Self::deposit_event(Event::ProposalEnacted { proposal_id });
 			Ok(())
 		}
 	}
