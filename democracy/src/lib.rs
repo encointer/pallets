@@ -174,8 +174,9 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let valid_reputations = Self::valid_reputations(proposal_id, &sender, &reputations)?;
-			let num_votes = valid_reputations.len() as u128;
+			let eligible_reputations =
+				Self::eligible_reputations(proposal_id, &sender, &reputations)?;
+			let num_votes = eligible_reputations.len() as u128;
 
 			let ayes = match vote {
 				Vote::Aye => num_votes,
@@ -191,7 +192,7 @@ pub mod pallet {
 			};
 
 			<Tallies<T>>::insert(proposal_id, new_tally);
-			for community_ceremony in valid_reputations {
+			for community_ceremony in eligible_reputations {
 				<VoteEntries<T>>::insert(proposal_id, (&sender, community_ceremony), ());
 			}
 
@@ -235,12 +236,12 @@ pub mod pallet {
 		/// 2. have not been used to vote for proposal_id
 		/// 3. originate in the correct community (for Community AccessPolicy)
 		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and proposal.start_cindex - 2
-		pub fn valid_reputations(
+		pub fn eligible_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,
 			reputations: &ReputationVecOf<T>,
 		) -> Result<ReputationVecOf<T>, Error<T>> {
-			let mut valid_reputations = Vec::<CommunityCeremony>::new();
+			let mut eligible_reputations = Vec::<CommunityCeremony>::new();
 
 			let maybe_cid = match Self::proposals(proposal_id)
 				.ok_or(Error::<T>::InexistentProposal)?
@@ -269,10 +270,10 @@ pub mod pallet {
 					&community_ceremony.0,
 					community_ceremony.1,
 				) {
-					valid_reputations.push(*community_ceremony);
+					eligible_reputations.push(*community_ceremony);
 				}
 			}
-			BoundedVec::try_from(valid_reputations).map_err(|_e| Error::<T>::BoundedVecError)
+			BoundedVec::try_from(eligible_reputations).map_err(|_e| Error::<T>::BoundedVecError)
 		}
 
 		/// Updates the proposal state
