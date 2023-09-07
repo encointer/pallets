@@ -1760,6 +1760,7 @@ impl<T: Config> Pallet<T> {
 		participants_indices: Vec<usize>,
 	) -> Result<(), Error<T>> {
 		let reward = Self::nominal_income(&cid);
+		let mut reputation_count = 0;
 		for i in &participants_indices {
 			let participant = &meetup_participants
 				.get(*i)
@@ -1772,11 +1773,12 @@ impl<T: Config> Pallet<T> {
 					participant,
 					Reputation::VerifiedUnlinked,
 				);
-				<ReputationCount<T>>::mutate((&cid, cindex), |b| *b += 1); // safe, as reputation_count is limited by the number of locations available on earth
-				<GlobalReputationCount<T>>::mutate(cindex, |b| *b += 1); // safe, as reputation_count is limited by the number of locations available on earth
+				reputation_count += 1;
 			}
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(participant), &true.encode());
 		}
+		<ReputationCount<T>>::mutate((&cid, cindex), |b| *b += reputation_count); // safe, as reputation_count is limited by the number of locations available on earth
+		<GlobalReputationCount<T>>::mutate(cindex, |b| *b += reputation_count); // safe, as reputation_count is limited by the number of locations available on earth
 
 		<IssuedRewards<T>>::insert((cid, cindex), meetup_idx, MeetupResult::Ok);
 		info!(target: LOG, "issuing rewards completed");
