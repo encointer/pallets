@@ -368,17 +368,17 @@ fn voting_works() {
 }
 
 #[test]
-fn update_proposal_state_fails_with_inexistent_proposal() {
+fn do_update_proposal_state_fails_with_inexistent_proposal() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
-			EncointerDemocracy::update_proposal_state(1),
+			EncointerDemocracy::do_update_proposal_state(1),
 			Error::<TestRuntime>::InexistentProposal
 		);
 	});
 }
 
 #[test]
-fn update_proposal_state_fails_with_wrong_state() {
+fn do_update_proposal_state_fails_with_wrong_state() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 		let proposal: Proposal<BlockNumber> = Proposal {
@@ -398,19 +398,19 @@ fn update_proposal_state_fails_with_wrong_state() {
 		Proposals::<TestRuntime>::insert(2, proposal2);
 
 		assert_err!(
-			EncointerDemocracy::update_proposal_state(1),
+			EncointerDemocracy::do_update_proposal_state(1),
 			Error::<TestRuntime>::ProposalCannotBeUpdated
 		);
 
 		assert_err!(
-			EncointerDemocracy::update_proposal_state(2),
+			EncointerDemocracy::do_update_proposal_state(2),
 			Error::<TestRuntime>::ProposalCannotBeUpdated
 		);
 	});
 }
 
 #[test]
-fn update_proposal_state_works_with_cancelled_proposal() {
+fn do_update_proposal_state_works_with_cancelled_proposal() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
@@ -425,14 +425,14 @@ fn update_proposal_state_works_with_cancelled_proposal() {
 
 		advance_n_blocks(5);
 
-		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
 	});
 }
 
 #[test]
-fn update_proposal_state_works_with_too_old_proposal() {
+fn do_update_proposal_state_works_with_too_old_proposal() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
@@ -445,18 +445,18 @@ fn update_proposal_state_works_with_too_old_proposal() {
 
 		advance_n_blocks(40);
 
-		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
 		advance_n_blocks(1);
 
-		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
 	});
 }
 
 #[test]
-fn update_proposal_state_works() {
+fn do_update_proposal_state_works() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
@@ -478,13 +478,13 @@ fn update_proposal_state_works() {
 			proposal_action
 		));
 
-		assert_ok!(EncointerDemocracy::update_proposal_state(1));
+		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
 		// propsal is passing
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 100 });
 
-		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
 		assert_eq!(
 			EncointerDemocracy::proposals(1).unwrap().state,
 			ProposalState::Confirming { since: 0 }
@@ -493,17 +493,17 @@ fn update_proposal_state_works() {
 		// not passing anymore
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 0 });
 
-		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
 		// nothing changes if repeated
-		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
 		// passing
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 100 });
 
-		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), false);
+		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
 		assert_eq!(
 			EncointerDemocracy::proposals(1).unwrap().state,
 			ProposalState::Confirming { since: 0 }
@@ -512,11 +512,39 @@ fn update_proposal_state_works() {
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
 		advance_n_blocks(11);
 		// proposal is enacted
-		assert_eq!(EncointerDemocracy::update_proposal_state(1).unwrap(), true);
+		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), true);
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);
 		assert_eq!(
 			EncointerDemocracy::enactment_queue(proposal_action.get_identifier()).unwrap(),
 			1
+		);
+	});
+}
+
+#[test]
+fn update_proposal_state_extrinsic_works() {
+	new_test_ext().execute_with(|| {
+		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+
+		let alice = alice();
+		let cid = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action
+		));
+
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+		// propsal is passing
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 3, ayes: 3 });
+		EncointerDemocracy::update_proposal_state(RuntimeOrigin::signed(alice), 1).unwrap();
+		assert_eq!(
+			EncointerDemocracy::proposals(1).unwrap().state,
+			ProposalState::Confirming { since: 0 }
 		);
 	});
 }
@@ -598,7 +626,7 @@ fn is_passing_works() {
 }
 
 #[test]
-fn enactment_updates_proposal_metadata_andenactment_queue() {
+fn enactment_updates_proposal_metadata_and_enactment_queue() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 		let alice = alice();
@@ -630,6 +658,49 @@ fn enactment_updates_proposal_metadata_andenactment_queue() {
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
 
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action2.get_identifier()), None);
+	});
+}
+
+#[test]
+fn proposal_happy_flow() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+		let alice = alice();
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037i32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action
+		));
+
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked);
+
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1,
+			Vote::Aye,
+			BoundedVec::try_from(vec![(cid, 3), (cid, 4), (cid, 5),]).unwrap()
+		));
+
+		advance_n_blocks(40);
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1,
+			Vote::Aye,
+			BoundedVec::try_from(vec![(cid2, 3)]).unwrap()
+		));
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(EncointerCommunities::nominal_income(cid), NominalIncomeType::from(13037i32));
 	});
 }
 

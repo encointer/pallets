@@ -195,6 +195,25 @@ pub mod pallet {
 				<VoteEntries<T>>::insert(proposal_id, (&sender, community_ceremony), ());
 			}
 
+			match Self::do_update_proposal_state(proposal_id) {
+				Ok(_) => Ok(()),
+				Err(error) => match error {
+					Error::<T>::ProposalCannotBeUpdated => Ok(()),
+					other_error => Err(other_error),
+				},
+			}?;
+
+			Ok(().into())
+		}
+
+		#[pallet::call_index(2)]
+		#[pallet::weight({10000})]
+		pub fn update_proposal_state(
+			origin: OriginFor<T>,
+			proposal_id: ProposalIdType,
+		) -> DispatchResultWithPostInfo {
+			let _sender = ensure_signed(origin)?;
+			Self::do_update_proposal_state(proposal_id)?;
 			Ok(().into())
 		}
 	}
@@ -259,11 +278,11 @@ pub mod pallet {
 		/// Updates the proposal state
 		/// If the state is changed to Approved, the proposal will be enacted
 		/// In case of enactment, the function returns true
-		pub fn update_proposal_state(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
+		pub fn do_update_proposal_state(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
 			let mut proposal =
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 			ensure!(proposal.state.can_update(), Error::<T>::ProposalCannotBeUpdated);
-			let mut enacted = false;
+			let mut approved = false;
 			let current_block = frame_system::Pallet::<T>::block_number();
 			let proposal_action_identifier = proposal.action.get_identifier();
 			let cancelled_at_block = Self::cancelled_at_block(proposal_action_identifier);
@@ -284,7 +303,7 @@ pub mod pallet {
 								proposal_action_identifier,
 								current_block,
 							);
-							enacted = true;
+							approved = true;
 						}
 					// not confirming
 					} else {
@@ -299,7 +318,7 @@ pub mod pallet {
 				}
 			}
 			<Proposals<T>>::insert(proposal_id, proposal);
-			Ok(enacted)
+			Ok(approved)
 		}
 
 		pub fn get_electorate(
