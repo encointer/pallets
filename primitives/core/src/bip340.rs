@@ -121,7 +121,8 @@ impl<'de> serde::Deserialize<'de> for Bip340 {
 	where
 		D: serde::Deserializer<'de>,
 	{
-		sp_std::str::FromStr::from_str(&codec::alloc::string::String::deserialize(deserializer)?)
+		use codec::alloc::string::{String, ToString};
+		sp_std::str::FromStr::from_str(&String::deserialize(deserializer)?)
 			.map_err(|e| serde::de::Error::custom(e.to_string()))
 	}
 }
