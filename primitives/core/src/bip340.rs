@@ -111,6 +111,7 @@ impl serde::Serialize for Bip340 {
 	where
 		S: serde::Serializer,
 	{
+		use codec::alloc::string::ToString;
 		serializer.serialize_str(&self.to_string())
 	}
 }
