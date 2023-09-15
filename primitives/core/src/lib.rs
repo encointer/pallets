@@ -16,6 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub mod bip340;
 pub mod bs58_verify;
 pub mod math;
 pub mod random_number_generator;

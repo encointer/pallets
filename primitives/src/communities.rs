@@ -18,10 +18,10 @@ use crate::common::FromStr as CrateFromStr;
 use bs58;
 use codec::{Decode, Encode, MaxEncodedLen};
 use crc::{Crc, CRC_32_CKSUM};
-use ep_core::fixed::types::I64F64;
+use ep_core::{bip340::Bip340, fixed::types::I64F64};
 use geohash::GeoHash as GeohashGeneric;
 use scale_info::TypeInfo;
-use sp_core::RuntimeDebug;
+use sp_core::{crypto::AccountId32, RuntimeDebug};
 use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
 
 #[cfg(feature = "serde_derive")]
@@ -235,7 +235,7 @@ impl Location {
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum AnnouncementSigner {
-	Bip340([u8; 32]),
+	Bip340(Bip340),
 }
 
 #[derive(
@@ -427,9 +427,9 @@ mod tests {
 		bs58_verify::Bs58Error,
 		common::{FromStr as CrateFromStr, IpfsValidationError},
 		communities::{
-			validate_demurrage, validate_nominal_income, CommunityIdentifier, CommunityMetadata,
-			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, PalletString,
-			RangeError,
+			validate_demurrage, validate_nominal_income, AnnouncementSigner, CommunityIdentifier,
+			CommunityMetadata, CommunityMetadataError, Degree, Demurrage, Location, NominalIncome,
+			PalletString, RangeError,
 		},
 	};
 	use sp_std::str::FromStr;
