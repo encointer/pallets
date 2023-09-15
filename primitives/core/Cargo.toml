@@ -4,6 +4,7 @@ name = "ep-core"
 version = "1.2.0"
 
 [dependencies]
+array-bytes = "6.1.0"
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
     "derive",
 ] }
