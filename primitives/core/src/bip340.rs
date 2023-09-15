@@ -1,6 +1,9 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::{crypto::AccountId32, ed25519, sr25519, ByteArray};
+use sp_core::{
+	crypto::{AccountId32, ByteArray},
+	ed25519, sr25519,
+};
 
 /// An opaque 32-byte cryptographic identifier.
 ///
@@ -90,13 +93,13 @@ impl From<ed25519::Public> for Bip340 {
 	}
 }
 
-impl std::fmt::Display for Bip340 {
+impl core::fmt::Display for Bip340 {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		write!(f, "0x{}", sp_core::hexdisplay::HexDisplay::from(&self.0))
 	}
 }
 
-impl sp_std::fmt::Debug for Bip340 {
+impl core::fmt::Debug for Bip340 {
 	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		write!(f, "0x{}", sp_core::hexdisplay::HexDisplay::from(&self.0))
 	}
