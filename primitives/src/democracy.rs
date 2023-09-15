@@ -87,7 +87,7 @@ pub enum ProposalState<BlockNumber> {
 	Enacted,
 }
 
-impl<BlockNumber: std::cmp::PartialEq> ProposalState<BlockNumber> {
+impl<BlockNumber: PartialEq> ProposalState<BlockNumber> {
 	pub fn can_update(self) -> bool {
 		matches!(self, Self::Confirming { since: _ } | Self::Ongoing)
 	}
