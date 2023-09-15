@@ -111,6 +111,7 @@ impl serde::Serialize for Bip340 {
 	where
 		S: serde::Serializer,
 	{
+		#[cfg(not(feature = "std"))]
 		use codec::alloc::string::ToString;
 		serializer.serialize_str(&self.to_string())
 	}
@@ -122,9 +123,10 @@ impl<'de> serde::Deserialize<'de> for Bip340 {
 	where
 		D: serde::Deserializer<'de>,
 	{
-		use codec::alloc::string::{String, ToString};
+		#[cfg(not(feature = "std"))]
+		use codec::alloc::string::String;
 		sp_std::str::FromStr::from_str(&String::deserialize(deserializer)?)
-			.map_err(|e| serde::de::Error::custom(e.to_string()))
+			.map_err(|e| serde::de::Error::custom(e))
 	}
 }
 
