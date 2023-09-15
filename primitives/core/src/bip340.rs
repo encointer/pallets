@@ -126,7 +126,7 @@ impl<'de> serde::Deserialize<'de> for Bip340 {
 		#[cfg(not(feature = "std"))]
 		use codec::alloc::string::String;
 		sp_std::str::FromStr::from_str(&String::deserialize(deserializer)?)
-			.map_err(|e| serde::de::Error::custom(e))
+			.map_err(serde::de::Error::custom)
 	}
 }
 
