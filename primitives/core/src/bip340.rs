@@ -94,13 +94,13 @@ impl From<ed25519::Public> for Bip340 {
 }
 
 impl core::fmt::Display for Bip340 {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "0x{}", sp_core::hexdisplay::HexDisplay::from(&self.0))
 	}
 }
 
 impl core::fmt::Debug for Bip340 {
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "0x{}", sp_core::hexdisplay::HexDisplay::from(&self.0))
 	}
 }
@@ -121,8 +121,8 @@ impl<'de> serde::Deserialize<'de> for Bip340 {
 	where
 		D: serde::Deserializer<'de>,
 	{
-		sp_std::str::FromStr::from_str(&String::deserialize(deserializer)?)
-			.map_err(|e| serde::de::Error::custom(format!("{:?}", e)))
+		sp_std::str::FromStr::from_str(&core::alloc::string::String::deserialize(deserializer)?)
+			.map_err(|e| serde::de::Error::custom(e.to_string()))
 	}
 }
 
