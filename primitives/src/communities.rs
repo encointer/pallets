@@ -18,7 +18,7 @@ use crate::common::FromStr as CrateFromStr;
 use bs58;
 use codec::{Decode, Encode, MaxEncodedLen};
 use crc::{Crc, CRC_32_CKSUM};
-use ep_core::fixed::types::I64F64;
+use ep_core::{bip340::Bip340, fixed::types::I64F64};
 use geohash::GeoHash as GeohashGeneric;
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
@@ -235,7 +235,7 @@ impl Location {
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum AnnouncementSigner {
-	Bip340([u8; 32]),
+	Bip340(Bip340),
 }
 
 #[derive(
