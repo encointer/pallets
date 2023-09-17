@@ -27,8 +27,16 @@ use encointer_primitives::{
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::traits::Get;
+pub use weights::WeightInfo;
+
+#[cfg(not(feature = "std"))]
+use sp_std::vec::Vec;
+
 // Logger target
 //const LOG: &str = "encointer";
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 
 pub use pallet::*;
 
@@ -63,6 +71,7 @@ pub mod pallet {
 		type ProposalLifetimeCycles: Get<u32>; // ceil of the proposal lifetime in cycles
 		#[pallet::constant]
 		type MinTurnout: Get<u128>; // in permill
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::event]
@@ -145,7 +154,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight({10000})]
+		#[pallet::weight((<T as Config>::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes))]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
 			proposal_action: ProposalAction,
@@ -173,7 +182,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight({10000})]
+		#[pallet::weight((<T as Config>::WeightInfo::vote(), DispatchClass::Normal, Pays::Yes))]
 		pub fn vote(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -216,7 +225,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight({10000})]
+		#[pallet::weight((<T as Config>::WeightInfo::update_proposal_state(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_proposal_state(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -445,11 +454,11 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	}
 }
 
-// mod weights;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+mod weights;
 //
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
