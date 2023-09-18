@@ -257,7 +257,7 @@ pub enum AnnouncementSigner {
 pub enum CommunityRules {
 	#[default]
 	LoCo,
-	LoCoLight,
+	LoCoFlex,
 	BeeDance,
 }
 
