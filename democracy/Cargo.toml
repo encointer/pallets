@@ -58,3 +58,7 @@ std = [
 ]
 
 runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto", "sp-core"]
+
+try-runtime = [
+    "frame-system/try-runtime",
+]

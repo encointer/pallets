@@ -48,6 +48,7 @@ impl dut::Config for TestRuntime {
 	type ProposalLifetime = ConstU64<40>;
 	type ProposalLifetimeCycles = ConstU32<1>;
 	type MinTurnout = ConstU128<20>; // 2%
+	type WeightInfo = (); // 2%
 }
 
 // boilerplate

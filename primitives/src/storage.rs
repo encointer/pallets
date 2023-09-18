@@ -16,7 +16,7 @@
 
 //! Helper functions to manipulate the storage, to get a specific state in the tests
 
-use crate::ceremonies::CommunityCeremony;
+use crate::{ceremonies::CommunityCeremony, scheduler::CeremonyIndexType};
 use frame_support::pallet_prelude::Encode;
 use sp_io::hashing::{blake2_128, twox_128};
 
@@ -40,6 +40,14 @@ pub fn participant_reputation<AccountId: Encode>(
 	storage_double_map_key("EncointerCeremonies", "ParticipantReputation", c, &account)
 }
 
+pub fn global_reputation_count(c: CeremonyIndexType) -> StorageKey {
+	storage_map_key("EncointerCeremonies", "GlobalReputationCount", c)
+}
+
+pub fn current_ceremony_index_key() -> StorageKey {
+	storage_key("EncointerScheduler", "CurrentCeremonyIndex")
+}
+
 pub fn storage_key(module: &str, storage_key_name: &str) -> StorageKey {
 	let mut key = twox_128(module.as_bytes()).to_vec();
 	key.extend(&twox_128(storage_key_name.as_bytes()));
@@ -60,6 +68,16 @@ where
 	bytes.extend(&twox_128(storage_key_name.as_bytes())[..]);
 	bytes.extend(key_hash(&key1));
 	bytes.extend(key_hash(&key2));
+	bytes
+}
+
+pub fn storage_map_key<K>(module: &str, storage_key_name: &str, key1: K) -> StorageKey
+where
+	K: Encode,
+{
+	let mut bytes = twox_128(module.as_bytes()).to_vec();
+	bytes.extend(&twox_128(storage_key_name.as_bytes())[..]);
+	bytes.extend(key_hash(&key1));
 	bytes
 }
 
