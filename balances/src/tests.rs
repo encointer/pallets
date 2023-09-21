@@ -20,6 +20,7 @@ use super::{Balance as EncointerBalanceStorage, *};
 use crate::mock::{Balances, DefaultDemurrage};
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use encointer_primitives::{
+	balances::I64F64_to_U64F64,
 	communities::CommunityIdentifier,
 	fixed::{traits::LossyInto, transcendental::exp},
 };
@@ -214,7 +215,8 @@ fn demurrage_should_work() {
 		System::set_block_number(1);
 		assert_eq!(
 			EncointerBalances::balance(cid, &alice),
-			exp::<BalanceType, BalanceType>(-DefaultDemurrage::get()).unwrap()
+			I64F64_to_U64F64(exp::<Demurrage, Demurrage>(-DefaultDemurrage::get()).unwrap())
+				.unwrap()
 		);
 		//one year later
 		System::set_block_number(86400 / 5 * 356);
@@ -309,7 +311,7 @@ fn transfer_all_works() {
 
 		let balance: f64 = EncointerBalances::balance(cid, &bob).lossy_into();
 		let demurrage_factor: f64 =
-			exp::<BalanceType, BalanceType>(Demurrage::from_num(3.0) * -DefaultDemurrage::get())
+			exp::<Demurrage, Demurrage>(Demurrage::from_num(3.0) * -DefaultDemurrage::get())
 				.unwrap()
 				.lossy_into();
 		assert_relative_eq!(balance, 50.0 * demurrage_factor, epsilon = 1.0e-9);

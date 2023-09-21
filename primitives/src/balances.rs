@@ -144,7 +144,14 @@ pub fn demurrage_factor(demurrage_per_block: Demurrage, elapsed_blocks: u32) -> 
 	let f: I64F64 = exp(exponent).unwrap_or_else(|_| 0.into());
 
 	// Safe conversion. The result of an exponential function can't be negative.
-	BalanceType::from_le_bytes(f.to_le_bytes())
+	I64F64_to_U64F64(f).unwrap_or_else(|| {
+		// Should never happen, but we absolutely don't want to panic in code that gets executed
+		// upon every transaction, which would brick the chain.
+		log::error!("Exponential function has returned a negate value. Critical bug!");
+
+		// In this critical scenario we return just 1, which is the no-op in terms of demurrage.
+		1u32.into()
+	})
 }
 
 /// Our BalanceType is I64F64, so the smallest possible number is
@@ -196,6 +203,15 @@ impl Convert<u128, BalanceType> for EncointerBalanceConverter {
 		result += i64_part;
 		result
 	}
+}
+
+#[allow(non_snake_case)]
+pub fn I64F64_to_U64F64(source: I64F64) -> Option<U64F64> {
+	if source.is_negative() {
+		return None
+	}
+
+	Some(U64F64::from_le_bytes(source.to_le_bytes()))
 }
 
 #[cfg(test)]
