@@ -143,7 +143,6 @@ pub fn demurrage_factor(demurrage_per_block: Demurrage, elapsed_blocks: u32) -> 
 	// exponent <= 0; hence return value [0, 1)
 	let f: I64F64 = exp(exponent).unwrap_or_else(|_| 0.into());
 
-	// Safe conversion. The result of an exponential function can't be negative.
 	I64F64_to_U64F64(f).unwrap_or_else(|| {
 		// Should never happen, but we absolutely don't want to panic in code that gets executed
 		// upon every transaction, which would brick the chain.
