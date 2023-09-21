@@ -171,7 +171,7 @@ impl Convert<BalanceType, u128> for EncointerBalanceConverter {
 		let bits = balance.to_bits();
 		let mut result: u128 = 0;
 
-		result += (bits >> 64) as u128 * ONE_ENCOINTER_BALANCE_UNIT;
+		result += (bits >> 64) * ONE_ENCOINTER_BALANCE_UNIT;
 
 		result += BalanceType::from_bits((bits as u64) as u128) // <- to truncate
 			.saturating_mul_int(ONE_ENCOINTER_BALANCE_UNIT)
