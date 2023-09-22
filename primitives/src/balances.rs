@@ -146,7 +146,7 @@ pub fn demurrage_factor(demurrage_per_block: Demurrage, elapsed_blocks: u32) -> 
 	to_U64F64(f).unwrap_or_else(|| {
 		// Should never happen, but we absolutely don't want to panic in code that gets executed
 		// upon every transaction, which would brick the chain.
-		log::error!("Exponential function has returned a negate value. Critical bug!");
+		log::error!("Exponential function has returned a negative value. Critical bug!");
 
 		// In this critical scenario we return 1, which is the no-op in terms of demurrage.
 		1u32.into()
