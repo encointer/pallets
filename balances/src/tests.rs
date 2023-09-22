@@ -20,6 +20,7 @@ use super::{Balance as EncointerBalanceStorage, *};
 use crate::mock::{Balances, DefaultDemurrage};
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use encointer_primitives::{
+	balances::to_U64F64,
 	communities::CommunityIdentifier,
 	fixed::{traits::LossyInto, transcendental::exp},
 };
@@ -214,7 +215,7 @@ fn demurrage_should_work() {
 		System::set_block_number(1);
 		assert_eq!(
 			EncointerBalances::balance(cid, &alice),
-			exp::<BalanceType, BalanceType>(-DefaultDemurrage::get()).unwrap()
+			to_U64F64(exp::<Demurrage, Demurrage>(-DefaultDemurrage::get()).unwrap()).unwrap()
 		);
 		//one year later
 		System::set_block_number(86400 / 5 * 356);
@@ -309,7 +310,7 @@ fn transfer_all_works() {
 
 		let balance: f64 = EncointerBalances::balance(cid, &bob).lossy_into();
 		let demurrage_factor: f64 =
-			exp::<BalanceType, BalanceType>(Demurrage::from_num(3.0) * -DefaultDemurrage::get())
+			exp::<Demurrage, Demurrage>(Demurrage::from_num(3.0) * -DefaultDemurrage::get())
 				.unwrap()
 				.lossy_into();
 		assert_relative_eq!(balance, 50.0 * demurrage_factor, epsilon = 1.0e-9);
@@ -493,67 +494,43 @@ mod impl_fungibles {
 			let ferdie = AccountKeyring::Ferdie.to_account_id();
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(50)));
 
-			assert!(
-				EncointerBalances::can_deposit(wrong_cid, &alice, 10, Provenance::Minted) ==
-					DepositConsequence::UnknownAsset
+			assert_eq!(
+				EncointerBalances::can_deposit(wrong_cid, &alice, 10, Provenance::Minted),
+				DepositConsequence::UnknownAsset
 			);
 
 			assert_ok!(EncointerBalances::issue(
 				cid,
 				&alice,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+				// u64::Max is uneven, so subtract 1 to be explicit about the result.
+				BalanceType::from_num((u64::MAX - 1) / 2)
 			));
+
 			assert_ok!(EncointerBalances::issue(
 				cid,
 				&bob,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+				// Subtract the 50 we issued to Alice above.
+				BalanceType::from_num((u64::MAX - 1) / 2 - 50)
 			));
 
-			assert!(
+			assert_eq!(
 				EncointerBalances::can_deposit(
 					cid,
 					&ferdie,
-					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
-					Provenance::Minted
-				) == DepositConsequence::Overflow
+					fungible(BalanceType::from_num(2)),
+					Provenance::Minted,
+				),
+				DepositConsequence::Overflow
 			);
 
-			// in the very weird case where some some balances are negative we need to test for overflow of
-			// and account balance, because now an account can overflow but the total issuance does not.
-			assert_ok!(EncointerBalances::burn(
-				cid,
-				&bob,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
-			));
-
-			assert_ok!(EncointerBalances::issue(
-				cid,
-				&bob,
-				BalanceType::from_num(-4.5 * 10f64.powf(18f64))
-			));
-
-			assert_ok!(EncointerBalances::issue(
-				cid,
-				&alice,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
-			));
-
-			assert!(
-				EncointerBalances::can_deposit(
-					cid,
-					&alice,
-					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
-					Provenance::Minted
-				) == DepositConsequence::Overflow
-			);
-
-			assert!(
+			assert_eq!(
 				EncointerBalances::can_deposit(
 					cid,
 					&alice,
 					fungible(BalanceType::from_num(1)),
 					Provenance::Minted
-				) == DepositConsequence::Success
+				),
+				DepositConsequence::Success
 			);
 		})
 	}
@@ -568,29 +545,29 @@ mod impl_fungibles {
 			assert_ok!(EncointerBalances::issue(cid, &alice, BalanceType::from_num(10)));
 			assert_ok!(EncointerBalances::issue(cid, &bob, BalanceType::from_num(1)));
 
-			assert!(
-				EncointerBalances::can_withdraw(wrong_cid, &alice, 10) ==
-					WithdrawConsequence::UnknownAsset
+			assert_eq!(
+				EncointerBalances::can_withdraw(wrong_cid, &alice, 10),
+				WithdrawConsequence::UnknownAsset
 			);
 
-			assert!(
-				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(12))) ==
-					WithdrawConsequence::Underflow
+			assert_eq!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(12))),
+				WithdrawConsequence::Underflow
 			);
 
-			assert!(
-				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(0))) ==
-					WithdrawConsequence::Success
+			assert_eq!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(0))),
+				WithdrawConsequence::Success
 			);
 
-			assert!(
-				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(2))) ==
-					WithdrawConsequence::BalanceLow
+			assert_eq!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(2))),
+				WithdrawConsequence::BalanceLow
 			);
 
-			assert!(
-				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(1))) ==
-					WithdrawConsequence::Success
+			assert_eq!(
+				EncointerBalances::can_withdraw(cid, &bob, fungible(BalanceType::from_num(1))),
+				WithdrawConsequence::Success
 			);
 		})
 	}

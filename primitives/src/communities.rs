@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 use ep_core::serde::{serialize_array, serialize_fixed};
 
 use crate::{
-	balances::Demurrage,
+	balances::{BalanceType, Demurrage},
 	common::{
 		validate_ascii, validate_ipfs_cid, AsByteOrNoop, BoundedIpfsCid, IpfsValidationError,
 		PalletString,
@@ -47,7 +47,7 @@ pub type GeoHash = GeohashGeneric<GEO_HASH_BUCKET_RESOLUTION>;
 pub type CommunityIndexType = u32;
 pub type LocationIndexType = u32;
 pub type Degree = I64F64;
-pub type NominalIncome = I64F64;
+pub type NominalIncome = BalanceType;
 pub type MinSolarTripTimeType = u32;
 pub type MaxSpeedMpsType = u32;
 
@@ -87,14 +87,6 @@ pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	// So the community does still have the choice of a huge demurrage.
 	if demurrage > &Demurrage::from_num(1) {
 		return Err(RangeError::TooHigh { limit: 1 })
-	}
-	Ok(())
-}
-
-/// Ensure that the nominal is in a sane range.
-pub fn validate_nominal_income(nominal_income: &NominalIncome) -> Result<(), RangeError> {
-	if nominal_income <= &NominalIncome::from_num(0) {
-		return Err(RangeError::LessThanOrEqualZero)
 	}
 	Ok(())
 }
@@ -427,9 +419,8 @@ mod tests {
 		bs58_verify::Bs58Error,
 		common::{FromStr as CrateFromStr, IpfsValidationError},
 		communities::{
-			validate_demurrage, validate_nominal_income, CommunityIdentifier, CommunityMetadata,
-			CommunityMetadataError, Degree, Demurrage, Location, NominalIncome, PalletString,
-			RangeError,
+			validate_demurrage, CommunityIdentifier, CommunityMetadata, CommunityMetadataError,
+			Degree, Demurrage, Location, PalletString, RangeError,
 		},
 	};
 	use sp_std::str::FromStr;
@@ -438,14 +429,6 @@ mod tests {
 	#[test]
 	fn demurrage_smaller_0_fails() {
 		assert_eq!(validate_demurrage(&Demurrage::from_num(-1)), Err(RangeError::LessThanZero));
-	}
-
-	#[test]
-	fn nominal_income_smaller_0_fails() {
-		assert_eq!(
-			validate_nominal_income(&NominalIncome::from_num(-1)),
-			Err(RangeError::LessThanOrEqualZero)
-		);
 	}
 
 	#[test]

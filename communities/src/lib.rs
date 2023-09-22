@@ -26,12 +26,11 @@
 use codec::Encode;
 use core::marker::PhantomData;
 use encointer_primitives::{
-	balances::{BalanceEntry, BalanceType, Demurrage},
+	balances::{BalanceEntry, Demurrage},
 	common::PalletString,
 	communities::{
-		consts::*, validate_nominal_income, CommunityIdentifier,
-		CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location, LossyFrom,
-		NominalIncome as NominalIncomeType,
+		consts::*, CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree,
+		GeoHash, Location, LossyFrom, NominalIncome as NominalIncomeType,
 	},
 	fixed::transcendental::{asin, cos, powi, sin, sqrt},
 	scheduler::CeremonyPhaseType,
@@ -106,9 +105,6 @@ pub mod pallet {
 			community_metadata
 				.validate()
 				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
-			if let Some(i) = nominal_income {
-				validate_nominal_income(&i).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
-			}
 
 			let cid = CommunityIdentifier::new(location, bootstrappers.clone())
 				.map_err(|_| Error::<T>::InvalidLocation)?;
@@ -275,7 +271,7 @@ pub mod pallet {
 		pub fn update_demurrage(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
-			demurrage: BalanceType,
+			demurrage: Demurrage,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 
@@ -480,8 +476,6 @@ impl<T: Config> Pallet<T> {
 		cid: CommunityIdentifier,
 		nominal_income: NominalIncomeType,
 	) -> DispatchResultWithPostInfo {
-		Self::ensure_cid_exists(&cid)?;
-		validate_nominal_income(&nominal_income).map_err(|_| <Error<T>>::InvalidNominalIncome)?;
 		Self::ensure_cid_exists(&cid)?;
 
 		<NominalIncome<T>>::insert(cid, nominal_income);
