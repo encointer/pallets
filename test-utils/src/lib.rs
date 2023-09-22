@@ -158,7 +158,7 @@ macro_rules! impl_balances {
 parameter_types! {
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 	/// 0.000005
-	pub const EncointerBalancesExistentialDeposit: BalanceType = BalanceType::from_bits(0x0000000000000000000053e2d6238da4_i128);
+	pub const EncointerBalancesExistentialDeposit: BalanceType = BalanceType::from_bits(0x0000000000000000000053e2d6238da4_u128);
 }
 
 #[macro_export]

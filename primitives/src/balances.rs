@@ -38,7 +38,7 @@ const LOG: &str = "encointer::demurrage";
 // We're working with fixpoint here.
 
 /// Encointer balances are fixpoint values
-pub type BalanceType = I64F64;
+pub type BalanceType = U64F64;
 
 /// Demurrage is the rate of evanescence of balances per block
 /// it must be positive
@@ -137,11 +137,20 @@ pub fn demurrage_factor(demurrage_per_block: Demurrage, elapsed_blocks: u32) -> 
 	// demurrage >= 0; hence exponent <= 0
 	let exponent = match (-demurrage_per_block.abs()).checked_mul(elapsed_blocks.into()) {
 		Some(exp) => exp,
-		None => return 0.into(),
+		None => return 0u64.into(),
 	};
 
 	// exponent <= 0; hence return value [0, 1)
-	exp(exponent).unwrap_or_else(|_| 0.into())
+	let f: I64F64 = exp(exponent).unwrap_or_else(|_| 0.into());
+
+	to_U64F64(f).unwrap_or_else(|| {
+		// Should never happen, but we absolutely don't want to panic in code that gets executed
+		// upon every transaction, which would brick the chain.
+		log::error!("Exponential function has returned a negative value. Critical bug!");
+
+		// In this critical scenario we return 1, which is the no-op in terms of demurrage.
+		1u32.into()
+	})
 }
 
 /// Our BalanceType is I64F64, so the smallest possible number is
@@ -161,10 +170,10 @@ impl Convert<BalanceType, u128> for EncointerBalanceConverter {
 		let bits = balance.to_bits();
 		let mut result: u128 = 0;
 
-		result += (bits >> 64) as u128 * ONE_ENCOINTER_BALANCE_UNIT;
+		result += (bits >> 64) * ONE_ENCOINTER_BALANCE_UNIT;
 
-		result += BalanceType::from_bits((bits as u64) as i128) // <- to truncate
-			.saturating_mul_int(ONE_ENCOINTER_BALANCE_UNIT as i128)
+		result += BalanceType::from_bits((bits as u64) as u128) // <- to truncate
+			.saturating_mul_int(ONE_ENCOINTER_BALANCE_UNIT)
 			.to_num::<u128>();
 		result
 	}
@@ -195,6 +204,16 @@ impl Convert<u128, BalanceType> for EncointerBalanceConverter {
 	}
 }
 
+#[allow(non_snake_case)]
+pub fn to_U64F64(source: I64F64) -> Option<U64F64> {
+	if source.is_negative() {
+		return None
+	}
+
+	// Safe conversion because we made sure that it is not negative above.
+	Some(U64F64::from_bits(source.to_bits() as u128))
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -215,26 +234,26 @@ mod tests {
 
 	#[test]
 	fn demurrage_works() {
-		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		let bal = BalanceEntry::<u32>::new(1u32.into(), 0);
 		assert_abs_diff_eq(bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0.5);
 	}
 
 	#[test]
 	fn apply_demurrage_when_principal_is_zero_works() {
-		let bal = BalanceEntry::<u32>::new(0.into(), 0);
+		let bal = BalanceEntry::<u32>::new(0u32.into(), 0);
 		assert_abs_diff_eq(bal.apply_demurrage(DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0f64);
 	}
 
 	#[test]
 	fn apply_demurrage_when_demurrage_is_negative_works() {
-		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		let bal = BalanceEntry::<u32>::new(1u32.into(), 0);
 		assert_abs_diff_eq(bal.apply_demurrage(-DEFAULT_DEMURRAGE, ONE_YEAR).principal, 0.5);
 	}
 
 	#[test]
 	fn apply_demurrage_with_overflowing_values_works() {
 		let demurrage = Demurrage::from_num(0.000048135220872218395);
-		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		let bal = BalanceEntry::<u32>::new(1u32.into(), 0);
 
 		// This produced a overflow before: https://github.com/encointer/encointer-node/issues/290
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).principal, 0f64);
@@ -249,7 +268,7 @@ mod tests {
 	#[test]
 	fn apply_demurrage_with_block_number_bigger_than_u32max_does_not_overflow() {
 		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
-		let bal = BalanceEntry::<u64>::new(1.into(), 0);
+		let bal = BalanceEntry::<u64>::new(1u32.into(), 0);
 
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, u32::MAX as u64 + 1).principal, 0f64);
 	}
@@ -257,15 +276,15 @@ mod tests {
 	#[test]
 	fn apply_demurrage_with_block_number_not_monotonically_rising_just_updates_last_block() {
 		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
-		let bal = BalanceEntry::<u32>::new(1.into(), 1);
+		let bal = BalanceEntry::<u32>::new(1u32.into(), 1);
 
-		assert_eq!(bal.apply_demurrage(demurrage, 0), BalanceEntry::<u32>::new(1.into(), 0))
+		assert_eq!(bal.apply_demurrage(demurrage, 0), BalanceEntry::<u32>::new(1u32.into(), 0))
 	}
 
 	#[test]
 	fn apply_demurrage_with_zero_demurrage_works() {
 		let demurrage = Demurrage::from_num(0.0);
-		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		let bal = BalanceEntry::<u32>::new(1u32.into(), 0);
 
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, ONE_YEAR).principal, 1f64);
 	}
@@ -273,7 +292,7 @@ mod tests {
 	#[test]
 	fn apply_demurrage_with_zero_elapsed_blocks_works() {
 		let demurrage = Demurrage::from_num(DEFAULT_DEMURRAGE);
-		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		let bal = BalanceEntry::<u32>::new(1u32.into(), 0);
 
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 0).principal, 1f64);
 	}
@@ -285,7 +304,7 @@ mod tests {
 		//
 		// Not critical as we safeguard against this with `validate_demurrage`.
 		let demurrage = Demurrage::from_num(i64::MAX - 1);
-		let bal = BalanceEntry::<u32>::new(1.into(), 0);
+		let bal = BalanceEntry::<u32>::new(1u32.into(), 0);
 
 		assert_abs_diff_eq(bal.apply_demurrage(demurrage, 1).principal, 0f64);
 	}

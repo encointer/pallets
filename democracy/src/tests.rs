@@ -89,7 +89,7 @@ fn proposal_submission_works() {
 		let cid = create_cid();
 		let block = System::block_number();
 		let proposal_action =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice()),
@@ -109,7 +109,7 @@ fn proposal_submission_fails_if_proposal_in_enactment_queue() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 		let proposal_action =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.get_identifier(), 100);
 
@@ -254,7 +254,7 @@ fn eligible_reputations_works_with_cids() {
 		let alice = alice();
 
 		let proposal_action =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action
@@ -384,7 +384,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		let proposal: Proposal<BlockNumber> = Proposal {
 			start: BlockNumber::from(1u64),
 			start_cindex: 1,
-			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32)),
+			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
 			state: ProposalState::Cancelled,
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
@@ -392,7 +392,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		let proposal2: Proposal<BlockNumber> = Proposal {
 			start: BlockNumber::from(1u64),
 			start_cindex: 1,
-			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32)),
+			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
 			state: ProposalState::Approved,
 		};
 		Proposals::<TestRuntime>::insert(2, proposal2);
@@ -570,7 +570,7 @@ fn test_get_electorate_works() {
 		));
 
 		let proposal_action =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action
@@ -638,7 +638,7 @@ fn enactment_updates_proposal_metadata_and_enactment_queue() {
 		));
 
 		let proposal_action2 =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100i32));
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action2
@@ -668,7 +668,7 @@ fn proposal_happy_flow() {
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 		let alice = alice();
 		let proposal_action =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037i32));
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action
@@ -700,7 +700,7 @@ fn proposal_happy_flow() {
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
-		assert_eq!(EncointerCommunities::nominal_income(cid), NominalIncomeType::from(13037i32));
+		assert_eq!(EncointerCommunities::nominal_income(cid), NominalIncomeType::from(13037u32));
 	});
 }
 
@@ -710,7 +710,7 @@ fn enact_update_nominal_income_works() {
 		let cid = create_cid();
 		let alice = alice();
 		let proposal_action =
-			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037i32));
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action
@@ -724,7 +724,7 @@ fn enact_update_nominal_income_works() {
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
-		assert_eq!(EncointerCommunities::nominal_income(cid), NominalIncomeType::from(13037i32));
+		assert_eq!(EncointerCommunities::nominal_income(cid), NominalIncomeType::from(13037u32));
 	});
 }
 
