@@ -20,7 +20,7 @@ use super::{Balance as EncointerBalanceStorage, *};
 use crate::mock::{Balances, DefaultDemurrage};
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use encointer_primitives::{
-	balances::I64F64_to_U64F64,
+	balances::to_U64F64,
 	communities::CommunityIdentifier,
 	fixed::{traits::LossyInto, transcendental::exp},
 };
@@ -215,8 +215,7 @@ fn demurrage_should_work() {
 		System::set_block_number(1);
 		assert_eq!(
 			EncointerBalances::balance(cid, &alice),
-			I64F64_to_U64F64(exp::<Demurrage, Demurrage>(-DefaultDemurrage::get()).unwrap())
-				.unwrap()
+			to_U64F64(exp::<Demurrage, Demurrage>(-DefaultDemurrage::get()).unwrap()).unwrap()
 		);
 		//one year later
 		System::set_block_number(86400 / 5 * 356);

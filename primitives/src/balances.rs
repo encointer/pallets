@@ -143,7 +143,7 @@ pub fn demurrage_factor(demurrage_per_block: Demurrage, elapsed_blocks: u32) -> 
 	// exponent <= 0; hence return value [0, 1)
 	let f: I64F64 = exp(exponent).unwrap_or_else(|_| 0.into());
 
-	I64F64_to_U64F64(f).unwrap_or_else(|| {
+	to_U64F64(f).unwrap_or_else(|| {
 		// Should never happen, but we absolutely don't want to panic in code that gets executed
 		// upon every transaction, which would brick the chain.
 		log::error!("Exponential function has returned a negate value. Critical bug!");
@@ -205,7 +205,7 @@ impl Convert<u128, BalanceType> for EncointerBalanceConverter {
 }
 
 #[allow(non_snake_case)]
-pub fn I64F64_to_U64F64(source: I64F64) -> Option<U64F64> {
+pub fn to_U64F64(source: I64F64) -> Option<U64F64> {
 	if source.is_negative() {
 		return None
 	}
