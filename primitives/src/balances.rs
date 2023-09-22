@@ -210,7 +210,9 @@ pub fn I64F64_to_U64F64(source: I64F64) -> Option<U64F64> {
 		return None
 	}
 
-	Some(U64F64::from_le_bytes(source.to_le_bytes()))
+	// Hacky conversion that is safe because we checked that is
+	// not negative above.
+	Some(U64F64::from_bits(source.to_bits() as u128))
 }
 
 #[cfg(test)]
