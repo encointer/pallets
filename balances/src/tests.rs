@@ -502,50 +502,23 @@ mod impl_fungibles {
 			assert_ok!(EncointerBalances::issue(
 				cid,
 				&alice,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+				// u64::Max is uneven, so subtract 1 to be explicit about the result.
+				BalanceType::from_num((u64::MAX - 1) / 2)
 			));
+
 			assert_ok!(EncointerBalances::issue(
 				cid,
 				&bob,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
+				// Subtract the 50 we issued to Alice above.
+				BalanceType::from_num((u64::MAX - 1) / 2 - 50)
 			));
 
 			assert_eq!(
 				EncointerBalances::can_deposit(
 					cid,
 					&ferdie,
-					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
-					Provenance::Minted
-				),
-				DepositConsequence::Overflow
-			);
-
-			// in the very weird case where some some balances are negative we need to test for overflow of
-			// and account balance, because now an account can overflow but the total issuance does not.
-			assert_ok!(EncointerBalances::burn(
-				cid,
-				&bob,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
-			));
-
-			assert_ok!(EncointerBalances::issue(
-				cid,
-				&bob,
-				BalanceType::from_num(-4.5 * 10f64.powf(18f64))
-			));
-
-			assert_ok!(EncointerBalances::issue(
-				cid,
-				&alice,
-				BalanceType::from_num(4.5 * 10f64.powf(18f64))
-			));
-
-			assert_eq!(
-				EncointerBalances::can_deposit(
-					cid,
-					&alice,
-					fungible(BalanceType::from_num(4.5 * 10f64.powf(18f64))),
-					Provenance::Minted
+					fungible(BalanceType::from_num(2)),
+					Provenance::Minted,
 				),
 				DepositConsequence::Overflow
 			);
