@@ -210,8 +210,7 @@ pub fn to_U64F64(source: I64F64) -> Option<U64F64> {
 		return None
 	}
 
-	// Hacky conversion that is safe because we checked that is
-	// not negative above.
+	// Safe conversion because we made sure that it is not negative above.
 	Some(U64F64::from_bits(source.to_bits() as u128))
 }
 
