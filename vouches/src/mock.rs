@@ -38,7 +38,8 @@ parameter_types! {}
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
-	type MaxQualitiesPerCall = ConstU32<4>;
+	type MaxQualitiesPerVouch = ConstU32<4>;
+	type MaxVouchesPerAttester = ConstU32<4>;
 }
 
 // boilerplate

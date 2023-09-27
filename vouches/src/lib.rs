@@ -19,13 +19,13 @@
 use core::marker::PhantomData;
 use encointer_primitives::vouches::{Vouch, VouchQuality, VouchType};
 
+use encointer_primitives::vouches::VouchQualityBoundedVec;
 use frame_system::{self as frame_system, ensure_signed, pallet_prelude::OriginFor};
 use log::info;
 pub use pallet::*;
 use sp_core::H256;
 use sp_std::convert::TryInto;
 pub use weights::WeightInfo;
-
 // Logger target
 const LOG: &str = "encointer";
 
@@ -58,39 +58,32 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight((<T as Config>::WeightInfo::register_purpose(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::vouch_for(), DispatchClass::Normal, Pays::Yes))]
 		pub fn vouch_for(
 			origin: OriginFor<T>,
 			attestee: T::AccountId,
 			vouch_type: VouchType,
-			qualities: BoundedVec<T::MaxQualitiesPerVouch, VouchQuality>,
-		) -> DispatchResultWithPostInfo
-		where
-			<T as pallet::Config>::MaxQualitiesPerVouch: Clone,
-		{
+			qualities: VouchQualityBoundedVec,
+		) -> DispatchResultWithPostInfo {
 			let attester = ensure_signed(origin)?;
 			let now = <pallet_timestamp::Pallet<T>>::get();
-			Self::do_vouch_for(attester, attestee, now, vouch_type, qualities)?;
-			Ok(().into())
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		pub fn do_vouch_for(
-			attester: T::AccountId,
-			attestee: T::AccountId,
-			timestamp: T::Moment,
-			vouch_type: VouchType,
-			qualities: BoundedVec<T::MaxQualitiesPerVouch, VouchQuality>,
-		) -> Result<(), Error<T>> {
-			let vouch = Vouch { protected: false, timestamp, vouch_type, qualities };
-			<Vouches<T>>::try_mutate(&attestee, &attester, |vouches| {
-				*vouches.push(vouch).map_err(|| Error::<T>::TooManyVouchesForAttestee);
-				Ok(())
-			})?;
+			let vouch = Vouch {
+				protected: false,
+				timestamp: now,
+				vouch_type,
+				qualities: qualities.clone(),
+			};
+			<Vouches<T>>::try_mutate(
+				&attestee,
+				&attester,
+				|vouches| -> DispatchResultWithPostInfo {
+					vouches.try_push(vouch).map_err(|_| Error::<T>::TooManyVouchesForAttestee)?;
+					Ok(().into())
+				},
+			)?;
 			info!(target: LOG, "vouching: {:?} for {:?}, vouch type: {:?}, attached qualities: {:?}", attester, attestee, vouch_type, qualities.len());
 			Self::deposit_event(Event::VouchedFor { attestee, attester, vouch_type });
-			Ok(())
+			Ok(().into())
 		}
 	}
 
@@ -115,7 +108,7 @@ pub mod pallet {
 		T::AccountId,
 		Identity,
 		T::AccountId,
-		BoundedVec<T::MaxVouchesPerAttester, Vouch<T::MaxQualitiesPerVouch, T::Moment>>,
+		BoundedVec<Vouch<T::Moment>, T::MaxVouchesPerAttester>,
 		ValueQuery,
 	>;
 }

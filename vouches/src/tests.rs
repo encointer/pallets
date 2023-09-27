@@ -20,7 +20,7 @@ use super::*;
 use crate::mock::{EncointerVouches, RuntimeOrigin, Timestamp};
 use codec::Encode;
 use encointer_primitives::{
-	common::BoundedIpfsCid,
+	common::{BoundedIpfsCid, FromStr},
 	vouches::{PresenceType, VouchType},
 };
 use frame_support::{
@@ -46,31 +46,23 @@ fn vouch_for_works() {
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 
 		let vouch_type = VouchType::EncounteredHuman(PresenceType::Physical);
-		let qualities = vec![VouchQuality::Badge(BoundedIpfsCid::from(
-			"QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB",
-		))];
+		let mut qualities = VouchQualityBoundedVec::default();
+		qualities
+			.try_push(VouchQuality::Badge(
+				BoundedIpfsCid::from_str("QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB").unwrap(),
+			))
+			.unwrap();
 
-		assert_ok!(EncointerVouches::do_vouch_for(
-			alice.clone(),
-			bob.clone(),
-			vouch_type,
-			qualities.clone()
-		));
-		assert_eq!(
-			EncointerVouches::vouches(bob, alice),
-			vec![Vouch { protected: false, timestamp: 42, vouch_type, qualities }]
-		);
-
-		// use extrinsic
 		assert_ok!(EncointerVouches::vouch_for(
 			RuntimeOrigin::signed(alice.clone()),
 			charlie.clone(),
 			vouch_type,
 			qualities.clone(),
 		));
+
 		assert_eq!(
-			EncointerVouches::vouches(charlie, alice),
-			vec![Vouch { protected: false, timestamp: 42, vouch_type, qualities }]
+			EncointerVouches::vouches(charlie, alice)[0],
+			Vouch { protected: false, timestamp: 42, vouch_type, qualities }
 		);
 	});
 }
