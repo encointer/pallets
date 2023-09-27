@@ -24,7 +24,7 @@ pub use pallet::*;
 use sp_std::convert::TryInto;
 pub use weights::WeightInfo;
 // Logger target
-const LOG: &str = "encointer";
+const LOG: &str = "encointer::vouches";
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -46,8 +46,6 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
-		#[pallet::constant]
-		type MaxQualitiesPerVouch: Get<u32>;
 		#[pallet::constant]
 		type MaxVouchesPerAttester: Get<u32>;
 	}

@@ -17,7 +17,6 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use encointer_primitives::{balances::BalanceType, vouches::PresenceType};
 use frame_support::{parameter_types, traits::ConstU32};
 use sp_runtime::BuildStorage;
 use test_utils::*;
@@ -38,7 +37,6 @@ parameter_types! {}
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
-	type MaxQualitiesPerVouch = ConstU32<4>;
 	type MaxVouchesPerAttester = ConstU32<4>;
 }
 
@@ -48,6 +46,6 @@ impl_timestamp!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
+	let t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 	t.into()
 }

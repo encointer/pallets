@@ -17,23 +17,14 @@
 //! Unit tests for the encointer_reputation_commitments module.
 
 use super::*;
-use crate::mock::{EncointerVouches, RuntimeOrigin, Timestamp};
-use codec::Encode;
+use crate::mock::{EncointerVouches, RuntimeOrigin};
 use encointer_primitives::{
 	common::{BoundedIpfsCid, FromStr},
 	vouches::{PresenceType, VouchType},
 };
-use frame_support::{
-	assert_err, assert_ok,
-	traits::{OnFinalize, OnInitialize},
-};
+use frame_support::assert_ok;
 use mock::{new_test_ext, System, TestRuntime};
-use sp_runtime::traits::{BlakeTwo256, Hash};
-use test_utils::{
-	helpers::{event_deposited, last_event, register_test_community},
-	storage::participant_reputation,
-	AccountId, AccountKeyring, BLOCKTIME, GENESIS_TIME,
-};
+use test_utils::{AccountId, AccountKeyring};
 
 #[test]
 fn vouch_for_works() {

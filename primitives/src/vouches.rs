@@ -55,6 +55,7 @@ pub enum VouchQuality {
 }
 
 #[derive(Default, Encode, Decode, PartialEq, Eq, RuntimeDebug, Clone, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Vouch<Moment> {
 	pub protected: bool,
 	pub timestamp: Moment,
