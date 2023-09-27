@@ -39,10 +39,9 @@ use test_utils::{
 fn vouch_for_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
-		pallet_timestamp::Pallet::<TestRuntime>::set(RuntimeOrigin::none(), 42);
+		let _ = pallet_timestamp::Pallet::<TestRuntime>::set(RuntimeOrigin::none(), 42);
 
 		let alice = AccountId::from(AccountKeyring::Alice);
-		let bob = AccountId::from(AccountKeyring::Bob);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 
 		let vouch_type = VouchType::EncounteredHuman(PresenceType::Physical);

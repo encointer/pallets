@@ -21,7 +21,6 @@ use encointer_primitives::vouches::{Vouch, VouchQuality, VouchType};
 use frame_system::{self as frame_system, ensure_signed, pallet_prelude::OriginFor};
 use log::info;
 pub use pallet::*;
-use sp_core::H256;
 use sp_std::convert::TryInto;
 pub use weights::WeightInfo;
 // Logger target

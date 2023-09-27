@@ -16,10 +16,7 @@
 
 use crate::common::BoundedIpfsCid;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-	traits::{ConstU32, Get},
-	BoundedVec, RuntimeDebug,
-};
+use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
