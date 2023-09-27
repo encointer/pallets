@@ -18,8 +18,6 @@
 
 use core::marker::PhantomData;
 use encointer_primitives::vouches::{Vouch, VouchQuality, VouchType};
-
-use encointer_primitives::vouches::VouchQualityBoundedVec;
 use frame_system::{self as frame_system, ensure_signed, pallet_prelude::OriginFor};
 use log::info;
 pub use pallet::*;
@@ -63,16 +61,12 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			attestee: T::AccountId,
 			vouch_type: VouchType,
-			qualities: VouchQualityBoundedVec,
+			quality: VouchQuality,
 		) -> DispatchResultWithPostInfo {
 			let attester = ensure_signed(origin)?;
 			let now = <pallet_timestamp::Pallet<T>>::get();
-			let vouch = Vouch {
-				protected: false,
-				timestamp: now,
-				vouch_type,
-				qualities: qualities.clone(),
-			};
+			let vouch =
+				Vouch { protected: false, timestamp: now, vouch_type, quality: quality.clone() };
 			<Vouches<T>>::try_mutate(
 				&attestee,
 				&attester,
@@ -81,7 +75,7 @@ pub mod pallet {
 					Ok(().into())
 				},
 			)?;
-			info!(target: LOG, "vouching: {:?} for {:?}, vouch type: {:?}, attached qualities: {:?}", attester, attestee, vouch_type, qualities.len());
+			info!(target: LOG, "vouching: {:?} for {:?}, vouch type: {:?}, quality: {:?}", attester, attestee, vouch_type, quality);
 			Self::deposit_event(Event::VouchedFor { attestee, attester, vouch_type });
 			Ok(().into())
 		}

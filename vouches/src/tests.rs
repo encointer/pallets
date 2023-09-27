@@ -46,23 +46,20 @@ fn vouch_for_works() {
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 
 		let vouch_type = VouchType::EncounteredHuman(PresenceType::Physical);
-		let mut qualities = VouchQualityBoundedVec::default();
-		qualities
-			.try_push(VouchQuality::Badge(
-				BoundedIpfsCid::from_str("QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB").unwrap(),
-			))
-			.unwrap();
+		let quality = VouchQuality::Badge(
+			BoundedIpfsCid::from_str("QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB").unwrap(),
+		);
 
 		assert_ok!(EncointerVouches::vouch_for(
 			RuntimeOrigin::signed(alice.clone()),
 			charlie.clone(),
 			vouch_type,
-			qualities.clone(),
+			quality.clone(),
 		));
 
 		assert_eq!(
 			EncointerVouches::vouches(charlie, alice)[0],
-			Vouch { protected: false, timestamp: 42, vouch_type, qualities }
+			Vouch { protected: false, timestamp: 42, vouch_type, quality }
 		);
 	});
 }

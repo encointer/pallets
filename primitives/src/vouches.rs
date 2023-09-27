@@ -57,12 +57,10 @@ pub enum VouchQuality {
 	Rating(Rating),
 }
 
-pub type VouchQualityBoundedVec = BoundedVec<VouchQuality, ConstU32<32>>;
-
 #[derive(Default, Encode, Decode, PartialEq, Eq, RuntimeDebug, Clone, TypeInfo, MaxEncodedLen)]
 pub struct Vouch<Moment> {
 	pub protected: bool,
 	pub timestamp: Moment,
 	pub vouch_type: VouchType,
-	pub qualities: VouchQualityBoundedVec,
+	pub quality: VouchQuality,
 }
