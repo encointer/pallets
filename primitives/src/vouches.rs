@@ -44,26 +44,19 @@ pub enum PresenceType {
 /// which still results in meaningful order
 #[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-#[repr(u8)]
 pub enum VouchKind {
 	/// Unspecified. This should generally be handeled as an invalid vouch or an alien use case
 	#[default]
-	#[codec(index = 0)]
 	Unspecified,
 	/// This person is know to me and I have verified their account with specified presence type
-	#[codec(index = 10)]
 	KnownHuman(PresenceType),
 	/// I do not claim to know this person, but I encountered a human being providing me with the account I vouch for
-	#[codec(index = 11)]
 	EncounteredHuman(PresenceType),
 	/// I encountered an object showing the account I vouch for
-	#[codec(index = 20)]
 	EncounteredObject(PresenceType),
 	/// I have visited a place labeled with the account I vouch for
-	#[codec(index = 30)]
 	VisitedPlace(PresenceType),
 	/// I have attended an event which identifies with the account I vouch for
-	#[codec(index = 40)]
 	AttendedEvent(PresenceType),
 }
 
