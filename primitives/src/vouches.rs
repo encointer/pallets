@@ -25,10 +25,18 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum PresenceType {
+	/// could be "I have exchanged messages with the person I vouch for"
+	/// could be "I have watched the replay of the Event or talk I vouch for"
 	#[default]
 	Asynchronous,
-	Virtual,
-	Physical,
+	/// could be "I have attended that online conference remotely"
+	/// could be "I have visited that place in the metaverse"
+	/// could be "I have met this person on an video call and they presented this account to me"
+	LiveVirtual,
+	/// could be "I met the human I vouch for in-person and scanned the account they presented at the occasion of this physical encounter"
+	/// could be "I was standing in front of this monument and scanned the QR code on its plate"
+	/// could be "I ate at this restaurant and scanned the QR code presented at their entrance in order to submit a rating"
+	LivePhysical,
 }
 
 /// The nature of a vouch
@@ -38,13 +46,25 @@ pub enum PresenceType {
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[repr(u8)]
 pub enum VouchKind {
+	/// Unspecified. This should generally be handeled as an invalid vouch or an alien use case
 	#[default]
-	Unspecified = 0,
-	KnownHuman = 10u8,
-	EncounteredHuman(PresenceType) = 20u8,
-	EncounteredObject(PresenceType) = 30u8,
-	VisitedEvent(PresenceType) = 40u8,
-	VisitedPlace(PresenceType) = 50u8,
+	#[codec(index = 0)]
+	Unspecified,
+	/// This person is know to me and I have verified their account with specified presence type
+	#[codec(index = 10)]
+	KnownHuman(PresenceType),
+	/// I do not claim to know this person, but I encountered a human being providing me with the account I vouch for
+	#[codec(index = 11)]
+	EncounteredHuman(PresenceType),
+	/// I encountered an object showing the account I vouch for
+	#[codec(index = 20)]
+	EncounteredObject(PresenceType),
+	/// I have visited a place labeled with the account I vouch for
+	#[codec(index = 30)]
+	VisitedPlace(PresenceType),
+	/// I have attended an event which identifies with the account I vouch for
+	#[codec(index = 40)]
+	AttendedEvent(PresenceType),
 }
 
 /// a scalar expression of quality. Interpretation left to client side per use case
@@ -55,6 +75,7 @@ pub type Rating = u8;
 #[derive(Default, Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum VouchQuality {
+	/// Don't want to submit additional information
 	#[default]
 	Unspecified,
 	/// a generic badge for qualitative attestation stored as a json file on IPFS (json schema TBD)

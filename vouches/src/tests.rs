@@ -35,7 +35,7 @@ fn vouch_for_works() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 
-		let vouch_kind = VouchKind::EncounteredHuman(PresenceType::Physical);
+		let vouch_kind = VouchKind::EncounteredHuman(PresenceType::LivePhysical);
 		let quality = VouchQuality::Badge(
 			BoundedIpfsCid::from_str("QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB").unwrap(),
 		);
