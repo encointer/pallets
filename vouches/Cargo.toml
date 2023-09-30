@@ -37,6 +37,7 @@ std = [
     # local deps
     "encointer-primitives/std",
     # substrate deps
+    "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
     "sp-std/std",

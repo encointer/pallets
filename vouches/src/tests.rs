@@ -20,7 +20,7 @@ use super::*;
 use crate::mock::{EncointerVouches, RuntimeOrigin};
 use encointer_primitives::{
 	common::{BoundedIpfsCid, FromStr},
-	vouches::{PresenceType, VouchType},
+	vouches::{PresenceType, VouchKind},
 };
 use frame_support::assert_ok;
 use mock::{new_test_ext, System, TestRuntime};
@@ -35,7 +35,7 @@ fn vouch_for_works() {
 		let alice = AccountId::from(AccountKeyring::Alice);
 		let charlie = AccountId::from(AccountKeyring::Charlie);
 
-		let vouch_type = VouchType::EncounteredHuman(PresenceType::Physical);
+		let vouch_kind = VouchKind::EncounteredHuman(PresenceType::Physical);
 		let quality = VouchQuality::Badge(
 			BoundedIpfsCid::from_str("QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB").unwrap(),
 		);
@@ -43,13 +43,13 @@ fn vouch_for_works() {
 		assert_ok!(EncointerVouches::vouch_for(
 			RuntimeOrigin::signed(alice.clone()),
 			charlie.clone(),
-			vouch_type,
+			vouch_kind,
 			quality.clone(),
 		));
 
 		assert_eq!(
 			EncointerVouches::vouches(charlie, alice)[0],
-			Vouch { protected: false, timestamp: 42, vouch_type, quality }
+			Vouch { protected: false, timestamp: 42, vouch_kind, quality }
 		);
 	});
 }

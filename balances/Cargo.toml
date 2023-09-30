@@ -1,9 +1,7 @@
 [package]
 name = "pallet-encointer-balances"
 version = "1.2.0"
-authors = [
-    "encointer.org <alain@encointer.org> and Parity Technologies <admin@parity.io>",
-]
+authors = ["encointer.org <alain@encointer.org>"]
 edition = "2021"
 
 [dependencies]

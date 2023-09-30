@@ -17,7 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use core::marker::PhantomData;
-use encointer_primitives::vouches::{Vouch, VouchQuality, VouchType};
+use encointer_primitives::vouches::{Vouch, VouchKind, VouchQuality};
 use frame_system::{self as frame_system, ensure_signed, pallet_prelude::OriginFor};
 use log::info;
 pub use pallet::*;
@@ -57,13 +57,13 @@ pub mod pallet {
 		pub fn vouch_for(
 			origin: OriginFor<T>,
 			attestee: T::AccountId,
-			vouch_type: VouchType,
+			vouch_kind: VouchKind,
 			quality: VouchQuality,
 		) -> DispatchResultWithPostInfo {
 			let attester = ensure_signed(origin)?;
 			let now = <pallet_timestamp::Pallet<T>>::get();
 			let vouch =
-				Vouch { protected: false, timestamp: now, vouch_type, quality: quality.clone() };
+				Vouch { protected: false, timestamp: now, vouch_kind, quality: quality.clone() };
 			<Vouches<T>>::try_mutate(
 				&attestee,
 				&attester,
@@ -72,8 +72,8 @@ pub mod pallet {
 					Ok(().into())
 				},
 			)?;
-			info!(target: LOG, "vouching: {:?} for {:?}, vouch type: {:?}, quality: {:?}", attester, attestee, vouch_type, quality);
-			Self::deposit_event(Event::VouchedFor { attestee, attester, vouch_type });
+			info!(target: LOG, "vouching: {:?} for {:?}, vouch type: {:?}, quality: {:?}", attester, attestee, vouch_kind, quality);
+			Self::deposit_event(Event::VouchedFor { attestee, attester, vouch_kind });
 			Ok(().into())
 		}
 	}
@@ -82,7 +82,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// someone or something has vouched for someone or something
-		VouchedFor { attestee: T::AccountId, attester: T::AccountId, vouch_type: VouchType },
+		VouchedFor { attestee: T::AccountId, attester: T::AccountId, vouch_kind: VouchKind },
 	}
 
 	#[pallet::error]
@@ -95,9 +95,9 @@ pub mod pallet {
 	#[pallet::getter(fn vouches)]
 	pub(super) type Vouches<T: Config> = StorageDoubleMap<
 		_,
-		Identity,
+		Blake2_128Concat,
 		T::AccountId,
-		Identity,
+		Blake2_128Concat,
 		T::AccountId,
 		BoundedVec<Vouch<T::Moment>, T::MaxVouchesPerAttester>,
 		ValueQuery,
