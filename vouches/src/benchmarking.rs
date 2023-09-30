@@ -7,7 +7,7 @@ benchmarks! {
 	vouch_for {
 		let zoran = account("zoran", 1, 1);
 		let goran = account("goran", 1, 2);
-		let vouch_kind = VouchKind::EncounteredHuman(PresenceType::Physical);
+		let vouch_kind = VouchKind::EncounteredHuman(PresenceType::LivePhysical);
 		let quality = VouchQuality::default();
 		assert!(<Vouches<T>>::iter().next().is_none());
 	}: _(RawOrigin::Signed(zoran), goran, vouch_kind, quality)
