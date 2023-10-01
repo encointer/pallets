@@ -22,6 +22,7 @@ members = [
     'rpc',
     'scheduler',
     'test-utils',
+    'vouches',
 ]
 
 #[patch."https://github.com/encointer/substrate-fixed"]

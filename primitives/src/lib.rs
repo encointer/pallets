@@ -28,6 +28,7 @@ pub mod faucet;
 pub mod reputation_commitments;
 pub mod scheduler;
 pub mod storage;
+pub mod vouches;
 
 pub use ep_core::*;
 
