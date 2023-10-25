@@ -10,10 +10,10 @@ license = "GPL-3.0-or-later"
 publish = false
 
 [dependencies]
-log = "0.4.14"
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
     "derive",
 ] }
+log = "0.4.14"
 # local deps
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances" }
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies" }
