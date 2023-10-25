@@ -26,7 +26,7 @@ encointer-rpc = { path = "../../rpc" }
 
 # substrate deps
 pallet-transaction-payment = { default-features = false, version = "23.0.0" }
-pallet-transaction-payment-rpc = { default-features = false, version = "23.0.0" }
+pallet-transaction-payment-rpc = { default-features = false, version = "25.0.0" }
 sc-rpc = "24.0.0"
 sc-rpc-api = "0.28.0"
 sp-api = "21.0.0"

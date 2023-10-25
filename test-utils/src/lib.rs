@@ -20,7 +20,7 @@
 
 use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{ord_parameter_types, parameter_types, traits::EitherOfDiverse};
-use frame_system::{EnsureRoot, EnsureSignedBy};
+use frame_system::{pallet_prelude::BlockNumberFor, EnsureRoot, EnsureSignedBy};
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
 
@@ -33,7 +33,6 @@ pub use encointer_ceremonies;
 pub use encointer_communities;
 pub use encointer_primitives::storage;
 pub use encointer_scheduler;
-pub use frame_support_test;
 pub use frame_system;
 pub use pallet_balances;
 pub use pallet_timestamp;
@@ -225,7 +224,7 @@ macro_rules! impl_encointer_ceremonies {
 			type CeremonyMaster = EnsureAlice;
 			type Public = <Signature as Verify>::Signer;
 			type Signature = Signature;
-			type RandomnessSource = frame_support_test::TestRandomness<$t>;
+			type RandomnessSource = test_utils::TestRandomness<$t>;
 			type MeetupSizeTarget = MeetupSizeTarget;
 			type MeetupMinSize = MeetupMinSize;
 			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
@@ -277,3 +276,22 @@ ord_parameter_types! {
 
 /// Test origin for the pallet's `EnsureOrigin` associated type.
 pub type EnsureAlice = EitherOfDiverse<EnsureSignedBy<Alice, AccountId32>, EnsureRoot<AccountId32>>;
+
+/// Provides an implementation of [`frame_support::traits::Randomness`] that should only be used in
+/// tests!
+pub struct TestRandomness<T>(sp_std::marker::PhantomData<T>);
+
+impl<Output: codec::Decode + Default, T>
+	frame_support::traits::Randomness<Output, BlockNumberFor<T>> for TestRandomness<T>
+where
+	T: frame_system::Config,
+{
+	fn random(subject: &[u8]) -> (Output, BlockNumberFor<T>) {
+		use sp_runtime::traits::TrailingZeroInput;
+
+		(
+			Output::decode(&mut TrailingZeroInput::new(subject)).unwrap_or_default(),
+			frame_system::Pallet::<T>::block_number(),
+		)
+	}
+}

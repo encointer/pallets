@@ -43,7 +43,6 @@ use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo, Pays},
 	ensure,
-	sp_std::cmp::min,
 	traits::{Get, Randomness},
 	BoundedVec,
 };
@@ -52,7 +51,11 @@ use log::{debug, error, info, trace, warn};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedSlice;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};
-use sp_std::{cmp::max, prelude::*, vec};
+use sp_std::{
+	cmp::{max, min},
+	prelude::*,
+	vec,
+};
 // Logger target
 const LOG: &str = "encointer";
 

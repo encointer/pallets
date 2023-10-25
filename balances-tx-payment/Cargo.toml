@@ -18,7 +18,7 @@ pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false
 # substrate dependencies
 frame-support = { default-features = false, version = "23.0.0" }
 frame-system = { default-features = false, version = "23.0.0" }
-pallet-asset-tx-payment = { default-features = false, version = "24.0.0" }
+pallet-asset-tx-payment = { default-features = false, version = "23.0.0" }
 pallet-transaction-payment = { default-features = false, version = "23.0.0" }
 sp-runtime = { default-features = false, version = "26.0.0" }
 
@@ -28,7 +28,7 @@ codec = { package = "parity-scale-codec", version = "3.6.1", default-features = 
 ] }
 rstest = "0.12.0"
 scale-info = { version = "2.5.0", default-features = false }
-sp-io = "26.0.0"
+sp-io = "25.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]

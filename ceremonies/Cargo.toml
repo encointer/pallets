@@ -28,7 +28,7 @@ frame-support = { default-features = false, version = "23.0.0" }
 frame-system = { default-features = false, version = "23.0.0" }
 pallet-timestamp = { default-features = false, version = "22.0.0" }
 sp-core = { default-features = false, version = "23.0.0" }
-sp-io = { default-features = false, version = "26.0.0" }
+sp-io = { default-features = false, version = "25.0.0" }
 sp-runtime = { default-features = false, version = "26.0.0" }
 sp-std = { default-features = false, version = "10.0.0" }
 
@@ -40,7 +40,7 @@ sp-application-crypto = { default-features = false, optional = true, version = "
 approx = "0.5.1"
 itertools = "0.10.3"
 rstest = "0.12.0"
-sp-io = "26.0.0"
+sp-io = "25.0.0"
 sp-keystore = "0.29.0"
 test-utils = { path = "../test-utils" }
 

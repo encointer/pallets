@@ -59,7 +59,7 @@ impl dut::Config for TestRuntime {
 	type CeremonyMaster = EnsureAlice;
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
-	type RandomnessSource = frame_support_test::TestRandomness<TestRuntime>;
+	type RandomnessSource = test_utils::TestRandomness<TestRuntime>;
 	type MeetupSizeTarget = MeetupSizeTarget;
 	type MeetupMinSize = MeetupMinSize;
 	type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
