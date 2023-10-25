@@ -22,7 +22,7 @@ use encointer_primitives::{
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use frame_support::{
-	assert_err, assert_ok, bounded_vec,
+	assert_err, assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
 use itertools::Itertools;
@@ -31,7 +31,7 @@ use mock::{
 	EncointerScheduler, RuntimeOrigin, System, TestProofOfAttendance, TestRuntime, Timestamp,
 };
 use rstest::*;
-use sp_core::{sr25519, Pair, H256};
+use sp_core::{sr25519, Pair, H256, bounded_vec};
 use sp_runtime::{traits::BlakeTwo256, DispatchError};
 use std::{ops::Rem, str::FromStr};
 use test_utils::{
