@@ -26,8 +26,8 @@ use encointer_primitives::{
 };
 use frame_support::{assert_err, assert_ok};
 use mock::{new_test_ext, RuntimeOrigin, TestRuntime};
-use sp_runtime::{AccountId32, DispatchError};
 use sp_core::bounded_vec;
+use sp_runtime::{AccountId32, DispatchError};
 use test_utils::{helpers::*, storage::*, *};
 
 pub type BalanceOf<T> =

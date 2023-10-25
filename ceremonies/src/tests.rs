@@ -31,7 +31,7 @@ use mock::{
 	EncointerScheduler, RuntimeOrigin, System, TestProofOfAttendance, TestRuntime, Timestamp,
 };
 use rstest::*;
-use sp_core::{sr25519, Pair, H256, bounded_vec};
+use sp_core::{bounded_vec, sr25519, Pair, H256};
 use sp_runtime::{traits::BlakeTwo256, DispatchError};
 use std::{ops::Rem, str::FromStr};
 use test_utils::{
