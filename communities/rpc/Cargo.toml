@@ -1,8 +1,12 @@
 [package]
-authors = ["encointer.org <alain@encointer.org>"]
+authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 name = "pallet-encointer-communities-rpc"
 version = "1.2.0"
+description = "Communities rpc for the Encointer blockchain runtime"
+homepage = "https://encointer.org"
+repository = "https://github.com/encointer/pallets"
+license = "GPL-3.0-or-later"
 
 [dependencies]
 jsonrpsee = { version = "0.16.2", features = [
@@ -20,11 +24,11 @@ encointer-primitives = { path = "../../primitives" }
 encointer-rpc = { path = "../../rpc" }
 
 # substrate deps
-sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-runtime = { version = "24.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sc-rpc = "24.0.0"
+sc-rpc-api = "0.28.0"
+sp-api = "21.0.0"
+sp-blockchain = "23.0.0"
+sp-runtime = "26.0.0"
 
 [dev-dependencies]
-sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-core = "23.0.0"

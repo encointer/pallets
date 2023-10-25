@@ -1,19 +1,23 @@
 [package]
 name = "encointer-ceremonies-assignment"
 version = "1.2.0"
+authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
+description = "Ceremonies assignments for the Encointer blockchain runtime"
+homepage = "https://encointer.org"
+repository = "https://github.com/encointer/pallets"
+license = "GPL-3.0-or-later"
 
 [dependencies]
-
 # local deps
 encointer-primitives = { path = "../../primitives", default-features = false }
 
 # substrate deps
-sp-runtime = { version = "24.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
-sp-std = { version = "8.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
+sp-runtime = { default-features = false, version = "26.0.0" }
+sp-std = { default-features = false, version = "10.0.0" }
 
 [dev-dependencies]
-sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-core = "23.0.0"
 
 [features]
 default = ["std"]

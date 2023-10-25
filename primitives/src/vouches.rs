@@ -16,10 +16,10 @@
 
 use crate::common::BoundedIpfsCid;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::RuntimeDebug;
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::RuntimeDebug;
 
 /// Did the attester meet the attestee physically, virtually or through asynchronous messages?
 #[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]

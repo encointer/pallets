@@ -1,16 +1,20 @@
 [package]
 name = "pallet-encointer-communities-rpc-runtime-api"
 version = "1.2.0"
-authors = ["encointer.org <alain@encointer.org>"]
+authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
+description = "Communities rpc runtime api for the Encointer blockchain runtime"
+homepage = "https://encointer.org"
+repository = "https://github.com/encointer/pallets"
+license = "GPL-3.0-or-later"
 
 [dependencies]
 # local deps
 encointer-primitives = { path = "../../../primitives", default-features = false }
 
 # substrate deps
-sp-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
-sp-std = { version = "8.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-api = { default-features = false, version = "21.0.0" }
+sp-std = { default-features = false, version = "10.0.0" }
 
 [features]
 default = ["std"]
