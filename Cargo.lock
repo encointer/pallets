@@ -1686,6 +1686,8 @@ name = "encointer-rpc"
 version = "0.1.0"
 dependencies = [
  "jsonrpsee",
+ "jsonrpsee-core",
+ "jsonrpsee-types",
  "thiserror",
 ]
 
