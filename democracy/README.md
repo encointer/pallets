@@ -1,6 +1,6 @@
-[![crates.io](https://img.shields.io/crates/v/encointer-primitives.svg)](https://crates.io/crates/encointer-primitives)
+[![crates.io](https://img.shields.io/crates/v/pallet-encointer-democracy.svg)](https://crates.io/crates/pallet-encointer-democracy)
 
-# encointer-primitives
+# pallet-encointer-democracy
 
 This crate is part of [Encointer](https://encointer.org) blockchain logic, built on [substrate / polkadot-sdk](https://github.com/paritytech/polkadot-sdk)
 
