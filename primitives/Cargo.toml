@@ -26,7 +26,7 @@ serde = { version = "1.0.136", optional = true, default-features = false, featur
 ] }
 
 # local deps
-ep-core = { path = "core", default-features = false }
+ep-core = { path = "core", default-features = false, version = "1.2.0" }
 
 # substrate deps
 frame-support = { default-features = false, version = "23.0.0" }
