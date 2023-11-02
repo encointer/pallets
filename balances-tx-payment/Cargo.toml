@@ -1,6 +1,6 @@
 [package]
 name = "encointer-balances-tx-payment"
-version = "1.0.0"
+version = "2.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Balances tx payment for the Encointer blockchain runtime"
@@ -9,26 +9,26 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-log = { version = "0.4.14", default-features = false }
+log = { version = "0.4.20", default-features = false }
 
-encointer-primitives = { path = "../primitives", default-features = false, version = "1.3.0" }
-pallet-encointer-balances = { path = "../balances", default-features = false, version = "1.2.0" }
-pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false, version = "1.2.0" }
+encointer-primitives = { path = "../primitives", default-features = false, version = "2.0.0" }
+pallet-encointer-balances = { path = "../balances", default-features = false, version = "2.0.0" }
+pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false, version = "2.0.0" }
 
 # substrate dependencies
-frame-support = { default-features = false, version = "23.0.0" }
-frame-system = { default-features = false, version = "23.0.0" }
-pallet-asset-tx-payment = { default-features = false, version = "23.0.0" }
-pallet-transaction-payment = { default-features = false, version = "23.0.0" }
-sp-runtime = { default-features = false, version = "26.0.0" }
+frame-support = { default-features = false, version = "24.0.0" }
+frame-system = { default-features = false, version = "24.0.0" }
+pallet-asset-tx-payment = { default-features = false, version = "24.0.0" }
+pallet-transaction-payment = { default-features = false, version = "24.0.0" }
+sp-runtime = { default-features = false, version = "27.0.0" }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
     "derive",
 ] }
 rstest = "0.12.0"
-scale-info = { version = "2.5.0", default-features = false }
-sp-io = "25.0.0"
+scale-info = { version = "2.9.0", default-features = false }
+sp-io = "26.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]
