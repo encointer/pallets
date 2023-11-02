@@ -24,8 +24,9 @@ use encointer_primitives::{
 	faucet::FromStr,
 	reputation_commitments::{DescriptorType, FromStr as DescriptorFromStr},
 };
-use frame_support::{assert_err, assert_ok, bounded_vec};
+use frame_support::{assert_err, assert_ok};
 use mock::{new_test_ext, RuntimeOrigin, TestRuntime};
+use sp_core::bounded_vec;
 use sp_runtime::{AccountId32, DispatchError};
 use test_utils::{helpers::*, storage::*, *};
 

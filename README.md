@@ -55,3 +55,13 @@ We bump crate versions separately and tag the repository with the highest crate 
 motivation: git blame should show on crate directory level if there was a change. This way, browsing the repo on github really shows when a certain pallet or crate has been touched. Even if it's only adjustments for upstream upgrades, just bump crate versions to the newest, which will be tagged globally
 
 Pallet repo version does not need to be aligned with neither node or parachain (or runtime) crate versions - although this has been the case in the past.
+
+#### crates.io
+
+use `cargo-release` we exclude non-public crates explicitly in tomls
+
+```
+cargo install cargo-release
+cargo release --execute
+```
+

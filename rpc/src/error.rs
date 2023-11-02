@@ -1,7 +1,5 @@
-use jsonrpsee::{
-	core::Error as JsonRpseeError,
-	types::error::{CallError, ErrorObject},
-};
+use jsonrpsee_core::error::Error as JsonRpseeError;
+use jsonrpsee_types::error::{CallError, ErrorObject};
 
 mod error_codes {
 	pub const RUNTIME_ERROR: i32 = 1; // Arbitrary number, but substrate uses the same

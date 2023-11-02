@@ -1,8 +1,12 @@
 [package]
 name = "pallet-encointer-communities"
 version = "1.3.0"
-authors = ["encointer.org <alain@encointer.org>"]
+authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
+description = "Communities pallet for the Encointer blockchain runtime"
+homepage = "https://encointer.org"
+repository = "https://github.com/encointer/pallets"
+license = "GPL-3.0-or-later"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
@@ -12,21 +16,21 @@ log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.5.0", default-features = false }
 
 # local deps
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"] }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "1.2.0" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "1.3.0" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "1.1.0" }
 
 # substrate deps
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, optional = true, branch = "polkadot-v1.0.0" }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
-sp-io = { version = "23.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
-sp-runtime = { version = "24.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
-sp-std = { version = "8.0.0", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
+frame-benchmarking = { default-features = false, optional = true, version = "23.0.0" }
+frame-support = { default-features = false, version = "23.0.0" }
+frame-system = { default-features = false, version = "23.0.0" }
+sp-io = { default-features = false, version = "25.0.0" }
+sp-runtime = { default-features = false, version = "26.0.0" }
+sp-std = { default-features = false, version = "10.0.0" }
 
 [dev-dependencies]
 approx = "0.5.1"
-sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v1.0.0" }
+sp-core = "23.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]

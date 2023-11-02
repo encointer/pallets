@@ -6,9 +6,10 @@ use encointer_primitives::{
 	faucet::FromStr,
 	storage::{community_identifiers, participant_reputation},
 };
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, vec};
+use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::BoundedVec;
 use frame_system::RawOrigin;
+use sp_std::vec;
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
