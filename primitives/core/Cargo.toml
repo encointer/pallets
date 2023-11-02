@@ -23,7 +23,7 @@ serde = { version = "1.0.136", optional = true, default-features = false, featur
     "alloc",
 ] }
 
-sp-arithmetic = { default-features = false, version = "18.0.0" }
+sp-arithmetic = { default-features = false, version = "19.0.0" }
 sp-core = { default-features = false, version = "24.0.0" }
 sp-runtime = { default-features = false, version = "27.0.0" }
 sp-std = { default-features = false, version = "11.0.0" }
