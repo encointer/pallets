@@ -34,6 +34,7 @@ frame_support::construct_runtime!(
 		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
 		EncointerDemocracy: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerReputationCommitments:encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -58,6 +59,7 @@ impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime, EncointerDemocracy);
 impl_encointer_ceremonies!(TestRuntime);
+impl_encointer_reputation_commitments!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
