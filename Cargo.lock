@@ -4291,6 +4291,7 @@ dependencies = [
  "pallet-encointer-balances",
  "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
+ "pallet-encointer-reputation-commitments",
  "pallet-encointer-scheduler",
  "pallet-timestamp",
  "parity-scale-codec",

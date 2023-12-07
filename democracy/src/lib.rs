@@ -20,7 +20,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use encointer_primitives::{
-	ceremonies::{CommunityCeremony, ReputationCountType},
+	ceremonies::ReputationCountType,
 	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -45,7 +45,10 @@ type ReputationVecOf<T> = ReputationVec<<T as pallet::Config>::MaxReputationVecL
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use encointer_primitives::democracy::{Tally, *};
+	use encointer_primitives::{
+		democracy::{Tally, *},
+		reputation_commitments::{DescriptorType, PurposeIdType},
+	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -58,6 +61,7 @@ pub mod pallet {
 		+ encointer_scheduler::Config
 		+ encointer_ceremonies::Config
 		+ encointer_communities::Config
+		+ encointer_reputation_commitments::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -98,7 +102,14 @@ pub mod pallet {
 		AQBError,
 		/// cannot submit new proposal as a proposal of the same type is waiting for enactment
 		ProposalWaitingForEnactment,
+		/// reputation commitment purpose could not be created
+		PurposeIdCreationFailed,
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn purpose_ids)]
+	pub(super) type PurposeIds<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProposalIdType, PurposeIdType, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
@@ -175,9 +186,20 @@ pub mod pallet {
 				state: ProposalState::Ongoing,
 				action: proposal_action,
 			};
+
+			let proposal_identifier =
+				["democracyProposal".as_bytes(), next_proposal_id.to_string().as_bytes()].concat();
+
+			let purpose_id = <encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
+				DescriptorType::try_from(proposal_identifier)
+					.map_err(|_| <Error<T>>::PurposeIdCreationFailed)?,
+			)?;
+
 			<Proposals<T>>::insert(next_proposal_id, proposal);
+			<PurposeIds<T>>::insert(next_proposal_id, purpose_id);
 			<ProposalCount<T>>::put(next_proposal_id);
 			<Tallies<T>>::insert(next_proposal_id, Tally { turnout: 0, ayes: 0 });
+
 			Ok(().into())
 		}
 
@@ -191,9 +213,9 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let eligible_reputations =
-				Self::eligible_reputations(proposal_id, &sender, &reputations)?;
-			let num_votes = eligible_reputations.len() as u128;
+
+			let num_votes =
+				Self::validate_and_commit_reputations(proposal_id, &sender, &reputations)?;
 
 			let ayes = match vote {
 				Vote::Aye => num_votes,
@@ -209,9 +231,6 @@ pub mod pallet {
 			};
 
 			<Tallies<T>>::insert(proposal_id, new_tally);
-			for community_ceremony in eligible_reputations {
-				<VoteEntries<T>>::insert(proposal_id, (&sender, community_ceremony), ());
-			}
 
 			match Self::do_update_proposal_state(proposal_id) {
 				Ok(_) => Ok(()),
@@ -248,17 +267,17 @@ pub mod pallet {
 				(proposal.start_cindex.saturating_sub(2)))
 				.collect::<Vec<CeremonyIndexType>>())
 		}
-		/// Returns the reputations that
+		/// Validates the reputations based on the following criteria and commits the reputations. Returns count of valid reputations.
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
 		/// 3. originate in the correct community (for Community AccessPolicy)
 		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and proposal.start_cindex - 2
-		pub fn eligible_reputations(
+		pub fn validate_and_commit_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,
 			reputations: &ReputationVecOf<T>,
-		) -> Result<ReputationVecOf<T>, Error<T>> {
-			let mut eligible_reputations = Vec::<CommunityCeremony>::new();
+		) -> Result<u128, Error<T>> {
+			let mut eligible_reputation_count = 0u128;
 
 			let maybe_cid = match Self::proposals(proposal_id)
 				.ok_or(Error::<T>::InexistentProposal)?
@@ -268,6 +287,9 @@ pub mod pallet {
 				ProposalAccessPolicy::Community(cid) => Some(cid),
 				_ => None,
 			};
+
+			let purpose_id =
+				Self::purpose_ids(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
 			for community_ceremony in reputations {
 				if !Self::relevant_cindexes(proposal_id)?.contains(&community_ceremony.1) {
@@ -279,18 +301,22 @@ pub mod pallet {
 						continue
 					}
 				}
-				if <VoteEntries<T>>::contains_key(proposal_id, (account_id, community_ceremony)) {
+
+				if <encointer_reputation_commitments::Pallet<T>>::do_commit_reputation(
+					account_id,
+					community_ceremony.0,
+					community_ceremony.1,
+					purpose_id,
+					None,
+				)
+				.is_err()
+				{
 					continue
 				}
-				if <encointer_ceremonies::Pallet<T>>::validate_reputation(
-					account_id,
-					&community_ceremony.0,
-					community_ceremony.1,
-				) {
-					eligible_reputations.push(*community_ceremony);
-				}
+
+				eligible_reputation_count += 1;
 			}
-			BoundedVec::try_from(eligible_reputations).map_err(|_e| Error::<T>::BoundedVecError)
+			Ok(eligible_reputation_count)
 		}
 
 		/// Updates the proposal state

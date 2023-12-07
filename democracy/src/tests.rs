@@ -137,58 +137,60 @@ fn eligible_reputations_works_with_different_reputations() {
 		));
 
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::Unverified);
-		assert!(EncointerDemocracy::eligible_reputations(
-			1,
-			&alice,
-			&BoundedVec::try_from(vec![(cid, 4)]).unwrap(),
-		)
-		.unwrap()
-		.is_empty());
+		assert_eq!(
+			EncointerDemocracy::validate_and_commit_reputations(
+				1,
+				&alice,
+				&BoundedVec::try_from(vec![(cid, 4)]).unwrap(),
+			),
+			Ok(0)
+		);
 
 		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::UnverifiedReputable);
-		assert!(EncointerDemocracy::eligible_reputations(
-			1,
-			&alice,
-			&BoundedVec::try_from(vec![(cid, 5)]).unwrap(),
-		)
-		.unwrap()
-		.is_empty());
+		assert_eq!(
+			EncointerDemocracy::validate_and_commit_reputations(
+				1,
+				&alice,
+				&BoundedVec::try_from(vec![(cid, 5)]).unwrap(),
+			),
+			Ok(0)
+		);
 
 		EncointerCeremonies::fake_reputation((cid2, 4), &alice, Reputation::VerifiedUnlinked);
 		assert_eq!(
-			EncointerDemocracy::eligible_reputations(
+			EncointerDemocracy::validate_and_commit_reputations(
 				1,
 				&alice,
 				&BoundedVec::try_from(vec![(cid2, 4)]).unwrap(),
-			)
-			.unwrap()
-			.len(),
-			1
+			),
+			Ok(1)
 		);
 
 		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked);
 		assert_eq!(
-			EncointerDemocracy::eligible_reputations(
+			EncointerDemocracy::validate_and_commit_reputations(
 				1,
 				&alice,
 				&BoundedVec::try_from(vec![(cid2, 3)]).unwrap(),
-			)
-			.unwrap()
-			.len(),
-			1
+			),
+			Ok(1)
 		);
 
-		let eligible_reputations = EncointerDemocracy::eligible_reputations(
-			1,
-			&alice,
-			&BoundedVec::try_from(vec![(cid, 5), (cid, 4), (cid2, 4), (cid2, 3)]).unwrap(),
-		)
-		.unwrap();
-		assert_eq!(eligible_reputations.len(), 2);
+		let cid3 = register_test_community::<TestRuntime>(None, 20.0, 10.0);
+		let cid4 = register_test_community::<TestRuntime>(None, 10.0, 20.0);
 
-		assert_eq!(eligible_reputations.first().unwrap(), &(cid2, 4u32));
-
-		assert_eq!(eligible_reputations.last().unwrap(), &(cid2, 3u32));
+		EncointerCeremonies::fake_reputation((cid3, 4), &alice, Reputation::Unverified);
+		EncointerCeremonies::fake_reputation((cid3, 5), &alice, Reputation::UnverifiedReputable);
+		EncointerCeremonies::fake_reputation((cid4, 4), &alice, Reputation::VerifiedUnlinked);
+		EncointerCeremonies::fake_reputation((cid4, 3), &alice, Reputation::VerifiedLinked);
+		assert_eq!(
+			EncointerDemocracy::validate_and_commit_reputations(
+				1,
+				&alice,
+				&BoundedVec::try_from(vec![(cid3, 5), (cid3, 4), (cid4, 4), (cid4, 3)]).unwrap(),
+			),
+			Ok(2)
+		);
 	});
 }
 
@@ -205,19 +207,25 @@ fn eligible_reputations_works_with_used_reputations() {
 		));
 
 		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
-		// use this reputation for a vote
-		VoteEntries::<TestRuntime>::insert(1, (alice.clone(), (cid, 5)), ());
+
+		// commit reputation
+		EncointerDemocracy::validate_and_commit_reputations(
+			1,
+			&alice,
+			&BoundedVec::try_from(vec![(cid, 5)]).unwrap(),
+		)
+		.ok();
 
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
 
-		let eligible_reputations = EncointerDemocracy::eligible_reputations(
-			1,
-			&alice,
-			&BoundedVec::try_from(vec![(cid, 5), (cid, 4)]).unwrap(),
+		assert_eq!(
+			EncointerDemocracy::validate_and_commit_reputations(
+				1,
+				&alice,
+				&BoundedVec::try_from(vec![(cid, 5), (cid, 4)]).unwrap(),
+			),
+			Ok(1)
 		)
-		.unwrap();
-		assert_eq!(eligible_reputations.len(), 1);
-		assert_eq!(eligible_reputations.first().unwrap().1, 4);
 	});
 }
 
@@ -235,14 +243,14 @@ fn eligible_reputations_works_with_inexistent_reputations() {
 
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
 
-		let eligible_reputations = EncointerDemocracy::eligible_reputations(
-			1,
-			&alice,
-			&BoundedVec::try_from(vec![(cid, 4), (cid, 5)]).unwrap(),
+		assert_eq!(
+			EncointerDemocracy::validate_and_commit_reputations(
+				1,
+				&alice,
+				&BoundedVec::try_from(vec![(cid, 5), (cid, 4)]).unwrap(),
+			),
+			Ok(1)
 		)
-		.unwrap();
-		assert_eq!(eligible_reputations.len(), 1);
-		assert_eq!(eligible_reputations.first().unwrap().1, 4);
 	});
 }
 
@@ -263,14 +271,14 @@ fn eligible_reputations_works_with_cids() {
 		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
 		EncointerCeremonies::fake_reputation((cid2, 5), &alice, Reputation::VerifiedLinked);
 
-		let eligible_reputations = EncointerDemocracy::eligible_reputations(
-			1,
-			&alice,
-			&BoundedVec::try_from(vec![(cid, 5), (cid2, 5)]).unwrap(),
+		assert_eq!(
+			EncointerDemocracy::validate_and_commit_reputations(
+				1,
+				&alice,
+				&BoundedVec::try_from(vec![(cid, 5), (cid2, 5)]).unwrap(),
+			),
+			Ok(1)
 		)
-		.unwrap();
-		assert_eq!(eligible_reputations.len(), 1);
-		assert_eq!(eligible_reputations.first().unwrap(), &(cid, 5u32));
 	});
 }
 
@@ -290,14 +298,14 @@ fn eligible_reputations_fails_with_invalid_cindex() {
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
 		EncointerCeremonies::fake_reputation((cid, 6), &alice, Reputation::VerifiedLinked);
 
-		let eligible_reputations = EncointerDemocracy::eligible_reputations(
-			1,
-			&alice,
-			&BoundedVec::try_from(vec![(cid, 1), (cid, 4), (cid, 6)]).unwrap(),
+		assert_eq!(
+			EncointerDemocracy::validate_and_commit_reputations(
+				1,
+				&alice,
+				&BoundedVec::try_from(vec![(cid, 1), (cid, 4), (cid, 6)]).unwrap(),
+			),
+			Ok(1)
 		)
-		.unwrap();
-		assert_eq!(eligible_reputations.len(), 1);
-		assert_eq!(eligible_reputations.first().unwrap(), &(cid, 4u32));
 	});
 }
 
@@ -352,7 +360,7 @@ fn voting_works() {
 			Vote::Nay,
 			BoundedVec::try_from(vec![
 				(cid, 2),  // invalid beacuse out of range
-				(cid, 3),  // invalid beacuse already used
+				(cid, 4),  // invalid beacuse already used
 				(cid2, 4), // invlaid because unverified
 				(cid2, 5), // valid
 				(cid2, 6), // invlaid because out of range
