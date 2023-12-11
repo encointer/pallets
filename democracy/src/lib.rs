@@ -26,7 +26,13 @@ use encointer_primitives::{
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
 use encointer_scheduler::OnCeremonyPhaseChange;
-use frame_support::traits::Get;
+use frame_support::{
+	sp_runtime::{
+		traits::{CheckedAdd, CheckedDiv, CheckedSub},
+		SaturatedConversion,
+	},
+	traits::Get,
+};
 pub use weights::WeightInfo;
 
 #[cfg(not(feature = "std"))]
@@ -68,11 +74,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxReputationVecLength: Get<u32>;
 		#[pallet::constant]
-		type ConfirmationPeriod: Get<BlockNumberFor<Self>>;
+		type ConfirmationPeriod: Get<Self::Moment>;
 		#[pallet::constant]
-		type ProposalLifetime: Get<BlockNumberFor<Self>>;
-		#[pallet::constant]
-		type ProposalLifetimeCycles: Get<u32>; // ceil of the proposal lifetime in cycles
+		type ProposalLifetime: Get<Self::Moment>;
 		#[pallet::constant]
 		type MinTurnout: Get<u128>; // in permill
 		type WeightInfo: WeightInfo;
@@ -104,6 +108,8 @@ pub mod pallet {
 		ProposalWaitingForEnactment,
 		/// reputation commitment purpose could not be created
 		PurposeIdCreationFailed,
+		/// error when doing math operations
+		MathError,
 	}
 
 	#[pallet::storage]
@@ -114,7 +120,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
 	pub(super) type Proposals<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<BlockNumberFor<T>>, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<T::Moment>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn proposal_count)]
@@ -138,9 +144,9 @@ pub mod pallet {
 	>;
 	// TODO set default value
 	#[pallet::storage]
-	#[pallet::getter(fn cancelled_at_block)]
-	pub(super) type CancelledAtBlock<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, BlockNumberFor<T>, ValueQuery>;
+	#[pallet::getter(fn cancelled_at)]
+	pub(super) type CancelledAt<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::Moment, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn enactment_queue)]
@@ -179,9 +185,9 @@ pub mod pallet {
 			let next_proposal_id = current_proposal_id
 				.checked_add(1u128)
 				.ok_or(Error::<T>::ProposalIdOutOfBounds)?;
-			let current_block = frame_system::Pallet::<T>::block_number();
+			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal = Proposal {
-				start: current_block,
+				start: now,
 				start_cindex: cindex,
 				state: ProposalState::Ongoing,
 				action: proposal_action,
@@ -260,11 +266,22 @@ pub mod pallet {
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
 			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			Ok(((proposal
-				.start_cindex
-				.saturating_sub(reputation_lifetime)
-				.saturating_add(T::ProposalLifetimeCycles::get()))..=
-				(proposal.start_cindex.saturating_sub(2)))
+			let cycle_duration = <encointer_scheduler::Pallet<T>>::get_cycle_duration();
+			let proposal_lifetime = T::ProposalLifetime::get();
+			// ceil(proposal_lifetime / cycle_duration)
+			let proposal_lifetime_cycles: u64 = proposal_lifetime
+				.checked_add(&cycle_duration)
+				.ok_or(Error::<T>::MathError)?
+				.checked_sub(&T::Moment::saturated_from(1u64))
+				.ok_or(Error::<T>::MathError)?
+				.checked_div(&cycle_duration)
+				.ok_or(Error::<T>::MathError)?
+				.saturated_into();
+			Ok((((proposal.start_cindex).saturating_sub(reputation_lifetime).saturating_add(
+				proposal_lifetime_cycles
+					.try_into()
+					.expect("this is a small number in cycles;qed"),
+			))..=(proposal.start_cindex.saturating_sub(2u32)))
 				.collect::<Vec<CeremonyIndexType>>())
 		}
 		/// Validates the reputations based on the following criteria and commits the reputations. Returns count of valid reputations.
@@ -327,11 +344,11 @@ pub mod pallet {
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 			ensure!(proposal.state.can_update(), Error::<T>::ProposalCannotBeUpdated);
 			let mut approved = false;
-			let current_block = frame_system::Pallet::<T>::block_number();
+			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal_action_identifier = proposal.action.get_identifier();
-			let cancelled_at_block = Self::cancelled_at_block(proposal_action_identifier);
-			let proposal_cancelled = proposal.start < cancelled_at_block;
-			let proposal_too_old = current_block - proposal.start > T::ProposalLifetime::get();
+			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
+			let proposal_cancelled = proposal.start < cancelled_at;
+			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled || proposal_too_old {
 				proposal.state = ProposalState::Cancelled;
 			} else {
@@ -340,18 +357,15 @@ pub mod pallet {
 					// confirming
 					if let ProposalState::Confirming { since } = proposal.state {
 						// confirmed longer than period
-						if current_block - since > T::ConfirmationPeriod::get() {
+						if now - since > T::ConfirmationPeriod::get() {
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
-							<CancelledAtBlock<T>>::insert(
-								proposal_action_identifier,
-								current_block,
-							);
+							<CancelledAt<T>>::insert(proposal_action_identifier, now);
 							approved = true;
 						}
 					// not confirming
 					} else {
-						proposal.state = ProposalState::Confirming { since: current_block };
+						proposal.state = ProposalState::Confirming { since: now };
 					}
 				// not passing
 				} else {

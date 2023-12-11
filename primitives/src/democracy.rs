@@ -79,15 +79,15 @@ impl ProposalAction {
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum ProposalState<BlockNumber> {
+pub enum ProposalState<Moment> {
 	Ongoing,
-	Confirming { since: BlockNumber },
+	Confirming { since: Moment },
 	Approved,
 	Cancelled,
 	Enacted,
 }
 
-impl<BlockNumber: PartialEq> ProposalState<BlockNumber> {
+impl<Moment: PartialEq> ProposalState<Moment> {
 	pub fn can_update(self) -> bool {
 		matches!(self, Self::Confirming { since: _ } | Self::Ongoing)
 	}
@@ -95,9 +95,9 @@ impl<BlockNumber: PartialEq> ProposalState<BlockNumber> {
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub struct Proposal<BlockNumber> {
-	pub start: BlockNumber,
+pub struct Proposal<Moment> {
+	pub start: Moment,
 	pub start_cindex: CeremonyIndexType,
 	pub action: ProposalAction,
-	pub state: ProposalState<BlockNumber>,
+	pub state: ProposalState<Moment>,
 }

@@ -45,9 +45,10 @@ frame_support::construct_runtime!(
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxReputationVecLength = ConstU32<10>;
-	type ConfirmationPeriod = ConstU64<10>;
-	type ProposalLifetime = ConstU64<40>;
-	type ProposalLifetimeCycles = ConstU32<1>;
+	// 10 blocks
+	type ConfirmationPeriod = ConstU64<60000>;
+	// 40 blocks
+	type ProposalLifetime = ConstU64<240000>;
 	type MinTurnout = ConstU128<20>; // 2%
 	type WeightInfo = (); // 2%
 }
