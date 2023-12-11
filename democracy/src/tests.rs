@@ -47,12 +47,11 @@ fn bob() -> AccountId {
 	AccountKeyring::Bob.into()
 }
 
-type BlockNumber = BlockNumberFor<TestRuntime>;
-
 fn advance_n_blocks(n: u64) {
+	let mut blocknr = System::block_number();
 	for _ in 0..n {
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
+		blocknr += 1;
+		run_to_block(blocknr);
 	}
 }
 
@@ -66,7 +65,7 @@ fn run_to_block(n: u64) {
 		if System::block_number() > 1 {
 			System::on_finalize(System::block_number());
 		}
-		set_timestamp(GENESIS_TIME + BLOCKTIME * n);
+		set_timestamp(Timestamp::get() + BLOCKTIME);
 		Timestamp::on_finalize(System::block_number());
 		System::set_block_number(System::block_number() + 1);
 		System::on_initialize(System::block_number());
@@ -87,7 +86,7 @@ fn run_to_next_phase() {
 fn proposal_submission_works() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
-		let block = System::block_number();
+		let now = Timestamp::get();
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 
@@ -99,7 +98,7 @@ fn proposal_submission_works() {
 		let proposal = EncointerDemocracy::proposals(1).unwrap();
 		assert_eq!(proposal.state, ProposalState::Ongoing);
 		assert_eq!(proposal.action, proposal_action);
-		assert_eq!(proposal.start, block);
+		assert_eq!(proposal.start, now);
 		assert!(EncointerDemocracy::tallies(1).is_some());
 	});
 }
@@ -389,16 +388,16 @@ fn do_update_proposal_state_fails_with_inexistent_proposal() {
 fn do_update_proposal_state_fails_with_wrong_state() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
-		let proposal: Proposal<BlockNumber> = Proposal {
-			start: BlockNumber::from(1u64),
+		let proposal: Proposal<Moment> = Proposal {
+			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
 			state: ProposalState::Cancelled,
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
 
-		let proposal2: Proposal<BlockNumber> = Proposal {
-			start: BlockNumber::from(1u64),
+		let proposal2: Proposal<Moment> = Proposal {
+			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
 			state: ProposalState::Approved,
@@ -427,7 +426,10 @@ fn do_update_proposal_state_works_with_cancelled_proposal() {
 			proposal_action
 		));
 
-		CancelledAtBlock::<TestRuntime>::insert(ProposalActionIdentifier::SetInactivityTimeout, 3);
+		CancelledAt::<TestRuntime>::insert(
+			ProposalActionIdentifier::SetInactivityTimeout,
+			3 * BLOCKTIME,
+		);
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
@@ -455,7 +457,6 @@ fn do_update_proposal_state_works_with_too_old_proposal() {
 
 		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
-
 		advance_n_blocks(1);
 
 		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
