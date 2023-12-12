@@ -86,7 +86,26 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		///  proposal enacted
-		ProposalEnacted { proposal_id: ProposalIdType },
+		ProposalEnacted {
+			proposal_id: ProposalIdType,
+		},
+		ProposalSubmitted {
+			proposal_id: ProposalIdType,
+			proposal_action: ProposalAction,
+		},
+		VotePlaced {
+			proposal_id: ProposalIdType,
+			vote: Vote,
+			num_votes: u128,
+		},
+		VoteFailed {
+			proposal_id: ProposalIdType,
+			vote: Vote,
+		},
+		ProposalStateUpdated {
+			proposal_id: ProposalIdType,
+			proposal_state: ProposalState<T::Moment>,
+		},
 	}
 
 	#[pallet::error]
@@ -205,7 +224,10 @@ pub mod pallet {
 			<PurposeIds<T>>::insert(next_proposal_id, purpose_id);
 			<ProposalCount<T>>::put(next_proposal_id);
 			<Tallies<T>>::insert(next_proposal_id, Tally { turnout: 0, ayes: 0 });
-
+			Self::deposit_event(Event::ProposalSubmitted {
+				proposal_id: next_proposal_id,
+				proposal_action,
+			});
 			Ok(().into())
 		}
 
@@ -246,6 +268,11 @@ pub mod pallet {
 				},
 			}?;
 
+			if num_votes > 0 {
+				Self::deposit_event(Event::VotePlaced { proposal_id, vote, num_votes })
+			} else {
+				Self::deposit_event(Event::VoteFailed { proposal_id, vote })
+			}
 			Ok(().into())
 		}
 
@@ -344,6 +371,7 @@ pub mod pallet {
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 			ensure!(proposal.state.can_update(), Error::<T>::ProposalCannotBeUpdated);
 			let mut approved = false;
+			let old_proposal_state = proposal.state;
 			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal_action_identifier = proposal.action.get_identifier();
 			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
@@ -375,7 +403,13 @@ pub mod pallet {
 					}
 				}
 			}
-			<Proposals<T>>::insert(proposal_id, proposal);
+			<Proposals<T>>::insert(proposal_id, &proposal);
+			if old_proposal_state != proposal.state {
+				Self::deposit_event(Event::ProposalStateUpdated {
+					proposal_id,
+					proposal_state: proposal.state,
+				});
+			}
 			Ok(approved)
 		}
 

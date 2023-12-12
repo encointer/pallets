@@ -27,11 +27,13 @@ use frame_support::{
 	assert_err, assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
-use frame_system::pallet_prelude::BlockNumberFor;
 use mock::{new_test_ext, EncointerDemocracy, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::BoundedVec;
 use test_utils::{
-	helpers::{account_id, add_population, register_test_community},
+	helpers::{
+		account_id, add_population, event_at_index, get_num_events, last_event,
+		register_test_community,
+	},
 	*,
 };
 
@@ -673,6 +675,7 @@ fn enactment_updates_proposal_metadata_and_enactment_queue() {
 #[test]
 fn proposal_happy_flow() {
 	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = create_cid();
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 		let alice = alice();
@@ -680,8 +683,12 @@ fn proposal_happy_flow() {
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action
+			proposal_action.clone()
 		));
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::ProposalSubmitted { proposal_id: 1, proposal_action }.into())
+		);
 
 		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
@@ -695,6 +702,11 @@ fn proposal_happy_flow() {
 			BoundedVec::try_from(vec![(cid, 3), (cid, 4), (cid, 5),]).unwrap()
 		));
 
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::VotePlaced { proposal_id: 1, vote: Vote::Aye, num_votes: 3 }.into())
+		);
+
 		advance_n_blocks(40);
 		assert_ok!(EncointerDemocracy::vote(
 			RuntimeOrigin::signed(alice.clone()),
@@ -703,9 +715,30 @@ fn proposal_happy_flow() {
 			BoundedVec::try_from(vec![(cid2, 3)]).unwrap()
 		));
 
+		assert_eq!(
+			last_event::<TestRuntime>(),
+			Some(Event::VoteFailed { proposal_id: 1, vote: Vote::Aye }.into())
+		);
+
+		assert_eq!(
+			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
+			Some(
+				Event::ProposalStateUpdated {
+					proposal_id: 1,
+					proposal_state: ProposalState::Approved
+				}
+				.into()
+			)
+		);
+
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
+
+		assert_eq!(
+			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
+			Some(Event::ProposalEnacted { proposal_id: 1 }.into())
+		);
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
