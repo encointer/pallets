@@ -210,6 +210,7 @@ pub mod pallet {
 				start_cindex: cindex,
 				state: ProposalState::Ongoing,
 				action: proposal_action,
+				electorate_size: Self::get_electorate(cindex, proposal_action)?,
 			};
 
 			let proposal_identifier =
@@ -289,10 +290,9 @@ pub mod pallet {
 	}
 	impl<T: Config> Pallet<T> {
 		fn relevant_cindexes(
-			proposal_id: ProposalIdType,
+			start_cindex: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
 			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
-			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 			let cycle_duration = <encointer_scheduler::Pallet<T>>::get_cycle_duration();
 			let proposal_lifetime = T::ProposalLifetime::get();
 			// ceil(proposal_lifetime / cycle_duration)
@@ -304,11 +304,11 @@ pub mod pallet {
 				.checked_div(&cycle_duration)
 				.ok_or(Error::<T>::MathError)?
 				.saturated_into();
-			Ok((((proposal.start_cindex).saturating_sub(reputation_lifetime).saturating_add(
+			Ok((((start_cindex).saturating_sub(reputation_lifetime).saturating_add(
 				proposal_lifetime_cycles
 					.try_into()
 					.expect("this is a small number in cycles;qed"),
-			))..=(proposal.start_cindex.saturating_sub(2u32)))
+			))..=(start_cindex.saturating_sub(2u32)))
 				.collect::<Vec<CeremonyIndexType>>())
 		}
 		/// Validates the reputations based on the following criteria and commits the reputations. Returns count of valid reputations.
@@ -322,12 +322,8 @@ pub mod pallet {
 			reputations: &ReputationVecOf<T>,
 		) -> Result<u128, Error<T>> {
 			let mut eligible_reputation_count = 0u128;
-
-			let maybe_cid = match Self::proposals(proposal_id)
-				.ok_or(Error::<T>::InexistentProposal)?
-				.action
-				.get_access_policy()
-			{
+			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			let maybe_cid = match proposal.action.get_access_policy() {
 				ProposalAccessPolicy::Community(cid) => Some(cid),
 				_ => None,
 			};
@@ -336,7 +332,8 @@ pub mod pallet {
 				Self::purpose_ids(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
 			for community_ceremony in reputations {
-				if !Self::relevant_cindexes(proposal_id)?.contains(&community_ceremony.1) {
+				if !Self::relevant_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
+				{
 					continue
 				}
 
@@ -414,14 +411,11 @@ pub mod pallet {
 		}
 
 		pub fn get_electorate(
-			proposal_id: ProposalIdType,
+			start_cindex: CeremonyIndexType,
+			proposal_action: ProposalAction,
 		) -> Result<ReputationCountType, Error<T>> {
-			let relevant_cindexes = Self::relevant_cindexes(proposal_id)?;
-			match Self::proposals(proposal_id)
-				.ok_or(Error::<T>::InexistentProposal)?
-				.action
-				.get_access_policy()
-			{
+			let relevant_cindexes = Self::relevant_cindexes(start_cindex)?;
+			match proposal_action.get_access_policy() {
 				ProposalAccessPolicy::Community(cid) => Ok(relevant_cindexes
 					.into_iter()
 					.map(|cindex| {
@@ -469,7 +463,8 @@ pub mod pallet {
 
 		pub fn is_passing(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
 			let tally = Self::tallies(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let electorate = Self::get_electorate(proposal_id)?;
+			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			let electorate = proposal.electorate_size;
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {

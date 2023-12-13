@@ -89,11 +89,20 @@ fn proposal_submission_works() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 		let now = Timestamp::get();
+		let alice = alice();
+
+		// invalid
+		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
+		// valid
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
-			RuntimeOrigin::signed(alice()),
+			RuntimeOrigin::signed(alice),
 			proposal_action.clone()
 		));
 		assert_eq!(EncointerDemocracy::proposal_count(), 1);
@@ -101,6 +110,7 @@ fn proposal_submission_works() {
 		assert_eq!(proposal.state, ProposalState::Ongoing);
 		assert_eq!(proposal.action, proposal_action);
 		assert_eq!(proposal.start, now);
+		assert_eq!(proposal.electorate_size, 3);
 		assert!(EncointerDemocracy::tallies(1).is_some());
 	});
 }
@@ -395,6 +405,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
 			state: ProposalState::Cancelled,
+			electorate_size: 0,
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
 
@@ -403,6 +414,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
 			state: ProposalState::Approved,
+			electorate_size: 0,
 		};
 		Proposals::<TestRuntime>::insert(2, proposal2);
 
@@ -540,14 +552,14 @@ fn update_proposal_state_extrinsic_works() {
 		let alice = alice();
 		let cid = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action
 		));
-
-		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 		// propsal is passing
@@ -580,15 +592,15 @@ fn test_get_electorate_works() {
 			proposal_action
 		));
 
-		let proposal_action =
+		let proposal_action2 =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action
 		));
 
-		assert_eq!(EncointerDemocracy::get_electorate(1).unwrap(), 5);
-		assert_eq!(EncointerDemocracy::get_electorate(2).unwrap(), 2);
+		assert_eq!(EncointerDemocracy::get_electorate(7, proposal_action).unwrap(), 5);
+		assert_eq!(EncointerDemocracy::get_electorate(7, proposal_action2).unwrap(), 2);
 	});
 }
 
@@ -679,6 +691,12 @@ fn proposal_happy_flow() {
 		let cid = create_cid();
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 		let alice = alice();
+
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked);
+
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
@@ -689,11 +707,6 @@ fn proposal_happy_flow() {
 			last_event::<TestRuntime>(),
 			Some(Event::ProposalSubmitted { proposal_id: 1, proposal_action }.into())
 		);
-
-		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked);
 
 		assert_ok!(EncointerDemocracy::vote(
 			RuntimeOrigin::signed(alice.clone()),

@@ -5,12 +5,11 @@ use crate::{
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
-use crate::scheduler::CeremonyIndexType;
+use crate::{ceremonies::ReputationCountType, scheduler::CeremonyIndexType};
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 use sp_runtime::BoundedVec;
-
 pub type ProposalIdType = u128;
 pub type VoteCountType = u128;
 pub type VoteEntry<AccountId> = (AccountId, CommunityCeremony);
@@ -100,4 +99,5 @@ pub struct Proposal<Moment> {
 	pub start_cindex: CeremonyIndexType,
 	pub action: ProposalAction,
 	pub state: ProposalState<Moment>,
+	pub electorate_size: ReputationCountType,
 }
