@@ -25,6 +25,8 @@ use encointer_primitives::{
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
+use frame_support::dispatch::DispatchErrorWithPostInfo;
+
 use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
 	sp_runtime::{
@@ -105,6 +107,10 @@ pub mod pallet {
 		ProposalStateUpdated {
 			proposal_id: ProposalIdType,
 			proposal_state: ProposalState<T::Moment>,
+		},
+		EnactmentFailed {
+			proposal_id: ProposalIdType,
+			reason: DispatchErrorWithPostInfo,
 		},
 	}
 
@@ -479,29 +485,29 @@ pub mod pallet {
 			}
 			Ok(false)
 		}
-		pub fn enact_proposal(proposal_id: ProposalIdType) -> Result<(), Error<T>> {
+		pub fn enact_proposal(proposal_id: ProposalIdType) -> DispatchResultWithPostInfo {
 			let mut proposal =
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
 			match proposal.action {
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
-					let _ = <encointer_communities::Pallet<T>>::do_update_nominal_income(
+					<encointer_communities::Pallet<T>>::do_update_nominal_income(
 						cid,
 						nominal_income,
-					);
+					)?;
 				},
 
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
-					let _ = <encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
+					<encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
 						inactivity_timeout,
-					);
+					)?;
 				},
 			};
 
 			proposal.state = ProposalState::Enacted;
 			<Proposals<T>>::insert(proposal_id, proposal);
 			Self::deposit_event(Event::ProposalEnacted { proposal_id });
-			Ok(())
+			Ok(().into())
 		}
 	}
 }
@@ -514,7 +520,9 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			CeremonyPhaseType::Registering => {
 				// safe as EnactmentQueue has one key per ProposalActionType and those are bounded
 				<EnactmentQueue<T>>::iter().for_each(|p| {
-					let _ = Self::enact_proposal(p.1);
+					if let Err(e) = Self::enact_proposal(p.1) {
+						Self::deposit_event(Event::EnactmentFailed { proposal_id: p.1, reason: e })
+					}
 				});
 				// remove all keys from the map
 				<EnactmentQueue<T>>::translate::<ProposalIdType, _>(|_, _| None);

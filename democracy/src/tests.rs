@@ -29,6 +29,7 @@ use frame_support::{
 };
 use mock::{new_test_ext, EncointerDemocracy, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::BoundedVec;
+use std::str::FromStr;
 use test_utils::{
 	helpers::{
 		account_id, add_population, event_at_index, get_num_events, last_event,
@@ -806,5 +807,34 @@ fn enact_set_inactivity_timeout_works() {
 			EncointerCeremonies::inactivity_timeout(),
 			InactivityTimeoutType::from(13037u32)
 		);
+	});
+}
+
+#[test]
+fn enactment_error_fires_event() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let cid = CommunityIdentifier::from_str("u0qj944rhWE").unwrap();
+		let alice = alice();
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action
+		));
+
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.get_identifier(), 1);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		match event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2).unwrap() {
+			mock::RuntimeEvent::EncointerDemocracy(Event::EnactmentFailed {
+				proposal_id: 1,
+				reason: _r,
+			}) => (),
+			_ => panic!("Wrong event"),
+		};
 	});
 }
