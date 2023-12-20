@@ -14,6 +14,7 @@ encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../cer
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false }
 encointer-primitives = { path = "../primitives", default-features = false }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false }
+encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false }
 
 # substrate deps
 frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", default-features = false, branch = "polkadot-v1.0.0" }
