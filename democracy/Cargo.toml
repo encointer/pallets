@@ -18,8 +18,8 @@ scale-info = { version = "2.9.0", default-features = false }
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false, version = "2.0.0" }
 encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "2.0.0" }
 encointer-primitives = { path = "../primitives", default-features = false, version = "2.0.0" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "2.0.0" }
 encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false, version = "2.0.0" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "2.0.0" }
 
 # substrate deps
 frame-support = { default-features = false, version = "24.0.0" }
