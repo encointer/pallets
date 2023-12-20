@@ -156,17 +156,6 @@ pub mod pallet {
 	pub(super) type Tallies<T: Config> =
 		StorageMap<_, Blake2_128Concat, ProposalIdType, Tally, OptionQuery>;
 
-	#[pallet::storage]
-	#[pallet::getter(fn vote_entries)]
-	pub(super) type VoteEntries<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		ProposalIdType,
-		Blake2_128Concat,
-		VoteEntry<T::AccountId>,
-		(),
-		ValueQuery,
-	>;
 	// TODO set default value
 	#[pallet::storage]
 	#[pallet::getter(fn cancelled_at)]
