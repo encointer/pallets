@@ -7,18 +7,22 @@ use encointer_primitives::{
 	storage::{current_ceremony_index_key, global_reputation_count, participant_reputation},
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
-use frame_support::{assert_ok, traits::OnInitialize, BoundedVec};
+use frame_support::{
+	assert_ok,
+	traits::{OnFinalize, OriginTrait},
+	BoundedVec,
+};
 use frame_system::RawOrigin;
 #[cfg(not(feature = "std"))]
 use sp_std::vec;
 
-fn advance_n_blocks<T: Config>(n: u64) {
-	for _ in 0..n {
-		frame_system::Pallet::<T>::set_block_number(
-			frame_system::Pallet::<T>::block_number() + 1u32.into(),
-		);
-		frame_system::Pallet::<T>::on_initialize(frame_system::Pallet::<T>::block_number());
-	}
+fn advance_timestamp_equivalent_to_n_blocks<T: Config>(n: u64) {
+	let offset: T::Moment = (n * 6000u64)
+		.try_into()
+		.unwrap_or_else(|_| panic!("Something went horribly wrong!"));
+	let new_time: T::Moment = pallet_timestamp::Pallet::<T>::get() + offset;
+	let _ = pallet_timestamp::Pallet::<T>::set(T::RuntimeOrigin::none(), new_time);
+	pallet_timestamp::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 }
 
 benchmarks! {
@@ -38,34 +42,40 @@ benchmarks! {
 		let zoran = account::<T::AccountId>("zoran", 1, 1);
 		let cid = CommunityIdentifier::default();
 
-		let proposal_action = ProposalAction::SetInactivityTimeout(8);
-		assert_ok!(EncointerDemocracy::<T>::submit_proposal(
-			RawOrigin::Signed(zoran.clone()).into(),
-			proposal_action
-		));
-
 		frame_support::storage::unhashed::put_raw(&participant_reputation((cid, 3), &zoran), &Reputation::VerifiedUnlinked.encode());
 		frame_support::storage::unhashed::put_raw(&participant_reputation((cid, 4), &zoran), &Reputation::VerifiedUnlinked.encode());
 		frame_support::storage::unhashed::put_raw(&participant_reputation((cid, 5), &zoran), &Reputation::VerifiedUnlinked.encode());
+		frame_support::storage::unhashed::put_raw(&global_reputation_count(3), &1u128.encode());
+		frame_support::storage::unhashed::put_raw(&global_reputation_count(4), &1u128.encode());
+		frame_support::storage::unhashed::put_raw(&global_reputation_count(5), &1u128.encode());
+
 		let reputation_vec: ReputationVecOf<T> = BoundedVec::try_from(vec![
 			(cid, 3),
 			(cid, 4),
 			(cid, 5),
 		]).unwrap();
 
-		assert!(<VoteEntries<T>>::iter().next().is_none());
+		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+		assert_ok!(EncointerDemocracy::<T>::submit_proposal(
+			RawOrigin::Signed(zoran.clone()).into(),
+			proposal_action
+		));
+
+		assert_eq!(<Tallies<T>>::get(1).unwrap().ayes, 0);
 	}: _(RawOrigin::Signed(zoran.clone()),
 	1,
 	Vote::Aye,
 	reputation_vec)
 	verify {
-		assert!(<VoteEntries<T>>::iter().next().is_some());
+		assert_eq!(<Tallies<T>>::get(1).unwrap().ayes, 3);
 	}
 
 	update_proposal_state {
 		frame_support::storage::unhashed::put_raw(&current_ceremony_index_key(), &7u32.encode());
 		let zoran = account::<T::AccountId>("zoran", 1, 1);
 		let cid = CommunityIdentifier::default();
+
+		frame_support::storage::unhashed::put_raw(&global_reputation_count(5), &3u128.encode());
 
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 		assert_ok!(EncointerDemocracy::<T>::submit_proposal(
@@ -76,11 +86,10 @@ benchmarks! {
 
 		Tallies::<T>::insert(1, Tally { turnout: 3, ayes: 3 });
 
-		frame_support::storage::unhashed::put_raw(&global_reputation_count(5), &3u128.encode());
 		assert_eq!(EncointerDemocracy::<T>::proposals(1).unwrap().state, ProposalState::Ongoing);
 		EncointerDemocracy::<T>::update_proposal_state(RawOrigin::Signed(zoran.clone()).into(), 1).ok();
 		assert!(<EnactmentQueue<T>>::iter().next().is_none());
-		advance_n_blocks::<T>(21);
+		advance_timestamp_equivalent_to_n_blocks::<T>(21);
 
 	}: _(RawOrigin::Signed(zoran), 1)
 	verify {
