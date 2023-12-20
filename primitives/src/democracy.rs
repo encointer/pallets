@@ -1,6 +1,10 @@
 use crate::{
+	balances::Demurrage,
 	ceremonies::{CommunityCeremony, InactivityTimeoutType},
-	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
+	communities::{
+		CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Location,
+		NominalIncome as NominalIncomeType,
+	},
 };
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -41,10 +45,14 @@ pub enum ProposalAccessPolicy {
 	Community(CommunityIdentifier),
 }
 
-#[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum ProposalAction {
+	AddLocation(CommunityIdentifier, Location),
+	RemoveLocation(CommunityIdentifier, Location),
+	UpdateCommunityMetadata(CommunityIdentifier, CommunityMetadataType),
+	UpdateDemurrage(CommunityIdentifier, Demurrage),
 	UpdateNominalIncome(CommunityIdentifier, NominalIncomeType),
 	SetInactivityTimeout(InactivityTimeoutType),
 }
@@ -53,6 +61,10 @@ pub enum ProposalAction {
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum ProposalActionIdentifier {
+	AddLocation(CommunityIdentifier),
+	RemoveLocation(CommunityIdentifier),
+	UpdateCommunityMetadata(CommunityIdentifier),
+	UpdateDemurrage(CommunityIdentifier),
 	UpdateNominalIncome(CommunityIdentifier),
 	SetInactivityTimeout,
 }
@@ -60,6 +72,10 @@ pub enum ProposalActionIdentifier {
 impl ProposalAction {
 	pub fn get_access_policy(self) -> ProposalAccessPolicy {
 		match self {
+			ProposalAction::AddLocation(cid, _) => ProposalAccessPolicy::Community(cid),
+			ProposalAction::RemoveLocation(cid, _) => ProposalAccessPolicy::Community(cid),
+			ProposalAction::UpdateCommunityMetadata(cid, _) => ProposalAccessPolicy::Community(cid),
+			ProposalAction::UpdateDemurrage(cid, _) => ProposalAccessPolicy::Community(cid),
 			ProposalAction::UpdateNominalIncome(cid, _) => ProposalAccessPolicy::Community(cid),
 			ProposalAction::SetInactivityTimeout(_) => ProposalAccessPolicy::Global,
 		}
@@ -67,6 +83,12 @@ impl ProposalAction {
 
 	pub fn get_identifier(self) -> ProposalActionIdentifier {
 		match self {
+			ProposalAction::AddLocation(cid, _) => ProposalActionIdentifier::AddLocation(cid),
+			ProposalAction::RemoveLocation(cid, _) => ProposalActionIdentifier::RemoveLocation(cid),
+			ProposalAction::UpdateCommunityMetadata(cid, _) =>
+				ProposalActionIdentifier::UpdateCommunityMetadata(cid),
+			ProposalAction::UpdateDemurrage(cid, _) =>
+				ProposalActionIdentifier::UpdateDemurrage(cid),
 			ProposalAction::UpdateNominalIncome(cid, _) =>
 				ProposalActionIdentifier::UpdateNominalIncome(cid),
 			ProposalAction::SetInactivityTimeout(_) =>

@@ -201,7 +201,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
-			if Self::enactment_queue(proposal_action.get_identifier()).is_some() {
+			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into())
 			}
 			let _sender = ensure_signed(origin)?;
@@ -215,8 +215,8 @@ pub mod pallet {
 				start: now,
 				start_cindex: cindex,
 				state: ProposalState::Ongoing,
-				action: proposal_action,
-				electorate_size: Self::get_electorate(cindex, proposal_action)?,
+				action: proposal_action.clone(),
+				electorate_size: Self::get_electorate(cindex, proposal_action.clone())?,
 			};
 
 			let proposal_identifier =
@@ -376,7 +376,7 @@ pub mod pallet {
 			let mut approved = false;
 			let old_proposal_state = proposal.state;
 			let now = <pallet_timestamp::Pallet<T>>::get();
-			let proposal_action_identifier = proposal.action.get_identifier();
+			let proposal_action_identifier = proposal.action.clone().get_identifier();
 			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
 			let proposal_cancelled = proposal.start < cancelled_at;
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
@@ -489,7 +489,22 @@ pub mod pallet {
 			let mut proposal =
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
-			match proposal.action {
+			match proposal.action.clone() {
+				ProposalAction::AddLocation(cid, location) => {
+					<encointer_communities::Pallet<T>>::do_add_loaction(cid, location)?;
+				},
+				ProposalAction::RemoveLocation(cid, location) => {
+					<encointer_communities::Pallet<T>>::do_remove_loaction(cid, location)?;
+				},
+				ProposalAction::UpdateCommunityMetadata(cid, community_metadata) => {
+					<encointer_communities::Pallet<T>>::do_update_community_metadata(
+						cid,
+						community_metadata,
+					)?;
+				},
+				ProposalAction::UpdateDemurrage(cid, demurrage) => {
+					<encointer_communities::Pallet<T>>::do_update_demurrage(cid, demurrage)?;
+				},
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
 					<encointer_communities::Pallet<T>>::do_update_nominal_income(
 						cid,
