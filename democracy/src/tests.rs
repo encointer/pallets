@@ -17,10 +17,17 @@
 //! Unit tests for the tokens module.
 
 use super::*;
-use crate::mock::{EncointerCeremonies, EncointerCommunities, EncointerScheduler, Timestamp};
+use crate::mock::{
+	EncointerBalances, EncointerCeremonies, EncointerCommunities, EncointerScheduler, Timestamp,
+};
 use encointer_primitives::{
+	balances::Demurrage,
 	ceremonies::{InactivityTimeoutType, Reputation},
-	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
+	common::{FromStr, PalletString},
+	communities::{
+		CommunityIdentifier, CommunityMetadata as CommunityMetadataType, Degree, GeoHash, Location,
+		NominalIncome as NominalIncomeType,
+	},
 	democracy::{ProposalAction, ProposalActionIdentifier, ProposalState, Tally, Vote},
 };
 use frame_support::{
@@ -29,7 +36,7 @@ use frame_support::{
 };
 use mock::{new_test_ext, EncointerDemocracy, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::BoundedVec;
-use std::str::FromStr;
+use std::str::FromStr as StdFromStr;
 use test_utils::{
 	helpers::{
 		account_id, add_population, event_at_index, get_num_events, last_event,
@@ -123,7 +130,7 @@ fn proposal_submission_fails_if_proposal_in_enactment_queue() {
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.get_identifier(), 100);
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
 
 		assert_err!(
 			EncointerDemocracy::submit_proposal(
@@ -499,7 +506,7 @@ fn do_update_proposal_state_works() {
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice),
-			proposal_action
+			proposal_action.clone()
 		));
 
 		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
@@ -533,13 +540,16 @@ fn do_update_proposal_state_works() {
 			ProposalState::Confirming { since: 0 }
 		);
 
-		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(
+			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()),
+			None
+		);
 		advance_n_blocks(11);
 		// proposal is enacted
 		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), true);
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);
 		assert_eq!(
-			EncointerDemocracy::enactment_queue(proposal_action.get_identifier()).unwrap(),
+			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()).unwrap(),
 			1
 		);
 	});
@@ -590,14 +600,14 @@ fn test_get_electorate_works() {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action
+			proposal_action.clone()
 		));
 
 		let proposal_action2 =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action
+			proposal_action.clone()
 		));
 
 		assert_eq!(EncointerDemocracy::get_electorate(7, proposal_action).unwrap(), 5);
@@ -658,18 +668,18 @@ fn enactment_updates_proposal_metadata_and_enactment_queue() {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action
+			proposal_action.clone()
 		));
 
 		let proposal_action2 =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action2
+			proposal_action2.clone()
 		));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.get_identifier(), 1);
-		EnactmentQueue::<TestRuntime>::insert(proposal_action2.get_identifier(), 2);
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(proposal_action2.clone().get_identifier(), 2);
 
 		run_to_next_phase();
 		run_to_next_phase();
@@ -706,7 +716,13 @@ fn proposal_happy_flow() {
 		));
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::ProposalSubmitted { proposal_id: 1, proposal_action }.into())
+			Some(
+				Event::ProposalSubmitted {
+					proposal_id: 1,
+					proposal_action: proposal_action.clone()
+				}
+				.into()
+			)
 		);
 
 		assert_ok!(EncointerDemocracy::vote(
@@ -755,8 +771,123 @@ fn proposal_happy_flow() {
 		);
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
-		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(
+			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()),
+			None
+		);
 		assert_eq!(EncointerCommunities::nominal_income(cid), NominalIncomeType::from(13037u32));
+	});
+}
+
+#[test]
+fn enact_add_location_works() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+		let location = Location { lat: Degree::from_num(10.0), lon: Degree::from_num(10.0) };
+		let proposal_action = ProposalAction::AddLocation(cid, location);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		assert_eq!(EncointerCommunities::locations(cid, geo_hash.clone()).len(), 0);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(EncointerCommunities::locations(cid, geo_hash).len(), 1);
+	});
+}
+
+#[test]
+fn enact_remove_location_works() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+		let location = Location { lat: Degree::from_num(10.0), lon: Degree::from_num(10.0) };
+		let _ = EncointerCommunities::do_add_loaction(cid, location);
+		let proposal_action = ProposalAction::RemoveLocation(cid, location);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		assert_eq!(EncointerCommunities::locations(cid, geo_hash.clone()).len(), 1);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(EncointerCommunities::locations(cid, geo_hash).len(), 0);
+	});
+}
+
+#[test]
+fn enact_update_community_metadata_works() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+		let community_metadata: CommunityMetadataType = CommunityMetadataType {
+			name: PalletString::from_str("abc1337").unwrap(),
+			symbol: PalletString::from_str("DEF").unwrap(),
+			..Default::default()
+		};
+
+		let proposal_action = ProposalAction::UpdateCommunityMetadata(cid, community_metadata);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(
+			EncointerCommunities::community_metadata(cid).name,
+			PalletString::from_str("abc1337").unwrap()
+		);
+	});
+}
+
+#[test]
+fn enact_update_demurrage_works() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+		let demurrage = Demurrage::from_num(0.0001337);
+
+		let proposal_action = ProposalAction::UpdateDemurrage(cid, demurrage);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
+		assert!(EncointerBalances::demurrage_per_block(&cid) != demurrage);
+
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(EncointerBalances::demurrage_per_block(&cid), demurrage);
 	});
 }
 
@@ -769,10 +900,10 @@ fn enact_update_nominal_income_works() {
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action
+			proposal_action.clone()
 		));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		run_to_next_phase();
 		run_to_next_phase();
@@ -792,17 +923,20 @@ fn enact_set_inactivity_timeout_works() {
 			ProposalAction::SetInactivityTimeout(InactivityTimeoutType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action
+			proposal_action.clone()
 		));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
-		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+		assert_eq!(
+			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()),
+			None
+		);
 		assert_eq!(
 			EncointerCeremonies::inactivity_timeout(),
 			InactivityTimeoutType::from(13037u32)
@@ -820,10 +954,10 @@ fn enactment_error_fires_event() {
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			proposal_action
+			proposal_action.clone()
 		));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		run_to_next_phase();
 		run_to_next_phase();
