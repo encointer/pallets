@@ -42,6 +42,14 @@ pub use weights::WeightInfo;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(not(feature = "std"))]
+use alloc::string::ToString;
+
 // Logger target
 //const LOG: &str = "encointer";
 
