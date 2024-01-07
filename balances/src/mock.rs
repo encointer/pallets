@@ -38,7 +38,7 @@ frame_support::construct_runtime!(
 		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerBalances: dut::{Pallet, Call, Storage, Event<T>, Config<T>},
 	}
-)
+);
 
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
