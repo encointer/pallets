@@ -12,8 +12,8 @@ license = "GPL-3.0-or-later"
 codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
     "derive",
 ] }
-scale-info = { version = "2.9.0", default-features = false }
-serde = { version = "1.0.136", default-features = false, features = [
+scale-info = { version = "2.10.0", default-features = false }
+serde = { version = "1.0.188", default-features = false, features = [
     "derive",
     "alloc",
 ] }
@@ -22,12 +22,12 @@ serde = { version = "1.0.136", default-features = false, features = [
 encointer-primitives = { path = "../../primitives", default-features = false, version = "2.0.0" }
 
 # substrate deps
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+sp-runtime = { default-features = false, version = "28.0.0" }
+sp-std = { default-features = false, version = "12.0.0" }
 
 [dev-dependencies]
 rstest = "0.12.0"
-sp-core = "24.0.0"
+sp-core = "25.0.0"
 
 [features]
 default = ["std"]

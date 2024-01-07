@@ -16,19 +16,19 @@ pallet-encointer-balances = { path = "../balances", default-features = false, ve
 pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false, version = "2.0.0" }
 
 # substrate dependencies
-frame-support = { default-features = false, version = "24.0.0" }
-frame-system = { default-features = false, version = "24.0.0" }
-pallet-asset-tx-payment = { default-features = false, version = "24.0.0" }
-pallet-transaction-payment = { default-features = false, version = "24.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
+frame-support = { default-features = false, version = "25.0.0" }
+frame-system = { default-features = false, version = "25.0.0" }
+pallet-asset-tx-payment = { default-features = false, version = "25.0.0" }
+pallet-transaction-payment = { default-features = false, version = "25.0.0" }
+sp-runtime = { default-features = false, version = "28.0.0" }
 
 [dev-dependencies]
 codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
     "derive",
 ] }
 rstest = "0.12.0"
-scale-info = { version = "2.9.0", default-features = false }
-sp-io = "26.0.0"
+scale-info = { version = "2.10.0", default-features = false }
+sp-io = "27.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]

@@ -13,7 +13,7 @@ codec = { package = "parity-scale-codec", version = "3.6.4", default-features = 
     "derive",
 ] }
 log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.9.0", default-features = false }
+scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "2.0.0" }
@@ -21,16 +21,16 @@ encointer-primitives = { path = "../primitives", default-features = false, featu
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "2.0.0" }
 
 # substrate deps
-frame-benchmarking = { default-features = false, optional = true, version = "24.0.0" }
-frame-support = { default-features = false, version = "24.0.0" }
-frame-system = { default-features = false, version = "24.0.0" }
-sp-io = { default-features = false, version = "26.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
+frame-support = { default-features = false, version = "25.0.0" }
+frame-system = { default-features = false, version = "25.0.0" }
+sp-io = { default-features = false, version = "27.0.0" }
+sp-runtime = { default-features = false, version = "28.0.0" }
+sp-std = { default-features = false, version = "12.0.0" }
 
 [dev-dependencies]
 approx = "0.5.1"
-sp-core = "24.0.0"
+sp-core = "25.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]
