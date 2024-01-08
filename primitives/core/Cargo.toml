@@ -32,16 +32,16 @@ sp-std = { default-features = false, version = "12.0.0" }
 serde_json = "1.0.105"
 
 [features]
-default = ["std", "serde_derive"]
-serde_derive = ["impl-serde", "fixed/serde", "serde"]
+default = [ "serde_derive", "std" ]
+serde_derive = [ "fixed/serde", "impl-serde", "serde" ]
 std = [
-    "codec/std",
-    "impl-serde/std",
-    "fixed/std",
-    "scale-info/std",
-    "serde/std",
-    "sp-arithmetic/std",
-    "sp-std/std",
-    "sp-core/std",
-    "sp-runtime/std",
+	"codec/std",
+	"fixed/std",
+	"impl-serde/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-arithmetic/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
 ]

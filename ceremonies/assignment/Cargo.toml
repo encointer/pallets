@@ -20,5 +20,5 @@ sp-std = { default-features = false, version = "12.0.0" }
 sp-core = "25.0.0"
 
 [features]
-default = ["std"]
-std = ["encointer-primitives/std", "sp-std/std", "sp-runtime/std"]
+default = [ "std" ]
+std = [ "encointer-primitives/std", "sp-runtime/std", "sp-std/std" ]

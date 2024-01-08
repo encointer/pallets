@@ -33,3 +33,8 @@ sp-io = "27.0.0"
 sp-keyring = "28.0.0"
 sp-runtime = "28.0.0"
 sp-std = "12.0.0"
+
+[features]
+runtime-benchmarks = []
+try-runtime = []
+std = []

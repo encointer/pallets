@@ -32,21 +32,24 @@ sp-io = "27.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "log/std",
-
-    # encointer deps
-    "pallet-encointer-balances/std",
-    "pallet-encointer-ceremonies/std",
-    "encointer-primitives/std",
-
-    # substrate deps
-    "frame-support/std",
-    "frame-system/std",
-    "pallet-asset-tx-payment/std",
-    "pallet-transaction-payment/std",
-    "sp-runtime/std",
+	"encointer-primitives/std",
+	# substrate deps
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"pallet-asset-tx-payment/std",
+	# encointer deps
+	"pallet-encointer-balances/std",
+	"pallet-encointer-ceremonies/std",
+	"pallet-transaction-payment/std",
+	"sp-runtime/std",
 ]
 
-try-runtime = ["frame-system/try-runtime"]
+try-runtime = [
+	"frame-system/try-runtime",
+	"pallet-encointer-balances/try-runtime",
+	"pallet-encointer-ceremonies/try-runtime",
+]
+runtime-benchmarks = []
