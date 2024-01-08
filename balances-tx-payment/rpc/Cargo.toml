@@ -1,6 +1,6 @@
 [package]
 name = "encointer-balances-tx-payment-rpc"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Balances tx payment rpc for the Encointer blockchain runtime"
@@ -20,9 +20,9 @@ parking_lot = "0.12.0"
 thiserror = "1.0.31"
 
 # local deps
-encointer-balances-tx-payment-rpc-runtime-api = { package = "encointer-balances-tx-payment-rpc-runtime-api", path = "runtime-api", version = "3.0.0" }
-encointer-primitives = { path = "../../primitives", version = "3.0.0" }
-encointer-rpc = { path = "../../rpc", version = "3.0.0" }
+encointer-balances-tx-payment-rpc-runtime-api = { package = "encointer-balances-tx-payment-rpc-runtime-api", path = "runtime-api", version = "3.0.1" }
+encointer-primitives = { path = "../../primitives", version = "3.0.1" }
+encointer-rpc = { path = "../../rpc", version = "3.0.1" }
 
 # substrate deps
 pallet-transaction-payment = { default-features = false, version = "25.0.0" }

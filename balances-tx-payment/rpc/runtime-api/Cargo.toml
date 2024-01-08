@@ -1,6 +1,6 @@
 [package]
 name = "encointer-balances-tx-payment-rpc-runtime-api"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Balances tx payment rpc runtime api for the Encointer blockchain runtime"
@@ -10,7 +10,7 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 # local deps
-encointer-primitives = { path = "../../../primitives", default-features = false, version = "3.0.0" }
+encointer-primitives = { path = "../../../primitives", default-features = false, version = "3.0.1" }
 
 # substrate deps
 codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [

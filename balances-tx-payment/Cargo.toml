@@ -1,6 +1,6 @@
 [package]
 name = "encointer-balances-tx-payment"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Balances tx payment for the Encointer blockchain runtime"
@@ -11,9 +11,9 @@ license = "GPL-3.0-or-later"
 [dependencies]
 log = { version = "0.4.20", default-features = false }
 
-encointer-primitives = { path = "../primitives", default-features = false, version = "3.0.0" }
-pallet-encointer-balances = { path = "../balances", default-features = false, version = "3.0.0" }
-pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false, version = "3.0.0" }
+encointer-primitives = { path = "../primitives", default-features = false, version = "3.0.1" }
+pallet-encointer-balances = { path = "../balances", default-features = false, version = "3.0.1" }
+pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false, version = "3.0.1" }
 
 # substrate dependencies
 frame-support = { default-features = false, version = "25.0.0" }

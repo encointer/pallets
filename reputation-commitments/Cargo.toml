@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-reputation-commitments"
-version = "3.0.0"
+version = "3.0.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Reputation commitments pallet for the Encointer blockchain runtime"
@@ -15,10 +15,10 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false, version = "3.0.0" }
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.0" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.0" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.0" }
+encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false, version = "3.0.1" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.1" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.1" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.1" }
 
 # substrate deps
 frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
