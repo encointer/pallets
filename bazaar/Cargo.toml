@@ -49,6 +49,8 @@ std = [
 runtime-benchmarks = [
     "encointer-communities/runtime-benchmarks",
     "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
     "test-utils/runtime-benchmarks",
 ]
 

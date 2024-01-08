@@ -69,6 +69,8 @@ runtime-benchmarks = [
     "encointer-communities/runtime-benchmarks",
     "encointer-scheduler/runtime-benchmarks",
     "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
     "sp-application-crypto",
     "sp-core",
     "test-utils/runtime-benchmarks",

@@ -40,6 +40,8 @@ runtime-benchmarks = [
     "encointer-ceremonies/runtime-benchmarks",
     "encointer-communities/runtime-benchmarks",
     "encointer-scheduler/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
 ]
 try-runtime = [
     "encointer-balances/try-runtime",
