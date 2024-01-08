@@ -35,28 +35,28 @@ test-utils = { path = "../test-utils" }
 
 [features]
 try-runtime = [
-	"encointer-balances/try-runtime",
-	"encointer-scheduler/try-runtime",
-	"frame-system/try-runtime",
+    "encointer-balances/try-runtime",
+    "encointer-scheduler/try-runtime",
+    "frame-system/try-runtime",
 ]
-default = [ "std" ]
+default = ["std"]
 std = [
-	"codec/std",
-	"encointer-balances/std",
-	# local deps
-	"encointer-primitives/std",
-	"encointer-scheduler/std",
-	# substrate deps
-	"frame-support/std",
-	"frame-system/std",
-	"log/std",
-	"scale-info/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
+    "codec/std",
+    "encointer-balances/std",
+    # local deps
+    "encointer-primitives/std",
+    "encointer-scheduler/std",
+    # substrate deps
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+    "scale-info/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
 ]
 runtime-benchmarks = [
-	"encointer-balances/runtime-benchmarks",
-	"encointer-scheduler/runtime-benchmarks",
-	"frame-benchmarking",
+    "encointer-balances/runtime-benchmarks",
+    "encointer-scheduler/runtime-benchmarks",
+    "frame-benchmarking",
 ]
