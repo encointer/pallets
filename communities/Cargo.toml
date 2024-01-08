@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-communities"
-version = "2.0.0"
+version = "3.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Communities pallet for the Encointer blockchain runtime"
@@ -16,9 +16,9 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "2.0.0" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "2.0.0" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "2.0.0" }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "3.0.0" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.0" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.0" }
 
 # substrate deps
 frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
