@@ -30,12 +30,12 @@ rstest = "0.12.0"
 sp-core = "25.0.0"
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
-	"codec/std",
-	"encointer-primitives/std",
-	"scale-info/std",
-	"serde/std",
-	"sp-runtime/std",
-	"sp-std/std",
+    "codec/std",
+    "encointer-primitives/std",
+    "scale-info/std",
+    "serde/std",
+    "sp-runtime/std",
+    "sp-std/std",
 ]

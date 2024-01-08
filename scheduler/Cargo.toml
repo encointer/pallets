@@ -32,18 +32,18 @@ sp-io = "27.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
-	"codec/std",
-	"encointer-primitives/std",
-	"frame-support/std",
-	"frame-system/std",
-	"log/std",
-	"pallet-timestamp/std",
-	"scale-info/std",
-	"sp-runtime/std",
-	"sp-std/std",
+    "codec/std",
+    "encointer-primitives/std",
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+    "pallet-timestamp/std",
+    "scale-info/std",
+    "sp-runtime/std",
+    "sp-std/std",
 ]
-runtime-benchmarks = [ "frame-benchmarking" ]
+runtime-benchmarks = ["frame-benchmarking"]
 
-try-runtime = [ "frame-system/try-runtime" ]
+try-runtime = ["frame-system/try-runtime"]
