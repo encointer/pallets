@@ -51,11 +51,10 @@ runtime-benchmarks = [
     "frame-benchmarking",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
-    "test-utils/runtime-benchmarks",
 ]
 
 try-runtime = [
     "encointer-communities/try-runtime",
     "frame-system/try-runtime",
-    "test-utils/try-runtime",
+
 ]

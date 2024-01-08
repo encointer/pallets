@@ -74,7 +74,7 @@ runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
     "sp-application-crypto",
-    "test-utils/runtime-benchmarks",
+
 ]
 
 try-runtime = [
@@ -82,7 +82,7 @@ try-runtime = [
     "encointer-communities/try-runtime",
     "encointer-scheduler/try-runtime",
     "frame-system/try-runtime",
-    "test-utils/try-runtime",
+
 ]
 
 mocks = []

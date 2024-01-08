@@ -38,7 +38,7 @@ try-runtime = [
     "encointer-balances/try-runtime",
     "encointer-scheduler/try-runtime",
     "frame-system/try-runtime",
-    "test-utils/try-runtime",
+
 ]
 default = ["std"]
 std = [
@@ -62,5 +62,5 @@ runtime-benchmarks = [
     "frame-benchmarking",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
-    "test-utils/runtime-benchmarks",
+
 ]
