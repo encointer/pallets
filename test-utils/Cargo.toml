@@ -35,6 +35,16 @@ sp-runtime = "28.0.0"
 sp-std = "12.0.0"
 
 [features]
-runtime-benchmarks = []
-try-runtime = []
+runtime-benchmarks = [
+    "encointer-balances/runtime-benchmarks",
+    "encointer-ceremonies/runtime-benchmarks",
+    "encointer-communities/runtime-benchmarks",
+    "encointer-scheduler/runtime-benchmarks",
+]
+try-runtime = [
+    "encointer-balances/try-runtime",
+    "encointer-ceremonies/try-runtime",
+    "encointer-communities/try-runtime",
+    "encointer-scheduler/try-runtime",
+]
 std = []

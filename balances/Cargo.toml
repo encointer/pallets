@@ -50,6 +50,10 @@ std = [
     "sp-std/std",
 ]
 
-runtime-benchmarks = ["approx", "frame-benchmarking"]
+runtime-benchmarks = [
+    "approx",
+    "frame-benchmarking",
+    "test-utils/runtime-benchmarks",
+]
 
-try-runtime = ["frame-system/try-runtime"]
+try-runtime = ["frame-system/try-runtime", "test-utils/try-runtime"]

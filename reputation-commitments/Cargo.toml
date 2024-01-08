@@ -60,6 +60,7 @@ runtime-benchmarks = [
     "encointer-communities/runtime-benchmarks",
     "encointer-scheduler/runtime-benchmarks",
     "frame-benchmarking",
+    "test-utils/runtime-benchmarks",
 ]
 
 try-runtime = [
@@ -67,4 +68,5 @@ try-runtime = [
     "encointer-communities/try-runtime",
     "encointer-scheduler/try-runtime",
     "frame-system/try-runtime",
+    "test-utils/try-runtime",
 ]

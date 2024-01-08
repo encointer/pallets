@@ -51,5 +51,10 @@ try-runtime = [
     "frame-system/try-runtime",
     "pallet-encointer-balances/try-runtime",
     "pallet-encointer-ceremonies/try-runtime",
+    "test-utils/try-runtime",
 ]
-runtime-benchmarks = []
+runtime-benchmarks = [
+    "pallet-encointer-balances/runtime-benchmarks",
+    "pallet-encointer-ceremonies/runtime-benchmarks",
+    "test-utils/runtime-benchmarks",
+]
