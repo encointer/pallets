@@ -30,8 +30,8 @@ sp-std = { default-features = false, version = "12.0.0" }
 
 # benchmarking
 frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
-sp-application-crypto = { default-features = false, optional = true, version = "26.0.0" }
-sp-core = { default-features = false, optional = true, version = "23.0.0" }
+sp-application-crypto = { default-features = false, optional = true, version = "27.0.0" }
+sp-core = { default-features = false, optional = true, version = "25.0.0" }
 
 [dev-dependencies]
 approx = "0.5.1"
@@ -40,7 +40,7 @@ encointer-balances = { package = "pallet-encointer-balances", path = "../balance
 itertools = "0.10.3"
 rstest = "0.12.0"
 sp-io = "27.0.0"
-sp-keystore = "0.30.0"
+sp-keystore = "0.31.0"
 test-utils = { path = "../test-utils" }
 
 [features]
