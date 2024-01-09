@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-democracy"
-version = "3.0.1"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Democracy pallet for the Encointer blockchain runtime"
@@ -15,10 +15,10 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false, version = "3.0.1" }
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.1" }
-encointer-primitives = { path = "../primitives", default-features = false, version = "3.0.1" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.1" }
+encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false, version = "3.0.2" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.2" }
+encointer-primitives = { path = "../primitives", default-features = false, version = "3.0.2" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.2" }
 
 # substrate deps
 frame-support = { default-features = false, version = "25.0.0" }
@@ -62,7 +62,6 @@ std = [
     "sp-io/std",
     "sp-std/std",
 ]
-
 runtime-benchmarks = [
     "encointer-balances/runtime-benchmarks",
     "encointer-ceremonies/runtime-benchmarks",
@@ -73,14 +72,11 @@ runtime-benchmarks = [
     "frame-system/runtime-benchmarks",
     "sp-application-crypto",
     "sp-core",
-
 ]
-
 try-runtime = [
     "encointer-balances/try-runtime",
     "encointer-ceremonies/try-runtime",
     "encointer-communities/try-runtime",
     "encointer-scheduler/try-runtime",
     "frame-system/try-runtime",
-
 ]

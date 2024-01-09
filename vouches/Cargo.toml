@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-vouches"
-version = "3.0.1"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Vouches pallet for the Encointer blockchain runtime"
@@ -16,7 +16,7 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.1" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
 
 # substrate deps
 frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
@@ -49,7 +49,6 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
 ]
-
 runtime-benchmarks = [
     "approx",
     "frame-benchmarking",
@@ -57,5 +56,4 @@ runtime-benchmarks = [
     "frame-system/runtime-benchmarks",
 
 ]
-
 try-runtime = ["frame-system/try-runtime"]

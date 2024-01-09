@@ -1,6 +1,6 @@
 [package]
 name = "test-utils"
-version = "3.0.1"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Test utils for the Encointer blockchain runtime"
@@ -49,4 +49,3 @@ try-runtime = [
     "encointer-communities/try-runtime",
     "encointer-scheduler/try-runtime",
 ]
-std = []

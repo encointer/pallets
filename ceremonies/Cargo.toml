@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-ceremonies"
-version = "3.0.1"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Ceremonies pallet for the Encointer blockchain runtime"
@@ -16,12 +16,12 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "3.0.1" }
-encointer-ceremonies-assignment = { path = "assignment", default-features = false, version = "3.0.1" }
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.1" }
-encointer-meetup-validation = { path = "meetup-validation", default-features = false, version = "3.0.1" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.1" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.1" }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "3.0.2" }
+encointer-ceremonies-assignment = { path = "assignment", default-features = false, version = "3.0.2" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.2" }
+encointer-meetup-validation = { path = "meetup-validation", default-features = false, version = "3.0.2" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.2" }
 
 # substrate deps
 frame-support = { default-features = false, version = "25.0.0" }
@@ -74,7 +74,6 @@ runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
     "sp-application-crypto",
-
 ]
 
 try-runtime = [
@@ -82,7 +81,6 @@ try-runtime = [
     "encointer-communities/try-runtime",
     "encointer-scheduler/try-runtime",
     "frame-system/try-runtime",
-
 ]
 
 mocks = []

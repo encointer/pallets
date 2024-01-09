@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-faucet"
-version = "3.0.1"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Faucet pallet for the Encointer blockchain runtime"
@@ -17,9 +17,9 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.1" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.1" }
-encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false, version = "3.0.1" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.2" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
+encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false, version = "3.0.2" }
 
 # substrate deps
 frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
@@ -54,7 +54,6 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
 ]
-
 runtime-benchmarks = [
     "approx",
     "encointer-communities/runtime-benchmarks",
@@ -63,12 +62,9 @@ runtime-benchmarks = [
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
     "pallet-treasury/runtime-benchmarks",
-
 ]
-
 try-runtime = [
     "encointer-communities/try-runtime",
     "encointer-reputation-commitments/try-runtime",
     "frame-system/try-runtime",
-
 ]
