@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-scheduler"
-version = "2.0.0"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Scheduler pallet for the Encointer blockchain runtime"
@@ -14,36 +14,40 @@ codec = { package = "parity-scale-codec", version = "3.6.4", default-features = 
 ] }
 impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
 
 # local deps
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "2.0.0" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
 
 # substrate deps
-frame-benchmarking = { default-features = false, optional = true, version = "24.0.0" }
-frame-support = { default-features = false, version = "24.0.0" }
-frame-system = { default-features = false, version = "24.0.0" }
-pallet-timestamp = { default-features = false, version = "23.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
+frame-support = { default-features = false, version = "25.0.0" }
+frame-system = { default-features = false, version = "25.0.0" }
+pallet-timestamp = { default-features = false, version = "24.0.0" }
+sp-runtime = { default-features = false, version = "28.0.0" }
+sp-std = { default-features = false, version = "12.0.0" }
 
 [dev-dependencies]
-sp-io = "26.0.0"
+sp-io = "27.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
 std = [
     "codec/std",
-    "log/std",
-    "scale-info/std",
     "encointer-primitives/std",
     "frame-support/std",
     "frame-system/std",
+    "log/std",
     "pallet-timestamp/std",
-    "sp-std/std",
+    "scale-info/std",
     "sp-runtime/std",
+    "sp-std/std",
 ]
-runtime-benchmarks = ["frame-benchmarking"]
+runtime-benchmarks = [
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
 
+]
 try-runtime = ["frame-system/try-runtime"]

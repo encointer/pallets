@@ -1,6 +1,6 @@
 [package]
 name = "encointer-primitives"
-version = "2.0.0"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Primitives for the Encointer blockchain runtime"
@@ -17,43 +17,47 @@ codec = { package = "parity-scale-codec", version = "3.6.4", default-features = 
 crc = "2.1.0"
 geohash = { package = "substrate-geohash", version = "0.13.0" }
 log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.9.0", default-features = false, features = [
+scale-info = { version = "2.10.0", default-features = false, features = [
     "derive",
 ] }
-serde = { version = "1.0.136", optional = true, default-features = false, features = [
+serde = { version = "1.0.188", optional = true, default-features = false, features = [
     "derive",
     "alloc",
 ] }
 
 # local deps
-ep-core = { path = "core", default-features = false, version = "2.0.0" }
+ep-core = { path = "core", default-features = false, version = "3.0.2" }
 
 # substrate deps
-frame-support = { default-features = false, version = "24.0.0" }
-sp-core = { default-features = false, version = "24.0.0" }
-sp-io = { default-features = false, version = "26.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+frame-support = { default-features = false, version = "25.0.0" }
+sp-core = { default-features = false, version = "25.0.0" }
+sp-io = { default-features = false, version = "27.0.0" }
+sp-runtime = { default-features = false, version = "28.0.0" }
+sp-std = { default-features = false, version = "12.0.0" }
 
 [dev-dependencies]
 approx = "0.5.1"
 rstest = "0.12.0"
-serde_json = "1.0.79"
+serde_json = "1.0.105"
 test-utils = { path = "../test-utils" }
 
 [features]
-default = ["std", "serde_derive"]
+default = ["serde_derive", "std"]
 full_crypto = ["sp-core/full_crypto"]
 serde_derive = ["ep-core/serde_derive", "serde"]
 std = [
-    "frame-support/std",
     "bs58/std",
     "codec/std",
     "ep-core/std",
+    "frame-support/std",
     "scale-info/std",
     "serde/std",
-    "sp-core/std",
     "sp-core/full_crypto",
-    "sp-std/std",
+    "sp-core/std",
     "sp-runtime/std",
+    "sp-std/std",
 ]
+runtime-benchmarks = [
+    "frame-support/runtime-benchmarks",
+]
+try-runtime = []

@@ -50,7 +50,9 @@ We also apply substrate's standard of serializing with `camelCase`.
 
 ### Versioning
 
-We bump crate versions separately and tag the repository with the highest crate version
+Major version must increase for polkadot-sdk release upgrades as these are always breaking changes. For convenience, all crates in this repos shall have the same major version.
+
+We bump minor crate versions separately and tag the repository with the highest crate version
 
 motivation: git blame should show on crate directory level if there was a change. This way, browsing the repo on github really shows when a certain pallet or crate has been touched. Even if it's only adjustments for upstream upgrades, just bump crate versions to the newest, which will be tagged globally
 
@@ -67,7 +69,7 @@ cargo install cargo-release
 cargo tree --workspace -i ep-core
 
 # add --execute if you're sure
-cargo release publish -p ep-core -p encointer-primitives -p test-utils -p pallet-encointer-scheduler -p pallet-encointer-balances -p pallet-encointer-communities
+cargo release publish -p ep-core -p encointer-primitives -p pallet-encointer-scheduler -p pallet-encointer-balances -p pallet-encointer-communities
 cargo release publish -p encointer-ceremonies-assignment -p encointer-meetup-validation -p pallet-encointer-ceremonies -p pallet-encointer-bazaar -p pallet-encointer-reputation-commitments -p pallet-encointer-faucet
 cargo release publish -p encointer-rpc -p encointer-balances-tx-payment -p encointer-balances-tx-payment-rpc-runtime-api -p encointer-balances-tx-payment-rpc -p pallet-encointer-bazaar-rpc-runtime-api -p pallet-encointer-bazaar-rpc -p pallet-encointer-ceremonies-rpc-runtime-api -p pallet-encointer-ceremonies-rpc -p pallet-encointer-communities-rpc-runtime-api -p pallet-encointer-communities-rpc
 ```

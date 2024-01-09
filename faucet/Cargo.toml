@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-faucet"
-version = "2.0.0"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Faucet pallet for the Encointer blockchain runtime"
@@ -14,34 +14,32 @@ codec = { package = "parity-scale-codec", version = "3.6.4", default-features = 
     "derive",
 ] }
 log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.9.0", default-features = false }
+scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "2.0.0" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "2.0.0" }
-encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false, version = "2.0.0" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.2" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
+encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false, version = "3.0.2" }
 
 # substrate deps
-frame-benchmarking = { default-features = false, optional = true, version = "24.0.0" }
-frame-support = { default-features = false, version = "24.0.0" }
-frame-system = { default-features = false, version = "24.0.0" }
-pallet-treasury = { default-features = false, version = "23.0.0" }
-sp-core = { default-features = false, version = "24.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
+frame-support = { default-features = false, version = "25.0.0" }
+frame-system = { default-features = false, version = "25.0.0" }
+pallet-treasury = { default-features = false, version = "24.0.0" }
+sp-core = { default-features = false, version = "25.0.0" }
+sp-runtime = { default-features = false, version = "28.0.0" }
+sp-std = { default-features = false, version = "12.0.0" }
 
 [dev-dependencies]
 approx = "0.5.1"
-sp-io = "26.0.0"
+sp-io = "27.0.0"
 test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "log/std",
-    "scale-info/std",
     "approx/std",
+    "codec/std",
     # local deps
     "encointer-communities/std",
     "encointer-primitives/std",
@@ -49,12 +47,24 @@ std = [
     # substrate deps
     "frame-support/std",
     "frame-system/std",
-    "sp-std/std",
-    "sp-runtime/std",
-    "sp-core/std",
+    "log/std",
     "pallet-treasury/std",
+    "scale-info/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "sp-std/std",
 ]
-
-runtime-benchmarks = ["frame-benchmarking", "approx"]
-
-try-runtime = ["frame-system/try-runtime"]
+runtime-benchmarks = [
+    "approx",
+    "encointer-communities/runtime-benchmarks",
+    "encointer-reputation-commitments/runtime-benchmarks",
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "pallet-treasury/runtime-benchmarks",
+]
+try-runtime = [
+    "encointer-communities/try-runtime",
+    "encointer-reputation-commitments/try-runtime",
+    "frame-system/try-runtime",
+]

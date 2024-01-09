@@ -147,6 +147,7 @@ macro_rules! impl_balances {
 			type MaxReserves = frame_support::traits::ConstU32<1000>;
 			type ReserveIdentifier = [u8; 8];
 			type RuntimeHoldReason = ();
+			type RuntimeFreezeReason = RuntimeFreezeReason;
 			type FreezeIdentifier = ();
 			type MaxHolds = frame_support::traits::ConstU32<0>;
 			type MaxFreezes = frame_support::traits::ConstU32<0>;

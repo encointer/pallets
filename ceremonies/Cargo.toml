@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-ceremonies"
-version = "2.0.0"
+version = "3.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Ceremonies pallet for the Encointer blockchain runtime"
@@ -13,61 +13,74 @@ codec = { package = "parity-scale-codec", version = "3.6.4", default-features = 
     "derive",
 ] }
 log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.9.0", default-features = false }
+scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "2.0.0" }
-encointer-ceremonies-assignment = { path = "assignment", default-features = false, version = "2.0.0" }
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "2.0.0" }
-encointer-meetup-validation = { path = "meetup-validation", default-features = false, version = "2.0.0" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "2.0.0" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "2.0.0" }
+encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "3.0.2" }
+encointer-ceremonies-assignment = { path = "assignment", default-features = false, version = "3.0.2" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.2" }
+encointer-meetup-validation = { path = "meetup-validation", default-features = false, version = "3.0.2" }
+encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
+encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.2" }
 
 # substrate deps
-frame-support = { default-features = false, version = "24.0.0" }
-frame-system = { default-features = false, version = "24.0.0" }
-pallet-timestamp = { default-features = false, version = "23.0.0" }
-sp-core = { default-features = false, version = "24.0.0" }
-sp-io = { default-features = false, version = "26.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+frame-support = { default-features = false, version = "25.0.0" }
+frame-system = { default-features = false, version = "25.0.0" }
+pallet-timestamp = { default-features = false, version = "24.0.0" }
+sp-core = { default-features = false, version = "25.0.0" }
+sp-io = { default-features = false, version = "27.0.0" }
+sp-runtime = { default-features = false, version = "28.0.0" }
+sp-std = { default-features = false, version = "12.0.0" }
 
 # benchmarking
-frame-benchmarking = { default-features = false, optional = true, version = "24.0.0" }
-sp-application-crypto = { default-features = false, optional = true, version = "26.0.0" }
+frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
+sp-application-crypto = { default-features = false, optional = true, version = "27.0.0" }
 
 [dev-dependencies]
 approx = "0.5.1"
 itertools = "0.10.3"
 rstest = "0.12.0"
-sp-io = "26.0.0"
-sp-keystore = "0.30.0"
+sp-io = "27.0.0"
+sp-keystore = "0.31.0"
 test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
 std = [
     "codec/std",
-    "log/std",
-    "scale-info/std",
     "encointer-balances/std",
     "encointer-ceremonies-assignment/std",
     "encointer-communities/std",
     "encointer-meetup-validation/std",
     "encointer-primitives/std",
     "encointer-scheduler/std",
+    "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
+    "log/std",
     "pallet-timestamp/std",
+    "scale-info/std",
+    "sp-core/std",
     "sp-io/std",
     "sp-runtime/std",
     "sp-std/std",
-    "frame-benchmarking/std",
-    "sp-core/std",
 ]
 
-runtime-benchmarks = ["frame-benchmarking", "sp-application-crypto"]
+runtime-benchmarks = [
+    "encointer-balances/runtime-benchmarks",
+    "encointer-communities/runtime-benchmarks",
+    "encointer-scheduler/runtime-benchmarks",
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "sp-application-crypto",
+]
 
-try-runtime = ["frame-system/try-runtime"]
+try-runtime = [
+    "encointer-balances/try-runtime",
+    "encointer-communities/try-runtime",
+    "encointer-scheduler/try-runtime",
+    "frame-system/try-runtime",
+]
 
 mocks = []

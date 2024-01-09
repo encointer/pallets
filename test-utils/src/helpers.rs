@@ -28,7 +28,7 @@ pub fn account_id(pair: &sr25519::Pair) -> AccountId {
 
 /// All well-known keys are bootstrappers for easy testing afterwards
 pub fn bootstrappers() -> Vec<sr25519::Pair> {
-	return vec![
+	return [
 		AccountKeyring::Alice,
 		AccountKeyring::Bob,
 		AccountKeyring::Charlie,
