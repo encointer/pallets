@@ -54,7 +54,9 @@ thread_local! {
 	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = RefCell::new(BTreeMap::new());
 	pub static LAST_ID: RefCell<u64> = RefCell::new(0u64);
 }
+
 /// set status for a given payment id
+#[cfg(feature = "runtime-benchmarks")]
 fn set_status(id: u64, s: PaymentStatus) {
 	STATUS.with(|m| m.borrow_mut().insert(id, s));
 }
@@ -67,9 +69,9 @@ impl Pay for TestPay {
 	type Error = ();
 
 	fn pay(
-		who: &Self::Beneficiary,
-		asset_kind: Self::AssetKind,
-		amount: Self::Balance,
+		_who: &Self::Beneficiary,
+		_asset_kind: Self::AssetKind,
+		_amount: Self::Balance,
 	) -> Result<Self::Id, Self::Error> {
 		Ok(LAST_ID.with(|lid| {
 			let x = *lid.borrow();
