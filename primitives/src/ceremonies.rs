@@ -21,8 +21,8 @@ use crate::communities::{CommunityIdentifier, Location};
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::{Pair, RuntimeDebug, H256};
-use sp_runtime::traits::{BlakeTwo256, Hash, IdentifyAccount, Verify};
+use sp_core::{Pair, RuntimeDebug};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub use crate::scheduler::CeremonyIndexType;
 
