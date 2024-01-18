@@ -153,9 +153,8 @@ pub mod pallet {
 					) == Reputation::VerifiedUnlinked,
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed
 				);
-				if Self::verify_attendee_signature(p.clone()).is_err() {
-					return Err(<Error<T>>::BadProofOfAttendanceSignature.into())
-				};
+
+				ensure!(p.verify_signature(), Error::<T>::BadProofOfAttendanceSignature);
 
 				// this reputation must now be burned so it can not be used again
 				<ParticipantReputation<T>>::insert(
@@ -1705,18 +1704,6 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(result)
-	}
-
-	fn verify_attendee_signature(
-		proof: ProofOfAttendance<T::Signature, T::AccountId>,
-	) -> DispatchResult {
-		match proof.attendee_signature.verify(
-			&(proof.prover_public, proof.ceremony_index).encode()[..],
-			&proof.attendee_public,
-		) {
-			true => Ok(()),
-			false => Err(<Error<T>>::BadAttendeeSignature.into()),
-		}
 	}
 
 	pub fn get_meetup_location(
