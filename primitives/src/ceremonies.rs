@@ -243,7 +243,7 @@ where
 		prover_public: AccountIdFor<Signature>,
 		cid: CommunityIdentifier,
 		cindex: CeremonyIndexType,
-		attendee: Signer,
+		attendee: &Signer,
 	) -> Self
 	where
 		Signer: Pair,
@@ -407,7 +407,7 @@ mod tests {
 			alice.public().into(),
 			Default::default(),
 			1,
-			alice,
+			&alice,
 		);
 
 		assert!(proof.verify_signature())
