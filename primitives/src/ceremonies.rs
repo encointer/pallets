@@ -235,7 +235,7 @@ where
 	pub fn verify_signature(&self) -> bool {
 		self.attendee_signature.verify(
 			&(self.prover_public.clone(), self.ceremony_index).encode()[..],
-			&self.attendee_public.clone().into(),
+			&self.attendee_public,
 		)
 	}
 
