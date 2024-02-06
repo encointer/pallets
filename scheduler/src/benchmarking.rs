@@ -6,8 +6,29 @@ use crate::Pallet as Scheduler;
 use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
 
+fn default_phase_durations<T: frame_system::Config + pallet::Config>() {
+	Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Assigning,
+		10u32.into(),
+	)
+	.ok();
+	Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Attesting,
+		10u32.into(),
+	)
+	.ok();
+	Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Registering,
+		10u32.into(),
+	)
+	.ok();
+}
 benchmarks! {
 	next_phase {
+		default_phase_durations::<T>();
 		crate::CurrentPhase::<T>::put(CeremonyPhaseType::Attesting);
 	}: _(RawOrigin::Root)
 	verify {
@@ -15,6 +36,7 @@ benchmarks! {
 	}
 
 	push_by_one_day {
+		default_phase_durations::<T>();
 		let current_timestamp = crate::NextPhaseTimestamp::<T>::get();
 	}: _(RawOrigin::Root)
 	verify {

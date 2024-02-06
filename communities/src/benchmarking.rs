@@ -42,6 +42,8 @@ fn setup_test_community<T: Config>() -> (
 	Option<Demurrage>,
 	Option<NominalIncomeType>,
 ) {
+	MaxSpeedMps::<T>::put(83);
+	MinSolarTripTimeS::<T>::put(1);
 	let bootstrappers: Vec<T::AccountId> = (0..10).map(|n| account("dummy name", n, n)).collect();
 	let mut community_metadata = CommunityMetadataType::default();
 	community_metadata.name = PalletString::from_str("20charsaaaaaaaaaaaaa").unwrap();
