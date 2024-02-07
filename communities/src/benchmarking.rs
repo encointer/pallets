@@ -62,7 +62,7 @@ fn setup_test_community<T: Config>() -> (
 	));
 	let cid = CommunityIdentifier::new(get_location(0).clone(), bootstrappers.clone()).unwrap();
 
-	return (cid, bootstrappers, community_metadata, demurrage, nominal_income)
+	return (cid, bootstrappers, community_metadata, demurrage, nominal_income);
 }
 
 parameter_types! {

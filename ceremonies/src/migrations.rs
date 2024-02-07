@@ -49,7 +49,7 @@ pub mod v1 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 0"
 				);
-				return weight
+				return weight;
 			}
 
 			// we do not actually migrate any data, because it seems that the storage representation of Vec and BoundedVec is the same.

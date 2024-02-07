@@ -159,7 +159,7 @@ where
 		if !self.offchain_indexing {
 			return Err(
 				Error::OffchainIndexingDisabled("ceremonies_getReputations".to_string()).into()
-			)
+			);
 		}
 
 		let cache_key = &reputation_cache_key(&account);
@@ -168,12 +168,12 @@ where
 			.map_err(|e| Error::Runtime(e.into()))?;
 
 		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
-			return Ok(self.refresh_reputation_cache(account, ceremony_info, at)?.reputation)
+			return Ok(self.refresh_reputation_cache(account, ceremony_info, at)?.reputation);
 		}
 
 		if let Some(reputation_cache_value) = self.get_storage::<ReputationCacheValue>(cache_key)? {
 			if ceremony_info == reputation_cache_value.ceremony_info {
-				return Ok(reputation_cache_value.reputation)
+				return Ok(reputation_cache_value.reputation);
 			}
 		};
 

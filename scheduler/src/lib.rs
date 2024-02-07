@@ -227,9 +227,9 @@ impl<T: Config> Pallet<T> {
 	// 1. when the chain bootstraps and cycle duration is smaller than 24h, phases would cycle with every block until catched up
 	// 2. when next_phase() is used, we would introduce long idle phases because next_phase_timestamp would be pushed furhter and further into the future
 	fn resync_and_set_next_phase_timestamp(tnext: T::Moment) -> DispatchResult {
-		let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::Registering) +
-			<PhaseDurations<T>>::get(CeremonyPhaseType::Assigning) +
-			<PhaseDurations<T>>::get(CeremonyPhaseType::Attesting);
+		let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::Registering)
+			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Assigning)
+			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Attesting);
 		let now = <pallet_timestamp::Pallet<T>>::now();
 
 		let tnext = if tnext < now {
@@ -237,14 +237,14 @@ impl<T: Config> Pallet<T> {
 			if let Some(n) = gap.checked_div(&cycle_duration) {
 				tnext.saturating_add((cycle_duration).saturating_mul(n + T::Moment::one()))
 			} else {
-				return Err(<Error<T>>::DivisionByZero.into())
+				return Err(<Error<T>>::DivisionByZero.into());
 			}
 		} else {
 			let gap = tnext - now;
 			if let Some(n) = gap.checked_div(&cycle_duration) {
 				tnext.saturating_sub(cycle_duration.saturating_mul(n))
 			} else {
-				return Err(<Error<T>>::DivisionByZero.into())
+				return Err(<Error<T>>::DivisionByZero.into());
 			}
 		};
 		<NextPhaseTimestamp<T>>::put(tnext);

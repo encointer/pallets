@@ -78,12 +78,12 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
 		.lon
 		.lossy_into();
 
-	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
-		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Registering) +
-		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Assigning) +
-		(cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::Attesting) +
-		ONE_DAY / 2 -
-		(mlon / 360.0 * ONE_DAY as f64) as u64;
+	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)
+		+ cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Registering)
+		+ cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Assigning)
+		+ (cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::Attesting)
+		+ ONE_DAY / 2
+		- (mlon / 360.0 * ONE_DAY as f64) as u64;
 
 	let time = t as i64 + EncointerCeremonies::meetup_time_offset() as i64;
 	time as u64
@@ -1653,12 +1653,12 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: i64
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 
 		let mtime = if lon_micro >= 0 {
-			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2 -
-				(lon_micro * ONE_DAY as i64 / 360_000_000) as u64
+			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2
+				- (lon_micro * ONE_DAY as i64 / 360_000_000) as u64
 		} else {
-			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
-				2 * ONE_DAY + ONE_DAY / 2 +
-				(lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
+			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)
+				+ 2 * ONE_DAY + ONE_DAY / 2
+				+ (lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
 		};
 
 		let adjusted_mtime = mtime as i64 + meetup_time_offset;

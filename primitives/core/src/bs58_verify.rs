@@ -56,11 +56,11 @@ impl Bs58verify {
 	pub fn verify(bytes: &[u8]) -> Result<(), Bs58Error> {
 		for (i, c) in bytes.iter().enumerate() {
 			if *c > 127 {
-				return Err(Bs58Error::NonAsciiCharacter(i as u8))
+				return Err(Bs58Error::NonAsciiCharacter(i as u8));
 			}
 
 			if Self::BITCOIN_DECODE_MAP[*c as usize] as usize == 0xFF {
-				return Err(Bs58Error::NonBs58Character(i as u8))
+				return Err(Bs58Error::NonBs58Character(i as u8));
 			}
 		}
 		Ok(())
