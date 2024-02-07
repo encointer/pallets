@@ -424,8 +424,8 @@ mod tests {
 			Degree, Demurrage, Location, PalletString, RangeError,
 		},
 	};
+	use frame_support::assert_err;
 	use sp_std::str::FromStr;
-	use std::assert_matches::assert_matches;
 
 	#[test]
 	fn demurrage_smaller_0_fails() {
@@ -509,8 +509,8 @@ mod tests {
 
 	#[test]
 	fn invalid_cid_from_str_errs() {
-		assert_matches!(
-			CommunityIdentifier::from_str("gbsuv7YXq9l").unwrap_err(),
+		assert_err!(
+			CommunityIdentifier::from_str("gbsuv7YXq9l"),
 			bs58::decode::Error::InvalidCharacter { character: 'l', index: 10 }
 		)
 	}
