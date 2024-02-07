@@ -45,6 +45,34 @@ fn test_location() -> Location {
 fn create_community<T: Config>() -> CommunityIdentifier {
 	let location = test_location();
 	let bs = bootstrappers::<T>();
+	encointer_scheduler::Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Assigning,
+		10u32.into(),
+	)
+	.ok();
+	encointer_scheduler::Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Attesting,
+		10u32.into(),
+	)
+	.ok();
+	encointer_scheduler::Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Registering,
+		10u32.into(),
+	)
+	.ok();
+	next_phase::<T>();
+	next_phase::<T>();
+	next_phase::<T>();
+	Pallet::<T>::set_inactivity_timeout(RawOrigin::Root.into(), 5).ok();
+	Pallet::<T>::set_reputation_lifetime(RawOrigin::Root.into(), 5).ok();
+	Pallet::<T>::set_endorsement_tickets_per_bootstrapper(RawOrigin::Root.into(), 1).ok();
+	Pallet::<T>::set_endorsement_tickets_per_reputable(RawOrigin::Root.into(), 1).ok();
+	Pallet::<T>::set_location_tolerance(RawOrigin::Root.into(), 1000).ok();
+	Pallet::<T>::set_time_tolerance(RawOrigin::Root.into(), 1_000_000u32.into()).ok();
+
 	encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(RawOrigin::Root.into(), 1).ok();
 	encointer_communities::Pallet::<T>::set_max_speed_mps(RawOrigin::Root.into(), 83).ok();
 	encointer_communities::Pallet::<T>::new_community(
@@ -126,7 +154,7 @@ where
 pub fn last_event<T: Config>() -> Option<<T as frame_system::Config>::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events();
 	if events.len() < 1 {
-		return None
+		return None;
 	}
 	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];
 	Some(event.clone())
