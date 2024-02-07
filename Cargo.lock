@@ -4391,7 +4391,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4437,7 +4437,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -4494,7 +4494,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4571,7 +4571,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-faucet"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4616,7 +4616,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
