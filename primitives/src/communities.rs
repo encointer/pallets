@@ -77,7 +77,7 @@ pub enum RangeError {
 /// zero is legit as it effectively disables demurrage
 pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	if demurrage < &Demurrage::from_num(0) {
-		return Err(RangeError::LessThanZero)
+		return Err(RangeError::LessThanZero);
 	}
 
 	// Just some safeguarding against overflows, but 1 is already a very high value:
@@ -86,7 +86,7 @@ pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	//
 	// So the community does still have the choice of a huge demurrage.
 	if demurrage > &Demurrage::from_num(1) {
-		return Err(RangeError::TooHigh { limit: 1 })
+		return Err(RangeError::TooHigh { limit: 1 });
 	}
 	Ok(())
 }
@@ -185,8 +185,9 @@ impl FromStr for CommunityIdentifier {
 fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 	use bs58::decode::Error as Bs58Err;
 	match err {
-		Bs58Err::InvalidCharacter { character, index } =>
-			Bs58Err::InvalidCharacter { character, index: index + 5 },
+		Bs58Err::InvalidCharacter { character, index } => {
+			Bs58Err::InvalidCharacter { character, index: index + 5 }
+		},
 		err => err,
 	}
 }
@@ -319,19 +320,19 @@ impl CommunityMetadata {
 		validate_ipfs_cid(&self.assets).map_err(CommunityMetadataError::InvalidIpfsCid)?;
 
 		if self.name.len() > 20 {
-			return Err(CommunityMetadataError::TooManyCharactersInName(self.name.len() as u8))
+			return Err(CommunityMetadataError::TooManyCharactersInName(self.name.len() as u8));
 		}
 
 		if self.symbol.len() != 3 {
 			return Err(CommunityMetadataError::InvalidAmountCharactersInSymbol(
 				self.symbol.len() as u8
-			))
+			));
 		}
 
 		if let Some(u) = &self.url {
 			validate_ascii(u.as_bytes_or_noop()).map_err(CommunityMetadataError::InvalidAscii)?;
 			if u.len() >= 20 {
-				return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8))
+				return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8));
 			}
 		}
 
@@ -423,8 +424,8 @@ mod tests {
 			Degree, Demurrage, Location, PalletString, RangeError,
 		},
 	};
+	use frame_support::assert_err;
 	use sp_std::str::FromStr;
-	use std::assert_matches::assert_matches;
 
 	#[test]
 	fn demurrage_smaller_0_fails() {
@@ -508,8 +509,8 @@ mod tests {
 
 	#[test]
 	fn invalid_cid_from_str_errs() {
-		assert_matches!(
-			CommunityIdentifier::from_str("gbsuv7YXq9l").unwrap_err(),
+		assert_err!(
+			CommunityIdentifier::from_str("gbsuv7YXq9l"),
 			bs58::decode::Error::InvalidCharacter { character: 'l', index: 10 }
 		)
 	}

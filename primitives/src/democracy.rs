@@ -68,10 +68,12 @@ impl ProposalAction {
 
 	pub fn get_identifier(self) -> ProposalActionIdentifier {
 		match self {
-			ProposalAction::UpdateNominalIncome(cid, _) =>
-				ProposalActionIdentifier::UpdateNominalIncome(cid),
-			ProposalAction::SetInactivityTimeout(_) =>
-				ProposalActionIdentifier::SetInactivityTimeout,
+			ProposalAction::UpdateNominalIncome(cid, _) => {
+				ProposalActionIdentifier::UpdateNominalIncome(cid)
+			},
+			ProposalAction::SetInactivityTimeout(_) => {
+				ProposalActionIdentifier::SetInactivityTimeout
+			},
 		}
 	}
 }

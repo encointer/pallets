@@ -83,7 +83,7 @@ fn attestation_graph_is_fully_connected(
 	for (i, mut attestations) in participant_attestations.into_iter().enumerate() {
 		// only consider participants present in the meetup
 		if !legit_participants.contains(&i) {
-			continue
+			continue;
 		}
 		attestations.sort();
 		let mut expected_attestations = legit_participants.clone();
@@ -92,7 +92,7 @@ fn attestation_graph_is_fully_connected(
 		expected_attestations.sort();
 
 		if attestations != expected_attestations {
-			return false
+			return false;
 		}
 	}
 	true
@@ -105,15 +105,15 @@ fn early_rewards_possible(
 	n_confirmed: u32,
 	vote_is_unanimous: bool,
 ) -> bool {
-	if vote_is_unanimous &&
-		vote_yields_majority(num_total_participants, n_confirmed) &&
-		num_attestations_matches_vote(
+	if vote_is_unanimous
+		&& vote_yields_majority(num_total_participants, n_confirmed)
+		&& num_attestations_matches_vote(
 			&legit_participants,
 			&participant_attestations,
 			n_confirmed,
 		) && attestation_graph_is_fully_connected(legit_participants, participant_attestations)
 	{
-		return true
+		return true;
 	}
 	false
 }
@@ -170,7 +170,7 @@ fn get_excluded_participants_num_attestations(
 	for _ in 0..max_iterations {
 		// if all participants were excluded, exit the loop
 		if participants_to_process.is_empty() {
-			return Ok(excluded_participants)
+			return Ok(excluded_participants);
 		};
 
 		let participants_grouped_by_outgoing_attestations =
@@ -217,10 +217,10 @@ fn get_excluded_participants_num_attestations(
 			participants_to_process.retain(|k| !participants_to_exclude.contains(k));
 			relevant_attestations =
 				filter_attestations(&participants_to_process, relevant_attestations.clone());
-			continue
+			continue;
 		} else {
 			// if all participants are above the threshold and therefore no participants were removed, we exit the loop
-			break
+			break;
 		}
 	}
 	Ok(excluded_participants)
@@ -240,12 +240,12 @@ fn find_majority_vote(
 	}
 
 	if n_vote_candidates.is_empty() {
-		return Err(MeetupValidationError::BallotEmpty)
+		return Err(MeetupValidationError::BallotEmpty);
 	}
 	// sort by descending vote count
 	n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
 	if n_vote_candidates.get_or_err(0)?.1 < 3 {
-		return Err(MeetupValidationError::NoDependableVote)
+		return Err(MeetupValidationError::NoDependableVote);
 	}
 	let (n_confirmed, vote_count) = n_vote_candidates.get_or_err(0)?;
 	let vote_is_unanimous = n_vote_candidates.len() == 1;
@@ -299,7 +299,7 @@ fn group_indices_by_value(
 ) -> Result<Vec<ParticipantGroup>, MeetupValidationError> {
 	if let Some(max) = indices.iter().max() {
 		if max >= &values.len() {
-			return Err(MeetupValidationError::IndexOutOfBounds)
+			return Err(MeetupValidationError::IndexOutOfBounds);
 		}
 	}
 

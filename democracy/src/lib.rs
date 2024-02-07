@@ -160,7 +160,7 @@ pub mod pallet {
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.get_identifier()).is_some() {
-				return Err(Error::<T>::ProposalWaitingForEnactment.into())
+				return Err(Error::<T>::ProposalWaitingForEnactment.into());
 			}
 			let _sender = ensure_signed(origin)?;
 			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
@@ -244,8 +244,8 @@ pub mod pallet {
 			Ok(((proposal
 				.start_cindex
 				.saturating_sub(reputation_lifetime)
-				.saturating_add(T::ProposalLifetimeCycles::get()))..=
-				(proposal.start_cindex.saturating_sub(2)))
+				.saturating_add(T::ProposalLifetimeCycles::get()))
+				..=(proposal.start_cindex.saturating_sub(2)))
 				.collect::<Vec<CeremonyIndexType>>())
 		}
 		/// Returns the reputations that
@@ -271,16 +271,16 @@ pub mod pallet {
 
 			for community_ceremony in reputations {
 				if !Self::relevant_cindexes(proposal_id)?.contains(&community_ceremony.1) {
-					continue
+					continue;
 				}
 
 				if let Some(cid) = maybe_cid {
 					if community_ceremony.0 != cid {
-						continue
+						continue;
 					}
 				}
 				if <VoteEntries<T>>::contains_key(proposal_id, (account_id, community_ceremony)) {
-					continue
+					continue;
 				}
 				if <encointer_ceremonies::Pallet<T>>::validate_reputation(
 					account_id,
@@ -379,8 +379,8 @@ pub mod pallet {
 				sqrt::<U64F64, U64F64>(U64F64::from_num(t)).map_err(|_| <Error<T>>::AQBError)?;
 			let one = U64F64::from_num(1);
 
-			Ok(U64F64::from_num(a) >
-				sqrt_e
+			Ok(U64F64::from_num(a)
+				> sqrt_e
 					.checked_mul(sqrt_t)
 					.ok_or(<Error<T>>::AQBError)?
 					.checked_div(
@@ -399,13 +399,13 @@ pub mod pallet {
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {
-				return Ok(false)
+				return Ok(false);
 			}
 			let positive_turnout_bias =
 				Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes);
 			if let Ok(passing) = positive_turnout_bias {
 				if passing {
-					return Ok(true)
+					return Ok(true);
 				}
 			}
 			Ok(false)

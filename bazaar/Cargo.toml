@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-bazaar"
-version = "3.0.2"
+version = "3.0.3"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Bazaar pallet for the Encointer blockchain runtime"
@@ -16,7 +16,7 @@ log = { version = "0.4.20", default-features = false }
 scale-info = { version = "2.10.0", default-features = false }
 
 # local deps
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.2" }
+encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.3" }
 encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
 
 # substrate deps

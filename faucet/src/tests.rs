@@ -45,7 +45,7 @@ fn new_faucet(
 	if let mock::RuntimeEvent::EncointerFaucet(Event::FaucetCreated(faucet_account, _)) =
 		last_event::<TestRuntime>().unwrap()
 	{
-		return faucet_account
+		return faucet_account;
 	} else {
 		panic!("Faucet not found");
 	}
