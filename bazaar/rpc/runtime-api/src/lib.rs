@@ -25,7 +25,7 @@ use encointer_primitives::{
 	bazaar::{BusinessData, BusinessIdentifier, OfferingData},
 	communities::CommunityIdentifier,
 };
-use sp_api::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 
 sp_api::decl_runtime_apis! {
 	pub trait BazaarApi<AccountId>

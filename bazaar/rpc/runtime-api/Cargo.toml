@@ -14,6 +14,7 @@ encointer-primitives = { workspace = true }
 
 # substrate deps
 frame-support = { workspace = true }
+parity-scale-codec = { workspace = true }
 sp-api = { workspace = true }
 sp-std = { workspace = true }
 

@@ -16,12 +16,12 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+use parity_scale_codec::{Decode, Encode};
 use parking_lot::RwLock;
-use sp_api::{
-	offchain::{OffchainStorage, STORAGE_PREFIX},
-	Decode, Encode, ProvideRuntimeApi,
-};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::offchain::{OffchainStorage, STORAGE_PREFIX};
+use sp_runtime::app_crypto::sp_core;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
@@ -71,7 +71,7 @@ pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
 impl<Client, Block, AccountId, Moment, S> CeremoniesRpc<Client, Block, AccountId, Moment, S>
 where
 	S: 'static + OffchainStorage,
-	Block: sp_api::BlockT,
+	Block: BlockT,
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	Moment: 'static + Encode + Decode + Send + Sync,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,

@@ -4044,6 +4044,7 @@ dependencies = [
  "jsonrpsee",
  "log",
  "pallet-encointer-bazaar-rpc-runtime-api",
+ "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-rpc",
  "sc-rpc-api",
@@ -4059,6 +4060,7 @@ version = "5.0.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
+ "parity-scale-codec",
  "sp-api",
  "sp-std",
 ]
@@ -4101,6 +4103,7 @@ dependencies = [
  "jsonrpsee",
  "log",
  "pallet-encointer-ceremonies-rpc-runtime-api",
+ "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-rpc",
  "sc-rpc-api",
@@ -4116,6 +4119,7 @@ version = "5.0.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
+ "parity-scale-codec",
  "sp-api",
  "sp-std",
 ]
@@ -4150,6 +4154,7 @@ dependencies = [
  "jsonrpsee",
  "log",
  "pallet-encointer-communities-rpc-runtime-api",
+ "parity-scale-codec",
  "parking_lot 0.12.1",
  "sc-rpc",
  "sc-rpc-api",
@@ -4165,6 +4170,7 @@ name = "pallet-encointer-communities-rpc-runtime-api"
 version = "5.0.0"
 dependencies = [
  "encointer-primitives",
+ "parity-scale-codec",
  "sp-api",
  "sp-std",
 ]

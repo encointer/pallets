@@ -17,20 +17,20 @@
 #[cfg(test)]
 mod tests;
 
-use encointer_rpc::Error;
-use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use sp_api::{Decode, Encode, HeaderT, ProvideRuntimeApi};
-use sp_blockchain::HeaderBackend;
-use sp_runtime::traits::Block as BlockT;
-use std::sync::Arc;
-
 use encointer_primitives::{
 	balances::BalanceEntry,
 	communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier, Location},
 };
+use encointer_rpc::Error;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use pallet_encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
+use parity_scale_codec::{Decode, Encode};
 use parking_lot::RwLock;
-use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
+use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
+use sp_core::offchain::{OffchainStorage, STORAGE_PREFIX};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use std::sync::Arc;
 
 const CIDS_KEY: &[u8; 4] = b"cids";
 

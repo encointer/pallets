@@ -16,7 +16,8 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use sp_api::{Decode, Encode, ProvideRuntimeApi};
+use parity_scale_codec::{Decode, Encode};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;

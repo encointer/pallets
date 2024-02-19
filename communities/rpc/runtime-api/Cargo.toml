@@ -13,6 +13,7 @@ license = "GPL-3.0-or-later"
 encointer-primitives = { workspace = true }
 
 # substrate deps
+parity-scale-codec = { workspace = true }
 sp-api = { workspace = true }
 sp-std = { workspace = true }
 
