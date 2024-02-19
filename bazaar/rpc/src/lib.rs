@@ -21,11 +21,11 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
-use encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;
 use encointer_primitives::{
 	bazaar::{Business, BusinessIdentifier, OfferingData},
 	communities::CommunityIdentifier,
 };
+use pallet_encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;
 
 #[rpc(client, server)]
 pub trait BazaarApi<BlockHash, AccountId>

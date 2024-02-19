@@ -270,7 +270,7 @@ fn dripping_works() {
 					cid,
 					12
 				),
-				encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommited
+				pallet_encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommited
 			);
 
 			assert_err!(
@@ -280,7 +280,7 @@ fn dripping_works() {
 					cid,
 					13
 				),
-				encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
+				pallet_encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
 			);
 
 			assert_err!(
@@ -290,7 +290,7 @@ fn dripping_works() {
 					cid2,
 					12
 				),
-				encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
+				pallet_encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
 			);
 		})
 	})

@@ -38,13 +38,13 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+		EncointerScheduler: pallet_encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerFaucet: dut::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
-		EncointerCeremonies: encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerReputationCommitments:encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
-		EncointerCommunities: encointer_communities::{Pallet, Call, Storage, Event<T>},
+		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Event<T>},
+		EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerReputationCommitments:pallet_encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
+		EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Event<T>},
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
@@ -162,7 +162,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.assimilate_storage(&mut t)
 		.unwrap();
 
-	encointer_ceremonies::GenesisConfig::<TestRuntime> {
+	pallet_encointer_ceremonies::GenesisConfig::<TestRuntime> {
 		ceremony_reward: BalanceType::from_num(1),
 		location_tolerance: LOCATION_TOLERANCE, // [m]
 		time_tolerance: TIME_TOLERANCE,         // [ms]
@@ -176,7 +176,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	encointer_communities::GenesisConfig::<TestRuntime> {
+	pallet_encointer_communities::GenesisConfig::<TestRuntime> {
 		min_solar_trip_time_s: 1,
 		max_speed_mps: 83,
 		..Default::default()

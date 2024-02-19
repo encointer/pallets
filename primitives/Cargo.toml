@@ -18,7 +18,7 @@ scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 
 # local deps
-ep-core = { path = "core", default-features = false, version = "3.0.2" }
+ep-core = { workspace = true }
 
 # substrate deps
 frame-support = { workspace = true }
@@ -31,7 +31,7 @@ sp-std = { workspace = true }
 approx = { workspace = true }
 rstest = { workspace = true }
 serde_json = { workspace = true }
-test-utils = { path = "../test-utils" }
+test-utils = { workspace = true }
 
 [features]
 default = ["serde_derive", "std"]

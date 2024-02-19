@@ -16,9 +16,9 @@ parking_lot = { workspace = true }
 thiserror = { workspace = true }
 
 # local deps
-encointer-balances-tx-payment-rpc-runtime-api = { package = "encointer-balances-tx-payment-rpc-runtime-api", path = "runtime-api", version = "3.0.2" }
-encointer-primitives = { path = "../../primitives", version = "3.0.2" }
-encointer-rpc = { path = "../../rpc", version = "3.0.2" }
+encointer-balances-tx-payment-rpc-runtime-api = { workspace = true }
+encointer-primitives = { workspace = true }
+encointer-rpc = { workspace = true }
 
 # substrate deps
 pallet-transaction-payment = { workspace = true, features = ["std"] }

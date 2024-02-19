@@ -24,11 +24,11 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
-use encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use encointer_primitives::{
 	balances::BalanceEntry,
 	communities::{consts::CACHE_DIRTY_KEY, CidName, CommunityIdentifier, Location},
 };
+use pallet_encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
 use parking_lot::RwLock;
 use sp_api::offchain::{OffchainStorage, STORAGE_PREFIX};
 

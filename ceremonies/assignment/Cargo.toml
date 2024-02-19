@@ -10,7 +10,7 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 # local deps
-encointer-primitives = { path = "../../primitives", default-features = false, version = "3.0.2" }
+encointer-primitives = { workspace = true }
 
 # substrate deps
 sp-runtime = { workspace = true }

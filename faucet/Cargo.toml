@@ -15,9 +15,9 @@ log = { workspace = true }
 scale-info = { workspace = true }
 
 # local deps
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "3.0.3" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
-encointer-reputation-commitments = { package = "pallet-encointer-reputation-commitments", path = "../reputation-commitments", default-features = false, version = "3.0.2" }
+encointer-primitives = { workspace = true }
+pallet-encointer-communities = { workspace = true }
+pallet-encointer-reputation-commitments = { workspace = true }
 
 # substrate deps
 frame-benchmarking = { workspace = true, optional = true }
@@ -31,22 +31,20 @@ sp-std = { workspace = true }
 [dev-dependencies]
 approx = { workspace = true }
 sp-io = { workspace = true, features = ["std"] }
-test-utils = { path = "../test-utils" }
+test-utils = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
     "approx/std",
-    "parity-scale-codec/std",
-    # local deps
-    "encointer-communities/std",
     "encointer-primitives/std",
-    "encointer-reputation-commitments/std",
-    # substrate deps
     "frame-support/std",
     "frame-system/std",
     "log/std",
+    "pallet-encointer-communities/std",
+    "pallet-encointer-reputation-commitments/std",
     "pallet-treasury/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "sp-core/std",
     "sp-runtime/std",
@@ -54,15 +52,15 @@ std = [
 ]
 runtime-benchmarks = [
     "approx",
-    "encointer-communities/runtime-benchmarks",
-    "encointer-reputation-commitments/runtime-benchmarks",
     "frame-benchmarking",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
+    "pallet-encointer-communities/runtime-benchmarks",
+    "pallet-encointer-reputation-commitments/runtime-benchmarks",
     "pallet-treasury/runtime-benchmarks",
 ]
 try-runtime = [
-    "encointer-communities/try-runtime",
-    "encointer-reputation-commitments/try-runtime",
     "frame-system/try-runtime",
+    "pallet-encointer-communities/try-runtime",
+    "pallet-encointer-reputation-commitments/try-runtime",
 ]

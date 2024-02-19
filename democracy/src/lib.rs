@@ -25,8 +25,8 @@ use encointer_primitives::{
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
-use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::traits::Get;
+use pallet_encointer_scheduler::OnCeremonyPhaseChange;
 pub use weights::WeightInfo;
 
 #[cfg(not(feature = "std"))]
@@ -55,9 +55,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
-		+ encointer_scheduler::Config
-		+ encointer_ceremonies::Config
-		+ encointer_communities::Config
+		+ pallet_encointer_scheduler::Config
+		+ pallet_encointer_ceremonies::Config
+		+ pallet_encointer_communities::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -163,7 +163,7 @@ pub mod pallet {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into());
 			}
 			let _sender = ensure_signed(origin)?;
-			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+			let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			let current_proposal_id = Self::proposal_count();
 			let next_proposal_id = current_proposal_id
 				.checked_add(1u128)
@@ -239,7 +239,8 @@ pub mod pallet {
 		fn relevant_cindexes(
 			proposal_id: ProposalIdType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
-			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+			let reputation_lifetime =
+				<pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 			Ok(((proposal
 				.start_cindex
@@ -282,7 +283,7 @@ pub mod pallet {
 				if <VoteEntries<T>>::contains_key(proposal_id, (account_id, community_ceremony)) {
 					continue;
 				}
-				if <encointer_ceremonies::Pallet<T>>::validate_reputation(
+				if <pallet_encointer_ceremonies::Pallet<T>>::validate_reputation(
 					account_id,
 					&community_ceremony.0,
 					community_ceremony.1,
@@ -351,13 +352,13 @@ pub mod pallet {
 				ProposalAccessPolicy::Community(cid) => Ok(relevant_cindexes
 					.into_iter()
 					.map(|cindex| {
-						<encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
+						<pallet_encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
 					})
 					.sum()),
 				ProposalAccessPolicy::Global => Ok(relevant_cindexes
 					.into_iter()
 					.map(|cindex| {
-						<encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
+						<pallet_encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
 					})
 					.sum()),
 			}
@@ -416,14 +417,14 @@ pub mod pallet {
 
 			match proposal.action {
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
-					let _ = <encointer_communities::Pallet<T>>::do_update_nominal_income(
+					let _ = <pallet_encointer_communities::Pallet<T>>::do_update_nominal_income(
 						cid,
 						nominal_income,
 					);
 				},
 
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
-					let _ = <encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
+					let _ = <pallet_encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
 						inactivity_timeout,
 					);
 				},

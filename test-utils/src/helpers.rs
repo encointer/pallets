@@ -48,7 +48,7 @@ pub fn register_test_community<Runtime>(
 	lon: f64,
 ) -> CommunityIdentifier
 where
-	Runtime: encointer_communities::Config,
+	Runtime: pallet_encointer_communities::Config,
 	Runtime: frame_system::Config<AccountId = AccountId>,
 	<Runtime as frame_system::Config>::RuntimeOrigin: OriginTrait<AccountId = AccountId>,
 {
@@ -57,7 +57,7 @@ where
 	let prime = &bs[0];
 
 	let location = Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) };
-	encointer_communities::Pallet::<Runtime>::new_community(
+	pallet_encointer_communities::Pallet::<Runtime>::new_community(
 		Runtime::RuntimeOrigin::signed(prime.clone()),
 		location,
 		bs.clone(),

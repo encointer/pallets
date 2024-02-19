@@ -14,7 +14,7 @@ scale-info = { workspace = true }
 serde = { workspace = true }
 
 # local deps
-encointer-primitives = { path = "../../primitives", default-features = false, version = "3.0.2" }
+encointer-primitives = { workspace = true }
 
 # substrate deps
 sp-runtime = { workspace = true }
