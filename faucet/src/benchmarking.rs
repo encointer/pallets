@@ -1,5 +1,4 @@
 use crate::{Pallet as FaucetPallet, *};
-use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityMetadata as CommunityMetadataType, Degree, Location},
@@ -9,6 +8,7 @@ use encointer_primitives::{
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::BoundedVec;
 use frame_system::RawOrigin;
+use parity_scale_codec::Encode;
 use sp_std::vec;
 
 #[cfg(not(feature = "std"))]

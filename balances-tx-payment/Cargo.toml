@@ -9,26 +9,24 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-log = { version = "0.4.20", default-features = false }
+log = { workspace = true }
 
 encointer-primitives = { path = "../primitives", default-features = false, version = "3.0.2" }
 pallet-encointer-balances = { path = "../balances", default-features = false, version = "3.0.2" }
 pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false, version = "3.0.2" }
 
 # substrate dependencies
-frame-support = { default-features = false, version = "25.0.0" }
-frame-system = { default-features = false, version = "25.0.0" }
-pallet-asset-tx-payment = { default-features = false, version = "25.0.0" }
-pallet-transaction-payment = { default-features = false, version = "25.0.0" }
-sp-runtime = { default-features = false, version = "28.0.0" }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-asset-tx-payment = { workspace = true }
+pallet-transaction-payment = { workspace = true }
+sp-runtime = { workspace = true }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-] }
-rstest = "0.12.0"
-scale-info = { version = "2.10.0", default-features = false }
-sp-io = "27.0.0"
+parity-scale-codec = { workspace = true }
+rstest = { workspace = true }
+scale-info = { workspace = true }
+sp-io = { workspace = true, features = ["std"] }
 test-utils = { path = "../test-utils" }
 
 [features]

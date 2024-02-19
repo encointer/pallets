@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{communities::CommunityIdentifier, reputation_commitments::PurposeIdType};
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::{bounded::BoundedVec, ConstU32, MaxEncodedLen, RuntimeDebug};
 

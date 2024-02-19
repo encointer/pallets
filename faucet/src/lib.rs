@@ -16,7 +16,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Decode;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	communities::CommunityIdentifier, faucet::*, reputation_commitments::DescriptorType,
@@ -32,6 +31,7 @@ use frame_support::{
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::info;
+use parity_scale_codec::Decode;
 use sp_core::H256;
 use sp_runtime::{traits::Hash, SaturatedConversion, Saturating};
 use sp_std::convert::TryInto;

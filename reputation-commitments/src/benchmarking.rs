@@ -1,10 +1,10 @@
 use crate::{Pallet as ReputationCommitments, *};
-use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation, reputation_commitments::FromStr, storage::participant_reputation,
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+use parity_scale_codec::Encode;
 use sp_runtime::traits::{BlakeTwo256, Hash};
 
 benchmarks! {

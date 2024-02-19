@@ -9,11 +9,9 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-] }
-log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.10.0", default-features = false }
+parity-scale-codec = { workspace = true }
+log = { workspace = true }
+scale-info = { workspace = true }
 
 # local deps
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances", default-features = false, version = "3.0.2" }
@@ -24,30 +22,30 @@ encointer-primitives = { path = "../primitives", default-features = false, featu
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "3.0.3" }
 
 # substrate deps
-frame-support = { default-features = false, version = "25.0.0" }
-frame-system = { default-features = false, version = "25.0.0" }
-pallet-timestamp = { default-features = false, version = "24.0.0" }
-sp-core = { default-features = false, version = "25.0.0" }
-sp-io = { default-features = false, version = "27.0.0" }
-sp-runtime = { default-features = false, version = "28.0.0" }
-sp-std = { default-features = false, version = "12.0.0" }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 # benchmarking
-frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
-sp-application-crypto = { default-features = false, optional = true, version = "27.0.0" }
+frame-benchmarking = { workspace = true, optional = true }
+sp-application-crypto = { workspace = true, optional = true }
 
 [dev-dependencies]
-approx = "0.5.1"
-itertools = "0.10.3"
-rstest = "0.12.0"
-sp-io = "27.0.0"
-sp-keystore = "0.31.0"
+approx = { workspace = true }
+itertools = { workspace = true }
+rstest = { workspace = true }
+sp-io = { workspace = true, features = ["std"] }
+sp-keystore = { workspace = true }
 test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
 std = [
-    "codec/std",
+    "parity-scale-codec/std",
     "encointer-balances/std",
     "encointer-ceremonies-assignment/std",
     "encointer-communities/std",

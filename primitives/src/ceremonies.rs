@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::communities::{CommunityIdentifier, Location};
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{RuntimeDebug, H256};
 use sp_runtime::traits::{BlakeTwo256, Hash, IdentifyAccount, Verify};

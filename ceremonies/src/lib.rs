@@ -25,7 +25,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 use encointer_ceremonies_assignment::{
 	assignment_fn_inverse, generate_assignment_function_params, get_meetup_location_index,
 	math::{checked_ceil_division, find_prime_below, find_random_coprime_below},
@@ -48,6 +47,7 @@ use frame_support::{
 };
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedSlice;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};

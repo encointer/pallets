@@ -282,7 +282,7 @@ pub type EnsureAlice = EitherOfDiverse<EnsureSignedBy<Alice, AccountId32>, Ensur
 /// tests!
 pub struct TestRandomness<T>(sp_std::marker::PhantomData<T>);
 
-impl<Output: codec::Decode + Default, T>
+impl<Output: parity_scale_codec::Decode + Default, T>
 	frame_support::traits::Randomness<Output, BlockNumberFor<T>> for TestRandomness<T>
 where
 	T: frame_system::Config,

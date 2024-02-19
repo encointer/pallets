@@ -9,34 +9,32 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-approx = { version = "0.5.1", optional = true }
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-] }
-log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.10.0", default-features = false }
+approx = { workspace = true, optional = true }
+parity-scale-codec = { workspace = true }
+log = { workspace = true }
+scale-info = { workspace = true }
 
 # local deps
 encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
 
 # substrate deps
-frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
-frame-support = { default-features = false, version = "25.0.0" }
-frame-system = { default-features = false, version = "25.0.0" }
-pallet-asset-tx-payment = { default-features = false, version = "25.0.0" }
-pallet-transaction-payment = { default-features = false, version = "25.0.0" }
-sp-runtime = { default-features = false, version = "28.0.0" }
-sp-std = { default-features = false, version = "12.0.0" }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-asset-tx-payment = { workspace = true }
+pallet-transaction-payment = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-approx = "0.5.1"
-sp-io = "27.0.0"
+approx = { workspace = true, features = ["std"] }
+sp-io = { workspace = true, features = ["std"] }
 test-utils = { path = "../test-utils" }
 
 [features]
 default = ["std"]
 std = [
-    "codec/std",
+    "parity-scale-codec/std",
     # local deps
     "encointer-primitives/std",
     # substrate deps

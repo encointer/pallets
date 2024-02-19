@@ -10,10 +10,8 @@ license = "GPL-3.0-or-later"
 publish = false
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-] }
-log = "0.4.20"
+parity-scale-codec = { workspace = true }
+log = { workspace = true, features = ["std"] }
 # local deps
 encointer-balances = { package = "pallet-encointer-balances", path = "../balances" }
 encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies" }
@@ -22,17 +20,17 @@ encointer-primitives = { path = "../primitives" }
 encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler" }
 
 # substrate deps
-frame-benchmarking = "25.0.0"
-frame-support = "25.0.0"
-frame-system = "25.0.0"
-pallet-balances = "25.0.0"
-pallet-timestamp = "24.0.0"
-sp-core = "25.0.0"
-sp-inherents = "23.0.0"
-sp-io = "27.0.0"
-sp-keyring = "28.0.0"
-sp-runtime = "28.0.0"
-sp-std = "12.0.0"
+frame-benchmarking = { workspace = true, features = ["std"] }
+frame-support = { workspace = true, features = ["std"] }
+frame-system = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-inherents = { workspace = true }
+sp-io = { workspace = true, features = ["std"] }
+sp-keyring = { workspace = true }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-std = { workspace = true, features = ["std"] }
 
 [features]
 runtime-benchmarks = [

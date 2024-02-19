@@ -18,7 +18,6 @@
 
 use super::*;
 use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System, Treasury};
-use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	faucet::FromStr,
@@ -26,6 +25,7 @@ use encointer_primitives::{
 };
 use frame_support::{assert_err, assert_ok};
 use mock::{new_test_ext, RuntimeOrigin, TestRuntime};
+use parity_scale_codec::Encode;
 use sp_core::bounded_vec;
 use sp_runtime::{AccountId32, DispatchError};
 use test_utils::{helpers::*, storage::*, *};

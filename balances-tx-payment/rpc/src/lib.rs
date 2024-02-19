@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::Codec;
 use core::fmt::Display;
 use encointer_balances_tx_payment_rpc_runtime_api::{
 	BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi, Error,
@@ -27,6 +26,7 @@ use jsonrpsee::{
 pub use pallet_transaction_payment::RuntimeDispatchInfo;
 use pallet_transaction_payment::{FeeDetails, InclusionFee};
 use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
+use parity_scale_codec::Codec;
 use sp_api::{Decode, Encode, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;

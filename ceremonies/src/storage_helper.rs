@@ -1,9 +1,9 @@
-use codec::{Decode, EncodeLike};
 use encointer_primitives::{
 	ceremonies::{CommunityCeremony, ParticipantIndexType},
 	communities::CommunityIdentifier,
 	scheduler::CeremonyIndexType,
 };
+use parity_scale_codec::{Decode, EncodeLike};
 pub fn remove_participant_from_registry<Index, Registry, Count, AccountId>(
 	cid: CommunityIdentifier,
 	cindex: CeremonyIndexType,

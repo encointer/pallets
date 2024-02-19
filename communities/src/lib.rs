@@ -23,7 +23,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, Demurrage},
@@ -38,6 +37,7 @@ use encointer_primitives::{
 use frame_support::{ensure, pallet_prelude::DispatchResultWithPostInfo, BoundedVec};
 use frame_system::pallet_prelude::BlockNumberFor;
 use log::{info, warn};
+use parity_scale_codec::Encode;
 use sp_runtime::{traits::Get, DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
 
