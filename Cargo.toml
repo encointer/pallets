@@ -28,8 +28,8 @@ members = [
 
 [workspace.dependencies]
 # local pin
-encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "3.0.2" }
 encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-features = false, version = "3.0.2" }
+encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "3.0.2" }
 encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
 encointer-rpc = { path = "rpc", version = "3.0.2" }
 ep-core = { path = "primitives/core", default-features = false, version = "3.0.2" }
@@ -48,16 +48,16 @@ pallet-encointer-communities-rpc-runtime-api = { path = "communities/rpc/runtime
 # various
 array-bytes = "6.1.0"
 bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
-parity-scale-codec = { version = "3.6.4", default-features = false, features = [ "derive", "max-encoded-len"] }
 crc = "2.1.0"
 fixed = { package = "substrate-fixed", default-features = false, version = "0.5.9" }
 geohash = { package = "substrate-geohash", version = "0.13.0" }
 impl-serde = { version = "0.4.0", default-features = false }
 impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log = { version = "0.4.20", default-features = false }
+parity-scale-codec = { version = "3.6.4", default-features = false, features = ["derive", "max-encoded-len"] }
 parking_lot = "0.12.0"
 scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0.188", default-features = false, features = [ "derive", "alloc" ] }
+serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"] }
 thiserror = "1.0.31"
 
 # polkadot-sdk [no_std]
@@ -78,7 +78,7 @@ sp-runtime = { default-features = false, version = "28.0.0" }
 sp-std = { default-features = false, version = "12.0.0" }
 
 # rpc stuff [std]
-jsonrpsee = { version = "0.16.3", features = ["client-core", "server", "macros" ] }
+jsonrpsee = { version = "0.16.3", features = ["client-core", "server", "macros"] }
 jsonrpsee-core = { version = "0.16.3" }
 jsonrpsee-types = { version = "0.16.3" }
 pallet-transaction-payment-rpc = { version = "27.0.0" }

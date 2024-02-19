@@ -11,8 +11,8 @@ publish = false
 
 [dependencies]
 approx = { workspace = true, optional = true }
-parity-scale-codec = { workspace = true }
 log = { workspace = true }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # local deps
@@ -36,14 +36,12 @@ test-utils = { workspace = true }
 default = ["std"]
 std = [
     "approx/std",
-    "parity-scale-codec/std",
-    # local deps
     "encointer-primitives/std",
-    # substrate deps
     "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
     "log/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "sp-core/std",
     "sp-runtime/std",
@@ -54,6 +52,5 @@ runtime-benchmarks = [
     "frame-benchmarking",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
-
 ]
 try-runtime = ["frame-system/try-runtime"]

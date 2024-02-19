@@ -9,8 +9,8 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-parity-scale-codec = { workspace = true }
 log = { workspace = true }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # local deps
@@ -31,14 +31,12 @@ test-utils = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
-    # local deps
-    "pallet-encointer-communities/std",
     "encointer-primitives/std",
-    # substrate deps
     "frame-support/std",
     "frame-system/std",
     "log/std",
+    "pallet-encointer-communities/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "sp-core/std",
     "sp-std/std",
@@ -52,6 +50,6 @@ runtime-benchmarks = [
 ]
 
 try-runtime = [
-    "pallet-encointer-communities/try-runtime",
     "frame-system/try-runtime",
+    "pallet-encointer-communities/try-runtime",
 ]

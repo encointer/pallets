@@ -10,8 +10,8 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 approx = { workspace = true, optional = true }
-parity-scale-codec = { workspace = true }
 log = { workspace = true }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # local deps
@@ -34,15 +34,13 @@ test-utils = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
-    # local deps
     "encointer-primitives/std",
-    # substrate deps
     "frame-support/std",
     "frame-system/std",
     "log/std",
     "pallet-asset-tx-payment/std",
     "pallet-transaction-payment/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "sp-runtime/std",
     "sp-std/std",

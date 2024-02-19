@@ -27,8 +27,8 @@ sp-core = { workspace = true, features = ["std"] }
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
     "encointer-primitives/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "serde/std",
     "sp-runtime/std",

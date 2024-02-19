@@ -15,9 +15,9 @@ parking_lot = { workspace = true }
 thiserror = { workspace = true }
 
 # local deps
-pallet-encointer-ceremonies-rpc-runtime-api = { workspace = true }
 encointer-primitives = { workspace = true }
 encointer-rpc = { workspace = true }
+pallet-encointer-ceremonies-rpc-runtime-api = { workspace = true }
 
 # substrate deps
 sc-rpc = { workspace = true }

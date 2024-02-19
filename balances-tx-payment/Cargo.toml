@@ -33,12 +33,10 @@ test-utils = { workspace = true }
 default = ["std"]
 std = [
     "encointer-primitives/std",
-    # substrate deps
     "frame-support/std",
     "frame-system/std",
     "log/std",
     "pallet-asset-tx-payment/std",
-    # encointer deps
     "pallet-encointer-balances/std",
     "pallet-encointer-ceremonies/std",
     "pallet-transaction-payment/std",

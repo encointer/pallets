@@ -10,9 +10,9 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 array-bytes = { workspace = true }
-parity-scale-codec = { workspace = true }
 fixed = { workspace = true }
 impl-serde = { workspace = true, optional = true }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 
@@ -28,9 +28,9 @@ serde_json = { workspace = true }
 default = ["serde_derive", "std"]
 serde_derive = ["fixed/serde", "impl-serde", "serde"]
 std = [
-    "parity-scale-codec/std",
     "fixed/std",
     "impl-serde/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "serde/std",
     "sp-arithmetic/std",

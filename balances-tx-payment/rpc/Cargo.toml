@@ -9,9 +9,9 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-parity-scale-codec = { workspace = true }
 jsonrpsee = { workspace = true }
 log = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
 parking_lot = { workspace = true }
 thiserror = { workspace = true }
 

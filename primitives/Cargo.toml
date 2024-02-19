@@ -10,10 +10,10 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 bs58 = { workspace = true }
-parity-scale-codec = { workspace = true }
 crc = { workspace = true }
 geohash = { workspace = true }
 log = { workspace = true }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 
@@ -39,9 +39,9 @@ full_crypto = ["sp-core/full_crypto"]
 serde_derive = ["ep-core/serde_derive", "serde"]
 std = [
     "bs58/std",
-    "parity-scale-codec/std",
     "ep-core/std",
     "frame-support/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "serde/std",
     "sp-core/full_crypto",

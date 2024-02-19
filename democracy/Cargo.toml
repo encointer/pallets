@@ -10,8 +10,8 @@ license = "GPL-3.0-or-later"
 publish = false
 
 [dependencies]
-parity-scale-codec = { workspace = true }
 log = { workspace = true }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # local deps
@@ -46,37 +46,37 @@ test-utils = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
-    "pallet-encointer-balances/std",
-    "pallet-encointer-ceremonies/std",
-    "pallet-encointer-communities/std",
     "encointer-primitives/std",
-    "pallet-encointer-scheduler/std",
     "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
     "log/std",
+    "pallet-encointer-balances/std",
+    "pallet-encointer-ceremonies/std",
+    "pallet-encointer-communities/std",
+    "pallet-encointer-scheduler/std",
     "pallet-timestamp/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "sp-core/std",
     "sp-io/std",
     "sp-std/std",
 ]
 runtime-benchmarks = [
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
     "pallet-encointer-balances/runtime-benchmarks",
     "pallet-encointer-ceremonies/runtime-benchmarks",
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-scheduler/runtime-benchmarks",
-    "frame-benchmarking",
-    "frame-support/runtime-benchmarks",
-    "frame-system/runtime-benchmarks",
     "sp-application-crypto",
     "sp-core",
 ]
 try-runtime = [
+    "frame-system/try-runtime",
     "pallet-encointer-balances/try-runtime",
     "pallet-encointer-ceremonies/try-runtime",
     "pallet-encointer-communities/try-runtime",
     "pallet-encointer-scheduler/try-runtime",
-    "frame-system/try-runtime",
 ]

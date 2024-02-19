@@ -10,8 +10,8 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 approx = { workspace = true, optional = true }
-parity-scale-codec = { workspace = true }
 log = { workspace = true }
+parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # local deps
