@@ -586,7 +586,7 @@ impl<T: Config> Pallet<T> {
 		i64::lossy_from(d).saturated_into()
 	}
 
-	fn validate_bootstrappers(bootstrappers: &Vec<T::AccountId>) -> DispatchResult {
+	fn validate_bootstrappers(bootstrappers: &[T::AccountId]) -> DispatchResult {
 		ensure!(
 			bootstrappers.len() <= T::MaxBootstrappers::get() as usize,
 			<Error<T>>::InvalidAmountBootstrappers
