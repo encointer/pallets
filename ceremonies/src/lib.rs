@@ -156,7 +156,6 @@ pub mod pallet {
 
 				ensure!(p.verify_signature(), Error::<T>::BadProofOfAttendanceSignature);
 
-
 				// this reputation must now be burned so it can not be used again
 				<ParticipantReputation<T>>::insert(
 					(p.community_identifier, p.ceremony_index),
