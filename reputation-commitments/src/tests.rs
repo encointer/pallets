@@ -21,7 +21,6 @@ use crate::mock::{
 	EncointerCeremonies, EncointerReputationCommitments, EncointerScheduler, RuntimeOrigin,
 	Timestamp,
 };
-use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityIdentifier, Degree, Location},
@@ -32,6 +31,7 @@ use frame_support::{
 	traits::{OnFinalize, OnInitialize},
 };
 use mock::{new_test_ext, System, TestRuntime};
+use parity_scale_codec::Encode;
 use sp_runtime::traits::{BlakeTwo256, Hash};
 use test_utils::{
 	helpers::{event_deposited, last_event, register_test_community},

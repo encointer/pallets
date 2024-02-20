@@ -28,13 +28,13 @@ use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
 pub use sp_keyring::AccountKeyring;
 
 // reexports for macro resolution
-pub use encointer_balances;
-pub use encointer_ceremonies;
-pub use encointer_communities;
 pub use encointer_primitives::storage;
-pub use encointer_scheduler;
 pub use frame_system;
 pub use pallet_balances;
+pub use pallet_encointer_balances;
+pub use pallet_encointer_ceremonies;
+pub use pallet_encointer_communities;
+pub use pallet_encointer_scheduler;
 pub use pallet_timestamp;
 pub use sp_runtime;
 
@@ -82,6 +82,7 @@ macro_rules! impl_frame_system {
 			type RuntimeOrigin = RuntimeOrigin;
 			type Nonce = u64;
 			type RuntimeCall = RuntimeCall;
+			type RuntimeTask = RuntimeTask;
 			type Hash = H256;
 			type Hashing = BlakeTwo256;
 			type AccountId = AccountId;
@@ -164,7 +165,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_encointer_balances {
 	($t:ident) => {
-		impl encointer_balances::Config for $t {
+		impl pallet_encointer_balances::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type DefaultDemurrage = DefaultDemurrage;
 			type ExistentialDeposit = EncointerBalancesExistentialDeposit;
@@ -178,7 +179,7 @@ macro_rules! impl_encointer_balances {
 macro_rules! impl_encointer_communities {
 	($t:ident) => {
 		use sp_core::ConstU32;
-		impl encointer_communities::Config for $t {
+		impl pallet_encointer_communities::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CommunityMaster = EnsureAlice;
 			type TrustableForNonDestructiveAction = EnsureAlice;
@@ -194,7 +195,7 @@ macro_rules! impl_encointer_communities {
 #[macro_export]
 macro_rules! impl_encointer_reputation_commitments {
 	($t:ident) => {
-		impl encointer_reputation_commitments::Config for $t {
+		impl pallet_encointer_reputation_commitments::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type WeightInfo = ();
 		}
@@ -220,7 +221,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_encointer_ceremonies {
 	($t:ident) => {
-		impl encointer_ceremonies::Config for $t {
+		impl pallet_encointer_ceremonies::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
 			type Public = <Signature as Verify>::Signer;
@@ -242,7 +243,7 @@ parameter_types! {
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
 	($t:ident, $ceremonies:ident, $reputationcommitments:ident) => {
-		impl encointer_scheduler::Config for $t {
+		impl pallet_encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = ($ceremonies, $reputationcommitments); //OnCeremonyPhaseChange;
@@ -252,7 +253,7 @@ macro_rules! impl_encointer_scheduler {
 	};
 
 	($t:ident, $ceremonies:ident) => {
-		impl encointer_scheduler::Config for $t {
+		impl pallet_encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = ($ceremonies, ()); //OnCeremonyPhaseChange;
@@ -261,7 +262,7 @@ macro_rules! impl_encointer_scheduler {
 		}
 	};
 	($t:ident) => {
-		impl encointer_scheduler::Config for $t {
+		impl pallet_encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
 			type OnCeremonyPhaseChange = ((), ()); //OnCeremonyPhaseChange;
@@ -282,7 +283,7 @@ pub type EnsureAlice = EitherOfDiverse<EnsureSignedBy<Alice, AccountId32>, Ensur
 /// tests!
 pub struct TestRandomness<T>(sp_std::marker::PhantomData<T>);
 
-impl<Output: codec::Decode + Default, T>
+impl<Output: parity_scale_codec::Decode + Default, T>
 	frame_support::traits::Randomness<Output, BlockNumberFor<T>> for TestRandomness<T>
 where
 	T: frame_system::Config,

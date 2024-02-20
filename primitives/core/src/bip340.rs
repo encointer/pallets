@@ -1,4 +1,4 @@
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{
 	crypto::{AccountId32, ByteArray},
@@ -112,7 +112,7 @@ impl serde::Serialize for Bip340 {
 		S: serde::Serializer,
 	{
 		#[cfg(not(feature = "std"))]
-		use codec::alloc::string::ToString;
+		use parity_scale_codec::alloc::string::ToString;
 		serializer.serialize_str(&self.to_string())
 	}
 }
@@ -124,7 +124,7 @@ impl<'de> serde::Deserialize<'de> for Bip340 {
 		D: serde::Deserializer<'de>,
 	{
 		#[cfg(not(feature = "std"))]
-		use codec::alloc::string::String;
+		use parity_scale_codec::alloc::string::String;
 		sp_std::str::FromStr::from_str(&String::deserialize(deserializer)?)
 			.map_err(serde::de::Error::custom)
 	}

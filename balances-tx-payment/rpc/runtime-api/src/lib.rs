@@ -20,7 +20,7 @@
 
 use core::fmt;
 use frame_support::pallet_prelude::TypeInfo;
-use sp_api::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 

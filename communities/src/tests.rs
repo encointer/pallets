@@ -121,8 +121,8 @@ fn haversine_distance_works() {
 
 		// pole to pole
 		assert_abs_diff_eq!(
-			f64::from(EncointerCommunities::haversine_distance(&NORTH_POLE, &SOUTH_POLE) as i32) *
-				0.001,
+			f64::from(EncointerCommunities::haversine_distance(&NORTH_POLE, &SOUTH_POLE) as i32)
+				* 0.001,
 			12742.0,
 			epsilon = 0.1
 		);
@@ -305,7 +305,7 @@ fn updating_demurrage_works() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = register_test_community(None, 0.0, 0.0);
-		assert!(encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
+		assert!(pallet_encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(cid).is_err());
 		let demurrage = Demurrage::from_num(0.0001);
 		assert_ok!(EncointerCommunities::update_demurrage(
 			RuntimeOrigin::signed(AccountKeyring::Alice.into()),
@@ -317,7 +317,7 @@ fn updating_demurrage_works() {
 			Some(Event::DemurrageUpdated(cid, demurrage).into())
 		);
 		assert_eq!(
-			encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(cid).unwrap(),
+			pallet_encointer_balances::DemurragePerBlock::<TestRuntime>::try_get(cid).unwrap(),
 			demurrage
 		);
 	});

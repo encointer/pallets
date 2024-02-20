@@ -1,6 +1,6 @@
 [package]
 name = "encointer-rpc"
-version = "3.0.2"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "RPC for the Encointer blockchain runtime"
@@ -9,7 +9,7 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-jsonrpsee = { version = "0.16.3" }
-jsonrpsee-core = { version = "0.16.3" }
-jsonrpsee-types = { version = "0.16.3" }
-thiserror = "1.0.31"
+jsonrpsee = { workspace = true }
+jsonrpsee-core = { workspace = true }
+jsonrpsee-types = { workspace = true }
+thiserror = { workspace = true }

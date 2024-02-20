@@ -23,7 +23,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Encode;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	balances::{BalanceEntry, Demurrage},
@@ -38,6 +37,7 @@ use encointer_primitives::{
 use frame_support::{ensure, pallet_prelude::DispatchResultWithPostInfo, BoundedVec};
 use frame_system::pallet_prelude::BlockNumberFor;
 use log::{info, warn};
+use parity_scale_codec::Encode;
 use sp_runtime::{traits::Get, DispatchResult, SaturatedConversion};
 use sp_std::{prelude::*, result::Result};
 
@@ -61,7 +61,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + encointer_scheduler::Config + encointer_balances::Config
+		frame_system::Config
+		+ pallet_encointer_scheduler::Config
+		+ pallet_encointer_balances::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -145,7 +147,7 @@ pub mod pallet {
 			<CommunityMetadata<T>>::insert(cid, &community_metadata);
 
 			if let Some(d) = demurrage {
-				<encointer_balances::Pallet<T>>::set_demurrage(&cid, d)
+				<pallet_encointer_balances::Pallet<T>>::set_demurrage(&cid, d)
 					.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 			}
 			if let Some(i) = nominal_income {
@@ -175,7 +177,8 @@ pub mod pallet {
 			T::TrustableForNonDestructiveAction::ensure_origin(origin)?;
 
 			ensure!(
-				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
+				<pallet_encointer_scheduler::Pallet<T>>::current_phase()
+					== CeremonyPhaseType::Registering,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
@@ -225,7 +228,8 @@ pub mod pallet {
 			T::CommunityMaster::ensure_origin(origin)?;
 
 			ensure!(
-				<encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
+				<pallet_encointer_scheduler::Pallet<T>>::current_phase()
+					== CeremonyPhaseType::Registering,
 				Error::<T>::RegistrationPhaseRequired
 			);
 			Self::ensure_cid_exists(&cid)?;
@@ -277,7 +281,7 @@ pub mod pallet {
 
 			Self::ensure_cid_exists(&cid)?;
 
-			<encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
+			<pallet_encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
 				.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 
 			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
@@ -525,7 +529,7 @@ impl<T: Config> Pallet<T> {
 
 		<NominalIncome<T>>::remove(cid);
 
-		<encointer_balances::Pallet<T>>::purge_balances(cid);
+		<pallet_encointer_balances::Pallet<T>>::purge_balances(cid);
 
 		Self::deposit_event(Event::CommunityPurged(cid));
 	}
@@ -556,10 +560,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn is_valid_location(loc: &Location) -> bool {
-		(loc.lat < MAX_ABS_LATITUDE) &
-			(loc.lat > -MAX_ABS_LATITUDE) &
-			(loc.lon < DATELINE_LON) &
-			(loc.lon > -DATELINE_LON)
+		(loc.lat < MAX_ABS_LATITUDE)
+			& (loc.lat > -MAX_ABS_LATITUDE)
+			& (loc.lon < DATELINE_LON)
+			& (loc.lon > -DATELINE_LON)
 	}
 
 	pub fn haversine_distance(a: &Location, b: &Location) -> u32 {
@@ -582,7 +586,7 @@ impl<T: Config> Pallet<T> {
 		i64::lossy_from(d).saturated_into()
 	}
 
-	fn validate_bootstrappers(bootstrappers: &Vec<T::AccountId>) -> DispatchResult {
+	fn validate_bootstrappers(bootstrappers: &[T::AccountId]) -> DispatchResult {
 		ensure!(
 			bootstrappers.len() <= T::MaxBootstrappers::get() as usize,
 			<Error<T>>::InvalidAmountBootstrappers
@@ -605,15 +609,15 @@ impl<T: Config> Pallet<T> {
 		let bucket_max_lon = bucket_center_lon + bucket_lon_error;
 
 		//check if northern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.n)
 		}
 
 		//check if southern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.s)
 		}
@@ -635,43 +639,43 @@ impl<T: Config> Pallet<T> {
 		// traverse 1 bucket horizontally
 
 		//check if north eastern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.ne)
 		}
 
 		//check if eastern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.e)
 		}
 
 		//check if south eastern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.se)
 		}
 
 		//check if north western neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.nw)
 		}
 
 		//check if western neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.w)
 		}
 
 		//check if south western neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location) <
-			Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location)
+			< Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.sw)
 		}
@@ -700,7 +704,7 @@ impl<T: Config> Pallet<T> {
 		let dateline_proxy = Location { lat: location.lat, lon: DATELINE_LON };
 		if Self::haversine_distance(location, &dateline_proxy) < DATELINE_DISTANCE_M {
 			warn!(target: LOG, "location too close to dateline: {:?}", location);
-			return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?
+			return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
 		}
 
 		let nearby_locations = Self::get_nearby_locations(location)?;
@@ -736,10 +740,10 @@ impl<T: Config> Pallet<T> {
 	) -> Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<T>>)> {
 		let mut balances: Vec<(CommunityIdentifier, BalanceEntry<BlockNumberFor<T>>)> = vec![];
 		for cid in Self::community_identifiers().into_iter() {
-			if encointer_balances::Balance::<T>::contains_key(cid, account.clone()) {
+			if pallet_encointer_balances::Balance::<T>::contains_key(cid, account.clone()) {
 				balances.push((
 					cid,
-					<encointer_balances::Pallet<T>>::balance_entry(cid, &account.clone()),
+					<pallet_encointer_balances::Pallet<T>>::balance_entry(cid, &account.clone()),
 				));
 			}
 		}

@@ -18,7 +18,6 @@
 
 use super::*;
 use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System, Treasury};
-use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	faucet::FromStr,
@@ -26,6 +25,7 @@ use encointer_primitives::{
 };
 use frame_support::{assert_err, assert_ok};
 use mock::{new_test_ext, RuntimeOrigin, TestRuntime};
+use parity_scale_codec::Encode;
 use sp_core::bounded_vec;
 use sp_runtime::{AccountId32, DispatchError};
 use test_utils::{helpers::*, storage::*, *};
@@ -45,7 +45,7 @@ fn new_faucet(
 	if let mock::RuntimeEvent::EncointerFaucet(Event::FaucetCreated(faucet_account, _)) =
 		last_event::<TestRuntime>().unwrap()
 	{
-		return faucet_account
+		return faucet_account;
 	} else {
 		panic!("Faucet not found");
 	}
@@ -270,7 +270,7 @@ fn dripping_works() {
 					cid,
 					12
 				),
-				encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommited
+				pallet_encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommited
 			);
 
 			assert_err!(
@@ -280,7 +280,7 @@ fn dripping_works() {
 					cid,
 					13
 				),
-				encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
+				pallet_encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
 			);
 
 			assert_err!(
@@ -290,7 +290,7 @@ fn dripping_works() {
 					cid2,
 					12
 				),
-				encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
+				pallet_encointer_reputation_commitments::Error::<TestRuntime>::NoReputation
 			);
 		})
 	})

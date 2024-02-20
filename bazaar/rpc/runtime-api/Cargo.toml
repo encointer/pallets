@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "3.0.2"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Bazaar rpc runtime API for the Encointer blockchain runtime"
@@ -10,12 +10,13 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 # local deps
-encointer-primitives = { path = "../../../primitives", default-features = false, version = "3.0.2" }
+encointer-primitives = { workspace = true }
 
 # substrate deps
-frame-support = { default-features = false, version = "25.0.0" }
-sp-api = { default-features = false, version = "23.0.0" }
-sp-std = { default-features = false, version = "12.0.0" }
+frame-support = { workspace = true }
+parity-scale-codec = { workspace = true }
+sp-api = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ["std"]

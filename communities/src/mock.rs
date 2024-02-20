@@ -29,9 +29,9 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		EncointerScheduler: encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+		EncointerScheduler: pallet_encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
 		EncointerCommunities: dut::{Pallet, Call, Storage, Event<T>},
-		EncointerBalances: encointer_balances::{Pallet, Call, Storage, Event<T>},
+		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -60,7 +60,7 @@ impl_encointer_balances!(TestRuntime);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
-	encointer_scheduler::GenesisConfig::<TestRuntime> {
+	pallet_encointer_scheduler::GenesisConfig::<TestRuntime> {
 		current_phase: CeremonyPhaseType::Registering,
 		current_ceremony_index: 1,
 		phase_durations: vec![

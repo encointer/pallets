@@ -16,16 +16,17 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use sp_api::{Decode, Encode, ProvideRuntimeApi};
+use parity_scale_codec::{Decode, Encode};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
-use encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;
 use encointer_primitives::{
 	bazaar::{Business, BusinessIdentifier, OfferingData},
 	communities::CommunityIdentifier,
 };
+use pallet_encointer_bazaar_rpc_runtime_api::BazaarApi as BazaarRuntimeApi;
 
 #[rpc(client, server)]
 pub trait BazaarApi<BlockHash, AccountId>

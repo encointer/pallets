@@ -1,6 +1,6 @@
 [package]
 name = "encointer-primitives"
-version = "3.0.2"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Primitives for the Encointer blockchain runtime"
@@ -9,37 +9,29 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-bs58 = { version = "0.4.0", default-features = false, features = ["alloc"] }
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-    "max-encoded-len",
-] }
-crc = "2.1.0"
-geohash = { package = "substrate-geohash", version = "0.13.0" }
-log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.10.0", default-features = false, features = [
-    "derive",
-] }
-serde = { version = "1.0.188", optional = true, default-features = false, features = [
-    "derive",
-    "alloc",
-] }
+bs58 = { workspace = true }
+crc = { workspace = true }
+geohash = { workspace = true }
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
 
 # local deps
-ep-core = { path = "core", default-features = false, version = "3.0.2" }
+ep-core = { workspace = true }
 
 # substrate deps
-frame-support = { default-features = false, version = "25.0.0" }
-sp-core = { default-features = false, version = "25.0.0" }
-sp-io = { default-features = false, version = "27.0.0" }
-sp-runtime = { default-features = false, version = "28.0.0" }
-sp-std = { default-features = false, version = "12.0.0" }
+frame-support = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-approx = "0.5.1"
-rstest = "0.12.0"
-serde_json = "1.0.105"
-test-utils = { path = "../test-utils" }
+approx = { workspace = true }
+rstest = { workspace = true }
+serde_json = { workspace = true }
+test-utils = { workspace = true }
 
 [features]
 default = ["serde_derive", "std"]
@@ -47,9 +39,9 @@ full_crypto = ["sp-core/full_crypto"]
 serde_derive = ["ep-core/serde_derive", "serde"]
 std = [
     "bs58/std",
-    "codec/std",
     "ep-core/std",
     "frame-support/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "serde/std",
     "sp-core/full_crypto",

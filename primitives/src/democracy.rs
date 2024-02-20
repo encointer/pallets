@@ -2,7 +2,7 @@ use crate::{
 	ceremonies::{CommunityCeremony, InactivityTimeoutType},
 	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
 };
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 use crate::scheduler::CeremonyIndexType;
@@ -68,10 +68,12 @@ impl ProposalAction {
 
 	pub fn get_identifier(self) -> ProposalActionIdentifier {
 		match self {
-			ProposalAction::UpdateNominalIncome(cid, _) =>
-				ProposalActionIdentifier::UpdateNominalIncome(cid),
-			ProposalAction::SetInactivityTimeout(_) =>
-				ProposalActionIdentifier::SetInactivityTimeout,
+			ProposalAction::UpdateNominalIncome(cid, _) => {
+				ProposalActionIdentifier::UpdateNominalIncome(cid)
+			},
+			ProposalAction::SetInactivityTimeout(_) => {
+				ProposalActionIdentifier::SetInactivityTimeout
+			},
 		}
 	}
 }

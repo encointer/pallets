@@ -45,8 +45,38 @@ fn test_location() -> Location {
 fn create_community<T: Config>() -> CommunityIdentifier {
 	let location = test_location();
 	let bs = bootstrappers::<T>();
+	pallet_encointer_scheduler::Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Assigning,
+		10u32.into(),
+	)
+	.ok();
+	pallet_encointer_scheduler::Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Attesting,
+		10u32.into(),
+	)
+	.ok();
+	pallet_encointer_scheduler::Pallet::<T>::set_phase_duration(
+		RawOrigin::Root.into(),
+		CeremonyPhaseType::Registering,
+		10u32.into(),
+	)
+	.ok();
+	next_phase::<T>();
+	next_phase::<T>();
+	next_phase::<T>();
+	Pallet::<T>::set_inactivity_timeout(RawOrigin::Root.into(), 5).ok();
+	Pallet::<T>::set_reputation_lifetime(RawOrigin::Root.into(), 5).ok();
+	Pallet::<T>::set_endorsement_tickets_per_bootstrapper(RawOrigin::Root.into(), 1).ok();
+	Pallet::<T>::set_endorsement_tickets_per_reputable(RawOrigin::Root.into(), 1).ok();
+	Pallet::<T>::set_location_tolerance(RawOrigin::Root.into(), 1000).ok();
+	Pallet::<T>::set_time_tolerance(RawOrigin::Root.into(), 1_000_000u32.into()).ok();
 
-	encointer_communities::Pallet::<T>::new_community(
+	pallet_encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(RawOrigin::Root.into(), 1)
+		.ok();
+	pallet_encointer_communities::Pallet::<T>::set_max_speed_mps(RawOrigin::Root.into(), 83).ok();
+	pallet_encointer_communities::Pallet::<T>::new_community(
 		RawOrigin::Root.into(),
 		location,
 		bs.clone(),
@@ -84,7 +114,7 @@ where
 /// We purposely don't use `run_to_next_phase` because in the actual node aura complained
 /// when the timestamps were manipulated.
 fn next_phase<T: Config>() {
-	encointer_scheduler::Pallet::<T>::next_phase(RawOrigin::Root.into()).unwrap();
+	pallet_encointer_scheduler::Pallet::<T>::next_phase(RawOrigin::Root.into()).unwrap();
 }
 
 pub fn account_id<T: Config>(account: &TestPublic) -> T::AccountId
@@ -102,10 +132,10 @@ where
 	<T as frame_system::Config>::AccountId: ByteArray,
 	<T as Config>::Signature: From<sr25519::Signature>,
 {
-	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+	let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 	let prover_account: T::AccountId = account_id::<T>(prover);
 
-	assert_ok!(encointer_balances::Pallet::<T>::issue(
+	assert_ok!(pallet_encointer_balances::Pallet::<T>::issue(
 		cid,
 		&prover_account,
 		NominalIncome::from_num(1)
@@ -116,7 +146,7 @@ where
 		Reputation::VerifiedUnlinked
 	);
 
-	let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+	let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 	IssuedRewards::<T>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 	let proof = create_proof_of_attendance::<T>(prover_account, cid, cindex - 1, prover);
 	proof
@@ -125,7 +155,7 @@ where
 pub fn last_event<T: Config>() -> Option<<T as frame_system::Config>::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events();
 	if events.len() < 1 {
-		return None
+		return None;
 	}
 	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];
 	Some(event.clone())
@@ -183,7 +213,7 @@ benchmarks! {
 		let zoran = generate_pair();
 		let zoran_account= account_id::<T>(&zoran);
 		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
 	}: _(RawOrigin::Signed(zoran_account.clone()), cid, Some(proof))
@@ -201,7 +231,7 @@ benchmarks! {
 		let zoran = generate_pair();
 		let zoran_account= account_id::<T>(&zoran);
 		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
 		assert_ok!(Pallet::<T>::register_participant(
 			RawOrigin::Signed(zoran_account.clone()).into(),
@@ -226,7 +256,7 @@ benchmarks! {
 		let zoran = generate_pair();
 		let zoran_account= account_id::<T>(&zoran);
 		let proof = fake_last_attendance_and_get_proof::<T>(&zoran, cid);
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
 		assert_ok!(Pallet::<T>::register_participant(
 			RawOrigin::Signed(zoran_account.clone()).into(),
@@ -265,7 +295,7 @@ benchmarks! {
 		next_phase::<T>();
 		next_phase::<T>();
 
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let mindex = 1;
 
 	}: _(RawOrigin::Signed(attestor_account.clone()), cid, 3, attestees)
@@ -277,14 +307,14 @@ benchmarks! {
 
 	endorse_newcomer {
 		let cid = create_community::<T>();
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 
 		// we let the newbie be endorsed by a reputable as this is the worst case scenario
 		let zoran = account_id::<T>(&generate_pair());
 		Pallet::<T>::fake_reputation((cid, cindex - 1), &zoran, Reputation::VerifiedUnlinked);
 
 		// issue some income such that newbies are allowed to register
-		assert_ok!(encointer_balances::Pallet::<T>::issue(
+		assert_ok!(pallet_encointer_balances::Pallet::<T>::issue(
 			cid,
 			&zoran,
 			NominalIncome::from_num(1)
@@ -311,7 +341,7 @@ benchmarks! {
 		next_phase::<T>();
 		next_phase::<T>();
 
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let loc = test_location();
 		let time = crate::Pallet::<T>::get_meetup_time(loc).expect("Could not get meetup time");
 		let mindex = 1;
@@ -379,7 +409,7 @@ benchmarks! {
 
 	purge_community_ceremony {
 		let cid = create_community::<T>();
-		let cindex = encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 		let user = generate_pair();
 		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&user.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&user.clone(), cid))));
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);

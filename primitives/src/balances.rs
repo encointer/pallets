@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode, MaxEncodedLen};
 use ep_core::fixed::types::I64F64;
 use log::{trace, warn};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 use sp_std::fmt::Debug;
@@ -87,11 +87,11 @@ where
 	) -> BalanceEntry<BlockNumber> {
 		if self.last_update == current_block_number {
 			// Nothing to be done, as no time elapsed.
-			return self
+			return self;
 		}
 
 		if self.principal.eq(&0i16) {
-			return Self { principal: self.principal, last_update: current_block_number }
+			return Self { principal: self.principal, last_update: current_block_number };
 		}
 
 		let elapsed_blocks =
@@ -207,7 +207,7 @@ impl Convert<u128, BalanceType> for EncointerBalanceConverter {
 #[allow(non_snake_case)]
 pub fn to_U64F64(source: I64F64) -> Option<U64F64> {
 	if source.is_negative() {
-		return None
+		return None;
 	}
 
 	// Safe conversion because we made sure that it is not negative above.
