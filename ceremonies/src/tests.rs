@@ -131,14 +131,7 @@ fn prove_attendance(
 	cindex: CeremonyIndexType,
 	attendee: &sr25519::Pair,
 ) -> TestProofOfAttendance {
-	let msg = (prover.clone(), cindex);
-	ProofOfAttendance {
-		prover_public: prover,
-		community_identifier: cid,
-		ceremony_index: cindex,
-		attendee_public: account_id(attendee),
-		attendee_signature: Signature::from(attendee.sign(&msg.encode())),
-	}
+	TestProofOfAttendance::signed(prover, cid, cindex, attendee)
 }
 
 /// Wrapper for EncointerCeremonies::register_participant that reduces boilerplate code.
