@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-ceremonies-rpc"
-version = "3.0.2"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Ceremonies rpc for the Encointer blockchain runtime"
@@ -11,6 +11,7 @@ license = "GPL-3.0-or-later"
 [dependencies]
 jsonrpsee = { workspace = true }
 log = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
 parking_lot = { workspace = true }
 thiserror = { workspace = true }
 

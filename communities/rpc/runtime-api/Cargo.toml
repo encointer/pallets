@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "3.0.2"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Communities rpc runtime api for the Encointer blockchain runtime"
@@ -13,6 +13,7 @@ license = "GPL-3.0-or-later"
 encointer-primitives = { workspace = true }
 
 # substrate deps
+parity-scale-codec = { workspace = true }
 sp-api = { workspace = true }
 sp-std = { workspace = true }
 

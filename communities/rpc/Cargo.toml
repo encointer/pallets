@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-communities-rpc"
-version = "3.0.2"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Communities rpc for the Encointer blockchain runtime"
@@ -11,6 +11,7 @@ license = "GPL-3.0-or-later"
 [dependencies]
 jsonrpsee = { workspace = true }
 log = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
 parking_lot = { workspace = true }
 thiserror = { workspace = true }
 
@@ -24,6 +25,7 @@ sc-rpc = { workspace = true }
 sc-rpc-api = { workspace = true }
 sp-api = { workspace = true, features = ["std"] }
 sp-blockchain = { workspace = true }
+sp-core = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
 
 [dev-dependencies]
