@@ -9,28 +9,24 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false }
-jsonrpsee = { version = "0.16.3", features = [
-    "client-core",
-    "server",
-    "macros",
-] }
-log = "0.4.20"
-parking_lot = "0.12.0"
-thiserror = "1.0.31"
+jsonrpsee = { workspace = true }
+log = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
+parking_lot = { workspace = true }
+thiserror = { workspace = true }
 
 # local deps
-encointer-balances-tx-payment-rpc-runtime-api = { package = "encointer-balances-tx-payment-rpc-runtime-api", path = "runtime-api", version = "3.0.2" }
-encointer-primitives = { path = "../../primitives", version = "3.0.2" }
-encointer-rpc = { path = "../../rpc", version = "3.0.2" }
+encointer-balances-tx-payment-rpc-runtime-api = { workspace = true }
+encointer-primitives = { workspace = true }
+encointer-rpc = { workspace = true }
 
 # substrate deps
-pallet-transaction-payment = { version = "25.0.0" }
-pallet-transaction-payment-rpc = { version = "27.0.0" }
-sc-rpc = "26.0.0"
-sc-rpc-api = "0.30.0"
-sp-api = "23.0.0"
-sp-blockchain = "25.0.0"
-sp-core = "25.0.0"
-sp-rpc = "23.0.0"
-sp-runtime = "28.0.0"
+pallet-transaction-payment = { workspace = true, features = ["std"] }
+pallet-transaction-payment-rpc = { workspace = true }
+sc-rpc = { workspace = true }
+sc-rpc-api = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-blockchain = { workspace = true }
+sp-core = { workspace = true, features = ["std"] }
+sp-rpc = { workspace = true }
+sp-runtime = { workspace = true, features = ["std"] }

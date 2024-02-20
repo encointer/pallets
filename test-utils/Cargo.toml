@@ -10,42 +10,41 @@ license = "GPL-3.0-or-later"
 publish = false
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-] }
-log = "0.4.20"
+log = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
+
 # local deps
-encointer-balances = { package = "pallet-encointer-balances", path = "../balances" }
-encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies" }
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities" }
-encointer-primitives = { path = "../primitives" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler" }
+encointer-primitives = { workspace = true, features = ["std"] }
+pallet-encointer-balances = { workspace = true, features = ["std"] }
+pallet-encointer-ceremonies = { workspace = true, features = ["std"] }
+pallet-encointer-communities = { workspace = true, features = ["std"] }
+pallet-encointer-scheduler = { workspace = true, features = ["std"] }
 
 # substrate deps
-frame-benchmarking = "25.0.0"
-frame-support = "25.0.0"
-frame-system = "25.0.0"
-pallet-balances = "25.0.0"
-pallet-timestamp = "24.0.0"
-sp-core = "25.0.0"
-sp-inherents = "23.0.0"
-sp-io = "27.0.0"
-sp-keyring = "28.0.0"
-sp-runtime = "28.0.0"
-sp-std = "12.0.0"
+frame-benchmarking = { workspace = true, features = ["std"] }
+frame-support = { workspace = true, features = ["std"] }
+frame-system = { workspace = true, features = ["std"] }
+pallet-balances = { workspace = true, features = ["std"] }
+pallet-timestamp = { workspace = true, features = ["std"] }
+sp-core = { workspace = true, features = ["std"] }
+sp-inherents = { workspace = true }
+sp-io = { workspace = true, features = ["std"] }
+sp-keyring = { workspace = true }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-std = { workspace = true, features = ["std"] }
 
 [features]
 runtime-benchmarks = [
-    "encointer-balances/runtime-benchmarks",
-    "encointer-ceremonies/runtime-benchmarks",
-    "encointer-communities/runtime-benchmarks",
-    "encointer-scheduler/runtime-benchmarks",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
+    "pallet-encointer-balances/runtime-benchmarks",
+    "pallet-encointer-ceremonies/runtime-benchmarks",
+    "pallet-encointer-communities/runtime-benchmarks",
+    "pallet-encointer-scheduler/runtime-benchmarks",
 ]
 try-runtime = [
-    "encointer-balances/try-runtime",
-    "encointer-ceremonies/try-runtime",
-    "encointer-communities/try-runtime",
-    "encointer-scheduler/try-runtime",
+    "pallet-encointer-balances/try-runtime",
+    "pallet-encointer-ceremonies/try-runtime",
+    "pallet-encointer-communities/try-runtime",
+    "pallet-encointer-scheduler/try-runtime",
 ]

@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode, MaxEncodedLen};
 use ep_core::fixed::types::I64F64;
 use log::{trace, warn};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 use sp_std::fmt::Debug;

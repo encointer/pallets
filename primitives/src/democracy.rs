@@ -2,7 +2,7 @@ use crate::{
 	ceremonies::{CommunityCeremony, InactivityTimeoutType},
 	communities::{CommunityIdentifier, NominalIncome as NominalIncomeType},
 };
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 use crate::scheduler::CeremonyIndexType;

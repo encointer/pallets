@@ -22,10 +22,10 @@ use encointer_primitives::{
 	reputation_commitments::{DescriptorType, PurposeIdType},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
-use encointer_scheduler::OnCeremonyPhaseChange;
 use frame_system::{self as frame_system, ensure_signed, pallet_prelude::OriginFor};
 use log::info;
 pub use pallet::*;
+use pallet_encointer_scheduler::OnCeremonyPhaseChange;
 use sp_core::H256;
 use sp_std::convert::TryInto;
 pub use weights::WeightInfo;
@@ -51,7 +51,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + encointer_ceremonies::Config + encointer_communities::Config
+		frame_system::Config
+		+ pallet_encointer_ceremonies::Config
+		+ pallet_encointer_communities::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
@@ -108,8 +110,11 @@ pub mod pallet {
 				return Err(<Error<T>>::InexistentPurpose);
 			}
 
-			if !<encointer_ceremonies::Pallet<T>>::participant_reputation((cid, cindex), account)
-				.is_verified()
+			if !<pallet_encointer_ceremonies::Pallet<T>>::participant_reputation(
+				(cid, cindex),
+				account,
+			)
+			.is_verified()
 			{
 				return Err(<Error<T>>::NoReputation);
 			}
@@ -139,7 +144,7 @@ pub mod pallet {
 
 		#[allow(deprecated)]
 		pub fn purge_registry(cindex: CeremonyIndexType) {
-			let cids = <encointer_communities::Pallet<T>>::community_identifiers();
+			let cids = <pallet_encointer_communities::Pallet<T>>::community_identifiers();
 			for cid in cids.into_iter() {
 				<Commitments<T>>::remove_prefix((cid, cindex), None);
 			}
@@ -206,8 +211,9 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			CeremonyPhaseType::Assigning => {},
 			CeremonyPhaseType::Attesting => {},
 			CeremonyPhaseType::Registering => {
-				let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
-				let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+				let reputation_lifetime =
+					<pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+				let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
 				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
 				if cindex > reputation_lifetime {
 					Self::purge_registry(

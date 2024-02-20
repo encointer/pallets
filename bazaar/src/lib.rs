@@ -43,7 +43,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + encointer_communities::Config {
+	pub trait Config: frame_system::Config + pallet_encointer_communities::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
 	}
@@ -65,7 +65,7 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			// Check that the supplied community is actually registered
 			ensure!(
-				<encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
+				<pallet_encointer_communities::Pallet<T>>::community_identifiers().contains(&cid),
 				Error::<T>::NonexistentCommunity
 			);
 

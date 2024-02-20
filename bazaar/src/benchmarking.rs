@@ -24,10 +24,11 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 	let bs = vec![alice.clone(), bob.clone(), charlie.clone()];
 	let community_meta: CommunityMetadata = CommunityMetadata::default();
 
-	encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(RawOrigin::Root.into(), 1).ok();
-	encointer_communities::Pallet::<T>::set_max_speed_mps(RawOrigin::Root.into(), 83).ok();
+	pallet_encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(RawOrigin::Root.into(), 1)
+		.ok();
+	pallet_encointer_communities::Pallet::<T>::set_max_speed_mps(RawOrigin::Root.into(), 83).ok();
 
-	encointer_communities::Pallet::<T>::new_community(
+	pallet_encointer_communities::Pallet::<T>::new_community(
 		RawOrigin::Root.into(),
 		location,
 		bs.clone(),

@@ -9,37 +9,35 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-] }
-impl-trait-for-tuples = { version = "0.2.2", default-features = false }
-log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
+impl-trait-for-tuples = { workspace = true }
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
 
 # local deps
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "3.0.2" }
+encointer-primitives = { workspace = true }
 
 # substrate deps
-frame-benchmarking = { default-features = false, optional = true, version = "25.0.0" }
-frame-support = { default-features = false, version = "25.0.0" }
-frame-system = { default-features = false, version = "25.0.0" }
-pallet-timestamp = { default-features = false, version = "24.0.0" }
-sp-runtime = { default-features = false, version = "28.0.0" }
-sp-std = { default-features = false, version = "12.0.0" }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-io = "27.0.0"
-test-utils = { path = "../test-utils" }
+sp-io = { workspace = true, features = ["std"] }
+test-utils = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-    "codec/std",
     "encointer-primitives/std",
     "frame-support/std",
     "frame-system/std",
     "log/std",
     "pallet-timestamp/std",
+    "parity-scale-codec/std",
     "scale-info/std",
     "sp-runtime/std",
     "sp-std/std",
@@ -48,6 +46,5 @@ runtime-benchmarks = [
     "frame-benchmarking",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
-
 ]
 try-runtime = ["frame-system/try-runtime"]

@@ -25,7 +25,6 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
-use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 use encointer_primitives::{
 	ceremonies::{
 		reputation_cache_dirty_key, reputation_cache_key, AggregatedAccountData, CeremonyInfo,
@@ -34,6 +33,7 @@ use encointer_primitives::{
 	communities::CommunityIdentifier,
 	scheduler::CeremonyIndexType,
 };
+use pallet_encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 
 #[rpc(client, server)]
 pub trait CeremoniesApi<BlockHash, AccountId, Moment>
