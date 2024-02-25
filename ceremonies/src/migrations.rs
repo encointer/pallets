@@ -193,6 +193,11 @@ mod test {
 				AccountId::from(AccountKeyring::Alice),
 				AccountId::from(AccountKeyring::Alice),
 				AccountId::from(AccountKeyring::Alice),
+				AccountId::from(AccountKeyring::Alice),
+				AccountId::from(AccountKeyring::Alice),
+				AccountId::from(AccountKeyring::Alice),
+				AccountId::from(AccountKeyring::Alice),
+				AccountId::from(AccountKeyring::Alice),
 			];
 
 			v0::AttestationRegistry::<TestRuntime>::insert(
