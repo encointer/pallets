@@ -45,7 +45,7 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
-	pub const MeetupSizeTarget: u64 = 10;
+	pub const MeetupSizeTarget: u64 = 15;
 	pub const MeetupMinSize: u64 = 3;
 	pub const MeetupNewbieLimitDivider: u64 = 3;
 }
@@ -64,7 +64,7 @@ impl dut::Config for TestRuntime {
 	type MeetupMinSize = MeetupMinSize;
 	type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 	type WeightInfo = ();
-	type MaxAttestations = ConstU32<10>;
+	type MaxAttestations = ConstU32<15>;
 }
 
 // boilerplate
