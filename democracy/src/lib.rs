@@ -482,7 +482,7 @@ pub mod pallet {
 
 			match proposal.action.clone() {
 				ProposalAction::AddLocation(cid, location) => {
-					<encointer_communities::Pallet<T>>::do_add_loaction(cid, location)?;
+					<encointer_communities::Pallet<T>>::do_add_location(cid, location)?;
 				},
 				ProposalAction::RemoveLocation(cid, location) => {
 					<encointer_communities::Pallet<T>>::do_remove_loaction(cid, location)?;

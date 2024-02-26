@@ -175,7 +175,7 @@ pub mod pallet {
 			location: Location,
 		) -> DispatchResultWithPostInfo {
 			T::TrustableForNonDestructiveAction::ensure_origin(origin)?;
-			Self::do_add_loaction(cid, location)
+			Self::do_add_location(cid, location)
 		}
 
 		/// Remove an existing meetup `location` from the community with `cid`.
@@ -405,7 +405,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn do_add_loaction(
+	pub fn do_add_location(
 		cid: CommunityIdentifier,
 		location: Location,
 	) -> DispatchResultWithPostInfo {

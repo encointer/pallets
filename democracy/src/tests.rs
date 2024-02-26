@@ -811,7 +811,7 @@ fn enact_remove_location_works() {
 		let cid = create_cid();
 		let alice = alice();
 		let location = Location { lat: Degree::from_num(10.0), lon: Degree::from_num(10.0) };
-		let _ = EncointerCommunities::do_add_loaction(cid, location);
+		let _ = EncointerCommunities::do_add_location(cid, location);
 		let proposal_action = ProposalAction::RemoveLocation(cid, location);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
