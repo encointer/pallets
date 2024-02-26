@@ -495,7 +495,7 @@ pub mod pallet {
 					<pallet_encointer_communities::Pallet<T>>::do_add_location(cid, location)?;
 				},
 				ProposalAction::RemoveLocation(cid, location) => {
-					<pallet_encointer_communities::Pallet<T>>::do_remove_loaction(cid, location)?;
+					<pallet_encointer_communities::Pallet<T>>::do_remove_location(cid, location)?;
 				},
 				ProposalAction::UpdateCommunityMetadata(cid, community_metadata) => {
 					<pallet_encointer_communities::Pallet<T>>::do_update_community_metadata(

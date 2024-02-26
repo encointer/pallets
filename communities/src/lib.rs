@@ -191,7 +191,7 @@ pub mod pallet {
 			location: Location,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
-			Self::do_remove_loaction(cid, location)
+			Self::do_remove_location(cid, location)
 		}
 
 		/// Update the metadata of the community with `cid`.
@@ -446,7 +446,7 @@ impl<T: Config> Pallet<T> {
 		Ok(().into())
 	}
 
-	pub fn do_remove_loaction(
+	pub fn do_remove_location(
 		cid: CommunityIdentifier,
 		location: Location,
 	) -> DispatchResultWithPostInfo {
