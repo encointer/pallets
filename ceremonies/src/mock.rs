@@ -64,7 +64,7 @@ impl dut::Config for TestRuntime {
 	type MeetupMinSize = MeetupMinSize;
 	type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 	type WeightInfo = ();
-	type MaxAttestations = ConstU32<15>;
+	type MaxAttestations = ConstU32<25>;
 }
 
 // boilerplate
