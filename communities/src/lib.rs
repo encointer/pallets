@@ -175,42 +175,7 @@ pub mod pallet {
 			location: Location,
 		) -> DispatchResultWithPostInfo {
 			T::TrustableForNonDestructiveAction::ensure_origin(origin)?;
-
-			ensure!(
-				<pallet_encointer_scheduler::Pallet<T>>::current_phase()
-					== CeremonyPhaseType::Registering,
-				Error::<T>::RegistrationPhaseRequired
-			);
-			Self::ensure_cid_exists(&cid)?;
-			Self::validate_location(&location)?;
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
-				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
-			// insert location into locations
-			let mut locations = Self::locations(cid, &geo_hash);
-			match locations.binary_search(&location) {
-				Ok(_) => (),
-				Err(index) => {
-					locations
-						.try_insert(index, location)
-						.map_err(|_| Error::<T>::TooManyLocationsPerGeohash)?;
-					<Locations<T>>::insert(cid, &geo_hash, locations);
-				},
-			}
-			// check if cid is in cids_by_geohash, if not, add it
-			let mut cids = Self::cids_by_geohash(&geo_hash);
-			match cids.binary_search(&cid) {
-				Ok(_) => (),
-				Err(index) => {
-					cids.try_insert(index, cid)
-						.map_err(|_| Error::<T>::TooManyCommunityIdentifiersPerGeohash)?;
-					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
-				},
-			}
-			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
-
-			info!(target: LOG, "added location {:?} to community with cid: {:?}", location, cid);
-			Self::deposit_event(Event::LocationAdded(cid, location));
-			Ok(().into())
+			Self::do_add_location(cid, location)
 		}
 
 		/// Remove an existing meetup `location` from the community with `cid`.
@@ -226,20 +191,7 @@ pub mod pallet {
 			location: Location,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
-
-			ensure!(
-				<pallet_encointer_scheduler::Pallet<T>>::current_phase()
-					== CeremonyPhaseType::Registering,
-				Error::<T>::RegistrationPhaseRequired
-			);
-			Self::ensure_cid_exists(&cid)?;
-
-			let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
-				.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
-			Self::remove_location_intern(cid, location, geo_hash);
-			info!(target: LOG, "removed location {:?} to community with cid: {:?}", location, cid);
-			Self::deposit_event(Event::LocationRemoved(cid, location));
-			Ok(().into())
+			Self::do_remove_location(cid, location)
 		}
 
 		/// Update the metadata of the community with `cid`.
@@ -253,21 +205,7 @@ pub mod pallet {
 			community_metadata: CommunityMetadataType,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
-
-			Self::ensure_cid_exists(&cid)?;
-			community_metadata
-				.validate()
-				.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
-
-			<CommunityMetadata<T>>::insert(cid, &community_metadata);
-
-			sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
-			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
-
-			info!(target: LOG, "updated community metadata for cid: {:?}", cid);
-			Self::deposit_event(Event::MetadataUpdated(cid));
-
-			Ok(().into())
+			Self::do_update_community_metadata(cid, community_metadata)
 		}
 
 		#[pallet::call_index(4)]
@@ -278,16 +216,7 @@ pub mod pallet {
 			demurrage: Demurrage,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
-
-			Self::ensure_cid_exists(&cid)?;
-
-			<pallet_encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
-				.map_err(|_| <Error<T>>::InvalidDemurrage)?;
-
-			info!(target: LOG, " updated demurrage for cid: {:?}", cid);
-			Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
-
-			Ok(().into())
+			Self::do_update_demurrage(cid, demurrage)
 		}
 
 		#[pallet::call_index(5)]
@@ -476,6 +405,99 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn do_add_location(
+		cid: CommunityIdentifier,
+		location: Location,
+	) -> DispatchResultWithPostInfo {
+		ensure!(
+			<pallet_encointer_scheduler::Pallet<T>>::current_phase()
+				== CeremonyPhaseType::Registering,
+			Error::<T>::RegistrationPhaseRequired
+		);
+		Self::ensure_cid_exists(&cid)?;
+		Self::validate_location(&location)?;
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
+			.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+		// insert location into locations
+		let mut locations = Self::locations(cid, &geo_hash);
+		match locations.binary_search(&location) {
+			Ok(_) => (),
+			Err(index) => {
+				locations
+					.try_insert(index, location)
+					.map_err(|_| Error::<T>::TooManyLocationsPerGeohash)?;
+				<Locations<T>>::insert(cid, &geo_hash, locations);
+			},
+		}
+		// check if cid is in cids_by_geohash, if not, add it
+		let mut cids = Self::cids_by_geohash(&geo_hash);
+		match cids.binary_search(&cid) {
+			Ok(_) => (),
+			Err(index) => {
+				cids.try_insert(index, cid)
+					.map_err(|_| Error::<T>::TooManyCommunityIdentifiersPerGeohash)?;
+				<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
+			},
+		}
+		sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+
+		info!(target: LOG, "added location {:?} to community with cid: {:?}", location, cid);
+		Self::deposit_event(Event::LocationAdded(cid, location));
+		Ok(().into())
+	}
+
+	pub fn do_remove_location(
+		cid: CommunityIdentifier,
+		location: Location,
+	) -> DispatchResultWithPostInfo {
+		ensure!(
+			<pallet_encointer_scheduler::Pallet<T>>::current_phase()
+				== CeremonyPhaseType::Registering,
+			Error::<T>::RegistrationPhaseRequired
+		);
+		Self::ensure_cid_exists(&cid)?;
+
+		let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
+			.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
+		Self::remove_location_intern(cid, location, geo_hash);
+		info!(target: LOG, "removed location {:?} to community with cid: {:?}", location, cid);
+		Self::deposit_event(Event::LocationRemoved(cid, location));
+		Ok(().into())
+	}
+	pub fn do_update_community_metadata(
+		cid: CommunityIdentifier,
+		community_metadata: CommunityMetadataType,
+	) -> DispatchResultWithPostInfo {
+		Self::ensure_cid_exists(&cid)?;
+		community_metadata
+			.validate()
+			.map_err(|_| <Error<T>>::InvalidCommunityMetadata)?;
+
+		<CommunityMetadata<T>>::insert(cid, &community_metadata);
+
+		sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
+		sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
+
+		info!(target: LOG, "updated community metadata for cid: {:?}", cid);
+		Self::deposit_event(Event::MetadataUpdated(cid));
+
+		Ok(().into())
+	}
+	pub fn do_update_demurrage(
+		cid: CommunityIdentifier,
+		demurrage: Demurrage,
+	) -> DispatchResultWithPostInfo {
+		Self::ensure_cid_exists(&cid)?;
+
+		<pallet_encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
+			.map_err(|_| <Error<T>>::InvalidDemurrage)?;
+
+		info!(target: LOG, " updated demurrage for cid: {:?}", cid);
+		Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
+
+		Ok(().into())
+	}
+
 	pub fn do_update_nominal_income(
 		cid: CommunityIdentifier,
 		nominal_income: NominalIncomeType,
