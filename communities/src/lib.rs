@@ -410,7 +410,8 @@ impl<T: Config> Pallet<T> {
 		location: Location,
 	) -> DispatchResultWithPostInfo {
 		ensure!(
-			<pallet_encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
+			<pallet_encointer_scheduler::Pallet<T>>::current_phase()
+				== CeremonyPhaseType::Registering,
 			Error::<T>::RegistrationPhaseRequired
 		);
 		Self::ensure_cid_exists(&cid)?;
@@ -450,7 +451,8 @@ impl<T: Config> Pallet<T> {
 		location: Location,
 	) -> DispatchResultWithPostInfo {
 		ensure!(
-			<pallet_encointer_scheduler::Pallet<T>>::current_phase() == CeremonyPhaseType::Registering,
+			<pallet_encointer_scheduler::Pallet<T>>::current_phase()
+				== CeremonyPhaseType::Registering,
 			Error::<T>::RegistrationPhaseRequired
 		);
 		Self::ensure_cid_exists(&cid)?;
