@@ -34,7 +34,7 @@ frame_support::construct_runtime!(
 		EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Event<T>},
 		EncointerDemocracy: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
-		EncointerReputationCommitments:encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
+		EncointerReputationCommitments:pallet_encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

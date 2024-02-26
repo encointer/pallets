@@ -28,7 +28,6 @@ use encointer_primitives::{
 
 use frame_support::dispatch::DispatchErrorWithPostInfo;
 
-use pallet_encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
 	sp_runtime::{
 		traits::{CheckedAdd, CheckedDiv, CheckedSub},
@@ -36,6 +35,7 @@ use frame_support::{
 	},
 	traits::Get,
 };
+use pallet_encointer_scheduler::OnCeremonyPhaseChange;
 
 pub use weights::WeightInfo;
 
@@ -158,11 +158,10 @@ pub mod pallet {
 	pub(super) type Tallies<T: Config> =
 		StorageMap<_, Blake2_128Concat, ProposalIdType, Tally, OptionQuery>;
 
-	// TODO set default value
 	#[pallet::storage]
 	#[pallet::getter(fn cancelled_at)]
 	pub(super) type CancelledAt<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::Moment, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::Moment, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn enactment_queue)]
@@ -213,10 +212,11 @@ pub mod pallet {
 			let proposal_identifier =
 				["democracyProposal".as_bytes(), next_proposal_id.to_string().as_bytes()].concat();
 
-			let purpose_id = <encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
-				DescriptorType::try_from(proposal_identifier)
-					.map_err(|_| <Error<T>>::PurposeIdCreationFailed)?,
-			)?;
+			let purpose_id =
+				<pallet_encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
+					DescriptorType::try_from(proposal_identifier)
+						.map_err(|_| <Error<T>>::PurposeIdCreationFailed)?,
+				)?;
 
 			<Proposals<T>>::insert(next_proposal_id, proposal);
 			<PurposeIds<T>>::insert(next_proposal_id, purpose_id);
@@ -289,7 +289,8 @@ pub mod pallet {
 		fn relevant_cindexes(
 			start_cindex: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
-			let reputation_lifetime = <pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+			let reputation_lifetime =
+				<pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 			let cycle_duration = <pallet_encointer_scheduler::Pallet<T>>::get_cycle_duration();
 			let proposal_lifetime = T::ProposalLifetime::get();
 			// ceil(proposal_lifetime / cycle_duration)
@@ -340,7 +341,7 @@ pub mod pallet {
 					}
 				}
 
-				if <encointer_reputation_commitments::Pallet<T>>::do_commit_reputation(
+				if <pallet_encointer_reputation_commitments::Pallet<T>>::do_commit_reputation(
 					account_id,
 					community_ceremony.0,
 					community_ceremony.1,
@@ -349,7 +350,7 @@ pub mod pallet {
 				)
 				.is_err()
 				{
-					continue
+					continue;
 				}
 
 				eligible_reputation_count += 1;
@@ -369,7 +370,8 @@ pub mod pallet {
 			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal_action_identifier = proposal.action.clone().get_identifier();
 			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
-			let proposal_cancelled = proposal.start < cancelled_at;
+			let proposal_cancelled =
+				cancelled_at.is_some() && proposal.start < cancelled_at.unwrap();
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled || proposal_too_old {
 				proposal.state = ProposalState::Cancelled;
@@ -482,19 +484,19 @@ pub mod pallet {
 
 			match proposal.action.clone() {
 				ProposalAction::AddLocation(cid, location) => {
-					<encointer_communities::Pallet<T>>::do_add_location(cid, location)?;
+					<pallet_encointer_communities::Pallet<T>>::do_add_location(cid, location)?;
 				},
 				ProposalAction::RemoveLocation(cid, location) => {
-					<encointer_communities::Pallet<T>>::do_remove_loaction(cid, location)?;
+					<pallet_encointer_communities::Pallet<T>>::do_remove_loaction(cid, location)?;
 				},
 				ProposalAction::UpdateCommunityMetadata(cid, community_metadata) => {
-					<encointer_communities::Pallet<T>>::do_update_community_metadata(
+					<pallet_encointer_communities::Pallet<T>>::do_update_community_metadata(
 						cid,
 						community_metadata,
 					)?;
 				},
 				ProposalAction::UpdateDemurrage(cid, demurrage) => {
-					<encointer_communities::Pallet<T>>::do_update_demurrage(cid, demurrage)?;
+					<pallet_encointer_communities::Pallet<T>>::do_update_demurrage(cid, demurrage)?;
 				},
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
 					<pallet_encointer_communities::Pallet<T>>::do_update_nominal_income(
@@ -504,7 +506,7 @@ pub mod pallet {
 				},
 
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
-					<pallet_. encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
+					<pallet_encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
 						inactivity_timeout,
 					)?;
 				},
