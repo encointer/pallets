@@ -223,13 +223,17 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	pub fn get_cycle_duration() -> T::Moment {
+		<PhaseDurations<T>>::get(CeremonyPhaseType::Registering)
+			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Assigning)
+			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Attesting)
+	}
+
 	// we need to resync in two situations:
 	// 1. when the chain bootstraps and cycle duration is smaller than 24h, phases would cycle with every block until catched up
 	// 2. when next_phase() is used, we would introduce long idle phases because next_phase_timestamp would be pushed furhter and further into the future
 	fn resync_and_set_next_phase_timestamp(tnext: T::Moment) -> DispatchResult {
-		let cycle_duration = <PhaseDurations<T>>::get(CeremonyPhaseType::Registering)
-			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Assigning)
-			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Attesting);
+		let cycle_duration = Self::get_cycle_duration();
 		let now = <pallet_timestamp::Pallet<T>>::now();
 
 		let tnext = if tnext < now {

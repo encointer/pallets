@@ -18,6 +18,7 @@ scale-info = { workspace = true }
 encointer-primitives = { workspace = true }
 pallet-encointer-ceremonies = { workspace = true }
 pallet-encointer-communities = { workspace = true }
+pallet-encointer-reputation-commitments = { workspace = true }
 pallet-encointer-scheduler = { workspace = true }
 
 # substrate deps
