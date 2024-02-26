@@ -684,6 +684,11 @@ mod test {
 				AccountId::from(AccountKeyring::Dave),
 				AccountId::from(AccountKeyring::Dave),
 				AccountId::from(AccountKeyring::Dave),
+				AccountId::from(AccountKeyring::Dave),
+				AccountId::from(AccountKeyring::Dave),
+				AccountId::from(AccountKeyring::Dave),
+				AccountId::from(AccountKeyring::Dave),
+				AccountId::from(AccountKeyring::Dave),
 			];
 			v0::Bootstrappers::<TestRuntime>::insert(
 				CommunityIdentifier::from_str("111112Fvv9d").unwrap(),

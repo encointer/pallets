@@ -1743,8 +1743,12 @@ fn after_inactive_cycle_forbid_non_bootstrapper_registration() {
 #[test]
 fn grow_population_and_removing_community_works() {
 	new_test_ext().execute_with(|| {
-		let cid = perform_bootstrapping_ceremony(None, 3);
 		let mut participants = bootstrappers();
+		participants.extend(add_population(5, participants.len()));
+		let cid = perform_bootstrapping_ceremony(
+			Some(participants.clone().into_iter().map(|b| account_id(&b)).collect()),
+			3,
+		);
 
 		// generate many keys and register all of them
 		// they will use the same keys per participant throughout to following ceremonies
@@ -1762,7 +1766,7 @@ fn grow_population_and_removing_community_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		run_to_next_phase();
 		// Assigning
-		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 11);
 		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 0);
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 14);
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
@@ -1788,14 +1792,15 @@ fn grow_population_and_removing_community_works() {
 		run_to_next_phase();
 		// Assigning
 
-		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
-		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 2);
-		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 12);
-		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 1);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 11);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 3);
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 11);
+		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
 
 		run_to_next_phase();
 
 		fully_attest_meetup(cid, 1);
+		fully_attest_meetup(cid, 2);
 
 		run_to_next_phase();
 		// Registering
@@ -1813,9 +1818,9 @@ fn grow_population_and_removing_community_works() {
 		run_to_next_phase();
 		// Assigning
 
-		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 6);
-		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 4);
-		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 10);
+		assert_eq!(EncointerCeremonies::bootstrapper_count((cid, cindex)), 11);
+		assert_eq!(EncointerCeremonies::reputable_count((cid, cindex)), 7);
+		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 7);
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
 
 		run_to_next_phase();
@@ -1841,7 +1846,11 @@ fn grow_population_and_removing_community_works() {
 		}
 		run_to_next_phase();
 		// Assigning
-		assert_eq!(proof_count, 13);
+		// 11 bootstrappers + 3 + 4 + 6
+		// ceremony 1 : add 3 reputables floor(11 / 3)
+		// ceremony 2 : add 4 reputables floor(14 / 3)
+		// ceremony 3 : add 6 reputables floor(18 / 3)
+		assert_eq!(proof_count, 24);
 		assert_eq!(EncointerCeremonies::meetup_count((cid, cindex)), 2);
 
 		// now we remove the community
@@ -2282,8 +2291,8 @@ fn get_meetup_participants_works() {
 	exp_n_assigned_reputables,
 	exp_n_assigned_endorsees,
 	exp_n_assigned_newbies,
-	case(3, 7, 12, 6, 13, 19, 5, 5, 7, 12, 6, 5),
-	case(10, 1, 1, 20, 13, 2, 17, 2, 1, 1, 18, 0)
+	case(3, 11, 18, 6, 13, 29, 5, 7, 11, 18, 6, 10),
+	case(10, 1, 1, 30, 13, 2, 23, 2, 1, 1, 28, 0)
 )]
 fn generate_meetup_assignment_params_works(
 	n_locations: u64,
@@ -2315,7 +2324,9 @@ fn generate_meetup_assignment_params_works(
 
 		assert_eq!(assigned_counts.bootstrappers, exp_n_assigned_bootstrappers);
 		assert_eq!(assigned_counts.reputables, exp_n_assigned_reputables);
+		// case 2: we have 2 meetups, so 1 + 1 + 28 + 0 participants
 		assert_eq!(assigned_counts.endorsees, exp_n_assigned_endorsees);
+		// case 1: 11 + 18 + 6 = 35, and we have 3 meetups, so 45 spots, so 10 newbie spots
 		assert_eq!(assigned_counts.newbies, exp_n_assigned_newbies);
 
 		let assignment = EncointerCeremonies::assignments((cid, cindex));

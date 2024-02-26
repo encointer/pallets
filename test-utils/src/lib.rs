@@ -185,7 +185,7 @@ macro_rules! impl_encointer_communities {
 			type TrustableForNonDestructiveAction = EnsureAlice;
 			type WeightInfo = ();
 			type MaxCommunityIdentifiers = ConstU32<10>;
-			type MaxBootstrappers = ConstU32<10>;
+			type MaxBootstrappers = ConstU32<15>;
 			type MaxLocationsPerGeohash = ConstU32<10>;
 			type MaxCommunityIdentifiersPerGeohash = ConstU32<10>;
 		}
@@ -213,7 +213,7 @@ macro_rules! test_runtime {
 }
 
 parameter_types! {
-	pub const MeetupSizeTarget: u64 = 10;
+	pub const MeetupSizeTarget: u64 = 15;
 	pub const MeetupMinSize: u64 = 3;
 	pub const MeetupNewbieLimitDivider: u64 = 3;
 }
@@ -231,7 +231,7 @@ macro_rules! impl_encointer_ceremonies {
 			type MeetupMinSize = MeetupMinSize;
 			type MeetupNewbieLimitDivider = MeetupNewbieLimitDivider;
 			type WeightInfo = ();
-			type MaxAttestations = ConstU32<10>;
+			type MaxAttestations = ConstU32<25>;
 		}
 	};
 }
