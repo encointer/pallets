@@ -16,16 +16,15 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+use parity_scale_codec::{Decode, Encode};
 use parking_lot::RwLock;
-use sp_api::{
-	offchain::{OffchainStorage, STORAGE_PREFIX},
-	Decode, Encode, ProvideRuntimeApi,
-};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::offchain::{OffchainStorage, STORAGE_PREFIX};
+use sp_runtime::app_crypto::sp_core;
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
-use encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 use encointer_primitives::{
 	ceremonies::{
 		reputation_cache_dirty_key, reputation_cache_key, AggregatedAccountData, CeremonyInfo,
@@ -34,6 +33,7 @@ use encointer_primitives::{
 	communities::CommunityIdentifier,
 	scheduler::CeremonyIndexType,
 };
+use pallet_encointer_ceremonies_rpc_runtime_api::CeremoniesApi as CeremoniesRuntimeApi;
 
 #[rpc(client, server)]
 pub trait CeremoniesApi<BlockHash, AccountId, Moment>
@@ -71,7 +71,7 @@ pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
 impl<Client, Block, AccountId, Moment, S> CeremoniesRpc<Client, Block, AccountId, Moment, S>
 where
 	S: 'static + OffchainStorage,
-	Block: sp_api::BlockT,
+	Block: BlockT,
 	AccountId: 'static + Encode + Decode + Send + Sync,
 	Moment: 'static + Encode + Decode + Send + Sync,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
@@ -159,7 +159,7 @@ where
 		if !self.offchain_indexing {
 			return Err(
 				Error::OffchainIndexingDisabled("ceremonies_getReputations".to_string()).into()
-			)
+			);
 		}
 
 		let cache_key = &reputation_cache_key(&account);
@@ -168,12 +168,12 @@ where
 			.map_err(|e| Error::Runtime(e.into()))?;
 
 		if self.cache_dirty(&reputation_cache_dirty_key(&account)) {
-			return Ok(self.refresh_reputation_cache(account, ceremony_info, at)?.reputation)
+			return Ok(self.refresh_reputation_cache(account, ceremony_info, at)?.reputation);
 		}
 
 		if let Some(reputation_cache_value) = self.get_storage::<ReputationCacheValue>(cache_key)? {
 			if ceremony_info == reputation_cache_value.ceremony_info {
-				return Ok(reputation_cache_value.reputation)
+				return Ok(reputation_cache_value.reputation);
 			}
 		};
 

@@ -1,6 +1,6 @@
 [package]
 name = "encointer-ceremonies-assignment"
-version = "2.0.0"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Ceremonies assignments for the Encointer blockchain runtime"
@@ -10,15 +10,15 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 # local deps
-encointer-primitives = { path = "../../primitives", default-features = false, version = "2.0.0" }
+encointer-primitives = { workspace = true }
 
 # substrate deps
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-sp-core = "24.0.0"
+sp-core = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
-std = ["encointer-primitives/std", "sp-std/std", "sp-runtime/std"]
+std = ["encointer-primitives/std", "sp-runtime/std", "sp-std/std"]

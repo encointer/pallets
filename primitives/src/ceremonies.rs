@@ -19,10 +19,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::communities::{CommunityIdentifier, Location};
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::{RuntimeDebug, H256};
-use sp_runtime::traits::{BlakeTwo256, Hash, IdentifyAccount, Verify};
+use sp_core::{Pair, RuntimeDebug};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub use crate::scheduler::CeremonyIndexType;
 
@@ -213,6 +213,8 @@ impl CommunityReputation {
 	}
 }
 
+pub type AccountIdFor<Signature> = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+
 #[derive(
 	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
@@ -226,17 +228,36 @@ pub struct ProofOfAttendance<Signature, AccountId> {
 	pub attendee_signature: Signature,
 }
 
-impl<Signature, AccountId: Clone + Encode> ProofOfAttendance<Signature, AccountId> {
-	/// get the hash of the proof without the attendee signature,
-	/// as the signature is non-deterministic.
-	pub fn hash(&self) -> H256 {
-		(
-			self.prover_public.clone(),
-			self.ceremony_index,
-			self.community_identifier,
-			self.attendee_public.clone(),
+impl<Signature: Verify> ProofOfAttendance<Signature, AccountIdFor<Signature>>
+where
+	AccountIdFor<Signature>: Clone + Encode,
+{
+	pub fn verify_signature(&self) -> bool {
+		self.attendee_signature.verify(
+			&(self.prover_public.clone(), self.ceremony_index).encode()[..],
+			&self.attendee_public,
 		)
-			.using_encoded(BlakeTwo256::hash)
+	}
+
+	pub fn signed<Signer>(
+		prover_public: AccountIdFor<Signature>,
+		cid: CommunityIdentifier,
+		cindex: CeremonyIndexType,
+		attendee: &Signer,
+	) -> Self
+	where
+		Signer: Pair,
+		Signature: From<Signer::Signature>,
+		AccountIdFor<Signature>: From<Signer::Public>,
+	{
+		let msg = (prover_public.clone(), cindex);
+		ProofOfAttendance {
+			prover_public,
+			community_identifier: cid,
+			ceremony_index: cindex,
+			attendee_public: attendee.public().into(),
+			attendee_signature: attendee.sign(&msg.encode()).into(),
+		}
 	}
 }
 
@@ -376,5 +397,19 @@ mod tests {
 		.sign(&alice);
 
 		assert!(claim.verify_signature())
+	}
+
+	#[test]
+	fn proof_of_attendance_signing_works() {
+		let alice = AccountKeyring::Alice.pair();
+
+		let proof = ProofOfAttendance::<Signature, _>::signed(
+			alice.public().into(),
+			Default::default(),
+			1,
+			&alice,
+		);
+
+		assert!(proof.verify_signature())
 	}
 }

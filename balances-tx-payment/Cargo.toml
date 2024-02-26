@@ -1,6 +1,6 @@
 [package]
 name = "encointer-balances-tx-payment"
-version = "2.0.0"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Balances tx payment for the Encointer blockchain runtime"
@@ -9,44 +9,48 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-log = { version = "0.4.20", default-features = false }
+log = { workspace = true }
 
-encointer-primitives = { path = "../primitives", default-features = false, version = "2.0.0" }
-pallet-encointer-balances = { path = "../balances", default-features = false, version = "2.0.0" }
-pallet-encointer-ceremonies = { path = "../ceremonies", default-features = false, version = "2.0.0" }
+encointer-primitives = { workspace = true }
+pallet-encointer-balances = { workspace = true }
+pallet-encointer-ceremonies = { workspace = true }
 
 # substrate dependencies
-frame-support = { default-features = false, version = "24.0.0" }
-frame-system = { default-features = false, version = "24.0.0" }
-pallet-asset-tx-payment = { default-features = false, version = "24.0.0" }
-pallet-transaction-payment = { default-features = false, version = "24.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-asset-tx-payment = { workspace = true }
+pallet-transaction-payment = { workspace = true }
+sp-runtime = { workspace = true }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = [
-    "derive",
-] }
-rstest = "0.12.0"
-scale-info = { version = "2.9.0", default-features = false }
-sp-io = "26.0.0"
-test-utils = { path = "../test-utils" }
+parity-scale-codec = { workspace = true }
+rstest = { workspace = true }
+scale-info = { workspace = true }
+sp-io = { workspace = true, features = ["std"] }
+test-utils = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-    "log/std",
-
-    # encointer deps
-    "pallet-encointer-balances/std",
-    "pallet-encointer-ceremonies/std",
     "encointer-primitives/std",
-
-    # substrate deps
     "frame-support/std",
     "frame-system/std",
+    "log/std",
     "pallet-asset-tx-payment/std",
+    "pallet-encointer-balances/std",
+    "pallet-encointer-ceremonies/std",
     "pallet-transaction-payment/std",
     "sp-runtime/std",
 ]
 
-try-runtime = ["frame-system/try-runtime"]
+try-runtime = [
+    "frame-system/try-runtime",
+    "pallet-encointer-balances/try-runtime",
+    "pallet-encointer-ceremonies/try-runtime",
+]
+runtime-benchmarks = [
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "pallet-encointer-balances/runtime-benchmarks",
+    "pallet-encointer-ceremonies/runtime-benchmarks",
+]

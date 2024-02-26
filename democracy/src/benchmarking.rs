@@ -1,5 +1,4 @@
 use crate::{Pallet as EncointerDemocracy, *};
-use codec::Encode;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::CommunityIdentifier,
@@ -13,6 +12,7 @@ use frame_support::{
 	BoundedVec,
 };
 use frame_system::RawOrigin;
+use parity_scale_codec::Encode;
 #[cfg(not(feature = "std"))]
 use sp_std::vec;
 

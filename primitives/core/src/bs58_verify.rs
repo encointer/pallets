@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 
@@ -56,11 +56,11 @@ impl Bs58verify {
 	pub fn verify(bytes: &[u8]) -> Result<(), Bs58Error> {
 		for (i, c) in bytes.iter().enumerate() {
 			if *c > 127 {
-				return Err(Bs58Error::NonAsciiCharacter(i as u8))
+				return Err(Bs58Error::NonAsciiCharacter(i as u8));
 			}
 
 			if Self::BITCOIN_DECODE_MAP[*c as usize] as usize == 0xFF {
-				return Err(Bs58Error::NonBs58Character(i as u8))
+				return Err(Bs58Error::NonBs58Character(i as u8));
 			}
 		}
 		Ok(())

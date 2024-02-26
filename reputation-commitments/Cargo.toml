@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-reputation-commitments"
-version = "2.0.0"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Reputation commitments pallet for the Encointer blockchain runtime"
@@ -9,51 +9,60 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-approx = { version = "0.5.1", optional = true }
-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = ["derive"] }
-log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.9.0", default-features = false }
+approx = { workspace = true, optional = true }
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
 
 # local deps
-encointer-ceremonies = { package = "pallet-encointer-ceremonies", path = "../ceremonies", default-features = false, version = "2.0.0" }
-encointer-communities = { package = "pallet-encointer-communities", path = "../communities", default-features = false, version = "2.0.0" }
-encointer-primitives = { path = "../primitives", default-features = false, features = ["serde_derive"], version = "2.0.0" }
-encointer-scheduler = { package = "pallet-encointer-scheduler", path = "../scheduler", default-features = false, version = "2.0.0" }
+encointer-primitives = { workspace = true }
+pallet-encointer-ceremonies = { workspace = true }
+pallet-encointer-communities = { workspace = true }
+pallet-encointer-scheduler = { workspace = true }
 
 # substrate deps
-frame-benchmarking = { default-features = false, optional = true, version = "24.0.0" }
-frame-support = { default-features = false, version = "24.0.0" }
-frame-system = { default-features = false, version = "24.0.0" }
-pallet-timestamp = { default-features = false, version = "23.0.0" }
-sp-core = { default-features = false, version = "24.0.0" }
-sp-runtime = { default-features = false, version = "27.0.0" }
-sp-std = { default-features = false, version = "11.0.0" }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-timestamp = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [dev-dependencies]
-approx = "0.5.1"
-sp-io = "26.0.0"
-test-utils = { path = "../test-utils" }
+approx = { workspace = true }
+sp-io = { workspace = true, features = ["std"] }
+test-utils = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "log/std",
-    "scale-info/std",
     "approx/std",
-    # local deps
     "encointer-primitives/std",
-    "encointer-ceremonies/std",
-    # substrate deps
     "frame-support/std",
     "frame-system/std",
-    "sp-std/std",
-    "sp-runtime/std",
+    "log/std",
+    "pallet-encointer-ceremonies/std",
+    "pallet-encointer-communities/std",
+    "pallet-encointer-scheduler/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
     "sp-core/std",
+    "sp-runtime/std",
+    "sp-std/std",
 ]
-
-runtime-benchmarks = ["frame-benchmarking", "approx"]
-
+runtime-benchmarks = [
+    "approx",
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "pallet-encointer-ceremonies/runtime-benchmarks",
+    "pallet-encointer-communities/runtime-benchmarks",
+    "pallet-encointer-scheduler/runtime-benchmarks",
+]
 try-runtime = [
     "frame-system/try-runtime",
+    "pallet-encointer-ceremonies/try-runtime",
+    "pallet-encointer-communities/try-runtime",
+    "pallet-encointer-scheduler/try-runtime",
 ]

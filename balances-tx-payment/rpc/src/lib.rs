@@ -14,20 +14,21 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use codec::Codec;
 use core::fmt::Display;
 use encointer_balances_tx_payment_rpc_runtime_api::{
 	BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi, Error,
 };
 use jsonrpsee::{
-	core::{Error as JsonRpseeError, RpcResult},
+	core::RpcResult,
 	proc_macros::rpc,
-	types::error::{CallError, ErrorCode, ErrorObject},
+	types::error::{CallError, ErrorObject},
 };
 pub use pallet_transaction_payment::RuntimeDispatchInfo;
 use pallet_transaction_payment::{FeeDetails, InclusionFee};
 use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
-use sp_api::{Decode, Encode, ProvideRuntimeApi};
+use parity_scale_codec::Codec;
+use parity_scale_codec::{Decode, Encode};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
 use sp_rpc::number::NumberOrHex;
@@ -107,16 +108,6 @@ where
 			))
 		})?;
 
-		let try_into_rpc_balance = |value: AssetBalance| {
-			value.try_into().map_err(|_| {
-				JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
-					ErrorCode::InvalidParams.code(),
-					format!("{value} doesn't fit in NumberOrHex representation"),
-					None::<()>,
-				)))
-			})
-		};
-
 		Ok(FeeDetails {
 			inclusion_fee: if let Some(inclusion_fee) = fee_details.inclusion_fee {
 				let base_fee = api
@@ -147,9 +138,9 @@ where
 					})?;
 
 				Some(InclusionFee {
-					base_fee: try_into_rpc_balance(base_fee)?,
-					len_fee: try_into_rpc_balance(len_fee)?,
-					adjusted_weight_fee: try_into_rpc_balance(adjusted_weight_fee)?,
+					base_fee: base_fee.into(),
+					len_fee: len_fee.into(),
+					adjusted_weight_fee: adjusted_weight_fee.into(),
 				})
 			} else {
 				None

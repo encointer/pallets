@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-bazaar-rpc"
-version = "2.0.0"
+version = "5.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Bazaar rpc for the Encointer blockchain runtime"
@@ -9,23 +9,20 @@ repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-jsonrpsee = { version = "0.16.3", features = [
-    "client-core",
-    "server",
-    "macros",
-] }
-log = "0.4.20"
-parking_lot = "0.12.0"
-thiserror = "1.0.31"
+jsonrpsee = { workspace = true }
+log = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
+parking_lot = { workspace = true }
+thiserror = { workspace = true }
 
 # local deps
-encointer-bazaar-rpc-runtime-api = { package = "pallet-encointer-bazaar-rpc-runtime-api", path = "runtime-api", version = "2.0.0" }
-encointer-primitives = { path = "../../primitives", version = "2.0.0" }
-encointer-rpc = { path = "../../rpc", version = "2.0.0" }
+encointer-primitives = { workspace = true }
+encointer-rpc = { workspace = true }
+pallet-encointer-bazaar-rpc-runtime-api = { workspace = true }
 
 # substrate deps
-sc-rpc = "25.0.0"
-sc-rpc-api = "0.29.0"
-sp-api = "22.0.0"
-sp-blockchain = "24.0.0"
-sp-runtime = "27.0.0"
+sc-rpc = { workspace = true }
+sc-rpc-api = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-blockchain = { workspace = true }
+sp-runtime = { workspace = true, features = ["std"] }

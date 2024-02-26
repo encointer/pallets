@@ -26,7 +26,7 @@ use encointer_primitives::{
 	common::PalletString,
 	communities::{CommunityIdentifier, Location},
 };
-use sp_api::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 
 sp_api::decl_runtime_apis! {
 

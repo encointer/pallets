@@ -16,7 +16,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::Decode;
 use core::marker::PhantomData;
 use encointer_primitives::{
 	communities::CommunityIdentifier, faucet::*, reputation_commitments::DescriptorType,
@@ -32,6 +31,7 @@ use frame_support::{
 };
 use frame_system::{self as frame_system, ensure_signed};
 use log::info;
+use parity_scale_codec::Decode;
 use sp_core::H256;
 use sp_runtime::{traits::Hash, SaturatedConversion, Saturating};
 use sp_std::convert::TryInto;
@@ -69,8 +69,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
-		+ encointer_reputation_commitments::Config
-		+ encointer_communities::Config
+		+ pallet_encointer_reputation_commitments::Config
+		+ pallet_encointer_communities::Config
 		+ pallet_treasury::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -99,11 +99,12 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 
-			let all_communities = encointer_communities::Pallet::<T>::community_identifiers();
+			let all_communities =
+				pallet_encointer_communities::Pallet::<T>::community_identifiers();
 			if let Some(wl) = whitelist.clone() {
 				for cid in &wl {
 					if !all_communities.contains(cid) {
-						return Err(<Error<T>>::InvalidCommunityIdentifierInWhitelist.into())
+						return Err(<Error<T>>::InvalidCommunityIdentifierInWhitelist.into());
 					}
 				}
 			}
@@ -122,7 +123,7 @@ pub mod pallet {
 				.expect("32 bytes can always construct an AccountId32");
 
 			if <Faucets<T>>::contains_key(&faucet_account) {
-				return Err(<Error<T>>::FaucetAlreadyExists.into())
+				return Err(<Error<T>>::FaucetAlreadyExists.into());
 			}
 
 			<T as Config>::Currency::reserve_named(
@@ -134,10 +135,11 @@ pub mod pallet {
 			<T as Config>::Currency::transfer(&from, &faucet_account, amount, KeepAlive)
 				.map_err(|_| <Error<T>>::InsuffiecientBalance)?;
 
-			let purpose_id = <encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
-				DescriptorType::try_from(faucet_identifier)
-					.map_err(|_| <Error<T>>::PurposeIdCreationFailed)?,
-			)?;
+			let purpose_id =
+				<pallet_encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
+					DescriptorType::try_from(faucet_identifier)
+						.map_err(|_| <Error<T>>::PurposeIdCreationFailed)?,
+				)?;
 
 			<Faucets<T>>::insert(
 				&faucet_account,
@@ -163,11 +165,11 @@ pub mod pallet {
 
 			if let Some(wl) = faucet.whitelist {
 				if !wl.contains(&cid) {
-					return Err(<Error<T>>::CommunityNotInWhitelist.into())
+					return Err(<Error<T>>::CommunityNotInWhitelist.into());
 				}
 			}
 
-			<encointer_reputation_commitments::Pallet<T>>::do_commit_reputation(
+			<pallet_encointer_reputation_commitments::Pallet<T>>::do_commit_reputation(
 				&from,
 				cid,
 				cindex,
@@ -232,8 +234,8 @@ pub mod pallet {
 
 			ensure!(from == faucet.creator, <Error<T>>::NotCreator);
 			ensure!(
-				<T as Config>::Currency::free_balance(&faucet_account) <
-					faucet.drip_amount.saturating_mul(2u32.saturated_into()),
+				<T as Config>::Currency::free_balance(&faucet_account)
+					< faucet.drip_amount.saturating_mul(2u32.saturated_into()),
 				<Error<T>>::FaucetNotEmpty
 			);
 

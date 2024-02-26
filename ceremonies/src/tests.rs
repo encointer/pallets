@@ -16,7 +16,6 @@
 
 use super::*;
 use approx::assert_abs_diff_eq;
-use encointer_balances::Event as BalancesEvent;
 use encointer_primitives::{
 	communities::{CommunityIdentifier, Degree, Location, LossyInto},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -30,6 +29,7 @@ use mock::{
 	master, new_test_ext, EncointerBalances, EncointerCeremonies, EncointerCommunities,
 	EncointerScheduler, RuntimeOrigin, System, TestProofOfAttendance, TestRuntime, Timestamp,
 };
+use pallet_encointer_balances::Event as BalancesEvent;
 use rstest::*;
 use sp_core::{bounded_vec, sr25519, Pair, H256};
 use sp_runtime::{traits::BlakeTwo256, DispatchError};
@@ -78,12 +78,12 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
 		.lon
 		.lossy_into();
 
-	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
-		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Registering) +
-		cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Assigning) +
-		(cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::Attesting) +
-		ONE_DAY / 2 -
-		(mlon / 360.0 * ONE_DAY as f64) as u64;
+	let t = GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)
+		+ cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Registering)
+		+ cindex * EncointerScheduler::phase_durations(CeremonyPhaseType::Assigning)
+		+ (cindex - 1) * EncointerScheduler::phase_durations(CeremonyPhaseType::Attesting)
+		+ ONE_DAY / 2
+		- (mlon / 360.0 * ONE_DAY as f64) as u64;
 
 	let time = t as i64 + EncointerCeremonies::meetup_time_offset() as i64;
 	time as u64
@@ -131,14 +131,7 @@ fn prove_attendance(
 	cindex: CeremonyIndexType,
 	attendee: &sr25519::Pair,
 ) -> TestProofOfAttendance {
-	let msg = (prover.clone(), cindex);
-	ProofOfAttendance {
-		prover_public: prover,
-		community_identifier: cid,
-		ceremony_index: cindex,
-		attendee_public: account_id(attendee),
-		attendee_signature: Signature::from(attendee.sign(&msg.encode())),
-	}
+	TestProofOfAttendance::signed(prover, cid, cindex, attendee)
 }
 
 /// Wrapper for EncointerCeremonies::register_participant that reduces boilerplate code.
@@ -1653,12 +1646,12 @@ fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: i64
 		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
 
 		let mtime = if lon_micro >= 0 {
-			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2 -
-				(lon_micro * ONE_DAY as i64 / 360_000_000) as u64
+			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) + 2 * ONE_DAY + ONE_DAY / 2
+				- (lon_micro * ONE_DAY as i64 / 360_000_000) as u64
 		} else {
-			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY) +
-				2 * ONE_DAY + ONE_DAY / 2 +
-				(lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
+			GENESIS_TIME - GENESIS_TIME.rem(ONE_DAY)
+				+ 2 * ONE_DAY + ONE_DAY / 2
+				+ (lon_micro.abs() * ONE_DAY as i64 / 360_000_000) as u64
 		};
 
 		let adjusted_mtime = mtime as i64 + meetup_time_offset;
@@ -2014,9 +2007,8 @@ fn purge_inactive_communities_works() {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = perform_bootstrapping_ceremony(None, 1);
 
-		assert!(
-			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
+		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
+			.contains(&cid));
 
 		// inactivity counter is 1, beacuse of a full ceremony cycle in the bootstrapping ceremony
 		// without any rewards being claimed
@@ -2029,9 +2021,8 @@ fn purge_inactive_communities_works() {
 			Some(Event::InactivityCounterUpdated(cid, 2).into())
 		);
 
-		assert!(
-			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
+		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
+			.contains(&cid));
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 2);
 
 		// issued rewards will cause inactivity counter to go to 0 in the next cycle
@@ -2049,35 +2040,31 @@ fn purge_inactive_communities_works() {
 			Some(Event::InactivityCounterUpdated(cid, 0).into())
 		);
 
-		assert!(
-			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
+		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
+			.contains(&cid));
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 0);
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
 
-		assert!(
-			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
+		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
+			.contains(&cid));
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 1);
 
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
 
-		assert!(
-			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
+		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
+			.contains(&cid));
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 2);
 
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
 
-		assert!(
-			<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
+		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
+			.contains(&cid));
 		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community will be purged
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 3);
 
@@ -2086,9 +2073,8 @@ fn purge_inactive_communities_works() {
 		run_to_next_phase();
 
 		// here community gets purged
-		assert!(
-			!<encointer_communities::Pallet<TestRuntime>>::community_identifiers().contains(&cid)
-		);
+		assert!(!<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
+			.contains(&cid));
 	});
 }
 

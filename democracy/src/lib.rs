@@ -25,9 +25,10 @@ use encointer_primitives::{
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
+
 use frame_support::dispatch::DispatchErrorWithPostInfo;
 
-use encointer_scheduler::OnCeremonyPhaseChange;
+use pallet_encointer_scheduler::OnCeremonyPhaseChange;
 use frame_support::{
 	sp_runtime::{
 		traits::{CheckedAdd, CheckedDiv, CheckedSub},
@@ -35,6 +36,7 @@ use frame_support::{
 	},
 	traits::Get,
 };
+
 pub use weights::WeightInfo;
 
 #[cfg(not(feature = "std"))]
@@ -66,10 +68,10 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
-		+ encointer_scheduler::Config
-		+ encointer_ceremonies::Config
-		+ encointer_communities::Config
-		+ encointer_reputation_commitments::Config
+		+ pallet_encointer_scheduler::Config
+		+ pallet_encointer_ceremonies::Config
+		+ pallet_encointer_communities::Config
+		+ pallet_encointer_reputation_commitments::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -191,10 +193,10 @@ pub mod pallet {
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
-				return Err(Error::<T>::ProposalWaitingForEnactment.into())
+				return Err(Error::<T>::ProposalWaitingForEnactment.into());
 			}
 			let _sender = ensure_signed(origin)?;
-			let cindex = <encointer_scheduler::Pallet<T>>::current_ceremony_index();
+			let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			let current_proposal_id = Self::proposal_count();
 			let next_proposal_id = current_proposal_id
 				.checked_add(1u128)
@@ -287,8 +289,8 @@ pub mod pallet {
 		fn relevant_cindexes(
 			start_cindex: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
-			let reputation_lifetime = <encointer_ceremonies::Pallet<T>>::reputation_lifetime();
-			let cycle_duration = <encointer_scheduler::Pallet<T>>::get_cycle_duration();
+			let reputation_lifetime = <pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+			let cycle_duration = <pallet_encointer_scheduler::Pallet<T>>::get_cycle_duration();
 			let proposal_lifetime = T::ProposalLifetime::get();
 			// ceil(proposal_lifetime / cycle_duration)
 			let proposal_lifetime_cycles: u64 = proposal_lifetime
@@ -329,12 +331,12 @@ pub mod pallet {
 			for community_ceremony in reputations {
 				if !Self::relevant_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
 				{
-					continue
+					continue;
 				}
 
 				if let Some(cid) = maybe_cid {
 					if community_ceremony.0 != cid {
-						continue
+						continue;
 					}
 				}
 
@@ -414,13 +416,13 @@ pub mod pallet {
 				ProposalAccessPolicy::Community(cid) => Ok(relevant_cindexes
 					.into_iter()
 					.map(|cindex| {
-						<encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
+						<pallet_encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
 					})
 					.sum()),
 				ProposalAccessPolicy::Global => Ok(relevant_cindexes
 					.into_iter()
 					.map(|cindex| {
-						<encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
+						<pallet_encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
 					})
 					.sum()),
 			}
@@ -442,8 +444,8 @@ pub mod pallet {
 				sqrt::<U64F64, U64F64>(U64F64::from_num(t)).map_err(|_| <Error<T>>::AQBError)?;
 			let one = U64F64::from_num(1);
 
-			Ok(U64F64::from_num(a) >
-				sqrt_e
+			Ok(U64F64::from_num(a)
+				> sqrt_e
 					.checked_mul(sqrt_t)
 					.ok_or(<Error<T>>::AQBError)?
 					.checked_div(
@@ -463,13 +465,13 @@ pub mod pallet {
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {
-				return Ok(false)
+				return Ok(false);
 			}
 			let positive_turnout_bias =
 				Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes);
 			if let Ok(passing) = positive_turnout_bias {
 				if passing {
-					return Ok(true)
+					return Ok(true);
 				}
 			}
 			Ok(false)
@@ -495,14 +497,14 @@ pub mod pallet {
 					<encointer_communities::Pallet<T>>::do_update_demurrage(cid, demurrage)?;
 				},
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
-					<encointer_communities::Pallet<T>>::do_update_nominal_income(
+					<pallet_encointer_communities::Pallet<T>>::do_update_nominal_income(
 						cid,
 						nominal_income,
 					)?;
 				},
 
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
-					<encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
+					<pallet_. encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
 						inactivity_timeout,
 					)?;
 				},

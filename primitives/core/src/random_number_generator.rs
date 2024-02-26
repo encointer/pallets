@@ -18,7 +18,7 @@
 //! A simple pseudo random number generator that allows a stream of random numbers to be efficiently
 //! created from a single initial seed hash.
 
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::traits::{Hash, TrailingZeroInput};
 
@@ -76,7 +76,7 @@ impl<Hashing: Hash> RandomNumberGenerator<Hashing> {
 			self.offset += needed as u32;
 			let raw = u32::decode(&mut TrailingZeroInput::new(data)).unwrap_or(0);
 			if raw <= top {
-				break if max < u32::MAX { raw % (max + 1) } else { raw }
+				break if max < u32::MAX { raw % (max + 1) } else { raw };
 			}
 		}
 	}

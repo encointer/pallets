@@ -6,7 +6,7 @@ use crate::{
 		NominalIncome as NominalIncomeType,
 	},
 };
-use codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 use crate::{ceremonies::ReputationCountType, scheduler::CeremonyIndexType};

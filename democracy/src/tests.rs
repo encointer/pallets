@@ -46,7 +46,7 @@ use test_utils::{
 };
 
 fn create_cid() -> CommunityIdentifier {
-	return register_test_community::<TestRuntime>(None, 0.0, 0.0)
+	return register_test_community::<TestRuntime>(None, 0.0, 0.0);
 }
 
 fn alice() -> AccountId {
