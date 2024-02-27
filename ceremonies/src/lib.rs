@@ -70,7 +70,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
 	#[pallet::without_storage_info]
@@ -150,17 +150,18 @@ pub mod pallet {
 					Self::participant_reputation(
 						(p.community_identifier, p.ceremony_index),
 						&p.attendee_public
-					) == Reputation::VerifiedUnlinked,
+					)
+					.is_verified_and_unlinked_for_cindex(cindex),
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed
 				);
 
 				ensure!(p.verify_signature(), Error::<T>::BadProofOfAttendanceSignature);
 
-				// this reputation must now be burned so it can not be used again
+				// this reputation must now be flagged so it can not be used again in the same cycle
 				<ParticipantReputation<T>>::insert(
 					(p.community_identifier, p.ceremony_index),
 					&p.attendee_public,
-					Reputation::VerifiedLinked,
+					Reputation::VerifiedLinked(cindex),
 				);
 				// register participant as reputable
 				<ParticipantReputation<T>>::insert(
@@ -253,7 +254,7 @@ pub mod pallet {
 				);
 
 				ensure!(
-					Self::participant_reputation(cc, &sender) == Reputation::VerifiedLinked,
+					Self::participant_reputation(cc, &sender) == Reputation::VerifiedLinked(cindex),
 					Error::<T>::ReputationMustBeLinked
 				);
 

@@ -100,11 +100,11 @@ fn proposal_submission_works() {
 		let alice = alice();
 
 		// invalid
-		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked(0));
 		// valid
-		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked(0));
 
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
@@ -185,7 +185,7 @@ fn eligible_reputations_works_with_different_reputations() {
 			Ok(1)
 		);
 
-		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked(0));
 		assert_eq!(
 			EncointerDemocracy::validate_and_commit_reputations(
 				1,
@@ -201,7 +201,7 @@ fn eligible_reputations_works_with_different_reputations() {
 		EncointerCeremonies::fake_reputation((cid3, 4), &alice, Reputation::Unverified);
 		EncointerCeremonies::fake_reputation((cid3, 5), &alice, Reputation::UnverifiedReputable);
 		EncointerCeremonies::fake_reputation((cid4, 4), &alice, Reputation::VerifiedUnlinked);
-		EncointerCeremonies::fake_reputation((cid4, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid4, 3), &alice, Reputation::VerifiedLinked(0));
 		assert_eq!(
 			EncointerDemocracy::validate_and_commit_reputations(
 				1,
@@ -225,7 +225,7 @@ fn eligible_reputations_works_with_used_reputations() {
 			proposal_action
 		));
 
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked(0));
 
 		// commit reputation
 		EncointerDemocracy::validate_and_commit_reputations(
@@ -235,7 +235,7 @@ fn eligible_reputations_works_with_used_reputations() {
 		)
 		.ok();
 
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
 
 		assert_eq!(
 			EncointerDemocracy::validate_and_commit_reputations(
@@ -260,7 +260,7 @@ fn eligible_reputations_works_with_inexistent_reputations() {
 			proposal_action
 		));
 
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
 
 		assert_eq!(
 			EncointerDemocracy::validate_and_commit_reputations(
@@ -287,8 +287,8 @@ fn eligible_reputations_works_with_cids() {
 			proposal_action
 		));
 
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid2, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid2, 5), &alice, Reputation::VerifiedLinked(0));
 
 		assert_eq!(
 			EncointerDemocracy::validate_and_commit_reputations(
@@ -313,9 +313,9 @@ fn eligible_reputations_fails_with_invalid_cindex() {
 			proposal_action
 		));
 
-		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 6), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 6), &alice, Reputation::VerifiedLinked(0));
 
 		assert_eq!(
 			EncointerDemocracy::validate_and_commit_reputations(
@@ -339,8 +339,8 @@ fn voting_works() {
 			ProposalAction::SetInactivityTimeout(InactivityTimeoutType::from(100u32));
 
 		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::Unverified);
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked(0));
 
 		assert_err!(
 			EncointerDemocracy::vote(
@@ -369,9 +369,9 @@ fn voting_works() {
 		assert_eq!(tally.ayes, 2);
 
 		EncointerCeremonies::fake_reputation((cid2, 4), &alice, Reputation::Unverified);
-		EncointerCeremonies::fake_reputation((cid2, 5), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid2, 6), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid2, 5), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid2, 6), &alice, Reputation::VerifiedLinked(0));
 
 		assert_ok!(EncointerDemocracy::vote(
 			RuntimeOrigin::signed(alice.clone()),
@@ -500,7 +500,7 @@ fn do_update_proposal_state_works() {
 			EncointerCeremonies::fake_reputation(
 				(cid, 5),
 				&account_id(&p),
-				Reputation::VerifiedLinked,
+				Reputation::VerifiedLinked(0),
 			);
 		}
 
@@ -563,9 +563,9 @@ fn update_proposal_state_extrinsic_works() {
 		let alice = alice();
 		let cid = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 
-		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked(0));
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
@@ -591,11 +591,11 @@ fn test_get_electorate_works() {
 		let alice = alice();
 		let bob = bob();
 
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid2, 3), &bob, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid2, 4), &bob, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid2, 5), &bob, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid2, 3), &bob, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid2, 4), &bob, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid2, 5), &bob, Reputation::VerifiedLinked(0));
 
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 		assert_ok!(EncointerDemocracy::submit_proposal(
@@ -627,7 +627,7 @@ fn is_passing_works() {
 			EncointerCeremonies::fake_reputation(
 				(cid, 5),
 				&account_id(&p),
-				Reputation::VerifiedLinked,
+				Reputation::VerifiedLinked(0),
 			);
 		}
 
@@ -703,10 +703,10 @@ fn proposal_happy_flow() {
 		let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 		let alice = alice();
 
-		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked);
-		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 3), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid, 5), &alice, Reputation::VerifiedLinked(0));
+		EncointerCeremonies::fake_reputation((cid2, 3), &alice, Reputation::VerifiedLinked(0));
 
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
