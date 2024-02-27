@@ -267,7 +267,7 @@ pub mod pallet {
 						} else {
 							// we don't want reputables to unregister without refunding their reputation because
 							// they couldn't re-register again in tha same cycle as reputables otherwise
-							Err(<Error<T>>::ReputationCommunityCeremonyRequired.into())
+							Err(<Error<T>>::ReputationCommunityCeremonyRequired)
 						}
 					},
 					|cc| {
