@@ -59,12 +59,9 @@ pub enum Reputation {
 
 impl Reputation {
 	pub fn is_verified(&self) -> bool {
-		match self {
-			Self::VerifiedLinked(_) => true,
-			Self::VerifiedUnlinked => true,
-			_ => false,
-		}
+		matches!(self, Self::VerifiedLinked(_) | Self::VerifiedUnlinked)
 	}
+
 	pub fn is_verified_and_unlinked_for_cindex(&self, cindex: CeremonyIndexType) -> bool {
 		match self {
 			Self::VerifiedUnlinked => true,
