@@ -34,6 +34,7 @@ frame_support::construct_runtime!(
 		EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Event<T>},
 		EncointerDemocracy: dut::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EncointerReputationCommitments:pallet_encointer_reputation_commitments::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -44,9 +45,10 @@ frame_support::construct_runtime!(
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type MaxReputationVecLength = ConstU32<10>;
-	type ConfirmationPeriod = ConstU64<10>;
-	type ProposalLifetime = ConstU64<40>;
-	type ProposalLifetimeCycles = ConstU32<1>;
+	// 10 blocks
+	type ConfirmationPeriod = ConstU64<60000>;
+	// 40 blocks
+	type ProposalLifetime = ConstU64<240000>;
 	type MinTurnout = ConstU128<20>; // 2%
 	type WeightInfo = (); // 2%
 }
@@ -58,6 +60,7 @@ impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
 impl_encointer_scheduler!(TestRuntime, EncointerDemocracy);
 impl_encointer_ceremonies!(TestRuntime);
+impl_encointer_reputation_commitments!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {

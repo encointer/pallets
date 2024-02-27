@@ -20,17 +20,35 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use encointer_primitives::{
-	ceremonies::{CommunityCeremony, ReputationCountType},
+	ceremonies::ReputationCountType,
 	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
 };
-use frame_support::traits::Get;
+
+use frame_support::dispatch::DispatchErrorWithPostInfo;
+
+use frame_support::{
+	sp_runtime::{
+		traits::{CheckedAdd, CheckedDiv, CheckedSub},
+		SaturatedConversion,
+	},
+	traits::Get,
+};
 use pallet_encointer_scheduler::OnCeremonyPhaseChange;
+
 pub use weights::WeightInfo;
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+#[cfg(not(feature = "std"))]
+use alloc::string::ToString;
 
 // Logger target
 //const LOG: &str = "encointer";
@@ -45,7 +63,10 @@ type ReputationVecOf<T> = ReputationVec<<T as pallet::Config>::MaxReputationVecL
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use encointer_primitives::democracy::{Tally, *};
+	use encointer_primitives::{
+		democracy::{Tally, *},
+		reputation_commitments::{DescriptorType, PurposeIdType},
+	};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
@@ -58,17 +79,16 @@ pub mod pallet {
 		+ pallet_encointer_scheduler::Config
 		+ pallet_encointer_ceremonies::Config
 		+ pallet_encointer_communities::Config
+		+ pallet_encointer_reputation_commitments::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		#[pallet::constant]
 		type MaxReputationVecLength: Get<u32>;
 		#[pallet::constant]
-		type ConfirmationPeriod: Get<BlockNumberFor<Self>>;
+		type ConfirmationPeriod: Get<Self::Moment>;
 		#[pallet::constant]
-		type ProposalLifetime: Get<BlockNumberFor<Self>>;
-		#[pallet::constant]
-		type ProposalLifetimeCycles: Get<u32>; // ceil of the proposal lifetime in cycles
+		type ProposalLifetime: Get<Self::Moment>;
 		#[pallet::constant]
 		type MinTurnout: Get<u128>; // in permill
 		type WeightInfo: WeightInfo;
@@ -78,7 +98,30 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		///  proposal enacted
-		ProposalEnacted { proposal_id: ProposalIdType },
+		ProposalEnacted {
+			proposal_id: ProposalIdType,
+		},
+		ProposalSubmitted {
+			proposal_id: ProposalIdType,
+			proposal_action: ProposalAction,
+		},
+		VotePlaced {
+			proposal_id: ProposalIdType,
+			vote: Vote,
+			num_votes: u128,
+		},
+		VoteFailed {
+			proposal_id: ProposalIdType,
+			vote: Vote,
+		},
+		ProposalStateUpdated {
+			proposal_id: ProposalIdType,
+			proposal_state: ProposalState<T::Moment>,
+		},
+		EnactmentFailed {
+			proposal_id: ProposalIdType,
+			reason: DispatchErrorWithPostInfo,
+		},
 	}
 
 	#[pallet::error]
@@ -98,12 +141,21 @@ pub mod pallet {
 		AQBError,
 		/// cannot submit new proposal as a proposal of the same type is waiting for enactment
 		ProposalWaitingForEnactment,
+		/// reputation commitment purpose could not be created
+		PurposeIdCreationFailed,
+		/// error when doing math operations
+		MathError,
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn purpose_ids)]
+	pub(super) type PurposeIds<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProposalIdType, PurposeIdType, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
 	pub(super) type Proposals<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<BlockNumberFor<T>>, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<T::Moment>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn proposal_count)]
@@ -115,21 +167,9 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, ProposalIdType, Tally, OptionQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn vote_entries)]
-	pub(super) type VoteEntries<T: Config> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		ProposalIdType,
-		Blake2_128Concat,
-		VoteEntry<T::AccountId>,
-		(),
-		ValueQuery,
-	>;
-	// TODO set default value
-	#[pallet::storage]
-	#[pallet::getter(fn cancelled_at_block)]
-	pub(super) type CancelledAtBlock<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, BlockNumberFor<T>, ValueQuery>;
+	#[pallet::getter(fn cancelled_at)]
+	pub(super) type CancelledAt<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::Moment, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn enactment_queue)]
@@ -159,7 +199,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
-			if Self::enactment_queue(proposal_action.get_identifier()).is_some() {
+			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into());
 			}
 			let _sender = ensure_signed(origin)?;
@@ -168,16 +208,32 @@ pub mod pallet {
 			let next_proposal_id = current_proposal_id
 				.checked_add(1u128)
 				.ok_or(Error::<T>::ProposalIdOutOfBounds)?;
-			let current_block = frame_system::Pallet::<T>::block_number();
+			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal = Proposal {
-				start: current_block,
+				start: now,
 				start_cindex: cindex,
 				state: ProposalState::Ongoing,
-				action: proposal_action,
+				action: proposal_action.clone(),
+				electorate_size: Self::get_electorate(cindex, proposal_action.clone())?,
 			};
+
+			let proposal_identifier =
+				["democracyProposal".as_bytes(), next_proposal_id.to_string().as_bytes()].concat();
+
+			let purpose_id =
+				<pallet_encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
+					DescriptorType::try_from(proposal_identifier)
+						.map_err(|_| <Error<T>>::PurposeIdCreationFailed)?,
+				)?;
+
 			<Proposals<T>>::insert(next_proposal_id, proposal);
+			<PurposeIds<T>>::insert(next_proposal_id, purpose_id);
 			<ProposalCount<T>>::put(next_proposal_id);
 			<Tallies<T>>::insert(next_proposal_id, Tally { turnout: 0, ayes: 0 });
+			Self::deposit_event(Event::ProposalSubmitted {
+				proposal_id: next_proposal_id,
+				proposal_action,
+			});
 			Ok(().into())
 		}
 
@@ -191,9 +247,9 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let eligible_reputations =
-				Self::eligible_reputations(proposal_id, &sender, &reputations)?;
-			let num_votes = eligible_reputations.len() as u128;
+
+			let num_votes =
+				Self::validate_and_commit_reputations(proposal_id, &sender, &reputations)?;
 
 			let ayes = match vote {
 				Vote::Aye => num_votes,
@@ -209,9 +265,6 @@ pub mod pallet {
 			};
 
 			<Tallies<T>>::insert(proposal_id, new_tally);
-			for community_ceremony in eligible_reputations {
-				<VoteEntries<T>>::insert(proposal_id, (&sender, community_ceremony), ());
-			}
 
 			match Self::do_update_proposal_state(proposal_id) {
 				Ok(_) => Ok(()),
@@ -221,6 +274,11 @@ pub mod pallet {
 				},
 			}?;
 
+			if num_votes > 0 {
+				Self::deposit_event(Event::VotePlaced { proposal_id, vote, num_votes })
+			} else {
+				Self::deposit_event(Event::VoteFailed { proposal_id, vote })
+			}
 			Ok(().into())
 		}
 
@@ -237,41 +295,51 @@ pub mod pallet {
 	}
 	impl<T: Config> Pallet<T> {
 		fn relevant_cindexes(
-			proposal_id: ProposalIdType,
+			start_cindex: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
 			let reputation_lifetime =
 				<pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
-			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			Ok(((proposal
-				.start_cindex
-				.saturating_sub(reputation_lifetime)
-				.saturating_add(T::ProposalLifetimeCycles::get()))
-				..=(proposal.start_cindex.saturating_sub(2)))
+			let cycle_duration = <pallet_encointer_scheduler::Pallet<T>>::get_cycle_duration();
+			let proposal_lifetime = T::ProposalLifetime::get();
+			// ceil(proposal_lifetime / cycle_duration)
+			let proposal_lifetime_cycles: u64 = proposal_lifetime
+				.checked_add(&cycle_duration)
+				.ok_or(Error::<T>::MathError)?
+				.checked_sub(&T::Moment::saturated_from(1u64))
+				.ok_or(Error::<T>::MathError)?
+				.checked_div(&cycle_duration)
+				.ok_or(Error::<T>::MathError)?
+				.saturated_into();
+			Ok((((start_cindex).saturating_sub(reputation_lifetime).saturating_add(
+				proposal_lifetime_cycles
+					.try_into()
+					.expect("this is a small number in cycles;qed"),
+			))..=(start_cindex.saturating_sub(2u32)))
 				.collect::<Vec<CeremonyIndexType>>())
 		}
-		/// Returns the reputations that
+		/// Validates the reputations based on the following criteria and commits the reputations. Returns count of valid reputations.
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
 		/// 3. originate in the correct community (for Community AccessPolicy)
 		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and proposal.start_cindex - 2
-		pub fn eligible_reputations(
+		pub fn validate_and_commit_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,
 			reputations: &ReputationVecOf<T>,
-		) -> Result<ReputationVecOf<T>, Error<T>> {
-			let mut eligible_reputations = Vec::<CommunityCeremony>::new();
-
-			let maybe_cid = match Self::proposals(proposal_id)
-				.ok_or(Error::<T>::InexistentProposal)?
-				.action
-				.get_access_policy()
-			{
+		) -> Result<u128, Error<T>> {
+			let mut eligible_reputation_count = 0u128;
+			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			let maybe_cid = match proposal.action.get_access_policy() {
 				ProposalAccessPolicy::Community(cid) => Some(cid),
 				_ => None,
 			};
 
+			let purpose_id =
+				Self::purpose_ids(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+
 			for community_ceremony in reputations {
-				if !Self::relevant_cindexes(proposal_id)?.contains(&community_ceremony.1) {
+				if !Self::relevant_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
+				{
 					continue;
 				}
 
@@ -280,18 +348,22 @@ pub mod pallet {
 						continue;
 					}
 				}
-				if <VoteEntries<T>>::contains_key(proposal_id, (account_id, community_ceremony)) {
+
+				if <pallet_encointer_reputation_commitments::Pallet<T>>::do_commit_reputation(
+					account_id,
+					community_ceremony.0,
+					community_ceremony.1,
+					purpose_id,
+					None,
+				)
+				.is_err()
+				{
 					continue;
 				}
-				if <pallet_encointer_ceremonies::Pallet<T>>::validate_reputation(
-					account_id,
-					&community_ceremony.0,
-					community_ceremony.1,
-				) {
-					eligible_reputations.push(*community_ceremony);
-				}
+
+				eligible_reputation_count += 1;
 			}
-			BoundedVec::try_from(eligible_reputations).map_err(|_e| Error::<T>::BoundedVecError)
+			Ok(eligible_reputation_count)
 		}
 
 		/// Updates the proposal state
@@ -302,11 +374,13 @@ pub mod pallet {
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 			ensure!(proposal.state.can_update(), Error::<T>::ProposalCannotBeUpdated);
 			let mut approved = false;
-			let current_block = frame_system::Pallet::<T>::block_number();
-			let proposal_action_identifier = proposal.action.get_identifier();
-			let cancelled_at_block = Self::cancelled_at_block(proposal_action_identifier);
-			let proposal_cancelled = proposal.start < cancelled_at_block;
-			let proposal_too_old = current_block - proposal.start > T::ProposalLifetime::get();
+			let old_proposal_state = proposal.state;
+			let now = <pallet_timestamp::Pallet<T>>::get();
+			let proposal_action_identifier = proposal.action.clone().get_identifier();
+			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
+			let proposal_cancelled =
+				cancelled_at.is_some() && proposal.start < cancelled_at.unwrap();
+			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled || proposal_too_old {
 				proposal.state = ProposalState::Cancelled;
 			} else {
@@ -315,18 +389,15 @@ pub mod pallet {
 					// confirming
 					if let ProposalState::Confirming { since } = proposal.state {
 						// confirmed longer than period
-						if current_block - since > T::ConfirmationPeriod::get() {
+						if now - since > T::ConfirmationPeriod::get() {
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
-							<CancelledAtBlock<T>>::insert(
-								proposal_action_identifier,
-								current_block,
-							);
+							<CancelledAt<T>>::insert(proposal_action_identifier, now);
 							approved = true;
 						}
 					// not confirming
 					} else {
-						proposal.state = ProposalState::Confirming { since: current_block };
+						proposal.state = ProposalState::Confirming { since: now };
 					}
 				// not passing
 				} else {
@@ -336,19 +407,22 @@ pub mod pallet {
 					}
 				}
 			}
-			<Proposals<T>>::insert(proposal_id, proposal);
+			<Proposals<T>>::insert(proposal_id, &proposal);
+			if old_proposal_state != proposal.state {
+				Self::deposit_event(Event::ProposalStateUpdated {
+					proposal_id,
+					proposal_state: proposal.state,
+				});
+			}
 			Ok(approved)
 		}
 
 		pub fn get_electorate(
-			proposal_id: ProposalIdType,
+			start_cindex: CeremonyIndexType,
+			proposal_action: ProposalAction,
 		) -> Result<ReputationCountType, Error<T>> {
-			let relevant_cindexes = Self::relevant_cindexes(proposal_id)?;
-			match Self::proposals(proposal_id)
-				.ok_or(Error::<T>::InexistentProposal)?
-				.action
-				.get_access_policy()
-			{
+			let relevant_cindexes = Self::relevant_cindexes(start_cindex)?;
+			match proposal_action.get_access_policy() {
 				ProposalAccessPolicy::Community(cid) => Ok(relevant_cindexes
 					.into_iter()
 					.map(|cindex| {
@@ -396,7 +470,8 @@ pub mod pallet {
 
 		pub fn is_passing(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
 			let tally = Self::tallies(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
-			let electorate = Self::get_electorate(proposal_id)?;
+			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
+			let electorate = proposal.electorate_size;
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {
@@ -411,29 +486,44 @@ pub mod pallet {
 			}
 			Ok(false)
 		}
-		pub fn enact_proposal(proposal_id: ProposalIdType) -> Result<(), Error<T>> {
+		pub fn enact_proposal(proposal_id: ProposalIdType) -> DispatchResultWithPostInfo {
 			let mut proposal =
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
-			match proposal.action {
+			match proposal.action.clone() {
+				ProposalAction::AddLocation(cid, location) => {
+					<pallet_encointer_communities::Pallet<T>>::do_add_location(cid, location)?;
+				},
+				ProposalAction::RemoveLocation(cid, location) => {
+					<pallet_encointer_communities::Pallet<T>>::do_remove_location(cid, location)?;
+				},
+				ProposalAction::UpdateCommunityMetadata(cid, community_metadata) => {
+					<pallet_encointer_communities::Pallet<T>>::do_update_community_metadata(
+						cid,
+						community_metadata,
+					)?;
+				},
+				ProposalAction::UpdateDemurrage(cid, demurrage) => {
+					<pallet_encointer_communities::Pallet<T>>::do_update_demurrage(cid, demurrage)?;
+				},
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
-					let _ = <pallet_encointer_communities::Pallet<T>>::do_update_nominal_income(
+					<pallet_encointer_communities::Pallet<T>>::do_update_nominal_income(
 						cid,
 						nominal_income,
-					);
+					)?;
 				},
 
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
-					let _ = <pallet_encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
+					<pallet_encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
 						inactivity_timeout,
-					);
+					)?;
 				},
 			};
 
 			proposal.state = ProposalState::Enacted;
 			<Proposals<T>>::insert(proposal_id, proposal);
 			Self::deposit_event(Event::ProposalEnacted { proposal_id });
-			Ok(())
+			Ok(().into())
 		}
 	}
 }
@@ -446,7 +536,9 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			CeremonyPhaseType::Registering => {
 				// safe as EnactmentQueue has one key per ProposalActionType and those are bounded
 				<EnactmentQueue<T>>::iter().for_each(|p| {
-					let _ = Self::enact_proposal(p.1);
+					if let Err(e) = Self::enact_proposal(p.1) {
+						Self::deposit_event(Event::EnactmentFailed { proposal_id: p.1, reason: e })
+					}
 				});
 				// remove all keys from the map
 				<EnactmentQueue<T>>::translate::<ProposalIdType, _>(|_, _| None);
