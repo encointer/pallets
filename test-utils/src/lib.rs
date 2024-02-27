@@ -150,7 +150,6 @@ macro_rules! impl_balances {
 			type RuntimeHoldReason = ();
 			type RuntimeFreezeReason = RuntimeFreezeReason;
 			type FreezeIdentifier = ();
-			type MaxHolds = frame_support::traits::ConstU32<0>;
 			type MaxFreezes = frame_support::traits::ConstU32<0>;
 		}
 	};
