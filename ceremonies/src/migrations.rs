@@ -21,6 +21,56 @@ mod v0 {
 
 pub mod v1 {
 	use super::*;
+	use encointer_primitives::common::{BoundedIpfsCid, PalletString};
+	use encointer_primitives::communities::CommunityRules;
+	use frame_support::{Deserialize, Serialize};
+
+	#[derive(
+		Default, Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	)]
+	#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+	pub enum Reputation {
+		// no attestations for attendance claim
+		#[default]
+		Unverified,
+		// no attestation yet but linked to reputation
+		UnverifiedReputable,
+		// verified former attendance that has not yet been linked to a new registration
+		VerifiedUnlinked,
+		// verified former attendance that has already been linked to a new registration
+		VerifiedLinked,
+	}
+
+	impl Reputation {
+		pub fn migrate_to_v2(
+			self,
+			linked_cindex: CeremonyIndexType,
+		) -> encointer_primitives::ceremonies::Reputation {
+			match self {
+				Reputation::UnverifiedReputable => {
+					encointer_primitives::ceremonies::Reputation::UnverifiedReputable
+				},
+				Reputation::VerifiedLinked => {
+					encointer_primitives::ceremonies::Reputation::VerifiedLinked(linked_cindex)
+				},
+				Reputation::VerifiedUnlinked => {
+					encointer_primitives::ceremonies::Reputation::VerifiedUnlinked
+				},
+				Reputation::Unverified => encointer_primitives::ceremonies::Reputation::Unverified,
+			}
+		}
+	}
+
+	#[storage_alias]
+	pub(super) type ParticipantReputation<T: Config> = StorageDoubleMap<
+		Pallet<T>,
+		Blake2_128Concat,
+		CommunityCeremony,
+		Blake2_128Concat,
+		<T as frame_system::Config>::AccountId,
+		Reputation,
+		ValueQuery,
+	>;
 
 	pub struct MigrateToV1<T>(sp_std::marker::PhantomData<T>);
 
@@ -80,6 +130,68 @@ pub mod v1 {
 	}
 }
 
+pub mod v2 {
+	use super::*;
+	use sp_runtime::Saturating;
+
+	pub struct MigrateToV2<T>(sp_std::marker::PhantomData<T>);
+
+	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for MigrateToV2<T> {
+		#[cfg(feature = "try-runtime")]
+		fn pre_upgrade() -> Result<Vec<u8>, DispatchError> {
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1, "can only upgrade from version 1");
+
+			let reputation_count = v1::ParticipantReputation::<T>::iter().count() as u32;
+			log::info!(target: TARGET, "{} reputation entries will be migrated.", reputation_count);
+
+			Ok((reputation_count).encode())
+		}
+
+		fn on_runtime_upgrade() -> Weight {
+			let weight = T::DbWeight::get().reads(1);
+			if StorageVersion::get::<Pallet<T>>() != 1 {
+				log::warn!(
+					target: TARGET,
+					"skipping on_runtime_upgrade: executed on wrong storage version.\
+				Expected version 1"
+				);
+				return weight;
+			}
+			let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
+			let phase = pallet_encointer_scheduler::Pallet::<T>::current_phase();
+			let linked_cindex = match phase {
+				CeremonyPhaseType::Attesting => cindex + 1,
+				_ => cindex,
+			};
+
+			let mut translated = 0u64;
+			ParticipantReputation::<T>::translate::<v1::Reputation, _>(
+				|cc: CommunityCeremony, account: T::AccountId, rep: v1::Reputation| {
+					translated.saturating_inc();
+					Some(rep.migrate_to_v2(linked_cindex))
+				},
+			);
+			StorageVersion::new(2).put::<Pallet<T>>();
+			T::DbWeight::get().reads_writes(translated, translated + 1)
+		}
+
+		#[cfg(feature = "try-runtime")]
+		fn post_upgrade(state: Vec<u8>) -> Result<(), DispatchError> {
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 2, "must upgrade");
+
+			let old_reputation_count: u32 =
+				Decode::decode(&mut &state[..]).expect("pre_upgrade provides a valid state; qed");
+
+			let new_reputation_count = crate::ParticipantReputation::<T>::iter().count() as u32;
+
+			assert_eq!(old_reputation_count, new_reputation_count, "must migrate all reputations");
+
+			log::info!(target: TARGET, "{} reputation entries migrated", new_reputation_count);
+			Ok(())
+		}
+	}
+}
+
 #[cfg(test)]
 #[cfg(feature = "try-runtime")]
 mod test {
@@ -90,7 +202,7 @@ mod test {
 	use test_utils::*;
 	#[allow(deprecated)]
 	#[test]
-	fn migration_works() {
+	fn migration_to_v1_works() {
 		new_test_ext().execute_with(|| {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
@@ -177,7 +289,7 @@ mod test {
 
 	#[allow(deprecated)]
 	#[test]
-	fn migration_fails_with_too_many_attestations() {
+	fn migration_to_v1_fails_with_too_many_attestations() {
 		new_test_ext().execute_with(|| {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
@@ -218,6 +330,36 @@ mod test {
 			// Migrate.
 			let state = v1::MigrateToV1::<TestRuntime>::pre_upgrade();
 			assert_err!(state, "too many attestations");
+		});
+	}
+	#[allow(deprecated)]
+	#[test]
+	fn migration_to_v2_works() {
+		new_test_ext().execute_with(|| {
+			StorageVersion::new(1).put::<Pallet<TestRuntime>>();
+			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 1);
+			// Insert some values into the v0 storage:
+			let alice: AccountId = AccountKeyring::Alice.into();
+			let old_rep = v1::Reputation::VerifiedLinked;
+			let cid = CommunityIdentifier::from_str("111112Fvv9e").unwrap();
+
+			v1::ParticipantReputation::<TestRuntime>::insert(
+				(cid, 1),
+				alice.clone(),
+				old_rep.clone(),
+			);
+
+			// Migrate.
+			let state = v2::MigrateToV2::<TestRuntime>::pre_upgrade().unwrap();
+			let _weight = v2::MigrateToV2::<TestRuntime>::on_runtime_upgrade();
+			v2::MigrateToV2::<TestRuntime>::post_upgrade(state).unwrap();
+
+			// Check that all values got migrated.
+
+			assert_eq!(
+				crate::ParticipantReputation::<TestRuntime>::get((cid, 1), alice),
+				Reputation::VerifiedLinked(1)
+			);
 		});
 	}
 }
