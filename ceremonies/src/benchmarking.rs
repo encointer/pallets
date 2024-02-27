@@ -221,7 +221,7 @@ benchmarks! {
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
 		assert_eq!(
 			Pallet::<T>::participant_reputation((cid, cindex - 1), zoran_account),
-			Reputation::VerifiedLinked
+			Reputation::VerifiedLinked(cindex)
 		);
 	}
 
@@ -246,7 +246,7 @@ benchmarks! {
 		assert_eq!(NewbieCount::<T>::get((cid, cindex)), 0);
 		assert_eq!(
 			Pallet::<T>::participant_reputation((cid, cindex - 1), zoran_account),
-			Reputation::VerifiedLinked
+			Reputation::VerifiedLinked(cindex)
 		);
 	}
 
@@ -267,7 +267,7 @@ benchmarks! {
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
 		assert_eq!(
 			Pallet::<T>::participant_reputation((cid, cindex - 1), &zoran_account),
-			Reputation::VerifiedLinked
+			Reputation::VerifiedLinked(cindex)
 		);
 	}: _(RawOrigin::Signed(zoran_account.clone()), cid, Some((cid, cindex - 1)))
 	verify {
