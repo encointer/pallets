@@ -1,5 +1,5 @@
-use jsonrpsee_core::error::Error as JsonRpseeError;
-use jsonrpsee_types::error::{CallError, ErrorObject};
+use jsonrpsee_types::error::ErrorObject;
+use jsonrpsee_types::ErrorObjectOwned;
 
 mod error_codes {
 	pub const RUNTIME_ERROR: i32 = 1; // Arbitrary number, but substrate uses the same
@@ -36,8 +36,8 @@ impl Error {
 	}
 }
 
-impl From<Error> for JsonRpseeError {
+impl From<Error> for ErrorObjectOwned {
 	fn from(err: Error) -> Self {
-		CallError::Custom(ErrorObject::owned(err.code(), err.to_string(), None::<()>)).into()
+		ErrorObject::owned(err.code(), err.to_string(), None::<()>)
 	}
 }
