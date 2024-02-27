@@ -21,14 +21,10 @@ mod v0 {
 
 pub mod v1 {
 	use super::*;
-	use encointer_primitives::common::{BoundedIpfsCid, PalletString};
-	use encointer_primitives::communities::CommunityRules;
-	use frame_support::{Deserialize, Serialize};
 
 	#[derive(
 		Default, Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 	)]
-	#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 	pub enum Reputation {
 		// no attestations for attendance claim
 		#[default]
@@ -84,7 +80,7 @@ pub mod v1 {
 			for a in attestations {
 				let count = a.2.len() as u32;
 				ensure!(count <= T::MaxAttestations::get(), "too many attestations");
-				attestation_count = attestation_count + count;
+				attestation_count += count;
 			}
 			log::info!(target: TARGET, "{} attestations will be migrated.", attestation_count,);
 
@@ -166,7 +162,7 @@ pub mod v2 {
 
 			let mut translated = 0u64;
 			ParticipantReputation::<T>::translate::<v1::Reputation, _>(
-				|cc: CommunityCeremony, account: T::AccountId, rep: v1::Reputation| {
+				|_cc: CommunityCeremony, _account: T::AccountId, rep: v1::Reputation| {
 					translated.saturating_inc();
 					Some(rep.migrate_to_v2(linked_cindex))
 				},
