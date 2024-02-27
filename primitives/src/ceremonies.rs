@@ -16,7 +16,7 @@
 
 use crate::communities::{CommunityIdentifier, Location};
 pub use crate::scheduler::CeremonyIndexType;
-use crate::scheduler::{CeremonyIndexShort, CeremonyPhaseType};
+use crate::scheduler::CeremonyPhaseType;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
@@ -58,10 +58,17 @@ pub enum Reputation {
 }
 
 impl Reputation {
-	pub fn is_verified(self) -> bool {
+	pub fn is_verified(&self) -> bool {
 		match self {
 			Self::VerifiedLinked(_) => true,
 			Self::VerifiedUnlinked => true,
+			_ => false,
+		}
+	}
+	pub fn is_verified_and_unlinked_for_cindex(&self, cindex: CeremonyIndexType) -> bool {
+		match self {
+			Self::VerifiedUnlinked => true,
+			Self::VerifiedLinked(c) => *c != cindex,
 			_ => false,
 		}
 	}

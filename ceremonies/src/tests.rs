@@ -1252,7 +1252,7 @@ fn register_with_reputation_works() {
 		);
 		assert_eq!(
 			EncointerCeremonies::participant_reputation((cid, cindex - 1), account_id(&zoran)),
-			Reputation::VerifiedLinked
+			Reputation::VerifiedLinked(cindex)
 		);
 
 		// double signing (re-using reputation) fails
@@ -1266,6 +1266,28 @@ fn register_with_reputation_works() {
 		let proof = prove_attendance(account_id(&yuri), cid, cindex - 1, &yuri);
 		assert_err!(
 			register(account_id(&yuri), cid, Some(proof)),
+			Error::<TestRuntime>::AttendanceUnverifiedOrAlreadyUsed
+		);
+
+		// tolerate no shows
+		// no meetup will succeed in this cycle, still we want reputation to be valid for the next cycle
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+		let cindex = EncointerScheduler::current_ceremony_index();
+		println!("cindex {cindex}");
+
+		let proof = prove_attendance(account_id(&zoran_new), cid, cindex - 2, &zoran);
+		assert_ok!(register(account_id(&zoran_new), cid, Some(proof)));
+		assert_eq!(
+			EncointerCeremonies::participant_reputation((cid, cindex - 2), account_id(&zoran)),
+			Reputation::VerifiedLinked(cindex)
+		);
+
+		// double signing (re-using reputation) fails
+		let proof_second = prove_attendance(account_id(&yuri), cid, cindex - 2, &zoran);
+		assert_err!(
+			register(account_id(&yuri), cid, Some(proof_second)),
 			Error::<TestRuntime>::AttendanceUnverifiedOrAlreadyUsed
 		);
 	});
@@ -2658,7 +2680,7 @@ fn unregister_participant_works_with_reputables() {
 		);
 		assert_eq!(
 			EncointerCeremonies::participant_reputation((cid, cindex - 1), &alice),
-			Reputation::VerifiedLinked
+			Reputation::VerifiedLinked(cindex)
 		);
 
 		assert_ok!(EncointerCeremonies::unregister_participant(
@@ -2699,7 +2721,7 @@ fn unregister_participant_fails_with_reputables_and_wrong_reputation() {
 		);
 		assert_eq!(
 			EncointerCeremonies::participant_reputation((cid, cindex - 1), &alice),
-			Reputation::VerifiedLinked
+			Reputation::VerifiedLinked(cindex)
 		);
 
 		assert_err!(
@@ -3276,7 +3298,7 @@ fn has_reputation_works() {
 		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
 
 		// reputation type qualifies
-		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked(1));
 
 		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), true);
 
@@ -3397,7 +3419,7 @@ fn validate_reputation_works() {
 		// fails because too old
 		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedUnlinked);
 		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 2), false);
-		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked(2));
 		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 2), false);
 
 		// fails because not verifieds
@@ -3409,7 +3431,7 @@ fn validate_reputation_works() {
 		// passes
 		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::VerifiedUnlinked);
 		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), true);
-		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::VerifiedLinked);
+		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::VerifiedLinked(7));
 		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), true);
 	});
 }
