@@ -22,6 +22,17 @@ use serde::{Deserialize, Serialize};
 
 pub type CeremonyIndexType = u32;
 
+/// a very short type for ceremony index which can be wrapped in an enum variant
+#[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
+pub struct CeremonyIndexShort(u8);
+
+impl From<CeremonyIndexType> for CeremonyIndexShort {
+	fn from(cindex: CeremonyIndexType) -> Self {
+		Self((cindex % 256) as u8)
+	}
+}
+
 #[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CeremonyPhaseType {

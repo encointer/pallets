@@ -14,17 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-#[cfg(feature = "serde_derive")]
-use serde::{Deserialize, Serialize};
-
 use crate::communities::{CommunityIdentifier, Location};
-
+pub use crate::scheduler::CeremonyIndexType;
+use crate::scheduler::{CeremonyIndexShort, CeremonyPhaseType};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+#[cfg(feature = "serde_derive")]
+use serde::{Deserialize, Serialize};
 use sp_core::{Pair, RuntimeDebug};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-
-pub use crate::scheduler::CeremonyIndexType;
+#[cfg(not(feature = "std"))]
+use sp_std::vec::Vec;
 
 pub type ParticipantIndexType = u64;
 pub type MeetupIndexType = u64;
@@ -33,15 +33,13 @@ pub type AttestationIndexType = u64;
 pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 pub type InactivityTimeoutType = u32;
 pub type EndorsementTicketsType = u8;
+
+/// reputation lifetime may not be longer than CeremonyIndexShort::MAX, otherwise double-using reputation is possible. therefore, we restrict the type to u8
 pub type ReputationLifetimeType = u32;
 pub type MeetupTimeOffsetType = i32;
 pub type MeetupData<AccountId, Moment> =
 	(CeremonyIndexType, MeetupIndexType, Vec<AccountId>, Location, Moment);
 pub type ReputationCountType = u128;
-
-use crate::scheduler::CeremonyPhaseType;
-#[cfg(not(feature = "std"))]
-use sp_std::vec::Vec;
 
 #[derive(
 	Default, Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
@@ -56,12 +54,16 @@ pub enum Reputation {
 	// verified former attendance that has not yet been linked to a new registration
 	VerifiedUnlinked,
 	// verified former attendance that has already been linked to a new registration
-	VerifiedLinked,
+	VerifiedLinked(CeremonyIndexType),
 }
 
 impl Reputation {
 	pub fn is_verified(self) -> bool {
-		self == Self::VerifiedLinked || self == Self::VerifiedUnlinked
+		match self {
+			Self::VerifiedLinked(_) => true,
+			Self::VerifiedUnlinked => true,
+			_ => false,
+		}
 	}
 }
 
