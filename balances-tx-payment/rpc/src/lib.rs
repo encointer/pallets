@@ -18,11 +18,8 @@ use core::fmt::Display;
 use encointer_balances_tx_payment_rpc_runtime_api::{
 	BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi, Error,
 };
-use jsonrpsee::{
-	core::RpcResult,
-	proc_macros::rpc,
-	types::error::{CallError, ErrorObject},
-};
+use jsonrpsee::types::ErrorObjectOwned;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc, types::error::ErrorObject};
 pub use pallet_transaction_payment::RuntimeDispatchInfo;
 use pallet_transaction_payment::{FeeDetails, InclusionFee};
 use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
@@ -94,18 +91,18 @@ where
 		let encoded_len = encoded_xt.len() as u32;
 
 		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| {
-			CallError::Custom(ErrorObject::owned(
+			ErrorObject::owned(
 				Error::DecodeError.into(),
 				"Unable to query fee details.",
 				Some(format!("{e:?}")),
-			))
+			)
 		})?;
 		let fee_details = api.query_fee_details(at, uxt, encoded_len).map_err(|e| {
-			CallError::Custom(ErrorObject::owned(
+			ErrorObject::owned(
 				Error::RuntimeError.into(),
 				"Unable to query fee details.",
 				Some(e.to_string()),
-			))
+			)
 		})?;
 
 		Ok(FeeDetails {
@@ -150,6 +147,6 @@ where
 	}
 }
 
-fn runtime_api_error_into_rpc_error<E: Display>(e: E, msg: &str) -> CallError {
-	CallError::Custom(ErrorObject::owned(Error::RuntimeError.into(), msg, Some(e.to_string())))
+fn runtime_api_error_into_rpc_error<E: Display>(e: E, msg: &str) -> ErrorObjectOwned {
+	ErrorObject::owned(Error::RuntimeError.into(), msg, Some(e.to_string()))
 }
