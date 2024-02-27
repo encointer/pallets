@@ -260,13 +260,14 @@ pub mod pallet {
 					|| {
 						// no reputation provided to refund
 						if participant_type == ParticipantType::Bootstrapper {
-							// bootstrappers can always register without proving previous attendance,
-							// therefore we don't care if reputation is refunded or not. client apps
-							// must take care not to provide invalid reputation proofs for bootstrappers
+							// bootstrappers can always register without proving previous attendance.
+							// Therefore, we don't care if they provide reputation to be refunded or not.
+							// Client apps must take care not to provide invalid reputation proofs
+							// for bootstrappers
 							Ok::<(), Error<T>>(())
 						} else {
 							// we don't want reputables to unregister without refunding their reputation because
-							// they couldn't re-register again in tha same cycle as reputables otherwise
+							// they then couldn't re-register again in the same cycle as reputables.
 							Err(<Error<T>>::ReputationCommunityCeremonyRequired)
 						}
 					},
