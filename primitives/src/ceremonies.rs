@@ -56,20 +56,12 @@ pub enum Reputation {
 	// verified former attendance that has not yet been linked to a new registration
 	VerifiedUnlinked,
 	// verified former attendance that has already been linked to a new registration
-	VerifiedLinked(CeremonyIndexType),
+	VerifiedLinked,
 }
 
 impl Reputation {
 	pub fn is_verified(&self) -> bool {
-		matches!(self, Self::VerifiedLinked(_) | Self::VerifiedUnlinked)
-	}
-
-	pub fn is_verified_and_unlinked_for_cindex(&self, cindex: CeremonyIndexType) -> bool {
-		match self {
-			Self::VerifiedUnlinked => true,
-			Self::VerifiedLinked(c) => *c != cindex,
-			_ => false,
-		}
+		matches!(self, Self::VerifiedLinked | Self::VerifiedUnlinked)
 	}
 }
 
