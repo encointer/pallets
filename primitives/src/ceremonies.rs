@@ -21,7 +21,9 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_core::{Pair, RuntimeDebug};
+#[cfg(any(feature = "std", feature = "full_crypto"))]
+use sp_core::Pair;
+use sp_core::RuntimeDebug;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
@@ -245,6 +247,7 @@ where
 		)
 	}
 
+	#[cfg(any(feature = "std", feature = "full_crypto"))]
 	pub fn signed<Signer>(
 		prover_public: AccountIdFor<Signature>,
 		cid: CommunityIdentifier,
