@@ -89,13 +89,18 @@ fn correct_meetup_time(cid: &CommunityIdentifier, mindex: MeetupIndexType) -> Mo
 	time as u64
 }
 
-fn get_proof(
+fn get_maybe_proof_for_self(
 	cid: CommunityIdentifier,
 	cindex: CeremonyIndexType,
 	pair: &sr25519::Pair,
 ) -> Option<TestProofOfAttendance> {
 	match EncointerCeremonies::participant_reputation((cid, cindex), account_id(pair)) {
 		Reputation::VerifiedUnlinked => Some(prove_attendance(account_id(pair), cid, cindex, pair)),
+		// the following will fail upon registration if this reputation has been previously used to
+		// register a participant in the same cycle
+		Reputation::VerifiedLinked(_) => {
+			Some(prove_attendance(account_id(pair), cid, cindex, pair))
+		},
 		_ => None,
 	}
 }
@@ -174,7 +179,7 @@ fn attest_all(
 
 /// Fully attest all attendees with the new `attest_attendees` extrinsic.
 fn fully_attest_attendees(
-	attendees: Vec<AccountId>,
+	attendees: &Vec<AccountId>,
 	cid: CommunityIdentifier,
 	n_participants: u32,
 ) {
@@ -202,7 +207,7 @@ fn fully_attest_meetup(cid: CommunityIdentifier, mindex: MeetupIndexType) {
 		EncointerCeremonies::get_meetup_participants((cid, cindex), mindex).unwrap();
 	let n_participants = meetup_participants.len() as u32;
 
-	fully_attest_attendees(meetup_participants, cid, n_participants);
+	fully_attest_attendees(&meetup_participants, cid, n_participants);
 }
 
 fn create_locations(n_locations: u32) -> Vec<Location> {
@@ -242,7 +247,7 @@ fn perform_bootstrapping_ceremony(
 	run_to_next_phase();
 	// Attesting
 
-	fully_attest_attendees(bootstrappers, cid, 6);
+	fully_attest_attendees(&bootstrappers, cid, bootstrappers.len().try_into().unwrap());
 
 	run_to_next_phase();
 	// Registering
@@ -1059,7 +1064,7 @@ fn early_rewards_works() {
 		// Attesting
 
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve, ferdie];
-		fully_attest_attendees(all_participants, cid, 6);
+		fully_attest_attendees(&all_participants, cid, 6);
 
 		// Still attesting phase
 		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
@@ -1101,7 +1106,7 @@ fn early_rewards_with_one_noshow_works() {
 		// Ferdie is missing
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve];
 
-		fully_attest_attendees(all_participants, cid, 5);
+		fully_attest_attendees(&all_participants, cid, 5);
 
 		// Still attesting phase
 		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
@@ -1294,11 +1299,100 @@ fn register_with_reputation_works() {
 }
 
 #[test]
+fn double_registering_by_adversary_bootstrapper_fails() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+		let alice = AccountKeyring::Alice.pair();
+		assert_ok!(EncointerCeremonies::claim_rewards(
+			RuntimeOrigin::signed(account_id(&alice)),
+			cid,
+			None
+		));
+		let cindex = EncointerScheduler::current_ceremony_index();
+		assert_eq!(cindex, 2);
+		let alice = AccountKeyring::Alice.pair();
+		// a non-bootstrapper newbie account controlled by adversary bootstrapper
+		let zoran = sr25519::Pair::from_seed_slice(&[9u8; 32]).unwrap();
+		// bootstrapper illegaly uses valid reputation to register fresh account as reputable
+		let proof = prove_attendance(account_id(&zoran), cid, cindex - 1, &alice);
+		assert_err!(
+			register(account_id(&zoran), cid, Some(proof)),
+			Error::<TestRuntime>::BootstrapperReputationIsUntransferrable
+		);
+		// now Alice abuses her bootstrapper privilege to try to register herself without proof
+		assert_ok!(register(account_id(&alice), cid, None));
+	});
+}
+
+#[test]
+fn register_as_bootstrapper_with_any_kind_of_reputation_after_unregister_works() {
+	new_test_ext().execute_with(|| {
+		let cid = perform_bootstrapping_ceremony(None, 1);
+
+		let alice = AccountKeyring::Alice.pair();
+		let bob = AccountKeyring::Bob.pair();
+		let charlie = AccountKeyring::Charlie.pair();
+
+		assert_ok!(EncointerCeremonies::claim_rewards(
+			RuntimeOrigin::signed(account_id(&alice)),
+			cid,
+			None
+		));
+
+		let cindex = EncointerScheduler::current_ceremony_index();
+		// register without using reputation works
+		assert_ok!(register(account_id(&alice), cid, None));
+		// register with reputation works
+		let proof = prove_attendance(account_id(&bob), cid, cindex - 1, &bob);
+		assert_ok!(register(account_id(&bob), cid, Some(proof)));
+		// simulate a bootstrapper noshow
+		EncointerCeremonies::fake_reputation(
+			(cid, cindex - 1),
+			&account_id(&charlie),
+			Reputation::VerifiedLinked(cindex - 1),
+		);
+		// register self with linked reputation works
+		let proof = prove_attendance(account_id(&charlie), cid, cindex - 1, &charlie);
+		assert_ok!(register(account_id(&charlie), cid, Some(proof)));
+
+		// now they all unregister
+		assert_ok!(EncointerCeremonies::unregister_participant(
+			RuntimeOrigin::signed(account_id(&alice)),
+			cid,
+			None
+		));
+		assert_ok!(EncointerCeremonies::unregister_participant(
+			RuntimeOrigin::signed(account_id(&bob)),
+			cid,
+			Some((cid, cindex - 1))
+		));
+		assert_ok!(EncointerCeremonies::unregister_participant(
+			RuntimeOrigin::signed(account_id(&charlie)),
+			cid,
+			Some((cid, cindex - 1))
+		));
+
+		// register again
+		assert_ok!(register(account_id(&alice), cid, None));
+		let proof = prove_attendance(account_id(&bob), cid, cindex - 1, &bob);
+		assert_ok!(register(account_id(&bob), cid, Some(proof)));
+		let proof = prove_attendance(account_id(&charlie), cid, cindex - 1, &charlie);
+		assert_ok!(register(account_id(&charlie), cid, Some(proof)));
+	});
+}
+
+#[test]
 fn endorsement_by_bootstrapper_for_newbie_works_until_no_more_tickets() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let alice = AccountId::from(AccountKeyring::Alice);
+
+		// get reputable tickets out of the way as they can be used by bootstrappers too
+		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_reputable(
+			RuntimeOrigin::root(),
+			0
+		));
 
 		let endorsees = add_population(
 			(EncointerCeremonies::endorsement_tickets_per_bootstrapper() + 1) as usize,
@@ -1808,7 +1902,7 @@ fn grow_population_and_removing_community_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		// register everybody again. also those who didn't have the chance last time
 		for pair in participants.iter() {
-			let proof = get_proof(cid, cindex - 1, pair);
+			let proof = get_maybe_proof_for_self(cid, cindex - 1, pair);
 			register(account_id(pair), cid, proof).unwrap();
 		}
 		run_to_next_phase();
@@ -1834,7 +1928,7 @@ fn grow_population_and_removing_community_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		// register everybody again. also those who didn't have the chance last time
 		for pair in participants.iter() {
-			let proof = get_proof(cid, cindex - 1, pair);
+			let proof = get_maybe_proof_for_self(cid, cindex - 1, pair);
 			register(account_id(pair), cid, proof).unwrap();
 		}
 		run_to_next_phase();
@@ -1860,7 +1954,7 @@ fn grow_population_and_removing_community_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 		let mut proof_count = 0;
 		for pair in participants.iter() {
-			let proof = get_proof(cid, cindex - 1, pair);
+			let proof = get_maybe_proof_for_self(cid, cindex - 1, pair);
 			if proof.is_some() {
 				proof_count += 1;
 			}
@@ -2041,7 +2135,7 @@ fn purge_inactive_communities_works() {
 		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
 			.contains(&cid));
 
-		// inactivity counter is 1, beacuse of a full ceremony cycle in the bootstrapping ceremony
+		// inactivity counter is 1, because of a full ceremony cycle in the bootstrapping ceremony
 		// without any rewards being claimed
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 1);
 

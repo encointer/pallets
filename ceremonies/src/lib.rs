@@ -154,7 +154,14 @@ pub mod pallet {
 					.is_verified_and_unlinked_for_cindex(cindex),
 					Error::<T>::AttendanceUnverifiedOrAlreadyUsed
 				);
-
+				if <pallet_encointer_communities::Pallet<T>>::bootstrappers(cid)
+					.contains(&p.attendee_public)
+				{
+					ensure!(
+						p.attendee_public == sender,
+						Error::<T>::BootstrapperReputationIsUntransferrable
+					)
+				}
 				ensure!(p.verify_signature(), Error::<T>::BadProofOfAttendanceSignature);
 
 				// this reputation must now be flagged so it can not be used again in the same cycle
@@ -245,24 +252,53 @@ pub mod pallet {
 
 			let participant_type = Self::get_participant_type((cid, cindex), &sender)
 				.ok_or(<Error<T>>::ParticipantIsNotRegistered)?;
-			if participant_type == ParticipantType::Reputable {
-				let cc = maybe_reputation_community_ceremony
-					.ok_or(<Error<T>>::ReputationCommunityCeremonyRequired)?;
-				ensure!(
-					cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
-					Error::<T>::ProofOutdated
-				);
+			if matches!(
+				participant_type,
+				ParticipantType::Reputable | ParticipantType::Bootstrapper
+			) {
+				maybe_reputation_community_ceremony.map_or_else(
+					|| {
+						// no reputation provided to refund
+						if participant_type == ParticipantType::Bootstrapper {
+							// bootstrappers can always register without proving previous attendance.
+							// Therefore, we don't care if they provide reputation to be refunded or not.
+							// Client apps must take care not to provide invalid reputation proofs
+							// for bootstrappers
+							Ok::<(), Error<T>>(())
+						} else {
+							// we don't want reputables to unregister without refunding their reputation because
+							// they then couldn't re-register again in the same cycle as reputables.
+							Err(<Error<T>>::ReputationCommunityCeremonyRequired)
+						}
+					},
+					|cc| {
+						// unlink reputation if previous attendance is legit. fail otherwise
+						ensure!(
+							cc.1 >= cindex.saturating_sub(Self::reputation_lifetime()),
+							Error::<T>::ProofOutdated
+						);
 
-				ensure!(
-					Self::participant_reputation(cc, &sender) == Reputation::VerifiedLinked(cindex),
-					Error::<T>::ReputationMustBeLinked
-				);
+						ensure!(
+							Self::participant_reputation(cc, &sender)
+								== Reputation::VerifiedLinked(cindex),
+							Error::<T>::ReputationMustBeLinked
+						);
 
-				<ParticipantReputation<T>>::insert(cc, &sender, Reputation::VerifiedUnlinked);
-				<ParticipantReputation<T>>::remove((cid, cindex), &sender);
+						<ParticipantReputation<T>>::insert(
+							cc,
+							&sender,
+							Reputation::VerifiedUnlinked,
+						);
+						<ParticipantReputation<T>>::remove((cid, cindex), &sender);
 
-				// invalidate reputation cache
-				sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
+						// invalidate reputation cache
+						sp_io::offchain_index::set(
+							&reputation_cache_dirty_key(&sender),
+							&true.encode(),
+						);
+						Ok(())
+					},
+				)?;
 			}
 			Self::remove_participant_from_registry(cid, cindex, &sender)?;
 
@@ -683,6 +719,8 @@ pub mod pallet {
 		BadProofOfAttendanceSignature,
 		/// verification of signature of attendee failed
 		BadAttendeeSignature,
+		/// Bootstrapper reputation is non-transferrable to other accounts for security reasons
+		BootstrapperReputationIsUntransferrable,
 		/// meetup location was not found
 		MeetupLocationNotFound,
 		/// meetup time calculation failed
