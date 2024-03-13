@@ -32,7 +32,7 @@ encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-feat
 encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "6.1.0" }
 encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "6.1.0" }
 encointer-rpc = { path = "rpc", version = "6.1.0" }
-ep-core = { path = "primitives/core", default-features = false, version = "6.1.0" }
+ep-core = { path = "primitives/core", default-features = false, version = "6.0.0" }
 pallet-encointer-balances = { path = "balances", default-features = false, version = "6.1.0" }
 pallet-encointer-ceremonies = { path = "ceremonies", default-features = false, version = "6.1.0" }
 pallet-encointer-communities = { path = "communities", default-features = false, version = "6.1.0" }

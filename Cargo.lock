@@ -1657,7 +1657,7 @@ checksum = "e48c92028aaa870e83d51c64e5d4e0b6981b360c522198c23959f219a4e1b15b"
 
 [[package]]
 name = "ep-core"
-version = "6.1.0"
+version = "6.0.0"
 dependencies = [
  "array-bytes 6.1.0",
  "impl-serde",
