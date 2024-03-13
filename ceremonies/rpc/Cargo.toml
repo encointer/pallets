@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-ceremonies-rpc"
-version = "6.0.0"
+version = "6.1.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Ceremonies rpc for the Encointer blockchain runtime"
