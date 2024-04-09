@@ -18,17 +18,9 @@
 
 use crate as dut;
 use encointer_primitives::balances::BalanceType;
-use frame_support::{
-	pallet_prelude::Get,
-	parameter_types,
-	traits::{
-		tokens::{ConversionFromAssetBalance, Pay, PaymentStatus},
-		ConstU64,
-	},
-	PalletId,
-};
-use sp_runtime::{BuildStorage, Permill};
-use std::{cell::RefCell, collections::BTreeMap, marker::PhantomData};
+use frame_support::{parameter_types, PalletId};
+use sp_runtime::BuildStorage;
+
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
