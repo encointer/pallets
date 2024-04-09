@@ -35,6 +35,9 @@ jobs:
       - name: Install protoc
         run: sudo apt-get install protobuf-compiler
 
+      - name: Install nightly toolchain
+        run: rustup toolchain install "nightly-$RUST_NIGHTLY_VERSION" --profile minimal --component rustfmt
+
       - name: Setup Rust toolchain
         run: rustup show
 
