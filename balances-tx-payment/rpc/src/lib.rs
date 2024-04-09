@@ -18,13 +18,15 @@ use core::fmt::Display;
 use encointer_balances_tx_payment_rpc_runtime_api::{
 	BalancesTxPaymentApi as BalancesTxPaymentApiRuntimeApi, Error,
 };
-use jsonrpsee::types::ErrorObjectOwned;
-use jsonrpsee::{core::RpcResult, proc_macros::rpc, types::error::ErrorObject};
+use jsonrpsee::{
+	core::RpcResult,
+	proc_macros::rpc,
+	types::{error::ErrorObject, ErrorObjectOwned},
+};
 pub use pallet_transaction_payment::RuntimeDispatchInfo;
 use pallet_transaction_payment::{FeeDetails, InclusionFee};
 use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
-use parity_scale_codec::Codec;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Codec, Decode, Encode};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;

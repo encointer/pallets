@@ -85,18 +85,14 @@ impl ProposalAction {
 		match self {
 			ProposalAction::AddLocation(cid, _) => ProposalActionIdentifier::AddLocation(cid),
 			ProposalAction::RemoveLocation(cid, _) => ProposalActionIdentifier::RemoveLocation(cid),
-			ProposalAction::UpdateCommunityMetadata(cid, _) => {
-				ProposalActionIdentifier::UpdateCommunityMetadata(cid)
-			},
-			ProposalAction::UpdateDemurrage(cid, _) => {
-				ProposalActionIdentifier::UpdateDemurrage(cid)
-			},
-			ProposalAction::UpdateNominalIncome(cid, _) => {
-				ProposalActionIdentifier::UpdateNominalIncome(cid)
-			},
-			ProposalAction::SetInactivityTimeout(_) => {
-				ProposalActionIdentifier::SetInactivityTimeout
-			},
+			ProposalAction::UpdateCommunityMetadata(cid, _) =>
+				ProposalActionIdentifier::UpdateCommunityMetadata(cid),
+			ProposalAction::UpdateDemurrage(cid, _) =>
+				ProposalActionIdentifier::UpdateDemurrage(cid),
+			ProposalAction::UpdateNominalIncome(cid, _) =>
+				ProposalActionIdentifier::UpdateNominalIncome(cid),
+			ProposalAction::SetInactivityTimeout(_) =>
+				ProposalActionIdentifier::SetInactivityTimeout,
 		}
 	}
 }

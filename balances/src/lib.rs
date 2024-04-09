@@ -278,7 +278,7 @@ impl<T: Config> Pallet<T> {
 		// Early exist if no-op.
 		if amount == 0u128 {
 			Self::deposit_event(Event::Transferred(cid, source, dest, amount));
-			return Ok(amount);
+			return Ok(amount)
 		}
 
 		ensure!(Balance::<T>::contains_key(cid, &source), Error::<T>::NoAccount);
@@ -289,7 +289,7 @@ impl<T: Config> Pallet<T> {
 
 		if source == dest {
 			<Balance<T>>::insert(cid, &source, entry_from);
-			return Ok(amount);
+			return Ok(amount)
 		}
 
 		if !Balance::<T>::contains_key(cid, &dest) {
@@ -352,7 +352,7 @@ impl<T: Config> Pallet<T> {
 			ensure!(res >= 0, Error::<T>::BalanceTooLow);
 			res
 		} else {
-			return Err(Error::<T>::BalanceTooLow.into());
+			return Err(Error::<T>::BalanceTooLow.into())
 		};
 		entry_tot.principal -= amount;
 		//FIXME: delete account if it falls below existential deposit

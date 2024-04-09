@@ -224,9 +224,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn get_cycle_duration() -> T::Moment {
-		<PhaseDurations<T>>::get(CeremonyPhaseType::Registering)
-			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Assigning)
-			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Attesting)
+		<PhaseDurations<T>>::get(CeremonyPhaseType::Registering) +
+			<PhaseDurations<T>>::get(CeremonyPhaseType::Assigning) +
+			<PhaseDurations<T>>::get(CeremonyPhaseType::Attesting)
 	}
 
 	// we need to resync in two situations:
@@ -241,14 +241,14 @@ impl<T: Config> Pallet<T> {
 			if let Some(n) = gap.checked_div(&cycle_duration) {
 				tnext.saturating_add((cycle_duration).saturating_mul(n + T::Moment::one()))
 			} else {
-				return Err(<Error<T>>::DivisionByZero.into());
+				return Err(<Error<T>>::DivisionByZero.into())
 			}
 		} else {
 			let gap = tnext - now;
 			if let Some(n) = gap.checked_div(&cycle_duration) {
 				tnext.saturating_sub(cycle_duration.saturating_mul(n))
 			} else {
-				return Err(<Error<T>>::DivisionByZero.into());
+				return Err(<Error<T>>::DivisionByZero.into())
 			}
 		};
 		<NextPhaseTimestamp<T>>::put(tnext);

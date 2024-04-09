@@ -261,7 +261,7 @@ pub mod v2 {
 					target: TARGET,
 					"skipping on_runtime_upgrade: executed on wrong storage version."
 				);
-				return T::DbWeight::get().reads(1);
+				return T::DbWeight::get().reads(1)
 			}
 			if onchain_version == StorageVersion::new(0) {
 				CommunityMetadata::<T>::translate::<UnboundedCommunityMetadata, _>(

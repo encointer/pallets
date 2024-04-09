@@ -58,7 +58,7 @@ pub type BoundedIpfsCid = PalletString;
 pub fn validate_ascii(bytes: &[u8]) -> Result<(), u8> {
 	for (i, c) in bytes.iter().enumerate() {
 		if *c > 127 {
-			return Err(i as u8);
+			return Err(i as u8)
 		}
 	}
 	Ok(())
@@ -70,7 +70,7 @@ pub const MAX_HASH_SIZE: usize = 46;
 
 pub fn validate_ipfs_cid(cid: &BoundedIpfsCid) -> Result<(), IpfsValidationError> {
 	if cid.len() != MAX_HASH_SIZE {
-		return Err(IpfsValidationError::InvalidLength(cid.len() as u8));
+		return Err(IpfsValidationError::InvalidLength(cid.len() as u8))
 	}
 	Bs58verify::verify(cid.as_bytes_or_noop()).map_err(IpfsValidationError::InvalidBase58)
 }

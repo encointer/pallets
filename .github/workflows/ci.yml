@@ -26,7 +26,7 @@ jobs:
         os: [ ubuntu-latest ]
         check: [ cargo build --release,
                  cargo test --all --features runtime-benchmarks --features try-runtime,
-                 cargo fmt --all -- --check,
+                 cargo +nightly fmt --all -- --check,
                  cargo clippy -- -D warnings
         ]
     steps:

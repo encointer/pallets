@@ -40,20 +40,20 @@ pub fn is_coprime(a: u64, b: u64) -> bool {
 
 pub fn is_prime(n: u64) -> bool {
 	if n <= 3 {
-		return n > 1;
+		return n > 1
 	}
 	if n % 2 == 0 || n % 3 == 0 {
-		return false;
+		return false
 	}
 	if n < 25 {
-		return true;
+		return true
 	}
 	let mut i: u64 = 5;
 	let mut j: u64 = 25;
 	while j <= n {
 		let i_plus_two = i.checked_add(2u64).expect("i^2 does not overflow, so i + 2 is safe; qed");
 		if n % i == 0u64 || n % (i_plus_two) == 0u64 {
-			return false;
+			return false
 		}
 		i = i.checked_add(6u64).expect("i^2 does not overflow, so i + 6 is safe; qed");
 
@@ -61,7 +61,7 @@ pub fn is_prime(n: u64) -> bool {
 			j = i_squared;
 		} else {
 			// if i overflows we can be sure that j <= n does not hold
-			break;
+			break
 		}
 	}
 	true
@@ -69,15 +69,15 @@ pub fn is_prime(n: u64) -> bool {
 
 pub fn get_greatest_common_denominator(a: u64, b: u64) -> u64 {
 	if a == 0 || b == 0 {
-		return 0;
+		return 0
 	}
 
 	if a == b {
-		return a;
+		return a
 	}
 
 	if a > b {
-		return get_greatest_common_denominator(a.checked_sub(b).expect("a > b; qed"), b);
+		return get_greatest_common_denominator(a.checked_sub(b).expect("a > b; qed"), b)
 	}
 
 	get_greatest_common_denominator(a, b.checked_sub(a).expect("b <= a; qed"))
@@ -85,19 +85,19 @@ pub fn get_greatest_common_denominator(a: u64, b: u64) -> u64 {
 
 pub fn find_prime_below(mut n: u64) -> u64 {
 	if n <= 2 {
-		return 2u64;
+		return 2u64
 	}
 	if n % 2 == 0 {
 		n = n.checked_sub(1).expect("n > 2; qed");
 	}
 	while n > 0 {
 		if is_prime(n) {
-			return n;
+			return n
 		}
 		if let Some(n_minus_two) = n.checked_sub(2) {
 			n = n_minus_two;
 		} else {
-			break;
+			break
 		}
 	}
 	2u64
@@ -108,11 +108,11 @@ pub fn find_random_coprime_below<H: Hash>(
 	random_source: &mut RandomNumberGenerator<H>,
 ) -> u64 {
 	if upper_bound <= 1 {
-		return 0;
+		return 0
 	}
 
 	if upper_bound == 2 {
-		return 1;
+		return 1
 	}
 
 	(1..upper_bound)
