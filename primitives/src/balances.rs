@@ -87,11 +87,11 @@ where
 	) -> BalanceEntry<BlockNumber> {
 		if self.last_update == current_block_number {
 			// Nothing to be done, as no time elapsed.
-			return self;
+			return self
 		}
 
 		if self.principal.eq(&0i16) {
-			return Self { principal: self.principal, last_update: current_block_number };
+			return Self { principal: self.principal, last_update: current_block_number }
 		}
 
 		let elapsed_blocks =
@@ -207,7 +207,7 @@ impl Convert<u128, BalanceType> for EncointerBalanceConverter {
 #[allow(non_snake_case)]
 pub fn to_U64F64(source: I64F64) -> Option<U64F64> {
 	if source.is_negative() {
-		return None;
+		return None
 	}
 
 	// Safe conversion because we made sure that it is not negative above.

@@ -155,7 +155,7 @@ where
 pub fn last_event<T: Config>() -> Option<<T as frame_system::Config>::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events();
 	if events.len() < 1 {
-		return None;
+		return None
 	}
 	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];
 	Some(event.clone())

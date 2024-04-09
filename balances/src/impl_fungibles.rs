@@ -71,20 +71,20 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		_provenance: Provenance,
 	) -> DepositConsequence {
 		if !<TotalIssuance<T>>::contains_key(asset) {
-			return DepositConsequence::UnknownAsset;
+			return DepositConsequence::UnknownAsset
 		};
 
 		let total_issuance = Pallet::<T>::total_issuance_entry(asset).principal;
 
 		let balance_amount = balance_type(amount);
 		if total_issuance.checked_add(balance_amount).is_none() {
-			return DepositConsequence::Overflow;
+			return DepositConsequence::Overflow
 		}
 
 		let balance = Pallet::<T>::balance(asset, who);
 
 		if balance.checked_add(balance_amount).is_none() {
-			return DepositConsequence::Overflow;
+			return DepositConsequence::Overflow
 		}
 
 		DepositConsequence::Success
@@ -98,22 +98,22 @@ impl<T: Config> fungibles::Inspect<T::AccountId> for Pallet<T> {
 		use WithdrawConsequence::*;
 
 		if !<TotalIssuance<T>>::contains_key(asset) {
-			return UnknownAsset;
+			return UnknownAsset
 		};
 
 		let total_issuance = Pallet::<T>::total_issuance_entry(asset);
 		if fungible(total_issuance.principal).checked_sub(amount).is_none() {
-			return Underflow;
+			return Underflow
 		}
 
 		if amount.is_zero() {
-			return Success;
+			return Success
 		}
 
 		let balance = fungible(Pallet::<T>::balance(asset, who));
 
 		if balance.checked_sub(amount).is_none() {
-			return WithdrawConsequence::BalanceLow;
+			return WithdrawConsequence::BalanceLow
 		}
 		WithdrawConsequence::Success
 	}
