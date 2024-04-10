@@ -38,7 +38,7 @@ pub fn bootstrappers() -> Vec<sr25519::Pair> {
 	]
 	.iter()
 	.map(|k| k.pair())
-	.collect();
+	.collect()
 }
 
 /// register a simple test community with a specified location and defined bootstrappers
@@ -88,7 +88,7 @@ pub fn last_event<T: frame_system::Config>() -> Option<T::RuntimeEvent> {
 pub fn event_at_index<T: frame_system::Config>(index: usize) -> Option<T::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events();
 	if events.len() < index {
-		return None;
+		return None
 	}
 	let frame_system::EventRecord { event, .. } = &events[index];
 	Some(event.clone())
@@ -99,7 +99,7 @@ pub fn event_deposited<T: frame_system::Config>(desired_event: T::RuntimeEvent) 
 	for eventrec in events.iter() {
 		let frame_system::EventRecord { event, .. } = eventrec;
 		if *event == desired_event {
-			return true;
+			return true
 		}
 	}
 	false

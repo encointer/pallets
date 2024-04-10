@@ -410,8 +410,8 @@ impl<T: Config> Pallet<T> {
 		location: Location,
 	) -> DispatchResultWithPostInfo {
 		ensure!(
-			<pallet_encointer_scheduler::Pallet<T>>::current_phase()
-				== CeremonyPhaseType::Registering,
+			<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
+				CeremonyPhaseType::Registering,
 			Error::<T>::RegistrationPhaseRequired
 		);
 		Self::ensure_cid_exists(&cid)?;
@@ -451,8 +451,8 @@ impl<T: Config> Pallet<T> {
 		location: Location,
 	) -> DispatchResultWithPostInfo {
 		ensure!(
-			<pallet_encointer_scheduler::Pallet<T>>::current_phase()
-				== CeremonyPhaseType::Registering,
+			<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
+				CeremonyPhaseType::Registering,
 			Error::<T>::RegistrationPhaseRequired
 		);
 		Self::ensure_cid_exists(&cid)?;
@@ -582,10 +582,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn is_valid_location(loc: &Location) -> bool {
-		(loc.lat < MAX_ABS_LATITUDE)
-			& (loc.lat > -MAX_ABS_LATITUDE)
-			& (loc.lon < DATELINE_LON)
-			& (loc.lon > -DATELINE_LON)
+		(loc.lat < MAX_ABS_LATITUDE) &
+			(loc.lat > -MAX_ABS_LATITUDE) &
+			(loc.lon < DATELINE_LON) &
+			(loc.lon > -DATELINE_LON)
 	}
 
 	pub fn haversine_distance(a: &Location, b: &Location) -> u32 {
@@ -631,15 +631,15 @@ impl<T: Config> Pallet<T> {
 		let bucket_max_lon = bucket_center_lon + bucket_lon_error;
 
 		//check if northern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_max_lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.n)
 		}
 
 		//check if southern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: location.lon, lat: bucket_min_lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.s)
 		}
@@ -661,43 +661,43 @@ impl<T: Config> Pallet<T> {
 		// traverse 1 bucket horizontally
 
 		//check if north eastern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_max_lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.ne)
 		}
 
 		//check if eastern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: location.lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.e)
 		}
 
 		//check if south eastern neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_max_lon, lat: bucket_min_lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.se)
 		}
 
 		//check if north western neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_max_lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.nw)
 		}
 
 		//check if western neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: location.lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.w)
 		}
 
 		//check if south western neighbour bucket needs to be included
-		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location)
-			< Self::min_solar_trip_time_s()
+		if Self::solar_trip_time(&Location { lon: bucket_min_lon, lat: bucket_min_lat }, location) <
+			Self::min_solar_trip_time_s()
 		{
 			relevant_neighbor_buckets.push(neighbors.sw)
 		}
@@ -726,7 +726,7 @@ impl<T: Config> Pallet<T> {
 		let dateline_proxy = Location { lat: location.lat, lon: DATELINE_LON };
 		if Self::haversine_distance(location, &dateline_proxy) < DATELINE_DISTANCE_M {
 			warn!(target: LOG, "location too close to dateline: {:?}", location);
-			return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
+			return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?
 		}
 
 		let nearby_locations = Self::get_nearby_locations(location)?;

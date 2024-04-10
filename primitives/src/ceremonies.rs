@@ -14,9 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::communities::{CommunityIdentifier, Location};
 pub use crate::scheduler::CeremonyIndexType;
-use crate::scheduler::CeremonyPhaseType;
+use crate::{
+	communities::{CommunityIdentifier, Location},
+	scheduler::CeremonyPhaseType,
+};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]

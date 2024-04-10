@@ -85,8 +85,11 @@ fn get_excluded_participants_num_attestations_works() {
 		(1, ExclusionReason::TooFewOutgoingAttestations),
 	];
 	assert_eq!(
-		get_excluded_participants_num_attestations(&participants, participant_attestations, |n| n
-			- 1)
+		get_excluded_participants_num_attestations(
+			&participants,
+			participant_attestations,
+			|n| n - 1
+		)
 		.unwrap(),
 		excluded_participants
 	);
