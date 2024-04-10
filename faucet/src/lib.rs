@@ -33,7 +33,10 @@ use frame_system::{self as frame_system, ensure_signed};
 use log::info;
 use parity_scale_codec::Decode;
 use sp_core::H256;
-use sp_runtime::{traits::Hash, SaturatedConversion, Saturating};
+use sp_runtime::{
+	traits::{AccountIdConversion, Hash},
+	SaturatedConversion, Saturating,
+};
 use sp_std::convert::TryInto;
 pub use weights::WeightInfo;
 
@@ -41,6 +44,7 @@ pub use weights::WeightInfo;
 const LOG: &str = "encointer";
 
 pub use pallet::*;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(test)]
@@ -71,12 +75,13 @@ pub mod pallet {
 		frame_system::Config
 		+ pallet_encointer_reputation_commitments::Config
 		+ pallet_encointer_communities::Config
-		+ pallet_treasury::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
 		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 		type WeightInfo: WeightInfo;
+
+		/// The treasury's pallet id, used for deriving its sovereign account ID.
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
 	}
@@ -89,7 +94,7 @@ pub mod pallet {
 		ReserveIdentifierOf<T>: From<[u8; 8]>,
 	{
 		#[pallet::call_index(0)]
-		#[pallet::weight((<T as Config>::WeightInfo::create_faucet(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((< T as Config >::WeightInfo::create_faucet(), DispatchClass::Normal, Pays::Yes))]
 		pub fn create_faucet(
 			origin: OriginFor<T>,
 			name: FaucetNameType,
@@ -152,7 +157,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 		#[pallet::call_index(1)]
-		#[pallet::weight((<T as Config>::WeightInfo::drip(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((< T as Config >::WeightInfo::drip(), DispatchClass::Normal, Pays::Yes))]
 		pub fn drip(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
@@ -195,7 +200,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight((<T as Config>::WeightInfo::dissolve_faucet(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((< T as Config >::WeightInfo::dissolve_faucet(), DispatchClass::Normal, Pays::Yes))]
 		pub fn dissolve_faucet(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
@@ -224,7 +229,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(3)]
-		#[pallet::weight((<T as Config>::WeightInfo::close_faucet(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((< T as Config >::WeightInfo::close_faucet(), DispatchClass::Normal, Pays::Yes))]
 		pub fn close_faucet(
 			origin: OriginFor<T>,
 			faucet_account: T::AccountId,
@@ -247,7 +252,7 @@ pub mod pallet {
 			<Faucets<T>>::remove(&faucet_account);
 			<T as Config>::Currency::transfer(
 				&faucet_account,
-				&<pallet_treasury::Pallet<T>>::account_id(),
+				&Self::catch_basin_account_id(),
 				<T as Config>::Currency::free_balance(&faucet_account),
 				AllowDeath,
 			)?;
@@ -283,6 +288,11 @@ pub mod pallet {
 				.expect("[u8; 32] can always be converted to [u8; 8]");
 			reserve_id.into()
 		}
+
+		/// returns the account id where remaining funds of closed faucets go
+		pub fn catch_basin_account_id() -> T::AccountId {
+			T::PalletId::get().into_account_truncating()
+		}
 	}
 
 	#[derive(frame_support::DefaultNoBound)]
@@ -301,7 +311,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// faucet dripped | facuet account, receiver account, balance
 		Dripped(T::AccountId, T::AccountId, BalanceOf<T>),

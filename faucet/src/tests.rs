@@ -17,7 +17,7 @@
 //! Unit tests for the encointer_faucet module.
 
 use super::*;
-use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System, Treasury};
+use crate::mock::{Balances, EncointerFaucet, EncointerReputationCommitments, System};
 use encointer_primitives::{
 	ceremonies::Reputation,
 	faucet::FromStr,
@@ -621,7 +621,7 @@ fn close_faucet_works() {
 			assert_eq!(Balances::free_balance(&faucet_account), 0);
 			assert_eq!(Balances::free_balance(&alice), 12);
 			assert_eq!(Balances::free_balance(&bob), 965);
-			assert_eq!(Balances::free_balance(&Treasury::account_id()), 23);
+			assert_eq!(Balances::free_balance(&EncointerFaucet::catch_basin_account_id()), 23);
 			assert_eq!(Balances::reserved_balance(&bob), 0);
 
 			assert_eq!(
