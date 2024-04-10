@@ -4183,7 +4183,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-faucet"
-version = "6.1.1"
+version = "6.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
