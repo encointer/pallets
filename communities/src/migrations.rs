@@ -9,27 +9,11 @@ mod v0 {
 	use super::*;
 	use encointer_primitives::{common::BoundedIpfsCid, communities::CommunityRules};
 
-	pub trait AsByteOrNoop {
-		fn as_bytes_or_noop(&self) -> &[u8];
-	}
-
 	#[cfg(not(feature = "std"))]
 	pub type UnboundedPalletString = Vec<u8>;
 
 	#[cfg(feature = "std")]
 	pub type UnboundedPalletString = String;
-
-	impl AsByteOrNoop for UnboundedPalletString {
-		#[cfg(feature = "std")]
-		fn as_bytes_or_noop(&self) -> &[u8] {
-			self.as_bytes()
-		}
-
-		#[cfg(not(feature = "std"))]
-		fn as_bytes_or_noop(&self) -> &[u8] {
-			self
-		}
-	}
 
 	pub type IpfsCid = UnboundedPalletString;
 
