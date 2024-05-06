@@ -43,15 +43,12 @@ pub mod v1 {
 			linked_cindex: CeremonyIndexType,
 		) -> encointer_primitives::ceremonies::Reputation {
 			match self {
-				Reputation::UnverifiedReputable => {
-					encointer_primitives::ceremonies::Reputation::UnverifiedReputable
-				},
-				Reputation::VerifiedLinked => {
-					encointer_primitives::ceremonies::Reputation::VerifiedLinked(linked_cindex)
-				},
-				Reputation::VerifiedUnlinked => {
-					encointer_primitives::ceremonies::Reputation::VerifiedUnlinked
-				},
+				Reputation::UnverifiedReputable =>
+					encointer_primitives::ceremonies::Reputation::UnverifiedReputable,
+				Reputation::VerifiedLinked =>
+					encointer_primitives::ceremonies::Reputation::VerifiedLinked(linked_cindex),
+				Reputation::VerifiedUnlinked =>
+					encointer_primitives::ceremonies::Reputation::VerifiedUnlinked,
 				Reputation::Unverified => encointer_primitives::ceremonies::Reputation::Unverified,
 			}
 		}
@@ -95,7 +92,7 @@ pub mod v1 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 0"
 				);
-				return weight;
+				return weight
 			}
 
 			// we do not actually migrate any data, because it seems that the storage representation of Vec and BoundedVec is the same.
@@ -151,7 +148,7 @@ pub mod v2 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 1"
 				);
-				return weight;
+				return weight
 			}
 			let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 			let phase = pallet_encointer_scheduler::Pallet::<T>::current_phase();
@@ -336,15 +333,26 @@ mod test {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 1);
 			// Insert some values into the v0 storage:
 			let alice: AccountId = AccountKeyring::Alice.into();
+			let bob: AccountId = AccountKeyring::Bob.into();
 			let old_rep = v1::Reputation::VerifiedLinked;
 			let cid = CommunityIdentifier::from_str("111112Fvv9e").unwrap();
+			let cid2 = CommunityIdentifier::from_str("111112Fvv9f").unwrap();
 
 			v1::ParticipantReputation::<TestRuntime>::insert(
 				(cid, 1),
 				alice.clone(),
 				old_rep.clone(),
 			);
-
+			v1::ParticipantReputation::<TestRuntime>::insert(
+				(cid, 2),
+				bob.clone(),
+				old_rep.clone(),
+			);
+			v1::ParticipantReputation::<TestRuntime>::insert(
+				(cid2, 0),
+				alice.clone(),
+				old_rep.clone(),
+			);
 			// Migrate.
 			let state = v2::MigrateToV2::<TestRuntime>::pre_upgrade().unwrap();
 			let _weight = v2::MigrateToV2::<TestRuntime>::on_runtime_upgrade();
@@ -353,7 +361,15 @@ mod test {
 			// Check that all values got migrated.
 
 			assert_eq!(
-				crate::ParticipantReputation::<TestRuntime>::get((cid, 1), alice),
+				crate::ParticipantReputation::<TestRuntime>::get((cid, 1), alice.clone()),
+				Reputation::VerifiedLinked(1)
+			);
+			assert_eq!(
+				crate::ParticipantReputation::<TestRuntime>::get((cid, 2), bob),
+				Reputation::VerifiedLinked(1)
+			);
+			assert_eq!(
+				crate::ParticipantReputation::<TestRuntime>::get((cid2, 0), alice),
 				Reputation::VerifiedLinked(1)
 			);
 		});

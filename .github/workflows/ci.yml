@@ -26,7 +26,7 @@ jobs:
         os: [ ubuntu-latest ]
         check: [ cargo build --release,
                  cargo test --all --features runtime-benchmarks --features try-runtime,
-                 cargo fmt --all -- --check,
+                 cargo +nightly fmt --all -- --check,
                  cargo clippy -- -D warnings
         ]
     steps:
@@ -34,6 +34,9 @@ jobs:
 
       - name: Install protoc
         run: sudo apt-get install protobuf-compiler
+
+      - name: Install nightly toolchain
+        run: rustup toolchain install nightly --profile minimal --component rustfmt
 
       - name: Setup Rust toolchain
         run: rustup show

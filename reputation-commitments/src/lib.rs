@@ -107,7 +107,7 @@ pub mod pallet {
 			commitment_hash: Option<H256>,
 		) -> Result<(), Error<T>> {
 			if !<Purposes<T>>::contains_key(purpose) {
-				return Err(<Error<T>>::InexistentPurpose);
+				return Err(<Error<T>>::InexistentPurpose)
 			}
 
 			if !<pallet_encointer_ceremonies::Pallet<T>>::participant_reputation(
@@ -116,11 +116,11 @@ pub mod pallet {
 			)
 			.is_verified()
 			{
-				return Err(<Error<T>>::NoReputation);
+				return Err(<Error<T>>::NoReputation)
 			}
 
 			if <Commitments<T>>::contains_key((cid, cindex), (purpose, &account)) {
-				return Err(<Error<T>>::AlreadyCommited);
+				return Err(<Error<T>>::AlreadyCommited)
 			}
 
 			<Commitments<T>>::insert((cid, cindex), (purpose, &account), commitment_hash);

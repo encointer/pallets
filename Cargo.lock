@@ -1514,7 +1514,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1534,7 +1534,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-balances-tx-payment-rpc-runtime-api",
  "encointer-primitives",
@@ -1557,7 +1557,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc-runtime-api"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1569,7 +1569,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-ceremonies-assignment"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "sp-core",
@@ -1579,7 +1579,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-meetup-validation"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -1593,7 +1593,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "approx",
  "bs58 0.5.0",
@@ -1616,7 +1616,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-rpc"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "jsonrpsee",
  "jsonrpsee-core",
@@ -3975,7 +3975,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -3995,7 +3995,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4013,7 +4013,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4032,7 +4032,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4043,7 +4043,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -4072,7 +4072,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4091,7 +4091,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4102,7 +4102,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4123,7 +4123,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4143,7 +4143,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -4153,7 +4153,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4182,7 +4182,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-faucet"
-version = "7.0.0"
+version = "7.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4192,7 +4192,6 @@ dependencies = [
  "log",
  "pallet-encointer-communities",
  "pallet-encointer-reputation-commitments",
- "pallet-treasury",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -4204,7 +4203,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-commitments"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4227,7 +4226,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4246,7 +4245,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-vouches"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4330,26 +4329,6 @@ dependencies = [
  "sp-api",
  "sp-runtime",
  "sp-weights",
-]
-
-[[package]]
-name = "pallet-treasury"
-version = "29.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "317d231ff8a773e94fe5be8d3710213215208e7993bfeedd96bd6f4402da114a"
-dependencies = [
- "docify",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "impl-trait-for-tuples",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -6999,7 +6978,7 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test-utils"
-version = "7.0.0"
+version = "7.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
