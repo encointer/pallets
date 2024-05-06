@@ -170,7 +170,7 @@ pub mod v2 {
 	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for MigrateV0orV1toV2<T> {
 		#[cfg(feature = "try-runtime")]
 		fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::DispatchError> {
-			let current_version = Pallet::<T>::current_storage_version();
+			let current_version = Pallet::<T>::in_code_storage_version();
 			let onchain_version = Pallet::<T>::on_chain_storage_version();
 			ensure!(
 				onchain_version < 2 && current_version == 2,
@@ -196,7 +196,7 @@ pub mod v2 {
 					count <= T::MaxCommunityIdentifiersPerGeohash::get(),
 					"too many cids per geohash"
 				);
-				cids_by_geohash_count = cids_by_geohash_count + count;
+				cids_by_geohash_count += count;
 			}
 			log::info!(
 				target: TARGET,
@@ -212,7 +212,7 @@ pub mod v2 {
 					count <= T::MaxLocationsPerGeohash::get(),
 					"too many locations per geohash"
 				);
-				locations_by_geohash_count = locations_by_geohash_count + count;
+				locations_by_geohash_count += count;
 			}
 			log::info!(
 				target: TARGET,
@@ -225,7 +225,7 @@ pub mod v2 {
 			for bs in bootstrappers {
 				let count = bs.1.len() as u32;
 				ensure!(count <= T::MaxBootstrappers::get(), "too many bootstrappers");
-				bootstrappers_count = bootstrappers_count + count
+				bootstrappers_count += count
 			}
 			log::info!(target: TARGET, "{} bootstrappers will be migrated.", bootstrappers_count,);
 
@@ -245,7 +245,7 @@ pub mod v2 {
 		/// 0->1 was a noop as long as no values exceeded bounds
 		/// there is no problem if we enforce bounds again if the onchain_version is already v1
 		fn on_runtime_upgrade() -> Weight {
-			let current_version = Pallet::<T>::current_storage_version();
+			let current_version = Pallet::<T>::in_code_storage_version();
 			let onchain_version = Pallet::<T>::on_chain_storage_version();
 
 			log::info!(
