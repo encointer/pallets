@@ -1,6 +1,6 @@
 [package]
 name = "encointer-meetup-validation"
-version = "6.1.0"
+version = "7.1.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Meetup validation for the Encointer blockchain runtime"

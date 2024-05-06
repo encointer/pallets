@@ -1,13 +1,12 @@
 [package]
 name = "pallet-encointer-democracy"
-version = "6.1.0"
+version = "7.1.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Democracy pallet for the Encointer blockchain runtime"
 homepage = "https://encointer.org"
 repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
-publish = false
 
 [dependencies]
 log = { workspace = true }
