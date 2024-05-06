@@ -85,8 +85,7 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 		None,
 	)
 	.ok();
-	let cid = CommunityIdentifier::new(location, bs).unwrap();
-	cid
+	CommunityIdentifier::new(location, bs).unwrap()
 }
 
 fn create_proof_of_attendance<T: Config>(
@@ -104,7 +103,7 @@ where
 		prover_public: prover,
 		community_identifier: cid,
 		ceremony_index: cindex,
-		attendee_public: account_id::<T>(&attendee),
+		attendee_public: account_id::<T>(attendee),
 		attendee_signature: T::Signature::from(sign(attendee, &msg.encode())),
 	}
 }
@@ -148,13 +147,12 @@ where
 
 	let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 	IssuedRewards::<T>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
-	let proof = create_proof_of_attendance::<T>(prover_account, cid, cindex - 1, prover);
-	proof
+	create_proof_of_attendance::<T>(prover_account, cid, cindex - 1, prover)
 }
 
 pub fn last_event<T: Config>() -> Option<<T as frame_system::Config>::RuntimeEvent> {
 	let events = frame_system::Pallet::<T>::events();
-	if events.len() < 1 {
+	if events.is_empty() {
 		return None
 	}
 	let frame_system::EventRecord { event, .. } = &events[events.len() - 1];

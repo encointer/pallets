@@ -45,9 +45,13 @@ fn setup_test_community<T: Config>() -> (
 	MaxSpeedMps::<T>::put(83);
 	MinSolarTripTimeS::<T>::put(1);
 	let bootstrappers: Vec<T::AccountId> = (0..10).map(|n| account("dummy name", n, n)).collect();
-	let mut community_metadata = CommunityMetadataType::default();
-	community_metadata.name = PalletString::from_str("20charsaaaaaaaaaaaaa").unwrap();
-	community_metadata.url = Some(PalletString::from_str("19charsaaaaaaaaa").unwrap());
+
+	let community_metadata = CommunityMetadataType {
+		name: PalletString::from_str("20charsaaaaaaaaaaaaa").unwrap(),
+		url: Some(PalletString::from_str("19charsaaaaaaaaa").unwrap()),
+		..Default::default()
+	};
+
 	let demurrage = Some(Demurrage::from_num(DefaultDemurrage::get()));
 	let nominal_income = Some(NominalIncome::from_num(1_u64));
 
@@ -57,12 +61,12 @@ fn setup_test_community<T: Config>() -> (
 		get_location(0),
 		bootstrappers.clone(),
 		community_metadata.clone(),
-		demurrage.clone(),
-		nominal_income.clone()
+		demurrage,
+		nominal_income
 	));
-	let cid = CommunityIdentifier::new(get_location(0).clone(), bootstrappers.clone()).unwrap();
+	let cid = CommunityIdentifier::new(get_location(0), bootstrappers.clone()).unwrap();
 
-	return (cid, bootstrappers, community_metadata, demurrage, nominal_income)
+	(cid, bootstrappers, community_metadata, demurrage, nominal_income)
 }
 
 parameter_types! {
@@ -122,7 +126,7 @@ benchmarks! {
 		assert_ok!(Communities::<T>::update_community_metadata(RawOrigin::Root.into(), cid, new_community_metadata));
 	}
 	verify {
-		assert_eq!(Pallet::<T>::community_metadata(&cid).name, new_community_name);
+		assert_eq!(Pallet::<T>::community_metadata(cid).name, new_community_name);
 	}
 
 	update_demurrage {
@@ -131,7 +135,7 @@ benchmarks! {
 		assert_ok!(Communities::<T>::update_demurrage(RawOrigin::Root.into(), cid, Demurrage::from_num(0.5)));
 	}
 	verify {
-		assert_eq!(pallet_encointer_balances::Pallet::<T>::demurrage_per_block(&cid), 0.5);
+		assert_eq!(pallet_encointer_balances::Pallet::<T>::demurrage_per_block(cid), 0.5);
 	}
 
 	update_nominal_income {
@@ -140,7 +144,7 @@ benchmarks! {
 		assert_ok!(Communities::<T>::update_nominal_income(RawOrigin::Root.into(), cid, NominalIncome::from(33u32)));
 	}
 	verify {
-		assert_eq!(Pallet::<T>::nominal_income(&cid), 33);
+		assert_eq!(Pallet::<T>::nominal_income(cid), 33);
 	}
 
 	set_min_solar_trip_time_s {
