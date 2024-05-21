@@ -38,8 +38,7 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 	)
 	.ok();
 
-	let cid = CommunityIdentifier::new(location, bs).unwrap();
-	cid
+	CommunityIdentifier::new(location, bs).unwrap()
 }
 
 benchmarks! {
