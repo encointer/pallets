@@ -1474,7 +1474,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1494,7 +1494,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-balances-tx-payment-rpc-runtime-api",
  "encointer-primitives",
@@ -1517,7 +1517,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc-runtime-api"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1529,7 +1529,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-ceremonies-assignment"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "sp-core",
@@ -1539,7 +1539,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-meetup-validation"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -1553,7 +1553,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "approx",
  "bs58 0.5.0",
@@ -1576,7 +1576,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-rpc"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "jsonrpsee",
  "jsonrpsee-core",
@@ -1617,7 +1617,7 @@ checksum = "e48c92028aaa870e83d51c64e5d4e0b6981b360c522198c23959f219a4e1b15b"
 
 [[package]]
 name = "ep-core"
-version = "7.0.0"
+version = "9.0.0"
 dependencies = [
  "array-bytes 6.1.0",
  "impl-serde",
@@ -3914,7 +3914,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -3934,7 +3934,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -3952,7 +3952,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -3971,7 +3971,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -3982,7 +3982,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -4011,7 +4011,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4030,7 +4030,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4041,7 +4041,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4062,7 +4062,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4082,7 +4082,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -4092,7 +4092,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4121,7 +4121,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-faucet"
-version = "7.2.0"
+version = "9.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4142,7 +4142,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-commitments"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4165,7 +4165,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4184,7 +4184,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-vouches"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -6956,7 +6956,7 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test-utils"
-version = "7.1.0"
+version = "9.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
