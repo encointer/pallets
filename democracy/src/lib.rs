@@ -58,7 +58,7 @@ mod benchmarking;
 
 pub use pallet::*;
 
-type ReputationVecOf<T> = ReputationVec<<T as pallet::Config>::MaxReputationVecLength>;
+type ReputationVecOf<T> = ReputationVec<<T as Config>::MaxReputationCount>;
 #[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
@@ -83,15 +83,26 @@ pub mod pallet {
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		type WeightInfo: WeightInfo;
+
+		/// Maximum reputation count to be supplied in the extrinsics.
 		#[pallet::constant]
-		type MaxReputationVecLength: Get<u32>;
+		type MaxReputationCount: Get<u32>;
+
+		/// The Period in which the proposal has to be in passing state before it is approved.
 		#[pallet::constant]
 		type ConfirmationPeriod: Get<Self::Moment>;
+
+		/// The total lifetime of a proposal.
+		///
+		/// If the proposal isn't approved withing its lifetime, it will be cancelled.
 		#[pallet::constant]
 		type ProposalLifetime: Get<Self::Moment>;
+
+		/// Minimum turnout a proposal needs to have to be considered as passing and entering the
+		/// `Confirming` state.
 		#[pallet::constant]
 		type MinTurnout: Get<u128>; // in permill
-		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::event]
@@ -366,9 +377,10 @@ pub mod pallet {
 			Ok(eligible_reputation_count)
 		}
 
-		/// Updates the proposal state
-		/// If the state is changed to Approved, the proposal will be enacted
-		/// In case of enactment, the function returns true
+		/// Updates the proposal state.
+		///
+		/// If the state is changed to Approved, the proposal will be enacted.
+		/// In case of enactment, the function returns true.
 		pub fn do_update_proposal_state(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
 			let mut proposal =
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
