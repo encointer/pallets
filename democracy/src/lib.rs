@@ -158,20 +158,26 @@ pub mod pallet {
 		MathError,
 	}
 
+	/// Unique `PurposeIds` of a `Proposal`.
+	///
+	/// This is used to prevent reuse of a reputation for the same `PurposeId`.
 	#[pallet::storage]
 	#[pallet::getter(fn purpose_ids)]
 	pub(super) type PurposeIds<T: Config> =
 		StorageMap<_, Blake2_128Concat, ProposalIdType, PurposeIdType, OptionQuery>;
 
+	/// All proposals that have ever been proposed including the past ones.
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
 	pub(super) type Proposals<T: Config> =
 		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<T::Moment>, OptionQuery>;
 
+	/// Proposal count of all proposals to date.
 	#[pallet::storage]
 	#[pallet::getter(fn proposal_count)]
 	pub(super) type ProposalCount<T: Config> = StorageValue<_, ProposalIdType, ValueQuery>;
 
+	/// Tallies for the proposal corresponding to `ProposalId`.
 	#[pallet::storage]
 	#[pallet::getter(fn tallies)]
 	pub(super) type Tallies<T: Config> =
