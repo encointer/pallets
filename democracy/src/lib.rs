@@ -67,8 +67,8 @@ use pallet_encointer_communities::Pallet as CommunitiesPallet;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use encointer_primitives::communities::CommunityIdentifier;
 	use encointer_primitives::{
+		communities::CommunityIdentifier,
 		democracy::{Tally, *},
 		reputation_commitments::{DescriptorType, PurposeIdType},
 	};
@@ -111,7 +111,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub (super) fn deposit_event)]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		///  proposal enacted
 		ProposalEnacted {
@@ -216,15 +216,13 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(
-            (< T as Config >::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes)
-        )]
+		#[pallet::weight((<T as Config>::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes))]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
-				return Err(Error::<T>::ProposalWaitingForEnactment.into());
+				return Err(Error::<T>::ProposalWaitingForEnactment.into())
 			}
 			let _sender = ensure_signed(origin)?;
 			let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
@@ -262,7 +260,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight((< T as Config >::WeightInfo::vote(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::vote(), DispatchClass::Normal, Pays::Yes))]
 		pub fn vote(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -307,9 +305,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight(
-            (< T as Config >::WeightInfo::update_proposal_state(), DispatchClass::Normal, Pays::Yes)
-        )]
+		#[pallet::weight((<T as Config>::WeightInfo::update_proposal_state(), DispatchClass::Normal, Pays::Yes))]
 		pub fn update_proposal_state(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -366,12 +362,12 @@ pub mod pallet {
 			for community_ceremony in reputations {
 				if !Self::relevant_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
 				{
-					continue;
+					continue
 				}
 
 				if let Some(cid) = maybe_cid {
 					if community_ceremony.0 != cid {
-						continue;
+						continue
 					}
 				}
 
@@ -384,7 +380,7 @@ pub mod pallet {
 				)
 				.is_err()
 				{
-					continue;
+					continue
 				}
 
 				eligible_reputation_count += 1;
@@ -416,8 +412,8 @@ pub mod pallet {
 					// confirming
 					if let ProposalState::Confirming { since } = proposal.state {
 						// confirmed longer than period
-						if now.checked_sub(&since).unwrap_or_default()
-							> T::ConfirmationPeriod::get()
+						if now.checked_sub(&since).unwrap_or_default() >
+							T::ConfirmationPeriod::get()
 						{
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
@@ -453,9 +449,8 @@ pub mod pallet {
 			let relevant_cindexes = Self::relevant_cindexes(start_cindex)?;
 
 			let electorate = match proposal_action.get_access_policy() {
-				ProposalAccessPolicy::Community(cid) => {
-					Self::community_electorate(cid, relevant_cindexes)
-				},
+				ProposalAccessPolicy::Community(cid) =>
+					Self::community_electorate(cid, relevant_cindexes),
 				ProposalAccessPolicy::Global => Self::global_electorate(relevant_cindexes),
 			};
 
