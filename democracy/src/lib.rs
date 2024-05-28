@@ -100,7 +100,7 @@ pub mod pallet {
 
 		/// The total lifetime of a proposal.
 		///
-		/// If the proposal isn't approved withing its lifetime, it will be cancelled.
+		/// If the proposal isn't approved within its lifetime, it will be cancelled.
 		///
 		/// Note: In cycles this must be smaller than `ReputationLifetime`, otherwise the eligible
 		/// electorate will be 0.
@@ -109,8 +109,10 @@ pub mod pallet {
 
 		/// Minimum turnout a proposal needs to have to be considered as passing and entering the
 		/// `Confirming` state.
+		///
+		/// The unit is in permill
 		#[pallet::constant]
-		type MinTurnout: Get<u128>; // in permill
+		type MinTurnout: Get<u128>;
 	}
 
 	#[pallet::event]
@@ -329,8 +331,8 @@ pub mod pallet {
 		/// approval threshold.
 		/// * 	The lower bound ensures that the oldest reputation still exist at the end of the
 		/// 	proposal lifetime.
-		/// *	The upper bound ensures that the still dynamic reputation number of the current
-		///		cindex at submission time is not included.
+		/// *	The upper bound ensures that the still dynamic reputation count of the
+		/// 	cindex at submission time is not included.
 		fn voting_cindexes(
 			proposal_start: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
