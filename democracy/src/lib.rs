@@ -320,25 +320,31 @@ pub mod pallet {
 		fn relevant_cindexes(
 			start_cindex: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
-			let reputation_lifetime = CeremoniesPallet::<T>::reputation_lifetime();
-			let cycle_duration = <pallet_encointer_scheduler::Pallet<T>>::get_cycle_duration();
-			let proposal_lifetime = T::ProposalLifetime::get();
-			// ceil(proposal_lifetime / cycle_duration)
-			let proposal_lifetime_cycles: u64 = proposal_lifetime
-				.checked_add(&cycle_duration)
-				.ok_or(Error::<T>::MathError)?
-				.checked_sub(&T::Moment::saturated_from(1u64))
-				.ok_or(Error::<T>::MathError)?
-				.checked_div(&cycle_duration)
-				.ok_or(Error::<T>::MathError)?
+
+			let proposal_lifetime_cycles: u32 = Self::proposal_lifetime_cycles()?
 				.saturated_into();
-			Ok((((start_cindex).saturating_sub(reputation_lifetime).saturating_add(
+
+			// Todo: elaborate why this is the lower bound
+			let voting_cindex_lower_bound = start_cindex.saturating_sub(CeremoniesPallet::<T>::reputation_lifetime()).saturating_add(
 				proposal_lifetime_cycles
-					.try_into()
-					.expect("this is a small number in cycles;qed"),
-			))..=(start_cindex.saturating_sub(2u32)))
-				.collect::<Vec<CeremonyIndexType>>())
+			);
+
+			let cindexes = voting_cindex_lower_bound..=start_cindex.saturating_sub(2u32);
+
+			Ok(cindexes.collect())
 		}
+
+		fn proposal_lifetime_cycles() -> Result<T::Moment, Error<T>> {
+			let cycle_duration = <pallet_encointer_scheduler::Pallet<T>>::get_cycle_duration();
+
+			// integer operation for ceil(proposal_lifetime / cycle_duration)
+			T::ProposalLifetime::get()
+				.checked_add(&cycle_duration)
+				.and_then(|r| r.checked_sub(&T::Moment::saturated_from(1u64)))
+				.and_then(|r| r.checked_div(&cycle_duration))
+				.ok_or(Error::<T>::MathError)
+		}
+
 		/// Validates the reputations based on the following criteria and commits the reputations. Returns count of valid reputations.
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
