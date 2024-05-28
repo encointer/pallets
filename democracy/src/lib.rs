@@ -64,6 +64,7 @@ type ReputationVecOf<T> = ReputationVec<<T as Config>::MaxReputationCount>;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use encointer_primitives::communities::CommunityIdentifier;
 	use encointer_primitives::{
 		democracy::{Tally, *},
 		reputation_commitments::{DescriptorType, PurposeIdType},
@@ -413,7 +414,9 @@ pub mod pallet {
 					// confirming
 					if let ProposalState::Confirming { since } = proposal.state {
 						// confirmed longer than period
-						if now.checked_sub(&since).unwrap_or_default() > T::ConfirmationPeriod::get() {
+						if now.checked_sub(&since).unwrap_or_default()
+							> T::ConfirmationPeriod::get()
+						{
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
 							<CancelledAt<T>>::insert(proposal_action_identifier, now);
@@ -446,20 +449,36 @@ pub mod pallet {
 			proposal_action: ProposalAction,
 		) -> Result<ReputationCountType, Error<T>> {
 			let relevant_cindexes = Self::relevant_cindexes(start_cindex)?;
-			match proposal_action.get_access_policy() {
-				ProposalAccessPolicy::Community(cid) => Ok(relevant_cindexes
-					.into_iter()
-					.map(|cindex| {
-						<pallet_encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
-					})
-					.sum()),
-				ProposalAccessPolicy::Global => Ok(relevant_cindexes
-					.into_iter()
-					.map(|cindex| {
-						<pallet_encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
-					})
-					.sum()),
-			}
+
+			let electorate = match proposal_action.get_access_policy() {
+				ProposalAccessPolicy::Community(cid) => {
+					Self::community_electorate(cid, relevant_cindexes)
+				},
+				ProposalAccessPolicy::Global => Self::global_electorate(relevant_cindexes),
+			};
+
+			Ok(electorate)
+		}
+
+		fn community_electorate(
+			cid: CommunityIdentifier,
+			cindexes: Vec<CeremonyIndexType>,
+		) -> ReputationCountType {
+			cindexes
+				.iter()
+				.map(|cindex| {
+					<pallet_encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
+				})
+				.sum()
+		}
+
+		fn global_electorate(cindexes: Vec<CeremonyIndexType>) -> ReputationCountType {
+			cindexes
+				.iter()
+				.map(|cindex| {
+					<pallet_encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
+				})
+				.sum()
 		}
 
 		fn positive_turnout_bias(e: u128, t: u128, a: u128) -> Option<bool> {
@@ -475,9 +494,9 @@ pub mod pallet {
 			let sqrt_e = sqrt::<U64F64, U64F64>(U64F64::from_num(e)).ok()?;
 			let sqrt_t = sqrt::<U64F64, U64F64>(U64F64::from_num(t)).ok()?;
 
-			let approval_threshold = sqrt_e.checked_mul(sqrt_t).and_then(|r|
+			let approval_threshold = sqrt_e.checked_mul(sqrt_t).and_then(|r| {
 				r.checked_div(sqrt_e.checked_div(sqrt_t).and_then(|r| r.checked_add(1u32.into()))?)
-			)?;
+			})?;
 
 			let approved = U64F64::from_num(a) > approval_threshold;
 
@@ -494,7 +513,8 @@ pub mod pallet {
 				return Ok(false);
 			}
 
-			Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes).ok_or(Error::<T>::AQBError)
+			Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes)
+				.ok_or(Error::<T>::AQBError)
 		}
 		pub fn enact_proposal(proposal_id: ProposalIdType) -> DispatchResultWithPostInfo {
 			let mut proposal =
