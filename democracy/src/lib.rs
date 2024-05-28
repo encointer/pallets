@@ -60,6 +60,9 @@ pub use pallet::*;
 
 type ReputationVecOf<T> = ReputationVec<<T as Config>::MaxReputationCount>;
 
+use pallet_encointer_ceremonies::Pallet as CeremoniesPallet;
+use pallet_encointer_communities::Pallet as CommunitiesPallet;
+
 #[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
@@ -321,8 +324,7 @@ pub mod pallet {
 		fn relevant_cindexes(
 			start_cindex: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
-			let reputation_lifetime =
-				<pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+			let reputation_lifetime = CeremoniesPallet::<T>::reputation_lifetime();
 			let cycle_duration = <pallet_encointer_scheduler::Pallet<T>>::get_cycle_duration();
 			let proposal_lifetime = T::ProposalLifetime::get();
 			// ceil(proposal_lifetime / cycle_duration)
@@ -466,18 +468,14 @@ pub mod pallet {
 		) -> ReputationCountType {
 			cindexes
 				.iter()
-				.map(|cindex| {
-					<pallet_encointer_ceremonies::Pallet<T>>::reputation_count((cid, cindex))
-				})
+				.map(|cindex| CeremoniesPallet::<T>::reputation_count((cid, cindex)))
 				.sum()
 		}
 
 		fn global_electorate(cindexes: Vec<CeremonyIndexType>) -> ReputationCountType {
 			cindexes
 				.iter()
-				.map(|cindex| {
-					<pallet_encointer_ceremonies::Pallet<T>>::global_reputation_count(cindex)
-				})
+				.map(|cindex| CeremoniesPallet::<T>::global_reputation_count(cindex))
 				.sum()
 		}
 
@@ -522,31 +520,22 @@ pub mod pallet {
 
 			match proposal.action.clone() {
 				ProposalAction::AddLocation(cid, location) => {
-					<pallet_encointer_communities::Pallet<T>>::do_add_location(cid, location)?;
+					CommunitiesPallet::<T>::do_add_location(cid, location)?;
 				},
 				ProposalAction::RemoveLocation(cid, location) => {
-					<pallet_encointer_communities::Pallet<T>>::do_remove_location(cid, location)?;
+					CommunitiesPallet::<T>::do_remove_location(cid, location)?;
 				},
 				ProposalAction::UpdateCommunityMetadata(cid, community_metadata) => {
-					<pallet_encointer_communities::Pallet<T>>::do_update_community_metadata(
-						cid,
-						community_metadata,
-					)?;
+					CommunitiesPallet::<T>::do_update_community_metadata(cid, community_metadata)?;
 				},
 				ProposalAction::UpdateDemurrage(cid, demurrage) => {
-					<pallet_encointer_communities::Pallet<T>>::do_update_demurrage(cid, demurrage)?;
+					CommunitiesPallet::<T>::do_update_demurrage(cid, demurrage)?;
 				},
 				ProposalAction::UpdateNominalIncome(cid, nominal_income) => {
-					<pallet_encointer_communities::Pallet<T>>::do_update_nominal_income(
-						cid,
-						nominal_income,
-					)?;
+					CommunitiesPallet::<T>::do_update_nominal_income(cid, nominal_income)?;
 				},
-
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
-					<pallet_encointer_ceremonies::Pallet<T>>::do_set_inactivity_timeout(
-						inactivity_timeout,
-					)?;
+					CeremoniesPallet::<T>::do_set_inactivity_timeout(inactivity_timeout)?;
 				},
 			};
 
