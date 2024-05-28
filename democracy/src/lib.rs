@@ -317,7 +317,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn relevant_cindexes(
+		fn voting_cindexes(
 			start_cindex: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
 
@@ -366,7 +366,7 @@ pub mod pallet {
 				Self::purpose_ids(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
 			for community_ceremony in reputations {
-				if !Self::relevant_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
+				if !Self::voting_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
 				{
 					continue
 				}
@@ -452,12 +452,12 @@ pub mod pallet {
 			start_cindex: CeremonyIndexType,
 			proposal_action: ProposalAction,
 		) -> Result<ReputationCountType, Error<T>> {
-			let relevant_cindexes = Self::relevant_cindexes(start_cindex)?;
+			let voting_cindexes = Self::voting_cindexes(start_cindex)?;
 
 			let electorate = match proposal_action.get_access_policy() {
 				ProposalAccessPolicy::Community(cid) =>
-					Self::community_electorate(cid, relevant_cindexes),
-				ProposalAccessPolicy::Global => Self::global_electorate(relevant_cindexes),
+					Self::community_electorate(cid, voting_cindexes),
+				ProposalAccessPolicy::Global => Self::global_electorate(voting_cindexes),
 			};
 
 			Ok(electorate)
