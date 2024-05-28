@@ -101,6 +101,9 @@ pub mod pallet {
 		/// The total lifetime of a proposal.
 		///
 		/// If the proposal isn't approved withing its lifetime, it will be cancelled.
+		///
+		/// Note: In cycles this must be smaller than `ReputationLifetime`, otherwise the eligible
+		/// electorate will be 0.
 		#[pallet::constant]
 		type ProposalLifetime: Get<Self::Moment>;
 
