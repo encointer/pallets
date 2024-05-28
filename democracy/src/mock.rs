@@ -44,7 +44,7 @@ frame_support::construct_runtime!(
 
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
-	type MaxReputationVecLength = ConstU32<10>;
+	type MaxReputationCount = ConstU32<10>;
 	// 10 blocks
 	type ConfirmationPeriod = ConstU64<60000>;
 	// 40 blocks
