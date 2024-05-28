@@ -413,7 +413,7 @@ pub mod pallet {
 					// confirming
 					if let ProposalState::Confirming { since } = proposal.state {
 						// confirmed longer than period
-						if now - since > T::ConfirmationPeriod::get() {
+						if now.checked_sub(&since).unwrap_or_default() > T::ConfirmationPeriod::get() {
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
 							<CancelledAt<T>>::insert(proposal_action_identifier, now);
@@ -474,10 +474,9 @@ pub mod pallet {
 
 			let sqrt_e = sqrt::<U64F64, U64F64>(U64F64::from_num(e)).ok()?;
 			let sqrt_t = sqrt::<U64F64, U64F64>(U64F64::from_num(t)).ok()?;
-			let one = U64F64::from_num(1);
 
 			let approval_threshold = sqrt_e.checked_mul(sqrt_t).and_then(|r|
-				r.checked_div(sqrt_e.checked_div(sqrt_t).and_then(|r| r.checked_add(one))?)
+				r.checked_div(sqrt_e.checked_div(sqrt_t).and_then(|r| r.checked_add(1u32.into()))?)
 			)?;
 
 			let approved = U64F64::from_num(a) > approval_threshold;
