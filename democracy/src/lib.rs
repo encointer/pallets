@@ -334,13 +334,11 @@ pub mod pallet {
 		fn voting_cindexes(
 			proposal_start: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
+			let proposal_lifetime_cycles: u32 = Self::proposal_lifetime_cycles()?.saturated_into();
 
-			let proposal_lifetime_cycles: u32 = Self::proposal_lifetime_cycles()?
-				.saturated_into();
-
-			let voting_cindex_lower_bound = proposal_start.saturating_sub(CeremoniesPallet::<T>::reputation_lifetime()).saturating_add(
-				proposal_lifetime_cycles
-			);
+			let voting_cindex_lower_bound = proposal_start
+				.saturating_sub(CeremoniesPallet::<T>::reputation_lifetime())
+				.saturating_add(proposal_lifetime_cycles);
 
 			let cindexes = voting_cindex_lower_bound..=proposal_start.saturating_sub(2u32);
 
@@ -379,8 +377,7 @@ pub mod pallet {
 				Self::purpose_ids(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
 			for community_ceremony in reputations {
-				if !Self::voting_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
-				{
+				if !Self::voting_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1) {
 					continue
 				}
 
