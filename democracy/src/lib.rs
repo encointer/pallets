@@ -107,10 +107,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type ProposalLifetime: Get<Self::Moment>;
 
-		/// Minimum turnout a proposal needs to have to be considered as passing and entering the
+		/// Minimum turnout in permill for a proposal to be considered as passing and entering the
 		/// `Confirming` state.
-		///
-		/// The unit is in permill
 		#[pallet::constant]
 		type MinTurnout: Get<u128>;
 	}
