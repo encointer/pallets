@@ -317,19 +317,29 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Returns the cindexes eligible for voting on a proposal with `proposal_start`.
+		///
+		/// It is essentially the range of:
+		/// 	`[proposal_start - reputation_lifetime + proposal_lifetime, proposal_start - 2]`
+		///
+		/// These boundaries ensure that we have a constant electorate to determine the
+		/// approval threshold.
+		/// * 	The lower bound ensures that the oldest reputation still exist at the end of the
+		/// 	proposal lifetime.
+		/// *	The upper bound ensures that the still dynamic reputation number of the current
+		///		cindex at submission time is not included.
 		fn voting_cindexes(
-			start_cindex: CeremonyIndexType,
+			proposal_start: CeremonyIndexType,
 		) -> Result<Vec<CeremonyIndexType>, Error<T>> {
 
 			let proposal_lifetime_cycles: u32 = Self::proposal_lifetime_cycles()?
 				.saturated_into();
 
-			// Todo: elaborate why this is the lower bound
-			let voting_cindex_lower_bound = start_cindex.saturating_sub(CeremoniesPallet::<T>::reputation_lifetime()).saturating_add(
+			let voting_cindex_lower_bound = proposal_start.saturating_sub(CeremoniesPallet::<T>::reputation_lifetime()).saturating_add(
 				proposal_lifetime_cycles
 			);
 
-			let cindexes = voting_cindex_lower_bound..=start_cindex.saturating_sub(2u32);
+			let cindexes = voting_cindex_lower_bound..=proposal_start.saturating_sub(2u32);
 
 			Ok(cindexes.collect())
 		}
