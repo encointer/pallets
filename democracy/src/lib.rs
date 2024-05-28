@@ -59,6 +59,7 @@ mod benchmarking;
 pub use pallet::*;
 
 type ReputationVecOf<T> = ReputationVec<<T as Config>::MaxReputationCount>;
+
 #[allow(clippy::unused_unit)]
 #[frame_support::pallet]
 pub mod pallet {
@@ -106,7 +107,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		///  proposal enacted
 		ProposalEnacted {
@@ -211,13 +212,15 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight((<T as Config>::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight(
+            (< T as Config >::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
-				return Err(Error::<T>::ProposalWaitingForEnactment.into())
+				return Err(Error::<T>::ProposalWaitingForEnactment.into());
 			}
 			let _sender = ensure_signed(origin)?;
 			let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
@@ -255,7 +258,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(1)]
-		#[pallet::weight((<T as Config>::WeightInfo::vote(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((< T as Config >::WeightInfo::vote(), DispatchClass::Normal, Pays::Yes))]
 		pub fn vote(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -300,7 +303,9 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight((<T as Config>::WeightInfo::update_proposal_state(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight(
+            (< T as Config >::WeightInfo::update_proposal_state(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn update_proposal_state(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -310,6 +315,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 	}
+
 	impl<T: Config> Pallet<T> {
 		fn relevant_cindexes(
 			start_cindex: CeremonyIndexType,
@@ -357,12 +363,12 @@ pub mod pallet {
 			for community_ceremony in reputations {
 				if !Self::relevant_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1)
 				{
-					continue
+					continue;
 				}
 
 				if let Some(cid) = maybe_cid {
 					if community_ceremony.0 != cid {
-						continue
+						continue;
 					}
 				}
 
@@ -375,7 +381,7 @@ pub mod pallet {
 				)
 				.is_err()
 				{
-					continue
+					continue;
 				}
 
 				eligible_reputation_count += 1;
@@ -456,7 +462,7 @@ pub mod pallet {
 			}
 		}
 
-		fn positive_turnout_bias(e: u128, t: u128, a: u128) -> Result<bool, Error<T>> {
+		fn positive_turnout_bias(e: u128, t: u128, a: u128) -> Option<bool> {
 			// electorate e
 			// turnout t
 			// approval a
@@ -466,24 +472,17 @@ pub mod pallet {
 			// <==>
 			// a > sqrt(e) * sqrt(t) / (sqrt(e) / sqrt(t) + 1)
 
-			let sqrt_e =
-				sqrt::<U64F64, U64F64>(U64F64::from_num(e)).map_err(|_| <Error<T>>::AQBError)?;
-			let sqrt_t =
-				sqrt::<U64F64, U64F64>(U64F64::from_num(t)).map_err(|_| <Error<T>>::AQBError)?;
+			let sqrt_e = sqrt::<U64F64, U64F64>(U64F64::from_num(e)).ok()?;
+			let sqrt_t = sqrt::<U64F64, U64F64>(U64F64::from_num(t)).ok()?;
 			let one = U64F64::from_num(1);
 
-			Ok(U64F64::from_num(a) >
-				sqrt_e
-					.checked_mul(sqrt_t)
-					.ok_or(<Error<T>>::AQBError)?
-					.checked_div(
-						sqrt_e
-							.checked_div(sqrt_t)
-							.ok_or(<Error<T>>::AQBError)?
-							.checked_add(one)
-							.ok_or(<Error<T>>::AQBError)?,
-					)
-					.ok_or(<Error<T>>::AQBError)?)
+			let approval_threshold = sqrt_e.checked_mul(sqrt_t).and_then(|r|
+				r.checked_div(sqrt_e.checked_div(sqrt_t).and_then(|r| r.checked_add(one))?)
+			)?;
+
+			let approved = U64F64::from_num(a) > approval_threshold;
+
+			Some(approved)
 		}
 
 		pub fn is_passing(proposal_id: ProposalIdType) -> Result<bool, Error<T>> {
@@ -493,16 +492,10 @@ pub mod pallet {
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {
-				return Ok(false)
+				return Ok(false);
 			}
-			let positive_turnout_bias =
-				Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes);
-			if let Ok(passing) = positive_turnout_bias {
-				if passing {
-					return Ok(true)
-				}
-			}
-			Ok(false)
+
+			Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes).ok_or(Error::<T>::AQBError)
 		}
 		pub fn enact_proposal(proposal_id: ProposalIdType) -> DispatchResultWithPostInfo {
 			let mut proposal =
