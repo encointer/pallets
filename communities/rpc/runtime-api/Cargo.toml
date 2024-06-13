@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "10.1.0"
+version = "11.1.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Communities rpc runtime api for the Encointer blockchain runtime"
