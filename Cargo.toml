@@ -61,40 +61,40 @@ serde = { version = "1.0.197", default-features = false, features = ["derive", "
 thiserror = "1.0.50"
 
 # polkadot-sdk [no_std]
-frame-benchmarking = { version = "33.0.0", default-features = false }
-frame-support = { version = "33.0.0", default-features = false }
-frame-system = { version = "33.0.0", default-features = false }
-pallet-asset-tx-payment = { version = "33.0.0", default-features = false }
-pallet-balances = { version = "34.0.0", default-features = false }
-pallet-timestamp = { version = "32.0.0", default-features = false }
-pallet-transaction-payment = { version = "33.0.0", default-features = false }
-pallet-treasury = { version = "32.0.0", default-features = false }
-sp-api = { version = "31.0.0", default-features = false }
-sp-application-crypto = { version = "35.0.0", default-features = false }
+frame-benchmarking = { version = "34.0.0", default-features = false }
+frame-support = { version = "34.0.0", default-features = false }
+frame-system = { version = "34.0.1", default-features = false }
+pallet-asset-tx-payment = { version = "34.0.0", default-features = false }
+pallet-balances = { version = "35.0.0", default-features = false }
+pallet-timestamp = { version = "33.0.0", default-features = false }
+pallet-transaction-payment = { version = "34.0.0", default-features = false }
+pallet-treasury = { version = "33.0.0", default-features = false }
+sp-api = { version = "32.0.0", default-features = false }
+sp-application-crypto = { version = "36.0.0", default-features = false }
 sp-arithmetic = { version = "26.0.0", default-features = false }
-sp-core = { version = "32.0.0", default-features = false }
-sp-io = { version = "35.0.0", default-features = false }
-sp-runtime = { version = "36.0.0", default-features = false }
+sp-core = { version = "33.0.1", default-features = false }
+sp-io = { version = "36.0.0", default-features = false }
+sp-runtime = { version = "37.0.0", default-features = false }
 sp-std = { version = "14.0.0", default-features = false }
 
 # rpc stuff [std]
-jsonrpsee = { version = "0.22.0", features = ["client-core", "server", "macros"] }
-jsonrpsee-core = { version = "0.22.0" }
-jsonrpsee-types = { version = "0.22.0" }
-pallet-transaction-payment-rpc = { version = "35.0.0" }
-sc-rpc = "34.0.0"
-sc-rpc-api = "0.38.0"
-sp-blockchain = "33.0.0"
-sp-rpc = "30.0.0"
+jsonrpsee = { version = "0.22.5", features = ["client-core", "server", "macros"] }
+jsonrpsee-core = { version = "0.22.5" }
+jsonrpsee-types = { version = "0.22.5" }
+pallet-transaction-payment-rpc = { version = "36.0.0" }
+sc-rpc = "35.0.0"
+sc-rpc-api = "0.39.0"
+sp-blockchain = "34.0.0"
+sp-rpc = "31.0.0"
 
 # dev deps
 approx = "0.5.1"
-itertools = "0.10.5"
+itertools = "0.11.0"
 rstest = "0.12.0"
 serde_json = "1.0.114"
-sp-inherents = "31.0.0"
-sp-keyring = "36.0.0"
-sp-keystore = "0.38.0"
+sp-inherents = "32.0.0"
+sp-keyring = "37.0.0"
+sp-keystore = "0.39.0"
 
 #[patch."https://github.com/encointer/substrate-fixed"]
 #substrate-fixed = { path = "../substrate-fixed"}
