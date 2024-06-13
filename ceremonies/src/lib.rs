@@ -1841,13 +1841,11 @@ impl<T: Config> Pallet<T> {
 
 		// gather votes and attestations
 		for participant in meetup_participants.iter() {
-			let attestations = match Self::attestation_registry(
+			let attestations = Self::attestation_registry(
 				(&cid, cindex),
 				Self::attestation_index((cid, cindex), participant),
-			) {
-				Some(attestees) => attestees,
-				None => Default::default(),
-			};
+			)
+			.unwrap_or_default();
 			// convert AccountId to local index
 			let attestation_indices = attestations
 				.into_iter()
