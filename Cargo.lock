@@ -985,27 +985,12 @@ dependencies = [
 
 [[package]]
 name = "crc"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49fc9a695bca7f35f5f4c15cddc84415f66a74ea78eef08e90c5024f2b540e23"
-dependencies = [
- "crc-catalog 1.1.1",
-]
-
-[[package]]
-name = "crc"
 version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69e6e4d7b33a94f0991c26729976b10ebde1d34c3ee82408fb536164fa10d636"
 dependencies = [
- "crc-catalog 2.4.0",
+ "crc-catalog",
 ]
-
-[[package]]
-name = "crc-catalog"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccaeedb56da03b09f598226e25e80088cb4cd25f316e6e4df7d695f0feeb1403"
 
 [[package]]
 name = "crc-catalog"
@@ -1572,7 +1557,7 @@ version = "11.1.0"
 dependencies = [
  "approx",
  "bs58 0.5.1",
- "crc 2.1.0",
+ "crc",
  "ep-core",
  "frame-support",
  "log",
@@ -6464,7 +6449,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f64cef148d3295c730c3cb340b0b252a4d570b1c7d4bf0808f88540b0a888bc"
 dependencies = [
  "bytes",
- "crc 3.2.1",
+ "crc",
  "fxhash",
  "log",
  "rand 0.8.5",
@@ -7505,7 +7490,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee48572247f422dcbe68630c973f8296fbd5157119cd36a3223e48bf83d47727"
 dependencies = [
  "combine",
- "crc 3.2.1",
+ "crc",
  "hmac 0.12.1",
  "once_cell",
  "openssl",
@@ -7525,7 +7510,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3f10d3f68e60168d81110410428a435dbde28cc5525f5f7c6fdec92dbdc2800"
 dependencies = [
  "combine",
- "crc 3.2.1",
+ "crc",
  "hmac 0.12.1",
  "once_cell",
  "openssl",

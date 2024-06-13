@@ -48,7 +48,7 @@ pallet-encointer-communities-rpc-runtime-api = { path = "communities/rpc/runtime
 # various
 array-bytes = "6.1.0"
 bs58 = { version = "0.5.0", default-features = false, features = ["alloc"] }
-crc = "2.1.0"
+crc = "3.2.1"
 fixed = { package = "substrate-fixed", default-features = false, version = "0.5.9" }
 geohash = { package = "substrate-geohash", version = "0.13.0" }
 impl-serde = { version = "0.4.0", default-features = false }
