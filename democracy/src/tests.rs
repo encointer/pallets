@@ -439,7 +439,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 }
 
 #[test]
-fn do_update_proposal_state_works_with_cancelled_proposal() {
+fn do_update_proposal_state_cancels_superseded_proposal() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
@@ -448,6 +448,7 @@ fn do_update_proposal_state_works_with_cancelled_proposal() {
 			proposal_action
 		));
 
+		//another proposal of same action has been scheduled for enactment
 		CancelledAt::<TestRuntime>::insert(
 			ProposalActionIdentifier::SetInactivityTimeout,
 			3 * BLOCKTIME,
@@ -544,7 +545,8 @@ fn do_update_proposal_state_works() {
 			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()),
 			None
 		);
-		advance_n_blocks(11);
+		// should even work if proposal is too old before update is called.
+		advance_n_blocks(41);
 		// proposal is enacted
 		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), true);
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);

@@ -426,10 +426,10 @@ pub mod pallet {
 			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal_action_identifier = proposal.action.clone().get_identifier();
 			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
-			let proposal_cancelled =
+			let proposal_cancelled_by_other =
 				cancelled_at.is_some() && proposal.start < cancelled_at.unwrap();
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
-			if proposal_cancelled || proposal_too_old {
+			if proposal_cancelled_by_other {
 				proposal.state = ProposalState::Cancelled;
 			} else {
 				// passing
@@ -445,15 +445,23 @@ pub mod pallet {
 							<CancelledAt<T>>::insert(proposal_action_identifier, now);
 							approved = true;
 						}
-					// not confirming
+					// not yet confirming
 					} else {
-						proposal.state = ProposalState::Confirming { since: now };
+						if proposal_too_old {
+							proposal.state = ProposalState::Cancelled;
+						} else {
+							proposal.state = ProposalState::Confirming { since: now };
+						}
 					}
 				// not passing
 				} else {
-					// confirming
-					if let ProposalState::Confirming { since: _ } = proposal.state {
-						proposal.state = ProposalState::Ongoing;
+					if proposal_too_old {
+						proposal.state = ProposalState::Cancelled;
+					} else {
+						// confirming
+						if let ProposalState::Confirming { since: _ } = proposal.state {
+							proposal.state = ProposalState::Ongoing;
+						}
 					}
 				}
 			}
