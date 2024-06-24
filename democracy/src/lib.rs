@@ -446,23 +446,17 @@ pub mod pallet {
 							approved = true;
 						}
 					// not yet confirming
-					} else {
-						if proposal_too_old {
-							proposal.state = ProposalState::Cancelled;
-						} else {
-							proposal.state = ProposalState::Confirming { since: now };
-						}
-					}
-				// not passing
-				} else {
-					if proposal_too_old {
+					} else if proposal_too_old {
 						proposal.state = ProposalState::Cancelled;
 					} else {
-						// confirming
-						if let ProposalState::Confirming { since: _ } = proposal.state {
-							proposal.state = ProposalState::Ongoing;
-						}
+						proposal.state = ProposalState::Confirming { since: now };
 					}
+
+				// not passing
+				} else if proposal_too_old {
+					proposal.state = ProposalState::Cancelled;
+				} else if let ProposalState::Confirming { since: _ } = proposal.state {
+					proposal.state = ProposalState::Ongoing;
 				}
 			}
 			<Proposals<T>>::insert(proposal_id, &proposal);
