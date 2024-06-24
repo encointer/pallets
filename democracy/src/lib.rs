@@ -519,7 +519,7 @@ pub mod pallet {
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {
-				return Ok(false);
+				return Ok(false)
 			}
 
 			Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes)
@@ -561,9 +561,7 @@ pub mod pallet {
 impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
-			CeremonyPhaseType::Assigning => {},
-			CeremonyPhaseType::Attesting => {},
-			CeremonyPhaseType::Registering => {
+			CeremonyPhaseType::Assigning => {
 				// safe as EnactmentQueue has one key per ProposalActionType and those are bounded
 				<EnactmentQueue<T>>::iter().for_each(|p| {
 					if let Err(e) = Self::enact_proposal(p.1) {
@@ -573,6 +571,8 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 				// remove all keys from the map
 				<EnactmentQueue<T>>::translate::<ProposalIdType, _>(|_, _| None);
 			},
+			CeremonyPhaseType::Attesting => {},
+			CeremonyPhaseType::Registering => {},
 		}
 	}
 }
