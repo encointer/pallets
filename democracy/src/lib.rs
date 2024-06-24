@@ -273,6 +273,15 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
+			// make sure we don't vote on proposal that can't update anymore
+			match Self::do_update_proposal_state(proposal_id) {
+				Ok(_) => Ok(()),
+				Err(error) => match error {
+					Error::<T>::ProposalCannotBeUpdated => Ok(()),
+					other_error => Err(other_error),
+				},
+			}?;
+
 			let num_votes =
 				Self::validate_and_commit_reputations(proposal_id, &sender, &reputations)?;
 
