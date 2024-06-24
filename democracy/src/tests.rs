@@ -412,7 +412,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
-			state: ProposalState::Cancelled,
+			state: ProposalState::Rejected,
 			electorate_size: 0,
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
@@ -426,6 +426,15 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(2, proposal2);
 
+		let proposal3: Proposal<Moment> = Proposal {
+			start: Moment::from(1u64),
+			start_cindex: 1,
+			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
+			state: ProposalState::SupersededBy { id: 2 },
+			electorate_size: 0,
+		};
+		Proposals::<TestRuntime>::insert(3, proposal3);
+
 		assert_err!(
 			EncointerDemocracy::do_update_proposal_state(1),
 			Error::<TestRuntime>::ProposalCannotBeUpdated
@@ -433,6 +442,11 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 
 		assert_err!(
 			EncointerDemocracy::do_update_proposal_state(2),
+			Error::<TestRuntime>::ProposalCannotBeUpdated
+		);
+
+		assert_err!(
+			EncointerDemocracy::do_update_proposal_state(3),
 			Error::<TestRuntime>::ProposalCannotBeUpdated
 		);
 	});
@@ -449,9 +463,9 @@ fn do_update_proposal_state_cancels_superseded_proposal() {
 		));
 
 		//another proposal of same action has been scheduled for enactment
-		CancelledAt::<TestRuntime>::insert(
+		LastApprovedProposalForAction::<TestRuntime>::insert(
 			ProposalActionIdentifier::SetInactivityTimeout,
-			3 * BLOCKTIME,
+			(3 * BLOCKTIME, 2),
 		);
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
@@ -460,7 +474,10 @@ fn do_update_proposal_state_cancels_superseded_proposal() {
 
 		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
 
-		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
+		assert_eq!(
+			EncointerDemocracy::proposals(1).unwrap().state,
+			ProposalState::SupersededBy { id: 2 }
+		);
 	});
 }
 
@@ -483,7 +500,7 @@ fn do_update_proposal_state_works_with_too_old_proposal() {
 		advance_n_blocks(1);
 
 		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
-		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Rejected);
 	});
 }
 

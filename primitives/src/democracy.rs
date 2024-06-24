@@ -104,7 +104,8 @@ pub enum ProposalState<Moment> {
 	Ongoing,
 	Confirming { since: Moment },
 	Approved,
-	Cancelled,
+	SupersededBy { id: ProposalIdType },
+	Rejected,
 	Enacted,
 }
 

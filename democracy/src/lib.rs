@@ -75,7 +75,10 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -192,9 +195,14 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, ProposalIdType, Tally, OptionQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn cancelled_at)]
-	pub(super) type CancelledAt<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::Moment, OptionQuery>;
+	#[pallet::getter(fn last_approved_proposal_for_action)]
+	pub(super) type LastApprovedProposalForAction<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		ProposalActionIdentifier,
+		(T::Moment, ProposalIdType),
+		OptionQuery,
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn enactment_queue)]
@@ -425,12 +433,14 @@ pub mod pallet {
 			let old_proposal_state = proposal.state;
 			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal_action_identifier = proposal.action.clone().get_identifier();
-			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
-			let proposal_cancelled_by_other =
-				cancelled_at.is_some() && proposal.start < cancelled_at.unwrap();
+			let last_approved_proposal_for_action =
+				Self::last_approved_proposal_for_action(proposal_action_identifier);
+			let proposal_cancelled_by_other = last_approved_proposal_for_action.is_some() &&
+				proposal.start < last_approved_proposal_for_action.unwrap().0;
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled_by_other {
-				proposal.state = ProposalState::Cancelled;
+				proposal.state =
+					ProposalState::SupersededBy { id: last_approved_proposal_for_action.unwrap().1 }
 			} else {
 				// passing
 				if Self::is_passing(proposal_id)? {
@@ -442,19 +452,22 @@ pub mod pallet {
 						{
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
-							<CancelledAt<T>>::insert(proposal_action_identifier, now);
+							<LastApprovedProposalForAction<T>>::insert(
+								proposal_action_identifier,
+								(now, proposal_id),
+							);
 							approved = true;
 						}
 					// not yet confirming
 					} else if proposal_too_old {
-						proposal.state = ProposalState::Cancelled;
+						proposal.state = ProposalState::Rejected;
 					} else {
 						proposal.state = ProposalState::Confirming { since: now };
 					}
 
 				// not passing
 				} else if proposal_too_old {
-					proposal.state = ProposalState::Cancelled;
+					proposal.state = ProposalState::Rejected;
 				} else if let ProposalState::Confirming { since: _ } = proposal.state {
 					proposal.state = ProposalState::Ongoing;
 				}
@@ -588,6 +601,7 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	}
 }
 
+mod migrations;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
