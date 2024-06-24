@@ -17,6 +17,7 @@ mod v0 {
 pub mod v1 {
 	use super::*;
 
+	#[allow(dead_code)]
 	pub struct MigrateV0toV1purging<T>(sp_std::marker::PhantomData<T>);
 
 	impl<T: Config + frame_system::Config> OnRuntimeUpgrade for MigrateV0toV1purging<T> {
