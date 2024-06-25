@@ -1,6 +1,6 @@
 [package]
 name = "encointer-primitives"
-version = "11.2.0"
+version = "12.2.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Primitives for the Encointer blockchain runtime"

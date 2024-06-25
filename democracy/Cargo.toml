@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-democracy"
-version = "11.2.0"
+version = "12.2.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Democracy pallet for the Encointer blockchain runtime"

@@ -28,22 +28,22 @@ members = [
 
 [workspace.dependencies]
 # local pin
-encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-features = false, version = "11.1.0" }
-encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "11.1.0" }
-encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "11.1.0" }
-encointer-rpc = { path = "rpc", version = "11.1.0" }
-ep-core = { path = "primitives/core", default-features = false, version = "11.0.0" }
-pallet-encointer-balances = { path = "balances", default-features = false, version = "11.1.0" }
-pallet-encointer-ceremonies = { path = "ceremonies", default-features = false, version = "11.1.0" }
-pallet-encointer-communities = { path = "communities", default-features = false, version = "11.1.0" }
-pallet-encointer-reputation-commitments = { path = "reputation-commitments", default-features = false, version = "11.1.0" }
-pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "11.1.0" }
+encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-features = false, version = "12.1.0" }
+encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "12.1.0" }
+encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "12.1.0" }
+encointer-rpc = { path = "rpc", version = "12.1.0" }
+ep-core = { path = "primitives/core", default-features = false, version = "12.0.0" }
+pallet-encointer-balances = { path = "balances", default-features = false, version = "12.1.0" }
+pallet-encointer-ceremonies = { path = "ceremonies", default-features = false, version = "12.1.0" }
+pallet-encointer-communities = { path = "communities", default-features = false, version = "12.1.0" }
+pallet-encointer-reputation-commitments = { path = "reputation-commitments", default-features = false, version = "12.1.0" }
+pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "12.1.0" }
 test-utils = { path = "test-utils" }
 # rpc apis
-encointer-balances-tx-payment-rpc-runtime-api = { path = "balances-tx-payment/rpc/runtime-api", version = "11.1.0" }
-pallet-encointer-bazaar-rpc-runtime-api = { path = "bazaar/rpc/runtime-api", version = "11.1.0" }
-pallet-encointer-ceremonies-rpc-runtime-api = { path = "ceremonies/rpc/runtime-api", version = "11.1.0" }
-pallet-encointer-communities-rpc-runtime-api = { path = "communities/rpc/runtime-api", version = "11.1.0" }
+encointer-balances-tx-payment-rpc-runtime-api = { path = "balances-tx-payment/rpc/runtime-api", version = "12.1.0" }
+pallet-encointer-bazaar-rpc-runtime-api = { path = "bazaar/rpc/runtime-api", version = "12.1.0" }
+pallet-encointer-ceremonies-rpc-runtime-api = { path = "ceremonies/rpc/runtime-api", version = "12.1.0" }
+pallet-encointer-communities-rpc-runtime-api = { path = "communities/rpc/runtime-api", version = "12.1.0" }
 
 # various
 array-bytes = "6.1.0"
@@ -61,40 +61,40 @@ serde = { version = "1.0.197", default-features = false, features = ["derive", "
 thiserror = "1.0.50"
 
 # polkadot-sdk [no_std]
-frame-benchmarking = { version = "34.0.0", default-features = false }
-frame-support = { version = "34.0.0", default-features = false }
-frame-system = { version = "34.0.1", default-features = false }
-pallet-asset-tx-payment = { version = "34.0.0", default-features = false }
-pallet-balances = { version = "35.0.0", default-features = false }
-pallet-timestamp = { version = "33.0.0", default-features = false }
-pallet-transaction-payment = { version = "34.0.0", default-features = false }
-pallet-treasury = { version = "33.0.0", default-features = false }
-sp-api = { version = "32.0.0", default-features = false }
-sp-application-crypto = { version = "36.0.0", default-features = false }
+frame-benchmarking = { version = "35.0.0", default-features = false }
+frame-support = { version = "35.0.0", default-features = false }
+frame-system = { version = "35.0.0", default-features = false }
+pallet-asset-tx-payment = { version = "35.0.0", default-features = false }
+pallet-balances = { version = "36.0.0", default-features = false }
+pallet-timestamp = { version = "34.0.0", default-features = false }
+pallet-transaction-payment = { version = "35.0.0", default-features = false }
+pallet-treasury = { version = "34.0.0", default-features = false }
+sp-api = { version = "33.0.0", default-features = false }
+sp-application-crypto = { version = "37.0.0", default-features = false }
 sp-arithmetic = { version = "26.0.0", default-features = false }
-sp-core = { version = "33.0.1", default-features = false }
-sp-io = { version = "36.0.0", default-features = false }
-sp-runtime = { version = "37.0.0", default-features = false }
+sp-core = { version = "34.0.0", default-features = false }
+sp-io = { version = "37.0.0", default-features = false }
+sp-runtime = { version = "38.0.0", default-features = false }
 sp-std = { version = "14.0.0", default-features = false }
 
 # rpc stuff [std]
 jsonrpsee = { version = "0.22.5", features = ["client-core", "server", "macros"] }
 jsonrpsee-core = { version = "0.22.5" }
 jsonrpsee-types = { version = "0.22.5" }
-pallet-transaction-payment-rpc = { version = "36.0.0" }
-sc-rpc = "35.0.0"
-sc-rpc-api = "0.39.0"
-sp-blockchain = "34.0.0"
-sp-rpc = "31.0.0"
+pallet-transaction-payment-rpc = { version = "37.0.0" }
+sc-rpc = "36.0.0"
+sc-rpc-api = "0.40.0"
+sp-blockchain = "35.0.0"
+sp-rpc = "32.0.0"
 
 # dev deps
 approx = "0.5.1"
 itertools = "0.11.0"
 rstest = "0.12.0"
 serde_json = "1.0.114"
-sp-inherents = "32.0.0"
-sp-keyring = "37.0.0"
-sp-keystore = "0.39.0"
+sp-inherents = "33.0.0"
+sp-keyring = "38.0.0"
+sp-keystore = "0.40.0"
 
 #[patch."https://github.com/encointer/substrate-fixed"]
 #substrate-fixed = { path = "../substrate-fixed"}
