@@ -758,20 +758,13 @@ fn proposal_happy_flow() {
 		// let pass the proposal lifetime
 		advance_n_blocks(40);
 
-		assert_ok!(EncointerDemocracy::vote(
+		assert_ok!(EncointerDemocracy::update_proposal_state(
 			RuntimeOrigin::signed(alice.clone()),
 			1,
-			Vote::Aye,
-			BoundedVec::try_from(vec![(cid2, 3)]).unwrap()
 		));
 
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::VoteFailed { proposal_id: 1, vote: Vote::Aye }.into())
-		);
-
-		assert_eq!(
-			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
 			Some(
 				Event::ProposalStateUpdated {
 					proposal_id: 1,

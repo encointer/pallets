@@ -282,13 +282,7 @@ pub mod pallet {
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
 			// make sure we don't vote on proposal that can't update anymore
-			match Self::do_update_proposal_state(proposal_id) {
-				Ok(_) => Ok(()),
-				Err(error) => match error {
-					Error::<T>::ProposalCannotBeUpdated => Ok(()),
-					other_error => Err(other_error),
-				},
-			}?;
+			Self::do_update_proposal_state(proposal_id)?;
 
 			let num_votes =
 				Self::validate_and_commit_reputations(proposal_id, &sender, &reputations)?;
@@ -308,13 +302,7 @@ pub mod pallet {
 
 			<Tallies<T>>::insert(proposal_id, new_tally);
 
-			match Self::do_update_proposal_state(proposal_id) {
-				Ok(_) => Ok(()),
-				Err(error) => match error {
-					Error::<T>::ProposalCannotBeUpdated => Ok(()),
-					other_error => Err(other_error),
-				},
-			}?;
+			Self::do_update_proposal_state(proposal_id)?;
 
 			if num_votes > 0 {
 				Self::deposit_event(Event::VotePlaced { proposal_id, vote, num_votes })
