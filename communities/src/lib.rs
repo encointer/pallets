@@ -175,6 +175,11 @@ pub mod pallet {
 			location: Location,
 		) -> DispatchResultWithPostInfo {
 			T::TrustableForNonDestructiveAction::ensure_origin(origin)?;
+			ensure!(
+				<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
+					CeremonyPhaseType::Registering,
+				Error::<T>::RegistrationPhaseRequired
+			);
 			Self::do_add_location(cid, location)
 		}
 
@@ -191,6 +196,11 @@ pub mod pallet {
 			location: Location,
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
+			ensure!(
+				<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
+					CeremonyPhaseType::Registering,
+				Error::<T>::RegistrationPhaseRequired
+			);
 			Self::do_remove_location(cid, location)
 		}
 
@@ -409,11 +419,6 @@ impl<T: Config> Pallet<T> {
 		cid: CommunityIdentifier,
 		location: Location,
 	) -> DispatchResultWithPostInfo {
-		ensure!(
-			<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
-				CeremonyPhaseType::Registering,
-			Error::<T>::RegistrationPhaseRequired
-		);
 		Self::ensure_cid_exists(&cid)?;
 		Self::validate_location(&location)?;
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
@@ -450,11 +455,6 @@ impl<T: Config> Pallet<T> {
 		cid: CommunityIdentifier,
 		location: Location,
 	) -> DispatchResultWithPostInfo {
-		ensure!(
-			<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
-				CeremonyPhaseType::Registering,
-			Error::<T>::RegistrationPhaseRequired
-		);
 		Self::ensure_cid_exists(&cid)?;
 
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon)

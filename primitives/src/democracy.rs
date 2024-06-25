@@ -104,13 +104,18 @@ pub enum ProposalState<Moment> {
 	Ongoing,
 	Confirming { since: Moment },
 	Approved,
-	Cancelled,
+	SupersededBy { id: ProposalIdType },
+	Rejected,
 	Enacted,
 }
 
 impl<Moment: PartialEq> ProposalState<Moment> {
 	pub fn can_update(self) -> bool {
 		matches!(self, Self::Confirming { since: _ } | Self::Ongoing)
+	}
+
+	pub fn has_failed(self) -> bool {
+		matches!(self, Self::SupersededBy { id: _ } | Self::Rejected)
 	}
 }
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]

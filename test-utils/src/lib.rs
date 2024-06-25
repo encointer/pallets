@@ -246,11 +246,12 @@ parameter_types! {
 
 #[macro_export]
 macro_rules! impl_encointer_scheduler {
-	($t:ident, $ceremonies:ident, $reputationcommitments:ident) => {
+	($t:ident, $ceremonies:ident, $othercallbackpallet:ident) => {
 		impl pallet_encointer_scheduler::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type CeremonyMaster = EnsureAlice;
-			type OnCeremonyPhaseChange = ($ceremonies, $reputationcommitments); //OnCeremonyPhaseChange;
+			// democracy callback MUST be executed before ceremony callback!
+			type OnCeremonyPhaseChange = ($othercallbackpallet, $ceremonies); //OnCeremonyPhaseChange;
 			type MomentsPerDay = MomentsPerDay;
 			type WeightInfo = ();
 		}

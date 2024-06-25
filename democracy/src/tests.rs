@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Unit tests for the tokens module.
+//! Unit tests for the encointer democracy module.
 
 use super::*;
 use crate::mock::{
@@ -378,11 +378,11 @@ fn voting_works() {
 			1,
 			Vote::Nay,
 			BoundedVec::try_from(vec![
-				(cid, 2),  // invalid beacuse out of range
-				(cid, 4),  // invalid beacuse already used
-				(cid2, 4), // invlaid because unverified
+				(cid, 2),  // invalid because out of range
+				(cid, 4),  // invalid because already used
+				(cid2, 4), // invalid because unverified
 				(cid2, 5), // valid
-				(cid2, 6), // invlaid because out of range
+				(cid2, 6), // invalid because out of range
 				(cid2, 3), // invlalid non-existent
 			])
 			.unwrap()
@@ -412,7 +412,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
-			state: ProposalState::Cancelled,
+			state: ProposalState::Rejected,
 			electorate_size: 0,
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
@@ -426,6 +426,15 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(2, proposal2);
 
+		let proposal3: Proposal<Moment> = Proposal {
+			start: Moment::from(1u64),
+			start_cindex: 1,
+			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
+			state: ProposalState::SupersededBy { id: 2 },
+			electorate_size: 0,
+		};
+		Proposals::<TestRuntime>::insert(3, proposal3);
+
 		assert_err!(
 			EncointerDemocracy::do_update_proposal_state(1),
 			Error::<TestRuntime>::ProposalCannotBeUpdated
@@ -435,11 +444,16 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 			EncointerDemocracy::do_update_proposal_state(2),
 			Error::<TestRuntime>::ProposalCannotBeUpdated
 		);
+
+		assert_err!(
+			EncointerDemocracy::do_update_proposal_state(3),
+			Error::<TestRuntime>::ProposalCannotBeUpdated
+		);
 	});
 }
 
 #[test]
-fn do_update_proposal_state_works_with_cancelled_proposal() {
+fn do_update_proposal_state_cancels_superseded_proposal() {
 	new_test_ext().execute_with(|| {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 
@@ -448,9 +462,10 @@ fn do_update_proposal_state_works_with_cancelled_proposal() {
 			proposal_action
 		));
 
-		CancelledAt::<TestRuntime>::insert(
+		//another proposal of same action has been scheduled for enactment
+		LastApprovedProposalForAction::<TestRuntime>::insert(
 			ProposalActionIdentifier::SetInactivityTimeout,
-			3 * BLOCKTIME,
+			(3 * BLOCKTIME, 2),
 		);
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
@@ -459,7 +474,10 @@ fn do_update_proposal_state_works_with_cancelled_proposal() {
 
 		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
 
-		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
+		assert_eq!(
+			EncointerDemocracy::proposals(1).unwrap().state,
+			ProposalState::SupersededBy { id: 2 }
+		);
 	});
 }
 
@@ -482,7 +500,7 @@ fn do_update_proposal_state_works_with_too_old_proposal() {
 		advance_n_blocks(1);
 
 		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
-		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Cancelled);
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Rejected);
 	});
 }
 
@@ -544,7 +562,8 @@ fn do_update_proposal_state_works() {
 			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()),
 			None
 		);
-		advance_n_blocks(11);
+		// should even work if proposal is too old before update is called.
+		advance_n_blocks(41);
 		// proposal is enacted
 		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), true);
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);
@@ -682,8 +701,7 @@ fn enactment_updates_proposal_metadata_and_enactment_queue() {
 		EnactmentQueue::<TestRuntime>::insert(proposal_action2.clone().get_identifier(), 2);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 
@@ -737,21 +755,16 @@ fn proposal_happy_flow() {
 			Some(Event::VotePlaced { proposal_id: 1, vote: Vote::Aye, num_votes: 3 }.into())
 		);
 
+		// let pass the proposal lifetime
 		advance_n_blocks(40);
-		assert_ok!(EncointerDemocracy::vote(
+
+		assert_ok!(EncointerDemocracy::update_proposal_state(
 			RuntimeOrigin::signed(alice.clone()),
 			1,
-			Vote::Aye,
-			BoundedVec::try_from(vec![(cid2, 3)]).unwrap()
 		));
 
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::VoteFailed { proposal_id: 1, vote: Vote::Aye }.into())
-		);
-
-		assert_eq!(
-			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
 			Some(
 				Event::ProposalStateUpdated {
 					proposal_id: 1,
@@ -762,8 +775,7 @@ fn proposal_happy_flow() {
 		);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(
 			event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2),
@@ -792,12 +804,14 @@ fn enact_add_location_works() {
 		));
 
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
+
+		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
 		assert_eq!(EncointerCommunities::locations(cid, geo_hash.clone()).len(), 0);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
@@ -819,12 +833,13 @@ fn enact_remove_location_works() {
 		));
 
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
+
+		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 		assert_eq!(EncointerCommunities::locations(cid, geo_hash.clone()).len(), 1);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
@@ -849,11 +864,11 @@ fn enact_update_community_metadata_works() {
 			proposal_action.clone()
 		));
 
+		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
@@ -877,13 +892,13 @@ fn enact_update_demurrage_works() {
 			proposal_action.clone()
 		));
 
+		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		assert!(EncointerBalances::demurrage_per_block(&cid) != demurrage);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
@@ -903,11 +918,11 @@ fn enact_update_nominal_income_works() {
 			proposal_action.clone()
 		));
 
+		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
@@ -926,11 +941,11 @@ fn enact_set_inactivity_timeout_works() {
 			proposal_action.clone()
 		));
 
+		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(
@@ -948,7 +963,10 @@ fn enact_set_inactivity_timeout_works() {
 fn enactment_error_fires_event() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+
+		// use inexisting community to cause an enactment error
 		let cid = CommunityIdentifier::from_str("u0qj944rhWE").unwrap();
+
 		let alice = alice();
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
@@ -957,11 +975,11 @@ fn enactment_error_fires_event() {
 			proposal_action.clone()
 		));
 
+		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
 		run_to_next_phase();
-		run_to_next_phase();
-		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
 
 		match event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 2).unwrap() {
 			mock::RuntimeEvent::EncointerDemocracy(Event::EnactmentFailed {

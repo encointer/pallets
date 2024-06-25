@@ -75,7 +75,10 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -192,9 +195,14 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, ProposalIdType, Tally, OptionQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn cancelled_at)]
-	pub(super) type CancelledAt<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, T::Moment, OptionQuery>;
+	#[pallet::getter(fn last_approved_proposal_for_action)]
+	pub(super) type LastApprovedProposalForAction<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		ProposalActionIdentifier,
+		(T::Moment, ProposalIdType),
+		OptionQuery,
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn enactment_queue)]
@@ -273,6 +281,9 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 			let tally = <Tallies<T>>::get(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
+			// make sure we don't vote on proposal that can't update anymore
+			Self::do_update_proposal_state(proposal_id)?;
+
 			let num_votes =
 				Self::validate_and_commit_reputations(proposal_id, &sender, &reputations)?;
 
@@ -291,13 +302,7 @@ pub mod pallet {
 
 			<Tallies<T>>::insert(proposal_id, new_tally);
 
-			match Self::do_update_proposal_state(proposal_id) {
-				Ok(_) => Ok(()),
-				Err(error) => match error {
-					Error::<T>::ProposalCannotBeUpdated => Ok(()),
-					other_error => Err(other_error),
-				},
-			}?;
+			Self::do_update_proposal_state(proposal_id)?;
 
 			if num_votes > 0 {
 				Self::deposit_event(Event::VotePlaced { proposal_id, vote, num_votes })
@@ -416,12 +421,14 @@ pub mod pallet {
 			let old_proposal_state = proposal.state;
 			let now = <pallet_timestamp::Pallet<T>>::get();
 			let proposal_action_identifier = proposal.action.clone().get_identifier();
-			let cancelled_at = Self::cancelled_at(proposal_action_identifier);
-			let proposal_cancelled =
-				cancelled_at.is_some() && proposal.start < cancelled_at.unwrap();
+			let last_approved_proposal_for_action =
+				Self::last_approved_proposal_for_action(proposal_action_identifier);
+			let proposal_cancelled_by_other = last_approved_proposal_for_action.is_some() &&
+				proposal.start < last_approved_proposal_for_action.unwrap().0;
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
-			if proposal_cancelled || proposal_too_old {
-				proposal.state = ProposalState::Cancelled;
+			if proposal_cancelled_by_other {
+				proposal.state =
+					ProposalState::SupersededBy { id: last_approved_proposal_for_action.unwrap().1 }
 			} else {
 				// passing
 				if Self::is_passing(proposal_id)? {
@@ -433,19 +440,24 @@ pub mod pallet {
 						{
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
-							<CancelledAt<T>>::insert(proposal_action_identifier, now);
+							<LastApprovedProposalForAction<T>>::insert(
+								proposal_action_identifier,
+								(now, proposal_id),
+							);
 							approved = true;
 						}
-					// not confirming
+					// not yet confirming
+					} else if proposal_too_old {
+						proposal.state = ProposalState::Rejected;
 					} else {
 						proposal.state = ProposalState::Confirming { since: now };
 					}
+
 				// not passing
-				} else {
-					// confirming
-					if let ProposalState::Confirming { since: _ } = proposal.state {
-						proposal.state = ProposalState::Ongoing;
-					}
+				} else if proposal_too_old {
+					proposal.state = ProposalState::Rejected;
+				} else if let ProposalState::Confirming { since: _ } = proposal.state {
+					proposal.state = ProposalState::Ongoing;
 				}
 			}
 			<Proposals<T>>::insert(proposal_id, &proposal);
@@ -519,7 +531,7 @@ pub mod pallet {
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {
-				return Ok(false);
+				return Ok(false)
 			}
 
 			Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes)
@@ -561,9 +573,7 @@ pub mod pallet {
 impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
-			CeremonyPhaseType::Assigning => {},
-			CeremonyPhaseType::Attesting => {},
-			CeremonyPhaseType::Registering => {
+			CeremonyPhaseType::Assigning => {
 				// safe as EnactmentQueue has one key per ProposalActionType and those are bounded
 				<EnactmentQueue<T>>::iter().for_each(|p| {
 					if let Err(e) = Self::enact_proposal(p.1) {
@@ -573,10 +583,13 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 				// remove all keys from the map
 				<EnactmentQueue<T>>::translate::<ProposalIdType, _>(|_, _| None);
 			},
+			CeremonyPhaseType::Attesting => {},
+			CeremonyPhaseType::Registering => {},
 		}
 	}
 }
 
+mod migrations;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
