@@ -113,6 +113,10 @@ impl<Moment: PartialEq> ProposalState<Moment> {
 	pub fn can_update(self) -> bool {
 		matches!(self, Self::Confirming { since: _ } | Self::Ongoing)
 	}
+
+	pub fn has_failed(self) -> bool {
+		matches!(self, Self::SupersededBy { id: _ } | Self::Rejected)
+	}
 }
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]

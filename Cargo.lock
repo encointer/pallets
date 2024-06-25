@@ -1553,7 +1553,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "11.1.0"
+version = "11.2.0"
 dependencies = [
  "approx",
  "bs58 0.5.1",
@@ -4509,7 +4509,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "11.1.0"
+version = "11.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
