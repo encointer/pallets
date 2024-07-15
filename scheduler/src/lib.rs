@@ -234,7 +234,7 @@ impl<T: Config> Pallet<T> {
 	// 2. when next_phase() is used, we would introduce long idle phases because next_phase_timestamp would be pushed furhter and further into the future
 	fn resync_and_set_next_phase_timestamp(tnext: T::Moment) -> DispatchResult {
 		let cycle_duration = Self::get_cycle_duration();
-		let now = <pallet_timestamp::Pallet<T>>::now();
+		let now = pallet_timestamp::Now::<T>::get();
 
 		let tnext = if tnext < now {
 			let gap = now - tnext;
