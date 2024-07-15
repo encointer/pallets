@@ -28,22 +28,22 @@ members = [
 
 [workspace.dependencies]
 # local pin
-encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-features = false, version = "12.1.0" }
-encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "12.1.0" }
-encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "12.1.0" }
-encointer-rpc = { path = "rpc", version = "12.1.0" }
-ep-core = { path = "primitives/core", default-features = false, version = "12.0.0" }
-pallet-encointer-balances = { path = "balances", default-features = false, version = "12.1.0" }
-pallet-encointer-ceremonies = { path = "ceremonies", default-features = false, version = "12.1.0" }
-pallet-encointer-communities = { path = "communities", default-features = false, version = "12.1.0" }
-pallet-encointer-reputation-commitments = { path = "reputation-commitments", default-features = false, version = "12.1.0" }
-pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "12.1.0" }
+encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-features = false, version = "13.1.0" }
+encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "13.1.0" }
+encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "13.1.0" }
+encointer-rpc = { path = "rpc", version = "13.1.0" }
+ep-core = { path = "primitives/core", default-features = false, version = "13.0.0" }
+pallet-encointer-balances = { path = "balances", default-features = false, version = "13.1.0" }
+pallet-encointer-ceremonies = { path = "ceremonies", default-features = false, version = "13.1.0" }
+pallet-encointer-communities = { path = "communities", default-features = false, version = "13.1.0" }
+pallet-encointer-reputation-commitments = { path = "reputation-commitments", default-features = false, version = "13.1.0" }
+pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "13.1.0" }
 test-utils = { path = "test-utils" }
 # rpc apis
-encointer-balances-tx-payment-rpc-runtime-api = { path = "balances-tx-payment/rpc/runtime-api", version = "12.1.0" }
-pallet-encointer-bazaar-rpc-runtime-api = { path = "bazaar/rpc/runtime-api", version = "12.1.0" }
-pallet-encointer-ceremonies-rpc-runtime-api = { path = "ceremonies/rpc/runtime-api", version = "12.1.0" }
-pallet-encointer-communities-rpc-runtime-api = { path = "communities/rpc/runtime-api", version = "12.1.0" }
+encointer-balances-tx-payment-rpc-runtime-api = { path = "balances-tx-payment/rpc/runtime-api", version = "13.1.0" }
+pallet-encointer-bazaar-rpc-runtime-api = { path = "bazaar/rpc/runtime-api", version = "13.1.0" }
+pallet-encointer-ceremonies-rpc-runtime-api = { path = "ceremonies/rpc/runtime-api", version = "13.1.0" }
+pallet-encointer-communities-rpc-runtime-api = { path = "communities/rpc/runtime-api", version = "13.1.0" }
 
 # various
 array-bytes = "6.1.0"
