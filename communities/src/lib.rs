@@ -93,7 +93,8 @@ pub mod pallet {
 		///
 		/// May only be called from `T::TrustableForNonDestructiveAction`.
 		#[pallet::call_index(0)]
-		#[pallet::weight((<T as Config>::WeightInfo::new_community(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::new_community(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn new_community(
 			origin: OriginFor<T>,
 			location: Location,
@@ -168,7 +169,8 @@ pub mod pallet {
 		///
 		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
 		#[pallet::call_index(1)]
-		#[pallet::weight((<T as Config>::WeightInfo::add_location(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::add_location(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn add_location(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -189,7 +191,8 @@ pub mod pallet {
 		///
 		/// Todo: Replace `T::CommunityMaster` with community governance: #137.
 		#[pallet::call_index(2)]
-		#[pallet::weight((<T as Config>::WeightInfo::remove_location(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::remove_location(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn remove_location(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -208,7 +211,8 @@ pub mod pallet {
 		///
 		/// May only be called from `T::CommunityMaster`.
 		#[pallet::call_index(3)]
-		#[pallet::weight((<T as Config>::WeightInfo::update_community_metadata(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::update_community_metadata(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn update_community_metadata(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -219,7 +223,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(4)]
-		#[pallet::weight((<T as Config>::WeightInfo::update_demurrage(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::update_demurrage(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn update_demurrage(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -230,7 +235,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(5)]
-		#[pallet::weight((<T as Config>::WeightInfo::update_nominal_income(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::update_nominal_income(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn update_nominal_income(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -241,7 +247,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(6)]
-		#[pallet::weight((<T as Config>::WeightInfo::set_min_solar_trip_time_s(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_min_solar_trip_time_s(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn set_min_solar_trip_time_s(
 			origin: OriginFor<T>,
 			min_solar_trip_time_s: MinSolarTripTimeType,
@@ -254,7 +261,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(7)]
-		#[pallet::weight((<T as Config>::WeightInfo::set_max_speed_mps(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::set_max_speed_mps(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn set_max_speed_mps(
 			origin: OriginFor<T>,
 			max_speed_mps: MaxSpeedMpsType,
@@ -267,7 +275,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(8)]
-		#[pallet::weight((<T as Config>::WeightInfo::purge_community(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::purge_community(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn purge_community(
 			origin: OriginFor<T>,
 			cid: CommunityIdentifier,
@@ -726,7 +735,7 @@ impl<T: Config> Pallet<T> {
 		let dateline_proxy = Location { lat: location.lat, lon: DATELINE_LON };
 		if Self::haversine_distance(location, &dateline_proxy) < DATELINE_DISTANCE_M {
 			warn!(target: LOG, "location too close to dateline: {:?}", location);
-			return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?
+			return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
 		}
 
 		let nearby_locations = Self::get_nearby_locations(location)?;
@@ -765,7 +774,7 @@ impl<T: Config> Pallet<T> {
 			if pallet_encointer_balances::Balance::<T>::contains_key(cid, account.clone()) {
 				balances.push((
 					cid,
-					<pallet_encointer_balances::Pallet<T>>::balance_entry(cid, &account.clone()),
+					<pallet_encointer_balances::Pallet<T>>::balance_entry(cid, account.clone()),
 				));
 			}
 		}
