@@ -21,6 +21,7 @@
 
 use encointer_primitives::{
 	ceremonies::ReputationCountType,
+	common::PalletString,
 	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -143,6 +144,10 @@ pub mod pallet {
 		EnactmentFailed {
 			proposal_id: ProposalIdType,
 			reason: DispatchErrorWithPostInfo,
+		},
+		PetitionApproved {
+			cid: Option<CommunityIdentifier>,
+			text: PalletString,
 		},
 	}
 
@@ -563,14 +568,7 @@ pub mod pallet {
 					CeremoniesPallet::<T>::do_set_inactivity_timeout(inactivity_timeout)?;
 				},
 				ProposalAction::Petition(maybe_cid, petition) => {
-					System::<T>::remark(
-						"petition approved by "
-							.as_bytes()
-							.to_vec()
-							.extend(hex::encode(maybe_cid.encode()))
-							.extend(":".as_bytes().to_vec())
-							.extend(petition),
-					);
+					Self::deposit_event(Event::PetitionApproved { cid: maybe_cid, text: petition });
 				},
 			};
 
