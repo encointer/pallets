@@ -180,7 +180,6 @@ impl FromStr for CommunityIdentifier {
 /// If we just returned the error as is, it would be confusing, as the index size is not the actual
 /// index of the &str passed to the `CommunityIdentifier::from_str` method. Hence, we increase the
 /// index by the geohash size.
-///
 fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 	use bs58::decode::Error as Bs58Err;
 	match err {
