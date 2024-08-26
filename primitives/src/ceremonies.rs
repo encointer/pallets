@@ -38,7 +38,8 @@ pub type CommunityCeremony = (CommunityIdentifier, CeremonyIndexType);
 pub type InactivityTimeoutType = u32;
 pub type EndorsementTicketsType = u8;
 
-/// reputation lifetime may not be longer than CeremonyIndexShort::MAX, otherwise double-using reputation is possible. therefore, we restrict the type to u8
+/// reputation lifetime may not be longer than CeremonyIndexShort::MAX, otherwise double-using
+/// reputation is possible. therefore, we restrict the type to u8
 pub type ReputationLifetimeType = u32;
 pub type MeetupTimeOffsetType = i32;
 pub type MeetupData<AccountId, Moment> =
@@ -302,16 +303,19 @@ pub struct Assignment {
 	pub locations: AssignmentParams,
 }
 
-// Todo: abstract AssignmentParams trait and use two different structs: AssignmentParams, LocationAssignmentParams
+// Todo: abstract AssignmentParams trait and use two different structs: AssignmentParams,
+// LocationAssignmentParams
 #[derive(
 	Encode, Decode, Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AssignmentParams {
-	/// Random prime below number of meetup participants. For locations this is the amount of locations.
+	/// Random prime below number of meetup participants. For locations this is the amount of
+	/// locations.
 	pub m: u64,
-	/// First random group element in the interval (0, m). For locations this is a random coprime < m.
+	/// First random group element in the interval (0, m). For locations this is a random coprime <
+	/// m.
 	pub s1: u64,
 	/// Second random group element in the interval (0, m). For locations the closest prime to m,
 	/// with s2 < m.

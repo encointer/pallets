@@ -57,7 +57,8 @@ pub trait WeightInfo {
 	fn delete_offering() -> Weight;
 }
 
-/// Weights for pallet_encointer_bazaar using the Encointer solo chain node and recommended hardware.
+/// Weights for pallet_encointer_bazaar using the Encointer solo chain node and recommended
+/// hardware.
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn create_business() -> Weight {

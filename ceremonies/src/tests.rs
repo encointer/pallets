@@ -217,7 +217,8 @@ fn create_locations(n_locations: u32) -> Vec<Location> {
 		.collect()
 }
 
-/// perform bootstrapping ceremony for test community with either the supplied bootstrappers or the default bootstrappers
+/// perform bootstrapping ceremony for test community with either the supplied bootstrappers or the
+/// default bootstrappers
 fn perform_bootstrapping_ceremony(
 	custom_bootstrappers: Option<Vec<AccountId>>,
 	n_locations: u32,
@@ -1274,7 +1275,8 @@ fn register_with_reputation_works() {
 		);
 
 		// tolerate no shows
-		// no meetup will succeed in this cycle, still we want reputation to be valid for the next cycle
+		// no meetup will succeed in this cycle, still we want reputation to be valid for the next
+		// cycle
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
@@ -2189,7 +2191,8 @@ fn purge_inactive_communities_works() {
 
 		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
 			.contains(&cid));
-		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community will be purged
+		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community
+		// will be purged
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 3);
 
 		run_to_next_phase();

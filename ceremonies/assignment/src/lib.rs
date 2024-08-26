@@ -264,7 +264,8 @@ mod tests {
 		assignment_params = AssignmentParams { m, s1, s2 };
 		check_assignment(num_participants, assignment_params, n);
 
-		// in the case where there is only one participant, m will be 2 because it is the smallest prime number
+		// in the case where there is only one participant, m will be 2 because it is the smallest
+		// prime number
 		s1 = 1u64;
 		s2 = 1u64;
 		n = 1u64;

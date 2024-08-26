@@ -15,7 +15,6 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 //! # Encointer Democracy Module
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -339,7 +338,7 @@ pub mod pallet {
 		///
 		/// These boundaries ensure that we have a constant electorate to determine the
 		/// approval threshold.
-		/// * 	The lower bound ensures that the oldest reputation still exist at the end of the
+		/// * The lower bound ensures that the oldest reputation still exist at the end of the
 		/// 	proposal lifetime.
 		/// *	The upper bound ensures that the still dynamic reputation count of the
 		/// 	cindex at submission time is not included.
@@ -368,11 +367,13 @@ pub mod pallet {
 				.ok_or(Error::<T>::MathError)
 		}
 
-		/// Validates the reputations based on the following criteria and commits the reputations. Returns count of valid reputations.
+		/// Validates the reputations based on the following criteria and commits the reputations.
+		/// Returns count of valid reputations.
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
 		/// 3. originate in the correct community (for Community AccessPolicy)
-		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and proposal.start_cindex - 2
+		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and
+		///    proposal.start_cindex - 2
 		pub fn validate_and_commit_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,

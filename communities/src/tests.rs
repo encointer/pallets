@@ -609,7 +609,6 @@ fn new_community_near_dateline_fails() {
 /// lat max: 0.0439453125
 /// lon min: 39.990234375
 /// lon max: 40.0341796875
-///
 #[test]
 fn get_relevant_neighbor_buckets_works() {
 	new_test_ext().execute_with(|| {
@@ -720,7 +719,6 @@ fn get_relevant_neighbor_buckets_works() {
 /// lat max: 0.0439453125
 /// lon min: 39.990234375
 /// lon max: 40.0341796875
-///
 ///
 #[test]
 fn get_nearby_locations_works() {

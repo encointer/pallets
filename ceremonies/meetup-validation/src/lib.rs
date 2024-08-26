@@ -4,10 +4,10 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::{vec, vec::Vec};
 
-/// This module is about finding which participants get their rewards based on their votes and attestations.
-/// The participant vecs are always vecs of participant ids
-/// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by the participant index
-/// ie. participant_votes[i] holds the vote of participant i
+/// This module is about finding which participants get their rewards based on their votes and
+/// attestations. The participant vecs are always vecs of participant ids
+/// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by
+/// the participant index ie. participant_votes[i] holds the vote of participant i
 
 type ParticipantIndex = usize;
 type Participants = Vec<ParticipantIndex>;
@@ -122,9 +122,10 @@ fn get_excluded_participants_no_vote(
 	participants: &Vec<ParticipantIndex>,
 	participant_votes: &Vec<u32>,
 ) -> Result<Vec<(ParticipantIndex, ExclusionReason)>, MeetupValidationError> {
-	// We want to get rid of all participants that did not vote (ie. have a vote of 0 (default storage value) because they did not receive any attestations).
-	// This needs to happen before we compute the majority vote, because otherwise it would be possible to receive a majority vote of 0
-	// in the case where more than half of the participants did not show up.
+	// We want to get rid of all participants that did not vote (ie. have a vote of 0 (default
+	// storage value) because they did not receive any attestations). This needs to happen before we
+	// compute the majority vote, because otherwise it would be possible to receive a majority vote
+	// of 0 in the case where more than half of the participants did not show up.
 
 	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
 	for i in participants {
@@ -219,7 +220,8 @@ fn get_excluded_participants_num_attestations(
 				filter_attestations(&participants_to_process, relevant_attestations.clone());
 			continue;
 		} else {
-			// if all participants are above the threshold and therefore no participants were removed, we exit the loop
+			// if all participants are above the threshold and therefore no participants were
+			// removed, we exit the loop
 			break;
 		}
 	}
@@ -256,7 +258,8 @@ fn filter_attestations(
 	participants: &Participants,
 	participant_attestations: Attestations,
 ) -> Attestations {
-	// filter out participants from the attestation vectors that are not in the participants vector anymore.
+	// filter out participants from the attestation vectors that are not in the participants vector
+	// anymore.
 	participant_attestations
 		.into_iter()
 		.map(|mut a| {

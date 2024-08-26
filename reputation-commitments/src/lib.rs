@@ -214,7 +214,8 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 				let reputation_lifetime =
 					<pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
 				let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
-				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
+				// Clean up with a time delay, such that participants can claim their UBI in the
+				// following cycle.
 				if cindex > reputation_lifetime {
 					Self::purge_registry(
 						cindex.saturating_sub(reputation_lifetime).saturating_sub(1),

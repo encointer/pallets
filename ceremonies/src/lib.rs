@@ -21,7 +21,6 @@
 //! - meetup assignment
 //! - attestation registry
 //! - issuance of basic income
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -260,14 +259,15 @@ pub mod pallet {
 					|| {
 						// no reputation provided to refund
 						if participant_type == ParticipantType::Bootstrapper {
-							// bootstrappers can always register without proving previous attendance.
-							// Therefore, we don't care if they provide reputation to be refunded or not.
-							// Client apps must take care not to provide invalid reputation proofs
-							// for bootstrappers
+							// bootstrappers can always register without proving previous
+							// attendance. Therefore, we don't care if they provide reputation to be
+							// refunded or not. Client apps must take care not to provide invalid
+							// reputation proofs for bootstrappers
 							Ok::<(), Error<T>>(())
 						} else {
-							// we don't want reputables to unregister without refunding their reputation because
-							// they then couldn't re-register again in the same cycle as reputables.
+							// we don't want reputables to unregister without refunding their
+							// reputation because they then couldn't re-register again in the same
+							// cycle as reputables.
 							Err(<Error<T>>::ReputationCommunityCeremonyRequired)
 						}
 					},
@@ -672,21 +672,26 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Participant registered for next ceremony [community, participant type, who]
 		ParticipantRegistered(CommunityIdentifier, ParticipantType, T::AccountId),
-		/// A bootstrapper (first accountid) has endorsed a participant (second accountid) who can now register as endorsee for this ceremony
+		/// A bootstrapper (first accountid) has endorsed a participant (second accountid) who can
+		/// now register as endorsee for this ceremony
 		EndorsedParticipant(CommunityIdentifier, T::AccountId, T::AccountId),
 		/// A participant has registered N attestations for fellow meetup participants
 		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
-		/// rewards have been claimed and issued successfully for N participants for their meetup at the previous ceremony
+		/// rewards have been claimed and issued successfully for N participants for their meetup
+		/// at the previous ceremony
 		RewardsIssued(CommunityIdentifier, MeetupIndexType, MeetupParticipantIndexType),
-		/// inactivity timeout has changed. affects how many ceremony cycles a community can be idle before getting purged
+		/// inactivity timeout has changed. affects how many ceremony cycles a community can be
+		/// idle before getting purged
 		InactivityTimeoutUpdated(InactivityTimeoutType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
 		EndorsementTicketsPerBootstrapperUpdated(EndorsementTicketsType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
 		EndorsementTicketsPerReputableUpdated(EndorsementTicketsType),
-		/// reputation lifetime has changed. After this many ceremony cycles, reputations is outdated
+		/// reputation lifetime has changed. After this many ceremony cycles, reputations is
+		/// outdated
 		ReputationLifetimeUpdated(ReputationLifetimeType),
-		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups will take place
+		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups
+		/// will take place
 		MeetupTimeOffsetUpdated(MeetupTimeOffsetType),
 		/// meetup time tolerance has changed
 		TimeToleranceUpdated(T::Moment),
@@ -778,7 +783,8 @@ pub mod pallet {
 		EarlyRewardsNotPossible,
 		/// Only newbies can upgrade their registration
 		MustBeNewbieToUpgradeRegistration,
-		/// To unregister as a reputable you need to provide a provide a community ceremony where you have a linked reputation
+		/// To unregister as a reputable you need to provide a provide a community ceremony where
+		/// you have a linked reputation
 		ReputationCommunityCeremonyRequired,
 		/// In order to unregister a reputable, the provided reputation must be linked
 		ReputationMustBeLinked,
@@ -1502,7 +1508,8 @@ impl<T: Config> Pallet<T> {
 			find_prime_below(num_registered_bootstrappers + num_registered_reputables),
 		);
 
-		//safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers + num_reputables
+		//safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers +
+		// num_reputables
 		let mut seats_left =
 			max_num_meetups.checked_mul(meetup_multiplier).ok_or(Error::<T>::CheckedMath)? -
 				num_registered_bootstrappers;
@@ -2000,7 +2007,8 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			CeremonyPhaseType::Attesting => {},
 			CeremonyPhaseType::Registering => {
 				let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
-				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
+				// Clean up with a time delay, such that participants can claim their UBI in the
+				// following cycle.
 				if cindex > Self::reputation_lifetime() {
 					Self::purge_registry(
 						cindex.saturating_sub(Self::reputation_lifetime()).saturating_sub(1),

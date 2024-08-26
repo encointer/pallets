@@ -19,7 +19,6 @@
 //! provides functionality for
 //! - scheduling ceremonies with their different phases
 //! - dispatch transition functions upon phase change
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -230,8 +229,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	// we need to resync in two situations:
-	// 1. when the chain bootstraps and cycle duration is smaller than 24h, phases would cycle with every block until catched up
-	// 2. when next_phase() is used, we would introduce long idle phases because next_phase_timestamp would be pushed furhter and further into the future
+	// 1. when the chain bootstraps and cycle duration is smaller than 24h, phases would cycle with
+	//    every block until catched up
+	// 2. when next_phase() is used, we would introduce long idle phases because
+	//    next_phase_timestamp would be pushed furhter and further into the future
 	fn resync_and_set_next_phase_timestamp(tnext: T::Moment) -> DispatchResult {
 		let cycle_duration = Self::get_cycle_duration();
 		let now = pallet_timestamp::Now::<T>::get();

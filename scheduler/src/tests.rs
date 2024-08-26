@@ -257,7 +257,8 @@ fn resync_after_next_phase_works() {
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 2 * ONE_DAY
 		);
-		// this means that we merely anticipated the ASSIGNING_PHASE. NExt ATTESTING will still start as if next_phase() had not been called
+		// this means that we merely anticipated the ASSIGNING_PHASE. NExt ATTESTING will still
+		// start as if next_phase() had not been called
 
 		run_to_block(2);
 		set_timestamp(genesis_time + 2 * TEN_MIN);
@@ -270,7 +271,8 @@ fn resync_after_next_phase_works() {
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + 3 * ONE_DAY
 		);
-		// this means that we merely anticipated the ATTESTING phase. NExt REGISTERING will still start as if next_phase() had not been called
+		// this means that we merely anticipated the ATTESTING phase. NExt REGISTERING will still
+		// start as if next_phase() had not been called
 
 		run_to_block(3);
 		set_timestamp(genesis_time + 3 * TEN_MIN);
@@ -285,8 +287,8 @@ fn resync_after_next_phase_works() {
 			EncointerScheduler::next_phase_timestamp(),
 			(genesis_time - genesis_time.rem(ONE_DAY)) + ONE_DAY
 		);
-		// now the next ASSIGNING phase starts exactly at the time it would have startet if next_phase had not been called.
-		// But the ceremony index increased by one
+		// now the next ASSIGNING phase starts exactly at the time it would have startet if
+		// next_phase had not been called. But the ceremony index increased by one
 	});
 }
 

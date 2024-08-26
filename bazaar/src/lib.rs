@@ -19,7 +19,6 @@
 //! provides functionality for
 //! - creating new bazaar entries (shop and articles)
 //! - removing existing entries (shop and articles)
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

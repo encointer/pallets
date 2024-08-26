@@ -55,7 +55,8 @@ pub trait WeightInfo {
 	fn set_next_phase_timestamp() -> Weight;
 }
 
-/// Weights for pallet_encointer_scheduler using the Encointer solo chain node and recommended hardware.
+/// Weights for pallet_encointer_scheduler using the Encointer solo chain node and recommended
+/// hardware.
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn next_phase() -> Weight {

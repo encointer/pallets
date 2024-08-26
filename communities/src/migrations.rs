@@ -209,7 +209,8 @@ pub mod v2 {
 			}
 			log::info!(target: TARGET, "{} bootstrappers will be migrated.", bootstrappers_count,);
 
-			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
+			// For community metadata, we do not need any checks, because the data is bounded
+			// already due to the CommmunityMetadata validate() function.
 
 			Ok((
 				cid_count,

@@ -19,7 +19,6 @@
 //! provides functionality for
 //! - registering new communities
 //! - modifying community characteristics
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

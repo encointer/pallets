@@ -33,9 +33,10 @@ pub enum PresenceType {
 	/// could be "I have visited that place in the metaverse"
 	/// could be "I have met this person on an video call and they presented this account to me"
 	LiveVirtual,
-	/// could be "I met the human I vouch for in-person and scanned the account they presented at the occasion of this physical encounter"
-	/// could be "I was standing in front of this monument and scanned the QR code on its plate"
-	/// could be "I ate at this restaurant and scanned the QR code presented at their entrance in order to submit a rating"
+	/// could be "I met the human I vouch for in-person and scanned the account they presented at
+	/// the occasion of this physical encounter" could be "I was standing in front of this monument
+	/// and scanned the QR code on its plate" could be "I ate at this restaurant and scanned the QR
+	/// code presented at their entrance in order to submit a rating"
 	LivePhysical,
 }
 
@@ -50,7 +51,8 @@ pub enum VouchKind {
 	Unspecified,
 	/// This person is know to me and I have verified their account with specified presence type
 	KnownHuman(PresenceType),
-	/// I do not claim to know this person, but I encountered a human being providing me with the account I vouch for
+	/// I do not claim to know this person, but I encountered a human being providing me with the
+	/// account I vouch for
 	EncounteredHuman(PresenceType),
 	/// I encountered an object showing the account I vouch for
 	EncounteredObject(PresenceType),
@@ -80,7 +82,8 @@ pub enum VouchQuality {
 #[derive(Default, Encode, Decode, PartialEq, Eq, RuntimeDebug, Clone, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Vouch<Moment> {
-	/// protected vouches can't be purged. unprotected ones can be lazily purged after a time-to-live. (future feature)
+	/// protected vouches can't be purged. unprotected ones can be lazily purged after a
+	/// time-to-live. (future feature)
 	pub protected: bool,
 	/// the timestamp of the block which registers this Vouch
 	pub timestamp: Moment,

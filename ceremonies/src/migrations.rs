@@ -95,8 +95,9 @@ pub mod v1 {
 				return weight;
 			}
 
-			// we do not actually migrate any data, because it seems that the storage representation of Vec and BoundedVec is the same.
-			// as long as we check the bounds in pre_upgrade, we should be fine.
+			// we do not actually migrate any data, because it seems that the storage representation
+			// of Vec and BoundedVec is the same. as long as we check the bounds in pre_upgrade, we
+			// should be fine.
 
 			StorageVersion::new(1).put::<Pallet<T>>();
 			weight.saturating_add(T::DbWeight::get().reads_writes(1, 2))
