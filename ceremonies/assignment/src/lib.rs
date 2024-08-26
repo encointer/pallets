@@ -50,7 +50,7 @@ pub fn generate_assignment_function_params<Hashing: Hash>(
 			AssignmentParams { m: m as u64, s1: s1 as u64, s2: s2 as u64 },
 			num_meetups,
 		) {
-			break
+			break;
 		} else {
 			skip_count += 1; // safe; skip_count <= 200;
 		}
@@ -65,7 +65,7 @@ fn validate_equal_mapping(
 	meetup_count: u64,
 ) -> bool {
 	if num_participants < 2 {
-		return true
+		return true;
 	}
 
 	let mut meetup_index_count: Vec<u64> = vec![0; meetup_count as usize];
@@ -80,7 +80,7 @@ fn validate_equal_mapping(
 
 		meetup_index_count[meetup_index] += 1; // safe; <= num_participants
 		if meetup_index_count[meetup_index] > meetup_index_count_max {
-			return false
+			return false;
 		}
 	}
 	true
@@ -97,7 +97,7 @@ pub fn assignment_fn_inverse(
 	participant_count: u64,
 ) -> Option<Vec<ParticipantIndexType>> {
 	if assignment_count == 0 {
-		return Some(vec![])
+		return Some(vec![]);
 	}
 
 	let mut max_index = assignment_params.m.saturating_sub(meetup_index) / assignment_count;
@@ -118,7 +118,7 @@ pub fn assignment_fn_inverse(
 		};
 
 		if t3 >= participant_count {
-			continue
+			continue;
 		}
 
 		result.push(t3);

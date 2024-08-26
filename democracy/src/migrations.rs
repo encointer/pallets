@@ -42,7 +42,7 @@ pub mod v1 {
 					target: TARGET,
 					"skipping on_runtime_upgrade: executed on wrong storage version."
 				);
-				return T::DbWeight::get().reads(1)
+				return T::DbWeight::get().reads(1);
 			}
 
 			let mut purged_keys = 0u64;

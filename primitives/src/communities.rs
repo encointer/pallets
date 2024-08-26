@@ -77,7 +77,7 @@ pub enum RangeError {
 /// zero is legit as it effectively disables demurrage
 pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	if demurrage < &Demurrage::from_num(0) {
-		return Err(RangeError::LessThanZero)
+		return Err(RangeError::LessThanZero);
 	}
 
 	// Just some safeguarding against overflows, but 1 is already a very high value:
@@ -86,7 +86,7 @@ pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 	//
 	// So the community does still have the choice of a huge demurrage.
 	if demurrage > &Demurrage::from_num(1) {
-		return Err(RangeError::TooHigh { limit: 1 })
+		return Err(RangeError::TooHigh { limit: 1 });
 	}
 	Ok(())
 }
@@ -319,19 +319,19 @@ impl CommunityMetadata {
 		validate_ipfs_cid(&self.assets).map_err(CommunityMetadataError::InvalidIpfsCid)?;
 
 		if self.name.len() > 20 {
-			return Err(CommunityMetadataError::TooManyCharactersInName(self.name.len() as u8))
+			return Err(CommunityMetadataError::TooManyCharactersInName(self.name.len() as u8));
 		}
 
 		if self.symbol.len() != 3 {
 			return Err(CommunityMetadataError::InvalidAmountCharactersInSymbol(
 				self.symbol.len() as u8
-			))
+			));
 		}
 
 		if let Some(u) = &self.url {
 			validate_ascii(u.as_bytes_or_noop()).map_err(CommunityMetadataError::InvalidAscii)?;
 			if u.len() >= 20 {
-				return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8))
+				return Err(CommunityMetadataError::TooManyCharactersInUrl(u.len() as u8));
 			}
 		}
 

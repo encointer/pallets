@@ -92,7 +92,7 @@ pub mod v1 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 0"
 				);
-				return weight
+				return weight;
 			}
 
 			// we do not actually migrate any data, because it seems that the storage representation of Vec and BoundedVec is the same.
@@ -148,7 +148,7 @@ pub mod v2 {
 					"skipping on_runtime_upgrade: executed on wrong storage version.\
 				Expected version 1"
 				);
-				return weight
+				return weight;
 			}
 			let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
 			let phase = pallet_encointer_scheduler::Pallet::<T>::current_phase();
