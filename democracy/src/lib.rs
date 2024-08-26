@@ -430,7 +430,8 @@ pub mod pallet {
 			let proposal_action_identifier = proposal.action.clone().get_identifier();
 			let last_approved_proposal_for_action =
 				Self::last_approved_proposal_for_action(proposal_action_identifier);
-			let proposal_cancelled_by_other = last_approved_proposal_for_action.is_some() &&
+			let proposal_cancelled_by_other = proposal.action.supersedes_same_action() &&
+				last_approved_proposal_for_action.is_some() &&
 				proposal.start < last_approved_proposal_for_action.unwrap().0;
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled_by_other {
@@ -548,15 +549,18 @@ pub mod pallet {
 			let mut proposal =
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
-			match proposal.action.clone() {
+			match proposal.action {
 				ProposalAction::AddLocation(cid, location) => {
 					CommunitiesPallet::<T>::do_add_location(cid, location)?;
 				},
 				ProposalAction::RemoveLocation(cid, location) => {
 					CommunitiesPallet::<T>::do_remove_location(cid, location)?;
 				},
-				ProposalAction::UpdateCommunityMetadata(cid, community_metadata) => {
-					CommunitiesPallet::<T>::do_update_community_metadata(cid, community_metadata)?;
+				ProposalAction::UpdateCommunityMetadata(cid, ref community_metadata) => {
+					CommunitiesPallet::<T>::do_update_community_metadata(
+						cid,
+						community_metadata.clone(),
+					)?;
 				},
 				ProposalAction::UpdateDemurrage(cid, demurrage) => {
 					CommunitiesPallet::<T>::do_update_demurrage(cid, demurrage)?;
@@ -567,8 +571,11 @@ pub mod pallet {
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
 					CeremoniesPallet::<T>::do_set_inactivity_timeout(inactivity_timeout)?;
 				},
-				ProposalAction::Petition(maybe_cid, petition) => {
-					Self::deposit_event(Event::PetitionApproved { cid: maybe_cid, text: petition });
+				ProposalAction::Petition(maybe_cid, ref petition) => {
+					Self::deposit_event(Event::PetitionApproved {
+						cid: maybe_cid,
+						text: petition.clone(),
+					});
 				},
 			};
 
