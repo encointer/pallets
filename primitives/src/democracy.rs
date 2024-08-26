@@ -9,11 +9,12 @@ use crate::{
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
-use crate::{ceremonies::ReputationCountType, scheduler::CeremonyIndexType};
+use crate::{ceremonies::ReputationCountType, common::PalletString, scheduler::CeremonyIndexType};
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 use sp_runtime::BoundedVec;
+
 pub type ProposalIdType = u128;
 pub type VoteCountType = u128;
 pub type VoteEntry<AccountId> = (AccountId, CommunityCeremony);
@@ -55,6 +56,7 @@ pub enum ProposalAction {
 	UpdateDemurrage(CommunityIdentifier, Demurrage),
 	UpdateNominalIncome(CommunityIdentifier, NominalIncomeType),
 	SetInactivityTimeout(InactivityTimeoutType),
+	Petition(Option<CommunityIdentifier>, PalletString),
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -67,32 +69,52 @@ pub enum ProposalActionIdentifier {
 	UpdateDemurrage(CommunityIdentifier),
 	UpdateNominalIncome(CommunityIdentifier),
 	SetInactivityTimeout,
+	Petition(Option<CommunityIdentifier>),
 }
 
 impl ProposalAction {
-	pub fn get_access_policy(self) -> ProposalAccessPolicy {
+	pub fn get_access_policy(&self) -> ProposalAccessPolicy {
 		match self {
-			ProposalAction::AddLocation(cid, _) => ProposalAccessPolicy::Community(cid),
-			ProposalAction::RemoveLocation(cid, _) => ProposalAccessPolicy::Community(cid),
-			ProposalAction::UpdateCommunityMetadata(cid, _) => ProposalAccessPolicy::Community(cid),
-			ProposalAction::UpdateDemurrage(cid, _) => ProposalAccessPolicy::Community(cid),
-			ProposalAction::UpdateNominalIncome(cid, _) => ProposalAccessPolicy::Community(cid),
+			ProposalAction::AddLocation(cid, _) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::RemoveLocation(cid, _) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::UpdateCommunityMetadata(cid, _) =>
+				ProposalAccessPolicy::Community(*cid),
+			ProposalAction::UpdateDemurrage(cid, _) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::UpdateNominalIncome(cid, _) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::SetInactivityTimeout(_) => ProposalAccessPolicy::Global,
+			ProposalAction::Petition(Some(cid), _) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::Petition(None, _) => ProposalAccessPolicy::Global,
 		}
 	}
 
-	pub fn get_identifier(self) -> ProposalActionIdentifier {
+	pub fn get_identifier(&self) -> ProposalActionIdentifier {
 		match self {
-			ProposalAction::AddLocation(cid, _) => ProposalActionIdentifier::AddLocation(cid),
-			ProposalAction::RemoveLocation(cid, _) => ProposalActionIdentifier::RemoveLocation(cid),
+			ProposalAction::AddLocation(cid, _) => ProposalActionIdentifier::AddLocation(*cid),
+			ProposalAction::RemoveLocation(cid, _) =>
+				ProposalActionIdentifier::RemoveLocation(*cid),
 			ProposalAction::UpdateCommunityMetadata(cid, _) =>
-				ProposalActionIdentifier::UpdateCommunityMetadata(cid),
+				ProposalActionIdentifier::UpdateCommunityMetadata(*cid),
 			ProposalAction::UpdateDemurrage(cid, _) =>
-				ProposalActionIdentifier::UpdateDemurrage(cid),
+				ProposalActionIdentifier::UpdateDemurrage(*cid),
 			ProposalAction::UpdateNominalIncome(cid, _) =>
-				ProposalActionIdentifier::UpdateNominalIncome(cid),
+				ProposalActionIdentifier::UpdateNominalIncome(*cid),
 			ProposalAction::SetInactivityTimeout(_) =>
 				ProposalActionIdentifier::SetInactivityTimeout,
+			ProposalAction::Petition(maybe_cid, _) =>
+				ProposalActionIdentifier::Petition(*maybe_cid),
+		}
+	}
+
+	/// Returns true if the action supersedes other proposals of the same action type when approved.
+	pub fn supersedes_same_action(&self) -> bool {
+		match self {
+			ProposalAction::AddLocation(_, _) => true,
+			ProposalAction::RemoveLocation(_, _) => true,
+			ProposalAction::UpdateCommunityMetadata(_, _) => true,
+			ProposalAction::UpdateDemurrage(_, _) => true,
+			ProposalAction::UpdateNominalIncome(_, _) => true,
+			ProposalAction::SetInactivityTimeout(_) => true,
+			ProposalAction::Petition(_, _) => false,
 		}
 	}
 }

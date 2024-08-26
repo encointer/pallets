@@ -42,7 +42,8 @@ const LOG: &str = "encointer";
 /// ```
 /// This needs to be negated in the formula!
 // FIXME: how to define negative hex literal?
-//pub const DemurrageRate: BalanceType = BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
+//pub const DemurrageRate: BalanceType =
+// BalanceType::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 pub use pallet::*;
 
 mod impl_fungibles;
@@ -133,8 +134,8 @@ pub mod pallet {
 		///
 		/// [CC]:	1 Unit of Community Currency
 		/// NI:		Nominal Income. Unit = [CC]
-		/// FCF:	Fee Conversion Factor. Unit = [1/ KKSM] <- Kilo-KSM to be able to adjust fee factor in both ways.
-		/// CB:		Balance in Community Currency [CC]
+		/// FCF:	Fee Conversion Factor. Unit = [1/ KKSM] <- Kilo-KSM to be able to adjust fee factor
+		/// in both ways. CB:		Balance in Community Currency [CC]
 		///
 		/// The following equation should hold for fee design:
 		///  KSM * FCF * NI = CB -> FCF = CB / (NI * KSM)
@@ -278,7 +279,7 @@ impl<T: Config> Pallet<T> {
 		// Early exist if no-op.
 		if amount == 0u128 {
 			Self::deposit_event(Event::Transferred(cid, source, dest, amount));
-			return Ok(amount)
+			return Ok(amount);
 		}
 
 		ensure!(Balance::<T>::contains_key(cid, &source), Error::<T>::NoAccount);
@@ -289,7 +290,7 @@ impl<T: Config> Pallet<T> {
 
 		if source == dest {
 			<Balance<T>>::insert(cid, &source, entry_from);
-			return Ok(amount)
+			return Ok(amount);
 		}
 
 		if !Balance::<T>::contains_key(cid, &dest) {
@@ -352,7 +353,7 @@ impl<T: Config> Pallet<T> {
 			ensure!(res >= 0, Error::<T>::BalanceTooLow);
 			res
 		} else {
-			return Err(Error::<T>::BalanceTooLow.into())
+			return Err(Error::<T>::BalanceTooLow.into());
 		};
 		entry_tot.principal -= amount;
 		//FIXME: delete account if it falls below existential deposit

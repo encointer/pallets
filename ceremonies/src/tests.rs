@@ -154,7 +154,8 @@ fn register_alice_bob_ferdie(cid: CommunityIdentifier) {
 	assert_ok!(register(account_id(&AccountKeyring::Ferdie.pair()), cid, None));
 }
 
-/// shortcut to register well-known keys for current ceremony
+/// shortcut to register well-known keys for
+/// current ceremony
 fn register_charlie_dave_eve(cid: CommunityIdentifier) {
 	assert_ok!(register(account_id(&AccountKeyring::Charlie.pair()), cid, None));
 	assert_ok!(register(account_id(&AccountKeyring::Dave.pair()), cid, None));
@@ -176,7 +177,8 @@ fn attest_all(
 	));
 }
 
-/// Fully attest all attendees with the new `attest_attendees` extrinsic.
+/// Fully attest all attendees with the new
+/// `attest_attendees` extrinsic.
 fn fully_attest_attendees(
 	attendees: &Vec<AccountId>,
 	cid: CommunityIdentifier,
@@ -199,7 +201,8 @@ fn fully_attest_attendees(
 	}
 }
 
-/// Perform full attestation of all participants for a given meetup.
+/// Perform full attestation of all participants
+/// for a given meetup.
 fn fully_attest_meetup(cid: CommunityIdentifier, mindex: MeetupIndexType) {
 	let cindex = EncointerScheduler::current_ceremony_index();
 	let meetup_participants =
@@ -217,7 +220,9 @@ fn create_locations(n_locations: u32) -> Vec<Location> {
 		.collect()
 }
 
-/// perform bootstrapping ceremony for test community with either the supplied bootstrappers or the default bootstrappers
+/// perform bootstrapping ceremony for test
+/// community with either the supplied
+/// bootstrappers or the default bootstrappers
 fn perform_bootstrapping_ceremony(
 	custom_bootstrappers: Option<Vec<AccountId>>,
 	n_locations: u32,
@@ -253,7 +258,8 @@ fn perform_bootstrapping_ceremony(
 	cid
 }
 
-// unit tests ////////////////////////////////////////
+// unit tests
+// ////////////////////////////////////////
 
 #[test]
 fn registering_participant_works() {
@@ -1274,7 +1280,8 @@ fn register_with_reputation_works() {
 		);
 
 		// tolerate no shows
-		// no meetup will succeed in this cycle, still we want reputation to be valid for the next cycle
+		// no meetup will succeed in this cycle, still we want reputation to be valid for the next
+		// cycle
 		run_to_next_phase();
 		run_to_next_phase();
 		run_to_next_phase();
@@ -1700,26 +1707,27 @@ fn registering_endorsee_removes_endorsement() {
 	});
 }
 
-// integration tests ////////////////////////////////
+// integration tests
+// ////////////////////////////////
 
 #[rstest(lat_micro, lon_micro, meetup_time_offset,
-case(0, 0, 0),
-case(1_000_000, 1_000_000, 0),
-case(0, 2_234_567, 0),
-case(2_000_000, 155_000_000, 0),
-case(1_000_000, -2_000_000, 0),
-case(-31_000_000, -155_000_000, 0),
-case(0, 0, 100_000),
-case(1_000_000, 1_000_000, 100_000),
-case(0, 2_234_567, 100_000),
-case(2_000_000, 155_000_000, 100_000),
-case(1_000_000, -2_000_000, 100_000),
-case(-31_000_000, -155_000_000, 100_000),
-case(1_000_000, 1_000_000, -100_000),
-case(0, 2_234_567, -100_000),
-case(2_000_000, 155_000_000, -100_000),
-case(1_000_000, -2_000_000, -100_000),
-case(-31_000_000, -155_000_000, -100_000),
+    case(0, 0, 0),
+    case(1_000_000, 1_000_000, 0),
+    case(0, 2_234_567, 0),
+    case(2_000_000, 155_000_000, 0),
+    case(1_000_000, -2_000_000, 0),
+    case(-31_000_000, -155_000_000, 0),
+    case(0, 0, 100_000),
+    case(1_000_000, 1_000_000, 100_000),
+    case(0, 2_234_567, 100_000),
+    case(2_000_000, 155_000_000, 100_000),
+    case(1_000_000, -2_000_000, 100_000),
+    case(-31_000_000, -155_000_000, 100_000),
+    case(1_000_000, 1_000_000, -100_000),
+    case(0, 2_234_567, -100_000),
+    case(2_000_000, 155_000_000, -100_000),
+    case(1_000_000, -2_000_000, -100_000),
+    case(-31_000_000, -155_000_000, -100_000),
 )]
 fn get_meetup_time_works(lat_micro: i64, lon_micro: i64, meetup_time_offset: i64) {
 	new_test_ext().execute_with(|| {
@@ -2189,7 +2197,8 @@ fn purge_inactive_communities_works() {
 
 		assert!(<pallet_encointer_communities::Pallet<TestRuntime>>::community_identifiers()
 			.contains(&cid));
-		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community will be purged
+		// now the inactivity counter is 3 == inactivity_timeout, so in the next cycle the community
+		// will be purged
 		assert_eq!(EncointerCeremonies::inactivity_counters(cid).unwrap(), 3);
 
 		run_to_next_phase();

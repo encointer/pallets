@@ -37,7 +37,8 @@ limitations under the License.
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --output=runtime/src/weights/pallet_encointer_reputation_commitments.rs
-// --template=/Users/pigu/Documents/code/encointer/encointer-node/scripts/frame-weight-template-full-info.hbs
+// --template=/Users/pigu/Documents/code/encointer/encointer-node/scripts/
+// frame-weight-template-full-info.hbs
 
 #![allow(unused_parens)]
 #![allow(unused_imports)]
@@ -54,7 +55,8 @@ pub trait WeightInfo {
 	fn commit_reputation() -> Weight;
 }
 
-/// Weights for pallet_encointer_reputation_commitments using the Encointer solo chain node and recommended hardware.
+/// Weights for pallet_encointer_reputation_commitments using the Encointer solo chain node and
+/// recommended hardware.
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn register_purpose() -> Weight {

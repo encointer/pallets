@@ -29,7 +29,12 @@ benchmarks! {
 
 	submit_proposal {
 		let zoran = account("zoran", 1, 1);
-		let proposal_action = ProposalAction::SetInactivityTimeout(8);
+		let cid = CommunityIdentifier::default();
+		// worst case is petition
+		let proposal_action = ProposalAction::Petition(Some(cid), PalletString::try_from("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
+		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".as_bytes().to_vec()).unwrap());
 		assert!(<Proposals<T>>::iter().next().is_none());
 	}: _(RawOrigin::Signed(zoran), proposal_action)
 	verify {

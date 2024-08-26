@@ -36,7 +36,8 @@ limitations under the License.
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --output=runtime/src/weights/pallet_encointer_balances.rs
-// --template=/Users/pigu/Dropbox/DATA/Documents/solidbit/kunden/encointer/code/repos/encointer-node/scripts/frame-weight-template-full-info.hbs
+// --template=/Users/pigu/Dropbox/DATA/Documents/solidbit/kunden/encointer/code/repos/
+// encointer-node/scripts/frame-weight-template-full-info.hbs
 
 #![allow(unused_parens)]
 #![allow(unused_imports)]
@@ -54,7 +55,8 @@ pub trait WeightInfo {
 	fn set_fee_conversion_factor() -> Weight;
 }
 
-/// Weights for pallet_encointer_balances using the Encointer solo chain node and recommended hardware.
+/// Weights for pallet_encointer_balances using the Encointer solo chain node and recommended
+/// hardware.
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn transfer() -> Weight {

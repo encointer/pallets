@@ -109,7 +109,7 @@ pub mod pallet {
 			if let Some(wl) = whitelist.clone() {
 				for cid in &wl {
 					if !all_communities.contains(cid) {
-						return Err(<Error<T>>::InvalidCommunityIdentifierInWhitelist.into())
+						return Err(<Error<T>>::InvalidCommunityIdentifierInWhitelist.into());
 					}
 				}
 			}
@@ -128,7 +128,7 @@ pub mod pallet {
 				.expect("32 bytes can always construct an AccountId32");
 
 			if <Faucets<T>>::contains_key(&faucet_account) {
-				return Err(<Error<T>>::FaucetAlreadyExists.into())
+				return Err(<Error<T>>::FaucetAlreadyExists.into());
 			}
 
 			<T as Config>::Currency::reserve_named(
@@ -170,7 +170,7 @@ pub mod pallet {
 
 			if let Some(wl) = faucet.whitelist {
 				if !wl.contains(&cid) {
-					return Err(<Error<T>>::CommunityNotInWhitelist.into())
+					return Err(<Error<T>>::CommunityNotInWhitelist.into());
 				}
 			}
 

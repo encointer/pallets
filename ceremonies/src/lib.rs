@@ -21,7 +21,6 @@
 //! - meetup assignment
 //! - attestation registry
 //! - issuance of basic income
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -135,7 +134,7 @@ pub mod pallet {
 			};
 
 			if Self::is_registered(cid, cindex, &sender) {
-				return Err(<Error<T>>::ParticipantAlreadyRegistered.into())
+				return Err(<Error<T>>::ParticipantAlreadyRegistered.into());
 			}
 
 			if let Some(p) = &proof {
@@ -220,7 +219,7 @@ pub mod pallet {
 				Self::remove_participant_from_registry(cid, cindex, &sender)?;
 				Self::register_participant(origin, cid, Some(proof))?;
 			} else {
-				return Err(<Error<T>>::MustBeNewbieToUpgradeRegistration.into())
+				return Err(<Error<T>>::MustBeNewbieToUpgradeRegistration.into());
 			}
 			Ok(().into())
 		}
@@ -260,14 +259,15 @@ pub mod pallet {
 					|| {
 						// no reputation provided to refund
 						if participant_type == ParticipantType::Bootstrapper {
-							// bootstrappers can always register without proving previous attendance.
-							// Therefore, we don't care if they provide reputation to be refunded or not.
-							// Client apps must take care not to provide invalid reputation proofs
-							// for bootstrappers
+							// bootstrappers can always register without proving previous
+							// attendance. Therefore, we don't care if they provide reputation to be
+							// refunded or not. Client apps must take care not to provide invalid
+							// reputation proofs for bootstrappers
 							Ok::<(), Error<T>>(())
 						} else {
-							// we don't want reputables to unregister without refunding their reputation because
-							// they then couldn't re-register again in the same cycle as reputables.
+							// we don't want reputables to unregister without refunding their
+							// reputation because they then couldn't re-register again in the same
+							// cycle as reputables.
 							Err(<Error<T>>::ReputationCommunityCeremonyRequired)
 						}
 					},
@@ -427,7 +427,7 @@ pub mod pallet {
 			};
 
 			if <IssuedRewards<T>>::contains_key((cid, cindex), meetup_index) {
-				return Err(<Error<T>>::RewardsAlreadyIssued.into())
+				return Err(<Error<T>>::RewardsAlreadyIssued.into());
 			}
 			info!(
 				target: LOG,
@@ -503,9 +503,9 @@ pub mod pallet {
 							meetup_index,
 							meetup_result,
 						));
-						return Ok(Pays::No.into())
+						return Ok(Pays::No.into());
 					} else {
-						return error
+						return error;
 					}
 				},
 			};
@@ -516,7 +516,7 @@ pub mod pallet {
 					target: LOG,
 					"early rewards not possible for meetup {:?}, cid: {:?}", meetup_index, cid
 				);
-				return Err(<Error<T>>::EarlyRewardsNotPossible.into())
+				return Err(<Error<T>>::EarlyRewardsNotPossible.into());
 			}
 			participants_eligible_for_rewards = participant_judgements.legit;
 			// emit events
@@ -614,12 +614,12 @@ pub mod pallet {
 			if <pallet_encointer_scheduler::Pallet<T>>::current_phase() !=
 				CeremonyPhaseType::Registering
 			{
-				return Err(<Error<T>>::WrongPhaseForChangingMeetupTimeOffset.into())
+				return Err(<Error<T>>::WrongPhaseForChangingMeetupTimeOffset.into());
 			}
 
 			// Meetup time offset needs to be in [-8h, 8h]
 			if meetup_time_offset.abs() > 8 * 3600 * 1000 {
-				return Err(<Error<T>>::InvalidMeetupTimeOffset.into())
+				return Err(<Error<T>>::InvalidMeetupTimeOffset.into());
 			}
 
 			<MeetupTimeOffset<T>>::put(meetup_time_offset);
@@ -672,21 +672,26 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Participant registered for next ceremony [community, participant type, who]
 		ParticipantRegistered(CommunityIdentifier, ParticipantType, T::AccountId),
-		/// A bootstrapper (first accountid) has endorsed a participant (second accountid) who can now register as endorsee for this ceremony
+		/// A bootstrapper (first accountid) has endorsed a participant (second accountid) who can
+		/// now register as endorsee for this ceremony
 		EndorsedParticipant(CommunityIdentifier, T::AccountId, T::AccountId),
 		/// A participant has registered N attestations for fellow meetup participants
 		AttestationsRegistered(CommunityIdentifier, MeetupIndexType, u32, T::AccountId),
-		/// rewards have been claimed and issued successfully for N participants for their meetup at the previous ceremony
+		/// rewards have been claimed and issued successfully for N participants for their meetup
+		/// at the previous ceremony
 		RewardsIssued(CommunityIdentifier, MeetupIndexType, MeetupParticipantIndexType),
-		/// inactivity timeout has changed. affects how many ceremony cycles a community can be idle before getting purged
+		/// inactivity timeout has changed. affects how many ceremony cycles a community can be
+		/// idle before getting purged
 		InactivityTimeoutUpdated(InactivityTimeoutType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
 		EndorsementTicketsPerBootstrapperUpdated(EndorsementTicketsType),
 		/// The number of endorsement tickets which bootstrappers can give out has changed
 		EndorsementTicketsPerReputableUpdated(EndorsementTicketsType),
-		/// reputation lifetime has changed. After this many ceremony cycles, reputations is outdated
+		/// reputation lifetime has changed. After this many ceremony cycles, reputations is
+		/// outdated
 		ReputationLifetimeUpdated(ReputationLifetimeType),
-		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups will take place
+		/// meetup time offset has changed. affects the exact time the upcoming ceremony meetups
+		/// will take place
 		MeetupTimeOffsetUpdated(MeetupTimeOffsetType),
 		/// meetup time tolerance has changed
 		TimeToleranceUpdated(T::Moment),
@@ -778,7 +783,8 @@ pub mod pallet {
 		EarlyRewardsNotPossible,
 		/// Only newbies can upgrade their registration
 		MustBeNewbieToUpgradeRegistration,
-		/// To unregister as a reputable you need to provide a provide a community ceremony where you have a linked reputation
+		/// To unregister as a reputable you need to provide a provide a community ceremony where
+		/// you have a linked reputation
 		ReputationCommunityCeremonyRequired,
 		/// In order to unregister a reputable, the provided reputation must be linked
 		ReputationMustBeLinked,
@@ -1223,7 +1229,7 @@ impl<T: Config> Pallet<T> {
 				<BootstrapperCount<T>>::insert((cid, cindex), participant_index);
 				ParticipantType::Bootstrapper
 			} else if <pallet_encointer_balances::Pallet<T>>::total_issuance(cid) <= 0 {
-				return Err(Error::<T>::OnlyBootstrappers)
+				return Err(Error::<T>::OnlyBootstrappers);
 			} else if is_reputable {
 				let participant_index = <ReputableCount<T>>::get((cid, cindex))
 					.checked_add(1)
@@ -1262,7 +1268,7 @@ impl<T: Config> Pallet<T> {
 		if <pallet_encointer_scheduler::Pallet<T>>::current_phase() !=
 			CeremonyPhaseType::Registering
 		{
-			return Err(<Error<T>>::WrongPhaseForUnregistering)
+			return Err(<Error<T>>::WrongPhaseForUnregistering);
 		}
 
 		let participant_type = Self::get_participant_type((cid, cindex), participant)
@@ -1331,7 +1337,7 @@ impl<T: Config> Pallet<T> {
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
 			<BurnedReputableNewbieTickets<T>>::mutate((cid, cindex), sender, |b| *b += 1);
-			return Ok(())
+			return Ok(());
 		}
 
 		if <pallet_encointer_communities::Pallet<T>>::bootstrappers(cid).contains(sender) &&
@@ -1340,7 +1346,7 @@ impl<T: Config> Pallet<T> {
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
 			<BurnedBootstrapperNewbieTickets<T>>::mutate(cid, sender, |b| *b += 1);
-			return Ok(())
+			return Ok(());
 		}
 
 		Err(Error::<T>::NoMoreNewbieTickets)
@@ -1422,7 +1428,7 @@ impl<T: Config> Pallet<T> {
 				"less than 3 participants available for a meetup. will not assign any meetups for cid {:?}",
 				community_ceremony.0
 			);
-			return Ok(())
+			return Ok(());
 		}
 		info!(target: LOG, "assigning {:} meetups for cid {:?}", num_meetups, community_ceremony.0);
 
@@ -1483,7 +1489,7 @@ impl<T: Config> Pallet<T> {
 			"Number of locations for cid {:?} is {:?}", community_ceremony.0, num_locations
 		);
 		if num_locations == 0 {
-			return Err(<Error<T>>::NoLocationsAvailable)
+			return Err(<Error<T>>::NoLocationsAvailable);
 		}
 
 		let num_registered_bootstrappers = Self::bootstrapper_count(community_ceremony);
@@ -1502,7 +1508,8 @@ impl<T: Config> Pallet<T> {
 			find_prime_below(num_registered_bootstrappers + num_registered_reputables),
 		);
 
-		//safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers + num_reputables
+		//safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers +
+		// num_reputables
 		let mut seats_left =
 			max_num_meetups.checked_mul(meetup_multiplier).ok_or(Error::<T>::CheckedMath)? -
 				num_registered_bootstrappers;
@@ -1599,16 +1606,16 @@ impl<T: Config> Pallet<T> {
 		participant: &T::AccountId,
 	) -> Option<ParticipantType> {
 		if <BootstrapperIndex<T>>::contains_key(community_ceremony, participant) {
-			return Some(ParticipantType::Bootstrapper)
+			return Some(ParticipantType::Bootstrapper);
 		}
 		if <ReputableIndex<T>>::contains_key(community_ceremony, participant) {
-			return Some(ParticipantType::Reputable)
+			return Some(ParticipantType::Reputable);
 		}
 		if <EndorseeIndex<T>>::contains_key(community_ceremony, participant) {
-			return Some(ParticipantType::Endorsee)
+			return Some(ParticipantType::Endorsee);
 		}
 		if <NewbieIndex<T>>::contains_key(community_ceremony, participant) {
-			return Some(ParticipantType::Newbie)
+			return Some(ParticipantType::Newbie);
 		}
 		None
 	}
@@ -1631,7 +1638,7 @@ impl<T: Config> Pallet<T> {
 				if participant_index < assignment_count.bootstrappers {
 					(participant_index, assignment.bootstrappers_reputables)
 				} else {
-					return None
+					return None;
 				}
 			},
 			ParticipantType::Reputable => {
@@ -1642,7 +1649,7 @@ impl<T: Config> Pallet<T> {
 						assignment.bootstrappers_reputables,
 					)
 				} else {
-					return None
+					return None;
 				}
 			},
 
@@ -1651,7 +1658,7 @@ impl<T: Config> Pallet<T> {
 				if participant_index < assignment_count.endorsees {
 					(participant_index, assignment.endorsees)
 				} else {
-					return None
+					return None;
 				}
 			},
 
@@ -1660,7 +1667,7 @@ impl<T: Config> Pallet<T> {
 				if participant_index < assignment_count.newbies {
 					(participant_index, assignment.newbies)
 				} else {
-					return None
+					return None;
 				}
 			},
 		};
@@ -1680,7 +1687,7 @@ impl<T: Config> Pallet<T> {
 				target: LOG,
 				"Invalid meetup index {}, meetup_count is {}", meetup_index, meetup_count
 			);
-			return Err(<Error<T>>::InvalidMeetupIndex)
+			return Err(<Error<T>>::InvalidMeetupIndex);
 		}
 
 		//safe; meetup index conversion from 1 based to 0 based
@@ -1769,7 +1776,7 @@ impl<T: Config> Pallet<T> {
 		if !(<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
 			CeremonyPhaseType::Attesting)
 		{
-			return None
+			return None;
 		}
 
 		let duration =
@@ -1889,20 +1896,20 @@ impl<T: Config> Pallet<T> {
 		for attestee in attestations.iter() {
 			if attestee == &participant {
 				warn!(target: LOG, "ignoring attestation for self: {:?}", attestee);
-				continue
+				continue;
 			};
 			if !meetup_participants.contains(attestee) {
 				warn!(
 					target: LOG,
 					"ignoring attestation that isn't a meetup participant: {:?}", attestee
 				);
-				continue
+				continue;
 			};
 			verified_attestees.insert(0, attestee.clone())
 		}
 
 		if verified_attestees.is_empty() {
-			return Err(<Error<T>>::NoValidAttestations)
+			return Err(<Error<T>>::NoValidAttestations);
 		}
 
 		let count = <AttestationCount<T>>::get((cid, cindex));
@@ -1940,7 +1947,7 @@ impl<T: Config> Pallet<T> {
 			if Self::participant_reputation((*cid, cindex.saturating_sub(i)), participant)
 				.is_verified()
 			{
-				return true
+				return true;
 			}
 		}
 		false
@@ -1954,7 +1961,7 @@ impl<T: Config> Pallet<T> {
 		for i in 0..=reputation_lifetime {
 			let cindex = cc.1.saturating_sub(i);
 			if <Endorsees<T>>::contains_key((cc.0, cindex), participant) {
-				return Some(cindex)
+				return Some(cindex);
 			}
 		}
 		None
@@ -1967,7 +1974,7 @@ impl<T: Config> Pallet<T> {
 	) -> bool {
 		let current_cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		if cindex < current_cindex.saturating_sub(Self::reputation_lifetime()) {
-			return false
+			return false;
 		}
 		<ParticipantReputation<T>>::get((*cid, cindex), account_id).is_verified()
 	}
@@ -2000,7 +2007,8 @@ impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 			CeremonyPhaseType::Attesting => {},
 			CeremonyPhaseType::Registering => {
 				let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
-				// Clean up with a time delay, such that participants can claim their UBI in the following cycle.
+				// Clean up with a time delay, such that participants can claim their UBI in the
+				// following cycle.
 				if cindex > Self::reputation_lifetime() {
 					Self::purge_registry(
 						cindex.saturating_sub(Self::reputation_lifetime()).saturating_sub(1),

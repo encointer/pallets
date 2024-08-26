@@ -18,8 +18,6 @@ mod v0 {
 	pub type IpfsCid = UnboundedPalletString;
 
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-	#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-	#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 	pub struct UnboundedCommunityMetadata {
 		/// utf8 encoded name
 		pub name: UnboundedPalletString,
@@ -105,8 +103,6 @@ pub mod v1 {
 	#[derive(
 		Encode, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
 	)]
-	#[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
-	#[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 	pub struct CommunityMetadataV1 {
 		/// utf8 encoded name
 		pub name: PalletString,
@@ -213,7 +209,8 @@ pub mod v2 {
 			}
 			log::info!(target: TARGET, "{} bootstrappers will be migrated.", bootstrappers_count,);
 
-			// For community metadata, we do not need any checks, because the data is bounded already due to the CommmunityMetadata validate() function.
+			// For community metadata, we do not need any checks, because the data is bounded
+			// already due to the CommmunityMetadata validate() function.
 
 			Ok((
 				cid_count,
@@ -245,7 +242,7 @@ pub mod v2 {
 					target: TARGET,
 					"skipping on_runtime_upgrade: executed on wrong storage version."
 				);
-				return T::DbWeight::get().reads(1)
+				return T::DbWeight::get().reads(1);
 			}
 			if onchain_version == StorageVersion::new(0) {
 				CommunityMetadata::<T>::translate::<UnboundedCommunityMetadata, _>(
@@ -434,13 +431,13 @@ mod test {
 			// Check that all values got migrated.
 
 			assert_eq!(
-				crate::CommunityIdentifiers::<TestRuntime>::get(),
-				BoundedVec::<
-					CommunityIdentifier,
-					<TestRuntime as Config>::MaxCommunityIdentifiers,
-				>::try_from(cids)
-				.unwrap()
-			);
+                crate::CommunityIdentifiers::<TestRuntime>::get(),
+                BoundedVec::<
+                    CommunityIdentifier,
+                    <TestRuntime as Config>::MaxCommunityIdentifiers,
+                >::try_from(cids)
+                    .unwrap()
+            );
 
 			assert_eq!(
 				crate::CommunityIdentifiersByGeohash::<TestRuntime>::get(

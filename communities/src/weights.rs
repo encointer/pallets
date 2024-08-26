@@ -60,7 +60,8 @@ pub trait WeightInfo {
 	fn purge_community() -> Weight;
 }
 
-/// Weights for pallet_encointer_communities using the Encointer solo chain node and recommended hardware.
+/// Weights for pallet_encointer_communities using the Encointer solo chain node and recommended
+/// hardware.
 pub struct EncointerWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
 	fn new_community() -> Weight {

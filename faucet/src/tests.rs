@@ -45,7 +45,7 @@ fn new_faucet(
 	if let mock::RuntimeEvent::EncointerFaucet(Event::FaucetCreated(faucet_account, _)) =
 		last_event::<TestRuntime>().unwrap()
 	{
-		return faucet_account
+		return faucet_account;
 	} else {
 		panic!("Faucet not found");
 	}
@@ -392,7 +392,7 @@ fn dripping_fails_when_cid_not_whitelisted() {
 
 		ext.execute_with(|| {
 			System::set_block_number(System::block_number() + 1); // this is needed to assert events
-														 // re-register because of different ext
+													  // re-register because of different ext
 			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 			let whitelist_input: WhiteListType = bounded_vec![cid];
@@ -458,7 +458,7 @@ fn dripping_works_with_whitelist_bypass() {
 
 		ext.execute_with(|| {
 			System::set_block_number(System::block_number() + 1); // this is needed to assert events
-														 // re-register because of different ext
+													  // re-register because of different ext
 			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 			Balances::make_free_balance_be(&bob, 1000);

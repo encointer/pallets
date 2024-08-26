@@ -15,12 +15,12 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 //! # Encointer Democracy Module
-//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use encointer_primitives::{
 	ceremonies::ReputationCountType,
+	common::PalletString,
 	democracy::{Proposal, ProposalAction, ProposalIdType, ReputationVec},
 	fixed::{transcendental::sqrt, types::U64F64},
 	scheduler::{CeremonyIndexType, CeremonyPhaseType},
@@ -144,6 +144,10 @@ pub mod pallet {
 			proposal_id: ProposalIdType,
 			reason: DispatchErrorWithPostInfo,
 		},
+		PetitionApproved {
+			cid: Option<CommunityIdentifier>,
+			text: PalletString,
+		},
 	}
 
 	#[pallet::error]
@@ -227,13 +231,14 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight((<T as Config>::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
 			proposal_action: ProposalAction,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
-				return Err(Error::<T>::ProposalWaitingForEnactment.into())
+				return Err(Error::<T>::ProposalWaitingForEnactment.into());
 			}
 			let _sender = ensure_signed(origin)?;
 			let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
@@ -313,7 +318,8 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(2)]
-		#[pallet::weight((<T as Config>::WeightInfo::update_proposal_state(), DispatchClass::Normal, Pays::Yes))]
+		#[pallet::weight((<T as Config>::WeightInfo::update_proposal_state(), DispatchClass::Normal, Pays::Yes)
+        )]
 		pub fn update_proposal_state(
 			origin: OriginFor<T>,
 			proposal_id: ProposalIdType,
@@ -332,7 +338,7 @@ pub mod pallet {
 		///
 		/// These boundaries ensure that we have a constant electorate to determine the
 		/// approval threshold.
-		/// * 	The lower bound ensures that the oldest reputation still exist at the end of the
+		/// * The lower bound ensures that the oldest reputation still exist at the end of the
 		/// 	proposal lifetime.
 		/// *	The upper bound ensures that the still dynamic reputation count of the
 		/// 	cindex at submission time is not included.
@@ -361,11 +367,13 @@ pub mod pallet {
 				.ok_or(Error::<T>::MathError)
 		}
 
-		/// Validates the reputations based on the following criteria and commits the reputations. Returns count of valid reputations.
+		/// Validates the reputations based on the following criteria and commits the reputations.
+		/// Returns count of valid reputations.
 		/// 1. are valid
 		/// 2. have not been used to vote for proposal_id
 		/// 3. originate in the correct community (for Community AccessPolicy)
-		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and proposal.start_cindex - 2
+		/// 4. are within proposal.start_cindex - reputation_lifetime + proposal_lifetime and
+		///    proposal.start_cindex - 2
 		pub fn validate_and_commit_reputations(
 			proposal_id: ProposalIdType,
 			account_id: &T::AccountId,
@@ -383,12 +391,12 @@ pub mod pallet {
 
 			for community_ceremony in reputations {
 				if !Self::voting_cindexes(proposal.start_cindex)?.contains(&community_ceremony.1) {
-					continue
+					continue;
 				}
 
 				if let Some(cid) = maybe_cid {
 					if community_ceremony.0 != cid {
-						continue
+						continue;
 					}
 				}
 
@@ -401,7 +409,7 @@ pub mod pallet {
 				)
 				.is_err()
 				{
-					continue
+					continue;
 				}
 
 				eligible_reputation_count += 1;
@@ -423,7 +431,8 @@ pub mod pallet {
 			let proposal_action_identifier = proposal.action.clone().get_identifier();
 			let last_approved_proposal_for_action =
 				Self::last_approved_proposal_for_action(proposal_action_identifier);
-			let proposal_cancelled_by_other = last_approved_proposal_for_action.is_some() &&
+			let proposal_cancelled_by_other = proposal.action.supersedes_same_action() &&
+				last_approved_proposal_for_action.is_some() &&
 				proposal.start < last_approved_proposal_for_action.unwrap().0;
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled_by_other {
@@ -531,7 +540,7 @@ pub mod pallet {
 
 			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
 			if turnout_permill < T::MinTurnout::get() {
-				return Ok(false)
+				return Ok(false);
 			}
 
 			Self::positive_turnout_bias(electorate, tally.turnout, tally.ayes)
@@ -541,15 +550,18 @@ pub mod pallet {
 			let mut proposal =
 				Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 
-			match proposal.action.clone() {
+			match proposal.action {
 				ProposalAction::AddLocation(cid, location) => {
 					CommunitiesPallet::<T>::do_add_location(cid, location)?;
 				},
 				ProposalAction::RemoveLocation(cid, location) => {
 					CommunitiesPallet::<T>::do_remove_location(cid, location)?;
 				},
-				ProposalAction::UpdateCommunityMetadata(cid, community_metadata) => {
-					CommunitiesPallet::<T>::do_update_community_metadata(cid, community_metadata)?;
+				ProposalAction::UpdateCommunityMetadata(cid, ref community_metadata) => {
+					CommunitiesPallet::<T>::do_update_community_metadata(
+						cid,
+						community_metadata.clone(),
+					)?;
 				},
 				ProposalAction::UpdateDemurrage(cid, demurrage) => {
 					CommunitiesPallet::<T>::do_update_demurrage(cid, demurrage)?;
@@ -559,6 +571,12 @@ pub mod pallet {
 				},
 				ProposalAction::SetInactivityTimeout(inactivity_timeout) => {
 					CeremoniesPallet::<T>::do_set_inactivity_timeout(inactivity_timeout)?;
+				},
+				ProposalAction::Petition(maybe_cid, ref petition) => {
+					Self::deposit_event(Event::PetitionApproved {
+						cid: maybe_cid,
+						text: petition.clone(),
+					});
 				},
 			};
 

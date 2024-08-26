@@ -26,7 +26,8 @@ pub mod serialize_array {
 	}
 }
 
-/// Serialization shim for fixed point numbers that is consistent with `polkadot-js`'s implementation.
+/// Serialization shim for fixed point numbers that is consistent with `polkadot-js`'s
+/// implementation.
 ///
 /// This is needed in particular for fixed point types that map to a i-/u128, as serde has problems
 /// with it: https://github.com/paritytech/substrate/issues/4641

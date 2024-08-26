@@ -4,10 +4,10 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::{vec, vec::Vec};
 
-/// This module is about finding which participants get their rewards based on their votes and attestations.
-/// The participant vecs are always vecs of participant ids
-/// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by the participant index
-/// ie. participant_votes[i] holds the vote of participant i
+/// This module is about finding which participants get their rewards based on their votes and
+/// attestations. The participant vecs are always vecs of participant ids
+/// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by
+/// the participant index ie. participant_votes[i] holds the vote of participant i
 
 type ParticipantIndex = usize;
 type Participants = Vec<ParticipantIndex>;
@@ -83,7 +83,7 @@ fn attestation_graph_is_fully_connected(
 	for (i, mut attestations) in participant_attestations.into_iter().enumerate() {
 		// only consider participants present in the meetup
 		if !legit_participants.contains(&i) {
-			continue
+			continue;
 		}
 		attestations.sort();
 		let mut expected_attestations = legit_participants.clone();
@@ -92,7 +92,7 @@ fn attestation_graph_is_fully_connected(
 		expected_attestations.sort();
 
 		if attestations != expected_attestations {
-			return false
+			return false;
 		}
 	}
 	true
@@ -113,7 +113,7 @@ fn early_rewards_possible(
 			n_confirmed,
 		) && attestation_graph_is_fully_connected(legit_participants, participant_attestations)
 	{
-		return true
+		return true;
 	}
 	false
 }
@@ -122,9 +122,10 @@ fn get_excluded_participants_no_vote(
 	participants: &Vec<ParticipantIndex>,
 	participant_votes: &Vec<u32>,
 ) -> Result<Vec<(ParticipantIndex, ExclusionReason)>, MeetupValidationError> {
-	// We want to get rid of all participants that did not vote (ie. have a vote of 0 (default storage value) because they did not receive any attestations).
-	// This needs to happen before we compute the majority vote, because otherwise it would be possible to receive a majority vote of 0
-	// in the case where more than half of the participants did not show up.
+	// We want to get rid of all participants that did not vote (ie. have a vote of 0 (default
+	// storage value) because they did not receive any attestations). This needs to happen before we
+	// compute the majority vote, because otherwise it would be possible to receive a majority vote
+	// of 0 in the case where more than half of the participants did not show up.
 
 	let mut excluded_participants: Vec<(ParticipantIndex, ExclusionReason)> = vec![];
 	for i in participants {
@@ -170,7 +171,7 @@ fn get_excluded_participants_num_attestations(
 	for _ in 0..max_iterations {
 		// if all participants were excluded, exit the loop
 		if participants_to_process.is_empty() {
-			return Ok(excluded_participants)
+			return Ok(excluded_participants);
 		};
 
 		let participants_grouped_by_outgoing_attestations =
@@ -217,10 +218,11 @@ fn get_excluded_participants_num_attestations(
 			participants_to_process.retain(|k| !participants_to_exclude.contains(k));
 			relevant_attestations =
 				filter_attestations(&participants_to_process, relevant_attestations.clone());
-			continue
+			continue;
 		} else {
-			// if all participants are above the threshold and therefore no participants were removed, we exit the loop
-			break
+			// if all participants are above the threshold and therefore no participants were
+			// removed, we exit the loop
+			break;
 		}
 	}
 	Ok(excluded_participants)
@@ -240,12 +242,12 @@ fn find_majority_vote(
 	}
 
 	if n_vote_candidates.is_empty() {
-		return Err(MeetupValidationError::BallotEmpty)
+		return Err(MeetupValidationError::BallotEmpty);
 	}
 	// sort by descending vote count
 	n_vote_candidates.sort_by(|a, b| b.1.cmp(&a.1));
 	if n_vote_candidates.get_or_err(0)?.1 < 3 {
-		return Err(MeetupValidationError::NoDependableVote)
+		return Err(MeetupValidationError::NoDependableVote);
 	}
 	let (n_confirmed, vote_count) = n_vote_candidates.get_or_err(0)?;
 	let vote_is_unanimous = n_vote_candidates.len() == 1;
@@ -256,7 +258,8 @@ fn filter_attestations(
 	participants: &Participants,
 	participant_attestations: Attestations,
 ) -> Attestations {
-	// filter out participants from the attestation vectors that are not in the participants vector anymore.
+	// filter out participants from the attestation vectors that are not in the participants vector
+	// anymore.
 	participant_attestations
 		.into_iter()
 		.map(|mut a| {
@@ -299,7 +302,7 @@ fn group_indices_by_value(
 ) -> Result<Vec<ParticipantGroup>, MeetupValidationError> {
 	if let Some(max) = indices.iter().max() {
 		if max >= &values.len() {
-			return Err(MeetupValidationError::IndexOutOfBounds)
+			return Err(MeetupValidationError::IndexOutOfBounds);
 		}
 	}
 

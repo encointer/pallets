@@ -46,7 +46,7 @@ use test_utils::{
 };
 
 fn create_cid() -> CommunityIdentifier {
-	return register_test_community::<TestRuntime>(None, 0.0, 0.0)
+	return register_test_community::<TestRuntime>(None, 0.0, 0.0);
 }
 
 fn alice() -> AccountId {
@@ -478,6 +478,35 @@ fn do_update_proposal_state_cancels_superseded_proposal() {
 			EncointerDemocracy::proposals(1).unwrap().state,
 			ProposalState::SupersededBy { id: 2 }
 		);
+	});
+}
+
+#[test]
+fn do_update_proposal_state_does_not_cancel_no_supersession_actions() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let petition1_text = PalletString::try_from("freedom for all".as_bytes().to_vec()).unwrap();
+		let proposal1_action = ProposalAction::Petition(Some(cid), petition1_text.clone());
+
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice()),
+			proposal1_action
+		));
+
+		//another proposal of same action has been scheduled for enactment
+		LastApprovedProposalForAction::<TestRuntime>::insert(
+			ProposalActionIdentifier::Petition(Some(cid)),
+			(3 * BLOCKTIME, 2),
+		);
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
+
+		advance_n_blocks(5);
+
+		assert_ok!(EncointerDemocracy::do_update_proposal_state(1));
+
+		// we do not want petitions to cancel others
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 	});
 }
 
@@ -956,6 +985,42 @@ fn enact_set_inactivity_timeout_works() {
 			EncointerCeremonies::inactivity_timeout(),
 			InactivityTimeoutType::from(13037u32)
 		);
+	});
+}
+
+#[test]
+fn enact_petition_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+
+		let cid = create_cid();
+		let alice = alice();
+		let petition_text = PalletString::try_from("freedom for all".as_bytes().to_vec()).unwrap();
+		let proposal_action = ProposalAction::Petition(Some(cid), petition_text.clone());
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		// directly inject the proposal into the enactment queue
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
+		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+
+		match event_at_index::<TestRuntime>(get_num_events::<TestRuntime>() - 3).unwrap() {
+			mock::RuntimeEvent::EncointerDemocracy(Event::PetitionApproved {
+				cid: maybe_cid,
+				text,
+			}) => {
+				assert_eq!(maybe_cid, Some(cid));
+				assert_eq!(text, petition_text);
+			},
+			_ => panic!("Wrong event"),
+		};
 	});
 }
 
