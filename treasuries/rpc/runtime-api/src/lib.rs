@@ -28,6 +28,6 @@ sp_api::decl_runtime_apis! {
 	pub trait TreasuriesApi<AccountId>
 	where AccountId: Encode + Decode
 	{
-		fn get_community_treasury_account_unchecked(cid: &CommunityIdentifier) -> AccountId;
+		fn get_community_treasury_account_unchecked(maybecid: &Option<CommunityIdentifier>) -> AccountId;
 	}
 }

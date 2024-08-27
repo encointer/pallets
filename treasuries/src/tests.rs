@@ -20,6 +20,7 @@ use super::*;
 use crate::mock::{Balances, EncointerTreasuries, System};
 use frame_support::assert_ok;
 use mock::{new_test_ext, TestRuntime};
+use sp_core::crypto::Ss58Codec;
 use test_utils::{helpers::*, *};
 
 pub type BalanceOf<T> =
@@ -33,15 +34,33 @@ fn treasury_spending_works() {
 		let amount: BalanceOf<TestRuntime> = 100_000_000;
 		let cid = CommunityIdentifier::default();
 
-		let treasury_account = EncointerTreasuries::get_community_treasury_account_unchecked(cid);
-		Balances::make_free_balance_be(&treasury_account, 500_000_000);
+		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
+		Balances::make_free_balance_be(&treasury, 500_000_000);
 
-		assert_ok!(EncointerTreasuries::do_spend_native(cid, beneficiary.clone(), amount));
-		assert_eq!(Balances::free_balance(&treasury_account), 400_000_000);
+		assert_ok!(EncointerTreasuries::do_spend_native(Some(cid), beneficiary.clone(), amount));
+		assert_eq!(Balances::free_balance(&treasury), 400_000_000);
 		assert_eq!(Balances::free_balance(&beneficiary), amount);
 		assert_eq!(
 			last_event::<TestRuntime>(),
-			Some(Event::SpentNative { cid, beneficiary, amount }.into())
+			Some(Event::SpentNative { treasury, beneficiary, amount }.into())
 		);
+	});
+}
+
+#[test]
+fn treasury_getter_works() {
+	new_test_ext().execute_with(|| {
+		let treasury_account = EncointerTreasuries::get_community_treasury_account_unchecked(None);
+		assert_eq!(
+			treasury_account.to_ss58check(),
+			"5FU79FVXdN3RYSj8857XjNT2SgeRrhk8iUzjb75X1yc8YDkZ"
+		);
+		let cid = CommunityIdentifier::default();
+		let treasury_account =
+			EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
+		assert_eq!(
+			treasury_account.to_ss58check(),
+			"5D58hM12H6Gkc1h1chuzbbJ3FitGHAyTM6ECkdz4hi5dFheH"
+		)
 	});
 }

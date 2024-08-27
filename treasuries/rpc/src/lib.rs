@@ -1,13 +1,8 @@
 use encointer_primitives::communities::CommunityIdentifier;
 use encointer_rpc::Error;
-use jsonrpsee::{
-	core::RpcResult,
-	proc_macros::rpc,
-	types::{error::ErrorObject, ErrorObjectOwned},
-};
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use pallet_encointer_treasuries_rpc_runtime_api::TreasuriesApi as TreasuriesRuntimeApi;
 use parity_scale_codec::{Decode, Encode};
-use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
@@ -21,7 +16,7 @@ where
 	#[method(name = "encointer_getCommunityTreasuryAccountUnchecked")]
 	fn get_community_treasury_account_unchecked(
 		&self,
-		cid: CommunityIdentifier,
+		maybecid: Option<CommunityIdentifier>,
 	) -> RpcResult<AccountId>;
 }
 
@@ -46,12 +41,12 @@ where
 {
 	fn get_community_treasury_account_unchecked(
 		&self,
-		cid: CommunityIdentifier,
+		maybecid: Option<CommunityIdentifier>,
 	) -> RpcResult<AccountId> {
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
 		Ok(api
-			.get_community_treasury_account_unchecked(at, &cid)
+			.get_community_treasury_account_unchecked(at, &maybecid)
 			.map_err(|e| Error::Runtime(e.into()))?)
 	}
 }
