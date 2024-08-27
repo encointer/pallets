@@ -23,6 +23,7 @@ members = [
     'rpc',
     'scheduler',
     'test-utils',
+    'treasuries',
     'vouches',
 ]
 

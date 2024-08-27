@@ -4788,6 +4788,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-treasuries"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "encointer-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-encointer-communities",
+ "pallet-encointer-reputation-commitments",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+]
+
+[[package]]
 name = "pallet-encointer-vouches"
 version = "13.1.0"
 dependencies = [
