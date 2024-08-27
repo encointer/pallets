@@ -19,7 +19,7 @@
 //extern crate node_primitives;
 
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{ord_parameter_types, parameter_types, traits::EitherOfDiverse};
+use frame_support::{ord_parameter_types, parameter_types, traits::EitherOfDiverse, PalletId};
 use frame_system::{pallet_prelude::BlockNumberFor, EnsureRoot, EnsureSignedBy};
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
@@ -206,6 +206,20 @@ macro_rules! impl_encointer_reputation_commitments {
 	};
 }
 
+parameter_types! {
+	pub const TreasuriesPalletId: PalletId = PalletId(*b"trsrysId");
+}
+#[macro_export]
+macro_rules! impl_encointer_treasuries {
+	($t:ident) => {
+		impl pallet_encointer_treasuries::Config for $t {
+			type RuntimeEvent = RuntimeEvent;
+			type Currency = pallet_balances::Pallet<TestRuntime>;
+			type PalletId = TreasuriesPalletId;
+		}
+	};
+}
+
 #[macro_export]
 macro_rules! test_runtime {
 	($t:ident, $system:ident, $scheduler:ident) => {
@@ -289,16 +303,16 @@ pub type EnsureAlice = EitherOfDiverse<EnsureSignedBy<Alice, AccountId32>, Ensur
 pub struct TestRandomness<T>(sp_std::marker::PhantomData<T>);
 
 impl<Output: parity_scale_codec::Decode + Default, T>
-	frame_support::traits::Randomness<Output, BlockNumberFor<T>> for TestRandomness<T>
+frame_support::traits::Randomness<Output, BlockNumberFor<T>> for TestRandomness<T>
 where
-	T: frame_system::Config,
+    T: frame_system::Config,
 {
-	fn random(subject: &[u8]) -> (Output, BlockNumberFor<T>) {
-		use sp_runtime::traits::TrailingZeroInput;
+    fn random(subject: &[u8]) -> (Output, BlockNumberFor<T>) {
+        use sp_runtime::traits::TrailingZeroInput;
 
-		(
-			Output::decode(&mut TrailingZeroInput::new(subject)).unwrap_or_default(),
-			frame_system::Pallet::<T>::block_number(),
-		)
-	}
+        (
+            Output::decode(&mut TrailingZeroInput::new(subject)).unwrap_or_default(),
+            frame_system::Pallet::<T>::block_number(),
+        )
+    }
 }

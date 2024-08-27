@@ -49,7 +49,7 @@ pub enum ProposalAccessPolicy {
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum ProposalAction {
+pub enum ProposalAction<AccountId, Balance> {
 	AddLocation(CommunityIdentifier, Location),
 	RemoveLocation(CommunityIdentifier, Location),
 	UpdateCommunityMetadata(CommunityIdentifier, CommunityMetadataType),
@@ -57,6 +57,7 @@ pub enum ProposalAction {
 	UpdateNominalIncome(CommunityIdentifier, NominalIncomeType),
 	SetInactivityTimeout(InactivityTimeoutType),
 	Petition(Option<CommunityIdentifier>, PalletString),
+	SpendNative(Option<CommunityIdentifier>, AccountId, Balance),
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -70,9 +71,10 @@ pub enum ProposalActionIdentifier {
 	UpdateNominalIncome(CommunityIdentifier),
 	SetInactivityTimeout,
 	Petition(Option<CommunityIdentifier>),
+	SpendNative(Option<CommunityIdentifier>),
 }
 
-impl ProposalAction {
+impl<AccountId, Balance> ProposalAction<AccountId, Balance> {
 	pub fn get_access_policy(&self) -> ProposalAccessPolicy {
 		match self {
 			ProposalAction::AddLocation(cid, _) => ProposalAccessPolicy::Community(*cid),
@@ -84,6 +86,8 @@ impl ProposalAction {
 			ProposalAction::SetInactivityTimeout(_) => ProposalAccessPolicy::Global,
 			ProposalAction::Petition(Some(cid), _) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::Petition(None, _) => ProposalAccessPolicy::Global,
+			ProposalAction::SpendNative(Some(cid), ..) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::SpendNative(None, ..) => ProposalAccessPolicy::Global,
 		}
 	}
 
@@ -102,6 +106,8 @@ impl ProposalAction {
 				ProposalActionIdentifier::SetInactivityTimeout,
 			ProposalAction::Petition(maybe_cid, _) =>
 				ProposalActionIdentifier::Petition(*maybe_cid),
+			ProposalAction::SpendNative(maybe_cid, ..) =>
+				ProposalActionIdentifier::SpendNative(*maybe_cid),
 		}
 	}
 
@@ -115,6 +121,7 @@ impl ProposalAction {
 			ProposalAction::UpdateNominalIncome(_, _) => true,
 			ProposalAction::SetInactivityTimeout(_) => true,
 			ProposalAction::Petition(_, _) => false,
+			ProposalAction::SpendNative(_, _, _) => false,
 		}
 	}
 }
@@ -143,10 +150,10 @@ impl<Moment: PartialEq> ProposalState<Moment> {
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub struct Proposal<Moment> {
+pub struct Proposal<Moment, AccountId, Balance> {
 	pub start: Moment,
 	pub start_cindex: CeremonyIndexType,
-	pub action: ProposalAction,
+	pub action: ProposalAction<AccountId, Balance>,
 	pub state: ProposalState<Moment>,
 	pub electorate_size: ReputationCountType,
 }

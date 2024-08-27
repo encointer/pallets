@@ -19,6 +19,7 @@ pallet-encointer-ceremonies = { workspace = true }
 pallet-encointer-communities = { workspace = true }
 pallet-encointer-reputation-commitments = { workspace = true }
 pallet-encointer-scheduler = { workspace = true }
+pallet-encointer-treasuries = { workspace = true }
 
 # substrate deps
 frame-support = { workspace = true }
