@@ -19,8 +19,8 @@
 use core::marker::PhantomData;
 use encointer_primitives::communities::CommunityIdentifier;
 use frame_support::{
-    traits::{Currency, ExistenceRequirement::KeepAlive, Get, NamedReservableCurrency},
-    PalletId,
+	traits::{Currency, ExistenceRequirement::KeepAlive, Get, NamedReservableCurrency},
+	PalletId,
 };
 use log::info;
 use parity_scale_codec::Decode;
@@ -38,57 +38,57 @@ mod mock;
 mod tests;
 
 pub type BalanceOf<T> =
-<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use super::*;
-    use frame_support::pallet_prelude::*;
+	use super::*;
+	use frame_support::pallet_prelude::*;
 
-    #[pallet::pallet]
-    pub struct Pallet<T>(PhantomData<T>);
+	#[pallet::pallet]
+	pub struct Pallet<T>(PhantomData<T>);
 
-    #[pallet::config]
-    pub trait Config: frame_system::Config {
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-        type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
 
-        /// The treasuries' pallet id, used for deriving sovereign account IDs per community.
-        #[pallet::constant]
-        type PalletId: Get<PalletId>;
-    }
+		/// The treasuries' pallet id, used for deriving sovereign account IDs per community.
+		#[pallet::constant]
+		type PalletId: Get<PalletId>;
+	}
 
-    impl<T: Config> Pallet<T>
-    where
-        sp_core::H256: From<<T as frame_system::Config>::Hash>,
-        T::AccountId: AsRef<[u8; 32]>,
-    {
-        pub fn get_community_treasury_account_unchecked(cid: CommunityIdentifier) -> T::AccountId {
-            let treasury_identifier =
-                [<T as Config>::PalletId::get().0.as_slice(), cid.encode().as_slice()].concat();
-            let treasury_id_hash: H256 = T::Hashing::hash_of(&treasury_identifier).into();
-            T::AccountId::decode(&mut treasury_id_hash.as_bytes())
-                .expect("32 bytes can always construct an AccountId32")
-        }
+	impl<T: Config> Pallet<T>
+	where
+		sp_core::H256: From<<T as frame_system::Config>::Hash>,
+		T::AccountId: AsRef<[u8; 32]>,
+	{
+		pub fn get_community_treasury_account_unchecked(cid: CommunityIdentifier) -> T::AccountId {
+			let treasury_identifier =
+				[<T as Config>::PalletId::get().0.as_slice(), cid.encode().as_slice()].concat();
+			let treasury_id_hash: H256 = T::Hashing::hash_of(&treasury_identifier).into();
+			T::AccountId::decode(&mut treasury_id_hash.as_bytes())
+				.expect("32 bytes can always construct an AccountId32")
+		}
 
-        /// returns the account id where remaining funds of closed faucets go
-        pub fn do_spend_native(
-            cid: CommunityIdentifier,
-            beneficiary: T::AccountId,
-            amount: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
-            let from = Self::get_community_treasury_account_unchecked(cid);
-            T::Currency::transfer(&from, &beneficiary, amount, KeepAlive)?;
-            info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", cid, amount, beneficiary);
-            Self::deposit_event(Event::SpentNative { cid, beneficiary, amount });
-            Ok(().into())
-        }
-    }
+		/// returns the account id where remaining funds of closed faucets go
+		pub fn do_spend_native(
+			cid: CommunityIdentifier,
+			beneficiary: T::AccountId,
+			amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let from = Self::get_community_treasury_account_unchecked(cid);
+			T::Currency::transfer(&from, &beneficiary, amount, KeepAlive)?;
+			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", cid, amount, beneficiary);
+			Self::deposit_event(Event::SpentNative { cid, beneficiary, amount });
+			Ok(().into())
+		}
+	}
 
-    #[pallet::event]
-    #[pallet::generate_deposit(pub (super) fn deposit_event)]
-    pub enum Event<T: Config> {
-        /// treasury spent native tokens from community `cid` to `beneficiary` amounting `amount`
-        SpentNative { cid: CommunityIdentifier, beneficiary: T::AccountId, amount: BalanceOf<T> },
-    }
+	#[pallet::event]
+	#[pallet::generate_deposit(pub (super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		/// treasury spent native tokens from community `cid` to `beneficiary` amounting `amount`
+		SpentNative { cid: CommunityIdentifier, beneficiary: T::AccountId, amount: BalanceOf<T> },
+	}
 }
