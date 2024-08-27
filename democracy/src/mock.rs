@@ -17,8 +17,8 @@
 use crate as dut;
 use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
 use sp_runtime::{
-    traits::{ConstU128, ConstU64},
-    BuildStorage,
+	traits::{ConstU128, ConstU64},
+	BuildStorage,
 };
 use test_utils::*;
 
@@ -45,14 +45,14 @@ frame_support::construct_runtime!(
 // }
 
 impl dut::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
-    type MaxReputationCount = ConstU32<10>;
-    // 10 6s blocks
-    type ConfirmationPeriod = ConstU64<60000>;
-    // 40 6s blocks
-    type ProposalLifetime = ConstU64<240000>;
-    type MinTurnout = ConstU128<20>; // 2%
-    type WeightInfo = (); // 2%
+	type RuntimeEvent = RuntimeEvent;
+	type MaxReputationCount = ConstU32<10>;
+	// 10 6s blocks
+	type ConfirmationPeriod = ConstU64<60000>;
+	// 40 6s blocks
+	type ProposalLifetime = ConstU64<240000>;
+	type MinTurnout = ConstU128<20>; // 2%
+	type WeightInfo = (); // 2%
 }
 
 // boilerplate
@@ -68,45 +68,45 @@ impl_encointer_treasuries!(TestRuntime);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
+	let mut t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 
-    dut::GenesisConfig::<TestRuntime> { proposal_count: 0, ..Default::default() }
-        .assimilate_storage(&mut t)
-        .unwrap();
+	dut::GenesisConfig::<TestRuntime> { proposal_count: 0, ..Default::default() }
+		.assimilate_storage(&mut t)
+		.unwrap();
 
-    pallet_encointer_scheduler::GenesisConfig::<TestRuntime> {
-        current_ceremony_index: 7,
-        phase_durations: vec![
-            (CeremonyPhaseType::Registering, ONE_DAY),
-            (CeremonyPhaseType::Assigning, ONE_DAY),
-            (CeremonyPhaseType::Attesting, ONE_DAY),
-        ],
-        ..Default::default()
-    }
-        .assimilate_storage(&mut t)
-        .unwrap();
+	pallet_encointer_scheduler::GenesisConfig::<TestRuntime> {
+		current_ceremony_index: 7,
+		phase_durations: vec![
+			(CeremonyPhaseType::Registering, ONE_DAY),
+			(CeremonyPhaseType::Assigning, ONE_DAY),
+			(CeremonyPhaseType::Attesting, ONE_DAY),
+		],
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
-    pallet_encointer_ceremonies::GenesisConfig::<TestRuntime> {
-        ceremony_reward: BalanceType::from_num(1),
-        location_tolerance: LOCATION_TOLERANCE, // [m]
-        time_tolerance: TIME_TOLERANCE,         // [ms]
-        inactivity_timeout: 12,
-        endorsement_tickets_per_bootstrapper: 50,
-        endorsement_tickets_per_reputable: 2,
-        reputation_lifetime: 5,
-        meetup_time_offset: 0,
-        ..Default::default()
-    }
-        .assimilate_storage(&mut t)
-        .unwrap();
+	pallet_encointer_ceremonies::GenesisConfig::<TestRuntime> {
+		ceremony_reward: BalanceType::from_num(1),
+		location_tolerance: LOCATION_TOLERANCE, // [m]
+		time_tolerance: TIME_TOLERANCE,         // [ms]
+		inactivity_timeout: 12,
+		endorsement_tickets_per_bootstrapper: 50,
+		endorsement_tickets_per_reputable: 2,
+		reputation_lifetime: 5,
+		meetup_time_offset: 0,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
-    pallet_encointer_communities::GenesisConfig::<TestRuntime> {
-        min_solar_trip_time_s: 1,
-        max_speed_mps: 83,
-        ..Default::default()
-    }
-        .assimilate_storage(&mut t)
-        .unwrap();
+	pallet_encointer_communities::GenesisConfig::<TestRuntime> {
+		min_solar_trip_time_s: 1,
+		max_speed_mps: 83,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
-    t.into()
+	t.into()
 }
