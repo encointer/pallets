@@ -1,0 +1,31 @@
+[package]
+name = "encointer-treasuries-rpc"
+version = "0.1.0"
+authors = ["Encointer Association <info@encointer.org>"]
+edition = "2021"
+description = "Treasuries pallet rpc for the Encointer blockchain runtime"
+homepage = "https://encointer.org"
+repository = "https://github.com/encointer/pallets"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+jsonrpsee = { workspace = true }
+log = { workspace = true, features = ["std"] }
+parity-scale-codec = { workspace = true }
+parking_lot = { workspace = true }
+thiserror = { workspace = true }
+
+# local deps
+pallet-encointer-treasuries-rpc-runtime-api = { workspace = true }
+encointer-primitives = { workspace = true }
+encointer-rpc = { workspace = true }
+
+# substrate deps
+sc-rpc = { workspace = true }
+sc-rpc-api = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-blockchain = { workspace = true }
+sp-core = { workspace = true, features = ["std"] }
+sp-rpc = { workspace = true }
+sp-runtime = { workspace = true, features = ["std"] }
+

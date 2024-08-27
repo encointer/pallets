@@ -17,7 +17,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use core::marker::PhantomData;
-use encointer_primitives::{communities::CommunityIdentifier};
+use encointer_primitives::communities::CommunityIdentifier;
 use frame_support::{
     traits::{Currency, ExistenceRequirement::KeepAlive, Get, NamedReservableCurrency},
     PalletId,
@@ -25,10 +25,7 @@ use frame_support::{
 use log::info;
 use parity_scale_codec::Decode;
 use sp_core::H256;
-use sp_runtime::{
-    traits::{Hash},
-};
-
+use sp_runtime::traits::Hash;
 
 // Logger target
 const LOG: &str = "encointer";

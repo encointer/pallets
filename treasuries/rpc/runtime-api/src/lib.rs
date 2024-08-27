@@ -14,30 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime API definition required by Communities RPC extensions.
+//! Runtime API definition required by Treasuries RPC extensions.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
-use encointer_primitives::{
-	balances::BalanceEntry,
-	common::PalletString,
-	communities::{CommunityIdentifier, Location},
-};
+use encointer_primitives::communities::CommunityIdentifier;
 use parity_scale_codec::{Decode, Encode};
-use sp_core::crypto::AccountId32;
 
 sp_api::decl_runtime_apis! {
-
-	pub trait TreasuriesApi<AccountId, BlockNumber>
-		where AccountId: Encode + Decode,
-		BlockNumber: Encode + Decode{
-
-		fn get_treasury_account_id(cid: &CommunityIdentifier) -> AccountId32;
-		fn get_name(cid: &CommunityIdentifier) -> Option<PalletString>;
-		fn get_locations(cid: &CommunityIdentifier) -> Vec<Location>;
-		fn get_all_balances(account: &AccountId) -> Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>;
+	pub trait TreasuriesApi<AccountId>
+	where AccountId: Encode + Decode
+	{
+		fn get_community_treasury_account_unchecked(cid: &CommunityIdentifier) -> AccountId;
 	}
 }

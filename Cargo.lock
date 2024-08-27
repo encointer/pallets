@@ -1631,6 +1631,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "encointer-treasuries-rpc"
+version = "0.1.0"
+dependencies = [
+ "encointer-primitives",
+ "encointer-rpc",
+ "jsonrpsee",
+ "log",
+ "pallet-encointer-treasuries-rpc-runtime-api",
+ "parity-scale-codec",
+ "parking_lot 0.12.3",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "thiserror",
+]
+
+[[package]]
 name = "enum-as-inner"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4806,6 +4827,18 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "test-utils",
+]
+
+[[package]]
+name = "pallet-encointer-treasuries-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-std",
 ]
 
 [[package]]

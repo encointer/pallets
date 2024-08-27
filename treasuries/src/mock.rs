@@ -46,9 +46,9 @@ parameter_types! {
 	pub const TreasuriesPalletId: PalletId = PalletId(*b"trsrysId");
 }
 impl dut::Config for TestRuntime {
-    type RuntimeEvent = RuntimeEvent;
-    type Currency = pallet_balances::Pallet<TestRuntime>;
-    type PalletId = TreasuriesPalletId;
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = pallet_balances::Pallet<TestRuntime>;
+	type PalletId = TreasuriesPalletId;
 }
 
 // boilerplate
@@ -60,6 +60,6 @@ impl_balances!(TestRuntime, System);
 
 // genesis values
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
-    t.into()
+	let t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
+	t.into()
 }
