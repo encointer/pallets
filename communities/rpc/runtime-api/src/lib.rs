@@ -27,15 +27,14 @@ use encointer_primitives::{
 	communities::{CommunityIdentifier, Location},
 };
 use parity_scale_codec::{Decode, Encode};
-use sp_core::crypto::AccountId32;
 
 sp_api::decl_runtime_apis! {
 
-	pub trait TreasuriesApi<AccountId, BlockNumber>
+	pub trait CommunitiesApi<AccountId, BlockNumber>
 		where AccountId: Encode + Decode,
 		BlockNumber: Encode + Decode{
 
-		fn get_treasury_account_id(cid: &CommunityIdentifier) -> AccountId32;
+		fn get_cids() -> Vec<CommunityIdentifier>;
 		fn get_name(cid: &CommunityIdentifier) -> Option<PalletString>;
 		fn get_locations(cid: &CommunityIdentifier) -> Vec<Location>;
 		fn get_all_balances(account: &AccountId) -> Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>;
