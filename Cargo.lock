@@ -1599,7 +1599,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "13.2.0"
+version = "13.3.0"
 dependencies = [
  "approx",
  "bs58 0.5.1",
@@ -1632,7 +1632,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-treasuries-rpc"
-version = "0.1.0"
+version = "13.3.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4811,7 +4811,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries"
-version = "0.1.0"
+version = "13.3.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4832,7 +4832,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries-rpc-runtime-api"
-version = "0.1.0"
+version = "13.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -7968,7 +7968,7 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test-utils"
-version = "13.1.0"
+version = "13.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
