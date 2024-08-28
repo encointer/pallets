@@ -16,9 +16,9 @@ parking_lot = { workspace = true }
 thiserror = { workspace = true }
 
 # local deps
-pallet-encointer-treasuries-rpc-runtime-api = { workspace = true }
 encointer-primitives = { workspace = true }
 encointer-rpc = { workspace = true }
+pallet-encointer-treasuries-rpc-runtime-api = { workspace = true }
 
 # substrate deps
 sc-rpc = { workspace = true }
@@ -28,4 +28,3 @@ sp-blockchain = { workspace = true }
 sp-core = { workspace = true, features = ["std"] }
 sp-rpc = { workspace = true }
 sp-runtime = { workspace = true, features = ["std"] }
-
