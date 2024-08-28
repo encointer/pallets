@@ -4718,7 +4718,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "13.2.0"
+version = "13.3.0"
 dependencies = [
  "approx",
  "encointer-primitives",
