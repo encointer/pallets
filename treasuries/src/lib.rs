@@ -74,7 +74,6 @@ pub mod pallet {
 				.expect("32 bytes can always construct an AccountId32")
 		}
 
-		/// returns the account id where remaining funds of closed faucets go
 		pub fn do_spend_native(
 			maybecid: Option<CommunityIdentifier>,
 			beneficiary: T::AccountId,
