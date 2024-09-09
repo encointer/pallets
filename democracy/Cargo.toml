@@ -25,6 +25,7 @@ pallet-encointer-treasuries = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 pallet-timestamp = { workspace = true }
+sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
@@ -32,7 +33,7 @@ sp-std = { workspace = true }
 # benchmarking
 frame-benchmarking = { workspace = true, optional = true }
 sp-application-crypto = { workspace = true, optional = true }
-sp-core = { workspace = true, optional = true }
+
 
 [dev-dependencies]
 approx = { workspace = true }
@@ -72,7 +73,6 @@ runtime-benchmarks = [
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-scheduler/runtime-benchmarks",
     "sp-application-crypto",
-    "sp-core",
 ]
 try-runtime = [
     "frame-system/try-runtime",
