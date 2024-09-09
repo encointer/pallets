@@ -1,5 +1,5 @@
 [package]
-name = "encointer-treasuries-rpc"
+name = "pallet-encointer-treasuries-rpc"
 version = "13.3.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
