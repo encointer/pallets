@@ -632,7 +632,7 @@ where
 	}
 }
 
-mod migrations;
+pub mod migrations;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
