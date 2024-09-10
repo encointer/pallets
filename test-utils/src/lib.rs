@@ -19,7 +19,7 @@
 //extern crate node_primitives;
 
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{ord_parameter_types, parameter_types, traits::EitherOfDiverse};
+use frame_support::{ord_parameter_types, parameter_types, traits::EitherOfDiverse, PalletId};
 use frame_system::{pallet_prelude::BlockNumberFor, EnsureRoot, EnsureSignedBy};
 use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
@@ -202,6 +202,20 @@ macro_rules! impl_encointer_reputation_commitments {
 		impl pallet_encointer_reputation_commitments::Config for $t {
 			type RuntimeEvent = RuntimeEvent;
 			type WeightInfo = ();
+		}
+	};
+}
+
+parameter_types! {
+	pub const TreasuriesPalletId: PalletId = PalletId(*b"trsrysId");
+}
+#[macro_export]
+macro_rules! impl_encointer_treasuries {
+	($t:ident) => {
+		impl pallet_encointer_treasuries::Config for $t {
+			type RuntimeEvent = RuntimeEvent;
+			type Currency = pallet_balances::Pallet<TestRuntime>;
+			type PalletId = TreasuriesPalletId;
 		}
 	};
 }

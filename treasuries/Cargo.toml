@@ -1,83 +1,63 @@
 [package]
-name = "pallet-encointer-democracy"
+name = "pallet-encointer-treasuries"
 version = "13.3.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
-description = "Democracy pallet for the Encointer blockchain runtime"
+description = "Treasuries pallet for the Encointer blockchain runtime"
 homepage = "https://encointer.org"
 repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
 [dependencies]
+approx = { workspace = true, optional = true }
 log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 
 # local deps
 encointer-primitives = { workspace = true }
-pallet-encointer-ceremonies = { workspace = true }
 pallet-encointer-communities = { workspace = true }
 pallet-encointer-reputation-commitments = { workspace = true }
-pallet-encointer-scheduler = { workspace = true }
-pallet-encointer-treasuries = { workspace = true }
 
 # substrate deps
+frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-pallet-timestamp = { workspace = true }
 sp-core = { workspace = true }
-sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
-# benchmarking
-frame-benchmarking = { workspace = true, optional = true }
-sp-application-crypto = { workspace = true, optional = true }
-
-
 [dev-dependencies]
 approx = { workspace = true }
-pallet-encointer-ceremonies = { workspace = true, features = ["mocks"] }
-pallet-encointer-balances = { workspace = true }
-itertools = { workspace = true }
-rstest = { workspace = true }
 sp-io = { workspace = true, features = ["std"] }
-sp-keystore = { workspace = true }
 test-utils = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
+    "approx/std",
     "encointer-primitives/std",
-    "frame-benchmarking/std",
     "frame-support/std",
     "frame-system/std",
     "log/std",
-    "pallet-encointer-balances/std",
-    "pallet-encointer-ceremonies/std",
     "pallet-encointer-communities/std",
-    "pallet-encointer-scheduler/std",
-    "pallet-timestamp/std",
+    "pallet-encointer-reputation-commitments/std",
     "parity-scale-codec/std",
     "scale-info/std",
     "sp-core/std",
-    "sp-io/std",
+    "sp-runtime/std",
     "sp-std/std",
 ]
 runtime-benchmarks = [
+    "approx",
     "frame-benchmarking",
     "frame-support/runtime-benchmarks",
     "frame-system/runtime-benchmarks",
-    "pallet-encointer-balances/runtime-benchmarks",
-    "pallet-encointer-ceremonies/runtime-benchmarks",
     "pallet-encointer-communities/runtime-benchmarks",
-    "pallet-encointer-scheduler/runtime-benchmarks",
-    "sp-application-crypto",
+    "pallet-encointer-reputation-commitments/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-system/try-runtime",
-    "pallet-encointer-balances/try-runtime",
-    "pallet-encointer-ceremonies/try-runtime",
     "pallet-encointer-communities/try-runtime",
-    "pallet-encointer-scheduler/try-runtime",
+    "pallet-encointer-reputation-commitments/try-runtime",
 ]

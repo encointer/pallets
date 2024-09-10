@@ -18,7 +18,8 @@
 
 use super::*;
 use crate::mock::{
-	EncointerBalances, EncointerCeremonies, EncointerCommunities, EncointerScheduler, Timestamp,
+	Balances, EncointerBalances, EncointerCeremonies, EncointerCommunities, EncointerScheduler,
+	EncointerTreasuries, Timestamp,
 };
 use encointer_primitives::{
 	balances::Demurrage,
@@ -408,7 +409,7 @@ fn do_update_proposal_state_fails_with_inexistent_proposal() {
 fn do_update_proposal_state_fails_with_wrong_state() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
-		let proposal: Proposal<Moment> = Proposal {
+		let proposal: Proposal<Moment, AccountId, Balance> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -417,7 +418,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
 
-		let proposal2: Proposal<Moment> = Proposal {
+		let proposal2: Proposal<Moment, AccountId, Balance> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -426,7 +427,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(2, proposal2);
 
-		let proposal3: Proposal<Moment> = Proposal {
+		let proposal3: Proposal<Moment, AccountId, Balance> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -1021,6 +1022,38 @@ fn enact_petition_works() {
 			},
 			_ => panic!("Wrong event"),
 		};
+	});
+}
+
+#[test]
+fn enact_spend_native_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let amount: BalanceOf<TestRuntime> = 100_000_000;
+		let cid = CommunityIdentifier::default();
+
+		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
+		Balances::make_free_balance_be(&treasury, 500_000_000);
+
+		let alice = alice();
+		let proposal_action = ProposalAction::SpendNative(Some(cid), beneficiary.clone(), amount);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		// directly inject the proposal into the enactment queue
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
+		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+
+		assert_eq!(Balances::free_balance(&treasury), 400_000_000);
+		assert_eq!(Balances::free_balance(&beneficiary), amount);
 	});
 }
 

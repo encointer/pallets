@@ -26,7 +26,11 @@ fn advance_timestamp_equivalent_to_n_blocks<T: Config>(n: u64) {
 }
 
 benchmarks! {
-
+	where_clause {
+		where
+		sp_core::H256: From<<T as frame_system::Config>::Hash>,
+		T::AccountId: AsRef<[u8; 32]>,
+	}
 	submit_proposal {
 		let zoran = account("zoran", 1, 1);
 		let cid = CommunityIdentifier::default();

@@ -1599,7 +1599,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "13.2.0"
+version = "13.3.0"
 dependencies = [
  "approx",
  "bs58 0.5.1",
@@ -4697,7 +4697,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "13.2.0"
+version = "13.3.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4711,6 +4711,7 @@ dependencies = [
  "pallet-encointer-communities",
  "pallet-encointer-reputation-commitments",
  "pallet-encointer-scheduler",
+ "pallet-encointer-treasuries",
  "pallet-timestamp",
  "parity-scale-codec",
  "rstest",
@@ -4785,6 +4786,60 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "test-utils",
+]
+
+[[package]]
+name = "pallet-encointer-treasuries"
+version = "13.3.0"
+dependencies = [
+ "approx",
+ "encointer-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-encointer-communities",
+ "pallet-encointer-reputation-commitments",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+]
+
+[[package]]
+name = "pallet-encointer-treasuries-rpc"
+version = "13.3.0"
+dependencies = [
+ "encointer-primitives",
+ "encointer-rpc",
+ "jsonrpsee",
+ "log",
+ "pallet-encointer-treasuries-rpc-runtime-api",
+ "parity-scale-codec",
+ "parking_lot 0.12.3",
+ "sc-rpc",
+ "sc-rpc-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "thiserror",
+]
+
+[[package]]
+name = "pallet-encointer-treasuries-rpc-runtime-api"
+version = "13.3.0"
+dependencies = [
+ "encointer-primitives",
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-std",
 ]
 
 [[package]]
@@ -7913,7 +7968,7 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test-utils"
-version = "13.1.0"
+version = "13.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",

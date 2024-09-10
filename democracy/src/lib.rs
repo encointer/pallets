@@ -49,7 +49,7 @@ extern crate alloc;
 use alloc::string::String;
 #[cfg(not(feature = "std"))]
 use alloc::string::ToString;
-
+use frame_support::traits::Currency;
 // Logger target
 //const LOG: &str = "encointer";
 
@@ -59,9 +59,13 @@ mod benchmarking;
 pub use pallet::*;
 
 type ReputationVecOf<T> = ReputationVec<<T as Config>::MaxReputationCount>;
+pub type BalanceOf<T> = <<T as pallet_encointer_treasuries::Config>::Currency as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::Balance;
 
 use pallet_encointer_ceremonies::Pallet as CeremoniesPallet;
 use pallet_encointer_communities::Pallet as CommunitiesPallet;
+use pallet_encointer_treasuries::Pallet as TreasuriesPallet;
 
 #[allow(clippy::unused_unit)]
 #[frame_support::pallet]
@@ -88,6 +92,7 @@ pub mod pallet {
 		+ pallet_encointer_ceremonies::Config
 		+ pallet_encointer_communities::Config
 		+ pallet_encointer_reputation_commitments::Config
+		+ pallet_encointer_treasuries::Config
 	{
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -125,7 +130,7 @@ pub mod pallet {
 		},
 		ProposalSubmitted {
 			proposal_id: ProposalIdType,
-			proposal_action: ProposalAction,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>>,
 		},
 		VotePlaced {
 			proposal_id: ProposalIdType,
@@ -184,8 +189,13 @@ pub mod pallet {
 	/// All proposals that have ever been proposed including the past ones.
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
-	pub(super) type Proposals<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalIdType, Proposal<T::Moment>, OptionQuery>;
+	pub(super) type Proposals<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		ProposalIdType,
+		Proposal<T::Moment, T::AccountId, BalanceOf<T>>,
+		OptionQuery,
+	>;
 
 	/// Proposal count of all proposals to date.
 	#[pallet::storage]
@@ -229,13 +239,17 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		sp_core::H256: From<<T as frame_system::Config>::Hash>,
+		T::AccountId: AsRef<[u8; 32]>,
+	{
 		#[pallet::call_index(0)]
 		#[pallet::weight((<T as Config>::WeightInfo::submit_proposal(), DispatchClass::Normal, Pays::Yes)
         )]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
-			proposal_action: ProposalAction,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>>,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into());
@@ -330,7 +344,11 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		sp_core::H256: From<<T as frame_system::Config>::Hash>,
+		T::AccountId: AsRef<[u8; 32]>,
+	{
 		/// Returns the cindexes eligible for voting on a proposal with `proposal_start`.
 		///
 		/// It is essentially the range of:
@@ -481,7 +499,7 @@ pub mod pallet {
 
 		pub fn get_electorate(
 			start_cindex: CeremonyIndexType,
-			proposal_action: ProposalAction,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>>,
 		) -> Result<ReputationCountType, Error<T>> {
 			let voting_cindexes = Self::voting_cindexes(start_cindex)?;
 
@@ -578,6 +596,9 @@ pub mod pallet {
 						text: petition.clone(),
 					});
 				},
+				ProposalAction::SpendNative(maybe_cid, ref beneficiary, amount) => {
+					TreasuriesPallet::<T>::do_spend_native(maybe_cid, beneficiary.clone(), amount)?;
+				},
 			};
 
 			proposal.state = ProposalState::Enacted;
@@ -588,7 +609,11 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
+impl<T: Config> OnCeremonyPhaseChange for Pallet<T>
+where
+	sp_core::H256: From<<T as frame_system::Config>::Hash>,
+	T::AccountId: AsRef<[u8; 32]>,
+{
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::Assigning => {
