@@ -1,15 +1,15 @@
 use crate::{Pallet as EncointerDemocracy, *};
 use encointer_primitives::{
-    ceremonies::Reputation,
-    communities::CommunityIdentifier,
-    democracy::{ProposalState, Tally, Vote},
-    storage::{current_ceremony_index_key, global_reputation_count, participant_reputation},
+	ceremonies::Reputation,
+	communities::CommunityIdentifier,
+	democracy::{ProposalState, Tally, Vote},
+	storage::{current_ceremony_index_key, global_reputation_count, participant_reputation},
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::{
-    assert_ok,
-    traits::{OnFinalize, OriginTrait},
-    BoundedVec,
+	assert_ok,
+	traits::{OnFinalize, OriginTrait},
+	BoundedVec,
 };
 use frame_system::RawOrigin;
 use parity_scale_codec::Encode;
@@ -17,9 +17,9 @@ use parity_scale_codec::Encode;
 use sp_std::vec;
 
 fn advance_timestamp_by<T: Config>(dt: T::Moment) {
-    let new_time: T::Moment = pallet_timestamp::Pallet::<T>::get() + dt;
-    let _ = pallet_timestamp::Pallet::<T>::set(T::RuntimeOrigin::none(), new_time);
-    pallet_timestamp::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
+	let new_time: T::Moment = pallet_timestamp::Pallet::<T>::get() + dt;
+	let _ = pallet_timestamp::Pallet::<T>::set(T::RuntimeOrigin::none(), new_time);
+	pallet_timestamp::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 }
 
 benchmarks! {
