@@ -16,11 +16,8 @@ use parity_scale_codec::Encode;
 #[cfg(not(feature = "std"))]
 use sp_std::vec;
 
-fn advance_timestamp_equivalent_to_n_blocks<T: Config>(n: u64) {
-	let offset: T::Moment = (n * 6000u64)
-		.try_into()
-		.unwrap_or_else(|_| panic!("Something went horribly wrong!"));
-	let new_time: T::Moment = pallet_timestamp::Pallet::<T>::get() + offset;
+fn advance_timestamp_by<T: Config>(dt: T::Moment) {
+	let new_time: T::Moment = pallet_timestamp::Pallet::<T>::get() + dt;
 	let _ = pallet_timestamp::Pallet::<T>::set(T::RuntimeOrigin::none(), new_time);
 	pallet_timestamp::Pallet::<T>::on_finalize(frame_system::Pallet::<T>::block_number());
 }
@@ -98,7 +95,8 @@ benchmarks! {
 		assert_eq!(EncointerDemocracy::<T>::proposals(1).unwrap().state, ProposalState::Ongoing);
 		EncointerDemocracy::<T>::update_proposal_state(RawOrigin::Signed(zoran.clone()).into(), 1).ok();
 		assert!(<EnactmentQueue<T>>::iter().next().is_none());
-		advance_timestamp_equivalent_to_n_blocks::<T>(21);
+		let confirmation_time = <T as Config>::ConfirmationPeriod::get();
+		advance_timestamp_by::<T>(confirmation_time + 1u32.into());
 
 	}: _(RawOrigin::Signed(zoran), 1)
 	verify {
