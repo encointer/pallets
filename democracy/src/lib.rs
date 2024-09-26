@@ -115,8 +115,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type ProposalLifetime: Get<Self::Moment>;
 
-		/// Minimum turnout in permill for a proposal to be considered as passing and entering the
-		/// `Confirming` state.
+		/// Minimum turnout in perthousand for a proposal to be considered as passing and entering
+		/// the `Confirming` state.
 		#[pallet::constant]
 		type MinTurnout: Get<u128>;
 	}
@@ -556,8 +556,8 @@ pub mod pallet {
 			let proposal = Self::proposals(proposal_id).ok_or(Error::<T>::InexistentProposal)?;
 			let electorate = proposal.electorate_size;
 
-			let turnout_permill = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
-			if turnout_permill < T::MinTurnout::get() {
+			let turnout_perthousand = (tally.turnout * 1000).checked_div(electorate).unwrap_or(0);
+			if turnout_perthousand < T::MinTurnout::get() {
 				return Ok(false);
 			}
 
