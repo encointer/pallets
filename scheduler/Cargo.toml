@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-scheduler"
-version = "13.1.0"
+version = "14.1.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Scheduler pallet for the Encointer blockchain runtime"
