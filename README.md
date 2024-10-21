@@ -70,7 +70,7 @@ cargo tree --workspace -i ep-core
 
 # add --execute if you're sure
 cargo release publish -p ep-core -p encointer-primitives -p pallet-encointer-scheduler -p pallet-encointer-balances -p pallet-encointer-communities
-cargo release publish -p encointer-ceremonies-assignment -p encointer-meetup-validation -p pallet-encointer-ceremonies -p pallet-encointer-bazaar -p pallet-encointer-reputation-commitments -p pallet-encointer-faucet -p pallet-encointer-democracy
+cargo release publish -p encointer-ceremonies-assignment -p encointer-meetup-validation -p pallet-encointer-ceremonies -p pallet-encointer-bazaar -p pallet-encointer-reputation-commitments -p pallet-encointer-faucet -p pallet-encointer-treasuries -p pallet-encointer-democracy
 cargo release publish -p encointer-rpc -p encointer-balances-tx-payment -p encointer-balances-tx-payment-rpc-runtime-api -p encointer-balances-tx-payment-rpc -p pallet-encointer-bazaar-rpc-runtime-api -p pallet-encointer-bazaar-rpc -p pallet-encointer-ceremonies-rpc-runtime-api -p pallet-encointer-ceremonies-rpc -p pallet-encointer-communities-rpc-runtime-api -p pallet-encointer-communities-rpc
 ```
 
