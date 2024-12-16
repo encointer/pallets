@@ -21,8 +21,6 @@
 use core::fmt;
 use frame_support::pallet_prelude::TypeInfo;
 use parity_scale_codec::{Decode, Encode};
-#[cfg(not(feature = "std"))]
-use sp_std::vec::Vec;
 
 /// Error type of this RPC api.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
