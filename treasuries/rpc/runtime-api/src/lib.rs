@@ -18,9 +18,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(not(feature = "std"))]
-use sp_std::vec::Vec;
-
 use encointer_primitives::communities::CommunityIdentifier;
 use parity_scale_codec::{Decode, Encode};
 

@@ -61,3 +61,16 @@ jobs:
       - name: Fail-fast; cancel other jobs
         if: failure()
         uses: andymckay/cancel-action@0.2
+
+  check-wasm:
+    if: ${{ !startsWith(github.head_ref, 'release/') }}
+    name: Check wasm build
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v3
+      - run: sudo apt-get install -y protobuf-compiler
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: check-debug-cache
+      - run: ./scripts/run_for_all_no_std_crates.sh check --no-default-features --target=wasm32-unknown-unknown
