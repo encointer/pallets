@@ -216,6 +216,7 @@ macro_rules! impl_encointer_treasuries {
 			type RuntimeEvent = RuntimeEvent;
 			type Currency = pallet_balances::Pallet<TestRuntime>;
 			type PalletId = TreasuriesPalletId;
+			type WeightInfo = ();
 		}
 	};
 }

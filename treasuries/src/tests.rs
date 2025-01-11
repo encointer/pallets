@@ -38,7 +38,7 @@ fn treasury_spending_works() {
 		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
 		Balances::make_free_balance_be(&treasury, 500_000_000);
 
-		assert_ok!(EncointerTreasuries::do_spend_native(Some(cid), beneficiary.clone(), amount));
+		assert_ok!(EncointerTreasuries::do_spend_native(Some(cid), &beneficiary, amount));
 		assert_eq!(Balances::free_balance(&treasury), 400_000_000);
 		assert_eq!(Balances::free_balance(&beneficiary), amount);
 		assert_eq!(
