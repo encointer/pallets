@@ -46,8 +46,6 @@ use sp_std::vec::Vec;
 extern crate alloc;
 
 #[cfg(not(feature = "std"))]
-use alloc::string::String;
-#[cfg(not(feature = "std"))]
 use alloc::string::ToString;
 use frame_support::traits::Currency;
 // Logger target
