@@ -4492,7 +4492,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "14.1.1"
+version = "14.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
