@@ -595,7 +595,7 @@ pub mod pallet {
 					});
 				},
 				ProposalAction::SpendNative(maybe_cid, ref beneficiary, amount) => {
-					TreasuriesPallet::<T>::do_spend_native(maybe_cid, &beneficiary, amount)?;
+					TreasuriesPallet::<T>::do_spend_native(maybe_cid, beneficiary, amount)?;
 				},
 				ProposalAction::IssueSwapNativeOption(cid, ref owner, swap_option) => {
 					TreasuriesPallet::<T>::do_issue_swap_native_option(cid, owner, swap_option)?;

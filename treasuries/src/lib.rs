@@ -91,7 +91,7 @@ pub mod pallet {
 	where
 		sp_core::H256: From<<T as frame_system::Config>::Hash>,
 		T::AccountId: AsRef<[u8; 32]>,
-		u64: From<BalanceOf<T>>,
+		u64: TryFrom<BalanceOf<T>>,
 	{
 		/// swap native tokens for community currency subject to an existing swap option for the
 		/// sender account.
@@ -115,12 +115,12 @@ pub mod pallet {
 					desired_native_amount,
 				Error::<T>::InsufficientNativeFunds
 			);
-			let rate = swap_option.rate.ok_or_else(|| Error::<T>::SwapRateNotDefined)?;
+			let rate = swap_option.rate.ok_or(Error::<T>::SwapRateNotDefined)?;
 			let cc_amount = BalanceType::from_num(
 				u64::try_from(desired_native_amount).or(Err(Error::<T>::SwapOverflow))?,
 			)
 			.checked_mul(rate)
-			.ok_or_else(|| Error::<T>::SwapOverflow)?;
+			.ok_or(Error::<T>::SwapOverflow)?;
 			if swap_option.do_burn {
 				<pallet_encointer_balances::Pallet<T>>::burn(cid, &sender, cc_amount)?;
 			} else {
@@ -162,7 +162,7 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let treasury = Self::get_community_treasury_account_unchecked(maybecid);
-			T::Currency::transfer(&treasury, &beneficiary, amount, KeepAlive)?;
+			T::Currency::transfer(&treasury, beneficiary, amount, KeepAlive)?;
 			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybecid, amount, beneficiary);
 			Self::deposit_event(Event::SpentNative {
 				treasury,
