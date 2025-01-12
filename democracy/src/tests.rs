@@ -1076,7 +1076,7 @@ fn enact_issue_swap_native_option_works() {
 
 		let alice = alice();
 		let proposal_action =
-			ProposalAction::IssueSwapOptionNative(cid, beneficiary.clone(), swap_option);
+			ProposalAction::IssueSwapNativeOption(cid, beneficiary.clone(), swap_option);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
 			proposal_action.clone()

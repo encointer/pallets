@@ -173,7 +173,7 @@ pub mod pallet {
 		}
 
 		/// store a swap option possibly replacing any previously existing option
-		pub fn do_grant_swap_native_option(
+		pub fn do_issue_swap_native_option(
 			cid: CommunityIdentifier,
 			who: &T::AccountId,
 			option: SwapNativeOption<BalanceOf<T>, T::Moment>,

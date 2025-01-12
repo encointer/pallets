@@ -96,7 +96,7 @@ fn swap_native_partial_works(burn: bool) {
 		Balances::make_free_balance_be(&treasury, 500_000_000);
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(100)).unwrap();
 
-		assert_ok!(EncointerTreasuries::do_grant_swap_native_option(
+		assert_ok!(EncointerTreasuries::do_issue_swap_native_option(
 			cid,
 			&beneficiary,
 			swap_option
@@ -193,7 +193,7 @@ fn swap_native_insufficient_cc_fails(burn: bool) {
 		Balances::make_free_balance_be(&treasury, 51_000_000);
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
 
-		assert_ok!(EncointerTreasuries::do_grant_swap_native_option(
+		assert_ok!(EncointerTreasuries::do_issue_swap_native_option(
 			cid,
 			&beneficiary,
 			swap_option
@@ -234,7 +234,7 @@ fn swap_native_insufficient_treasury_funds_fails(burn: bool) {
 		Balances::make_free_balance_be(&treasury, 49_000_000);
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
 
-		assert_ok!(EncointerTreasuries::do_grant_swap_native_option(
+		assert_ok!(EncointerTreasuries::do_issue_swap_native_option(
 			cid,
 			&beneficiary,
 			swap_option
@@ -275,7 +275,7 @@ fn swap_native_insufficient_allowance_fails(burn: bool) {
 		Balances::make_free_balance_be(&treasury, 51_000_000);
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
 
-		assert_ok!(EncointerTreasuries::do_grant_swap_native_option(
+		assert_ok!(EncointerTreasuries::do_issue_swap_native_option(
 			cid,
 			&beneficiary,
 			swap_option

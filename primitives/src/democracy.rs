@@ -61,7 +61,7 @@ pub enum ProposalAction<AccountId, Balance, Moment> {
 	SetInactivityTimeout(InactivityTimeoutType),
 	Petition(Option<CommunityIdentifier>, PalletString),
 	SpendNative(Option<CommunityIdentifier>, AccountId, Balance),
-	IssueSwapOptionNative(CommunityIdentifier, AccountId, SwapNativeOption<Balance, Moment>),
+	IssueSwapNativeOption(CommunityIdentifier, AccountId, SwapNativeOption<Balance, Moment>),
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -76,7 +76,7 @@ pub enum ProposalActionIdentifier {
 	SetInactivityTimeout,
 	Petition(Option<CommunityIdentifier>),
 	SpendNative(Option<CommunityIdentifier>),
-	IssueSwapOptionNative(CommunityIdentifier),
+	IssueSwapNativeOption(CommunityIdentifier),
 }
 
 impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
@@ -93,7 +93,7 @@ impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
 			ProposalAction::Petition(None, _) => ProposalAccessPolicy::Global,
 			ProposalAction::SpendNative(Some(cid), ..) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::SpendNative(None, ..) => ProposalAccessPolicy::Global,
-			ProposalAction::IssueSwapOptionNative(cid, ..) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::IssueSwapNativeOption(cid, ..) => ProposalAccessPolicy::Community(*cid),
 		}
 	}
 
@@ -114,8 +114,8 @@ impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
 				ProposalActionIdentifier::Petition(*maybe_cid),
 			ProposalAction::SpendNative(maybe_cid, ..) =>
 				ProposalActionIdentifier::SpendNative(*maybe_cid),
-			ProposalAction::IssueSwapOptionNative(cid, ..) =>
-				ProposalActionIdentifier::IssueSwapOptionNative(*cid),
+			ProposalAction::IssueSwapNativeOption(cid, ..) =>
+				ProposalActionIdentifier::IssueSwapNativeOption(*cid),
 		}
 	}
 
@@ -130,7 +130,7 @@ impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
 			ProposalAction::SetInactivityTimeout(_) => true,
 			ProposalAction::Petition(_, _) => false,
 			ProposalAction::SpendNative(_, _, _) => false,
-			ProposalAction::IssueSwapOptionNative(..) => false,
+			ProposalAction::IssueSwapNativeOption(..) => false,
 		}
 	}
 }
