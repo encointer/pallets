@@ -18,9 +18,9 @@ pub struct SwapNativeOption<NativeBalance, Moment> {
 	pub cid: CommunityIdentifier,
 	/// the total amount of native tokens which can be swapped with this option
 	pub native_allowance: NativeBalance,
-	/// the exchange rate. How many units of community currency will you pay to get one unit of
-	/// native tokens? Leave as None if the rate is derived on the spot by either an oracle or an
-	/// auction
+	/// the exchange rate. How many units of community currency will you pay to get one
+	/// native token (not applying decimals)? Leave as None if the rate is derived on the spot by
+	/// either an oracle or an auction
 	pub rate: Option<BalanceType>,
 	/// if true, cc will be burned. If false, cc will be put into community treasury
 	pub do_burn: bool,

@@ -45,10 +45,9 @@ pub type BalanceOf<T> =
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use encointer_primitives::{balances::BalanceEntry, treasuries::SwapNativeOption};
+	use encointer_primitives::treasuries::SwapNativeOption;
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::{BlockNumberFor, OriginFor};
-	use std::ops::Shr;
+	use frame_system::pallet_prelude::OriginFor;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -108,11 +107,14 @@ pub mod pallet {
 				Self::swap_native_options(cid, &sender).ok_or(<Error<T>>::NoValidSwapOption)?;
 			ensure!(
 				swap_option.native_allowance >= desired_native_amount,
-				Error::<T>::NoValidSwapOption
+				Error::<T>::InsufficientAllowance
 			);
 			let treasury_account = Self::get_community_treasury_account_unchecked(Some(cid));
-			let granted_native_amount = desired_native_amount
-				.min(T::Currency::free_balance(&treasury_account) - T::Currency::minimum_balance());
+			ensure!(
+				T::Currency::free_balance(&treasury_account) - T::Currency::minimum_balance() >=
+					desired_native_amount,
+				Error::<T>::InsufficientNativeFunds
+			);
 			let rate = swap_option.rate.ok_or_else(|| Error::<T>::SwapRateNotDefined)?;
 			let cc_amount = BalanceType::from_num(
 				u64::try_from(desired_native_amount).or(Err(Error::<T>::SwapOverflow))?,
@@ -121,7 +123,6 @@ pub mod pallet {
 			.ok_or_else(|| Error::<T>::SwapOverflow)?;
 			if swap_option.do_burn {
 				<pallet_encointer_balances::Pallet<T>>::burn(cid, &sender, cc_amount)?;
-				Self::deposit_event(Event::Burned { cid, who: sender.clone(), amount: cc_amount });
 			} else {
 				<pallet_encointer_balances::Pallet<T>>::do_transfer(
 					cid,
@@ -131,11 +132,11 @@ pub mod pallet {
 				)?;
 			}
 			let new_swap_option = SwapNativeOption {
-				native_allowance: swap_option.native_allowance - granted_native_amount,
+				native_allowance: swap_option.native_allowance - desired_native_amount,
 				..swap_option
 			};
 			<SwapNativeOptions<T>>::insert(cid, &sender, new_swap_option);
-			Self::do_spend_native(Some(cid), &sender, granted_native_amount)?;
+			Self::do_spend_native(Some(cid), &sender, desired_native_amount)?;
 			Ok(().into())
 		}
 	}
@@ -196,11 +197,6 @@ pub mod pallet {
 			cid: CommunityIdentifier,
 			who: T::AccountId,
 		},
-		Burned {
-			cid: CommunityIdentifier,
-			who: T::AccountId,
-			amount: BalanceType,
-		},
 	}
 
 	#[pallet::error]
@@ -209,5 +205,7 @@ pub mod pallet {
 		NoValidSwapOption,
 		SwapRateNotDefined,
 		SwapOverflow,
+		InsufficientNativeFunds,
+		InsufficientAllowance,
 	}
 }

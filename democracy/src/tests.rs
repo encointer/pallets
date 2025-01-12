@@ -22,7 +22,7 @@ use crate::mock::{
 	EncointerTreasuries, Timestamp,
 };
 use encointer_primitives::{
-	balances::Demurrage,
+	balances::{BalanceType, Demurrage},
 	ceremonies::{InactivityTimeoutType, Reputation},
 	common::{FromStr, PalletString},
 	communities::{
@@ -30,6 +30,7 @@ use encointer_primitives::{
 		NominalIncome as NominalIncomeType,
 	},
 	democracy::{ProposalAction, ProposalActionIdentifier, ProposalState, Tally, Vote},
+	treasuries::SwapNativeOption,
 };
 use frame_support::{
 	assert_err, assert_ok,
@@ -1056,7 +1057,43 @@ fn enact_spend_native_works() {
 		assert_eq!(Balances::free_balance(&beneficiary), amount);
 	});
 }
+#[test]
+fn enact_issue_swap_native_option_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let native_allowance: BalanceOf<TestRuntime> = 100_000_000;
+		let rate = Some(BalanceType::from_num(1.5));
+		let cid = CommunityIdentifier::default();
+		let swap_option: SwapNativeOption<Balance, Moment> = SwapNativeOption {
+			cid,
+			native_allowance,
+			rate,
+			do_burn: true,
+			valid_from: None,
+			valid_until: None,
+		};
 
+		let alice = alice();
+		let proposal_action =
+			ProposalAction::IssueSwapOptionNative(cid, beneficiary.clone(), swap_option);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		// directly inject the proposal into the enactment queue
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
+		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+
+		assert_eq!(EncointerTreasuries::swap_native_options(cid, beneficiary), Some(swap_option));
+	});
+}
 #[test]
 fn enactment_error_fires_event() {
 	new_test_ext().execute_with(|| {
