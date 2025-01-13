@@ -4763,7 +4763,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries"
-version = "14.4.0"
+version = "14.4.1"
 dependencies = [
  "approx",
  "encointer-primitives",

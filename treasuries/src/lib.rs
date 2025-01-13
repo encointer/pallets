@@ -33,6 +33,8 @@ const LOG: &str = "encointer";
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
