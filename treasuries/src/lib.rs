@@ -90,8 +90,6 @@ pub mod pallet {
 	impl<T: Config> Pallet<T>
 	where
 		sp_core::H256: From<<T as frame_system::Config>::Hash>,
-		T::AccountId: AsRef<[u8; 32]>,
-		u64: TryFrom<BalanceOf<T>>,
 	{
 		/// swap native tokens for community currency subject to an existing swap option for the
 		/// sender account.
@@ -116,8 +114,8 @@ pub mod pallet {
 				Error::<T>::InsufficientNativeFunds
 			);
 			let rate = swap_option.rate.ok_or(Error::<T>::SwapRateNotDefined)?;
-			let cc_amount = BalanceType::from_num(
-				u64::try_from(desired_native_amount).or(Err(Error::<T>::SwapOverflow))?,
+			let cc_amount = BalanceType::from_num::<u64>(
+				desired_native_amount.try_into().or(Err(Error::<T>::SwapOverflow))?,
 			)
 			.checked_mul(rate)
 			.ok_or(Error::<T>::SwapOverflow)?;
@@ -143,7 +141,6 @@ pub mod pallet {
 	impl<T: Config> Pallet<T>
 	where
 		sp_core::H256: From<<T as frame_system::Config>::Hash>,
-		T::AccountId: AsRef<[u8; 32]>,
 	{
 		pub fn get_community_treasury_account_unchecked(
 			maybecid: Option<CommunityIdentifier>,
