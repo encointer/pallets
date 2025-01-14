@@ -128,7 +128,7 @@ pub mod pallet {
 		},
 		ProposalSubmitted {
 			proposal_id: ProposalIdType,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
 		},
 		VotePlaced {
 			proposal_id: ProposalIdType,
@@ -247,7 +247,7 @@ pub mod pallet {
         )]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into());
@@ -497,7 +497,7 @@ pub mod pallet {
 
 		pub fn get_electorate(
 			start_cindex: CeremonyIndexType,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
 		) -> Result<ReputationCountType, Error<T>> {
 			let voting_cindexes = Self::voting_cindexes(start_cindex)?;
 
@@ -595,7 +595,10 @@ pub mod pallet {
 					});
 				},
 				ProposalAction::SpendNative(maybe_cid, ref beneficiary, amount) => {
-					TreasuriesPallet::<T>::do_spend_native(maybe_cid, beneficiary.clone(), amount)?;
+					TreasuriesPallet::<T>::do_spend_native(maybe_cid, beneficiary, amount)?;
+				},
+				ProposalAction::IssueSwapNativeOption(cid, ref owner, swap_option) => {
+					TreasuriesPallet::<T>::do_issue_swap_native_option(cid, owner, swap_option)?;
 				},
 			};
 

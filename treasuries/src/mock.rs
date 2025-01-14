@@ -49,6 +49,7 @@ impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = TreasuriesPalletId;
+	type WeightInfo = ();
 }
 
 // boilerplate

@@ -1588,7 +1588,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "14.3.0"
+version = "14.4.0"
 dependencies = [
  "approx",
  "bs58 0.5.1",
@@ -4492,7 +4492,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "14.1.0"
+version = "14.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4670,7 +4670,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "14.3.2"
+version = "14.4.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4763,7 +4763,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries"
-version = "14.3.0"
+version = "14.4.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4771,9 +4771,12 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "pallet-encointer-balances",
  "pallet-encointer-communities",
  "pallet-encointer-reputation-commitments",
+ "pallet-timestamp",
  "parity-scale-codec",
+ "rstest",
  "scale-info",
  "sp-core",
  "sp-io",

@@ -96,7 +96,7 @@ pub mod pallet {
 			amount: BalanceType,
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
-			Self::do_transfer(community_id, from, dest, amount)?;
+			Self::do_transfer(community_id, &from, &dest, amount)?;
 			Ok(().into())
 		}
 
@@ -122,7 +122,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 			let amount = Self::balance(cid, &from);
-			Self::do_transfer(cid, from, dest, amount)?;
+			Self::do_transfer(cid, &from, &dest, amount)?;
 			Ok(().into())
 		}
 	}
@@ -134,8 +134,8 @@ pub mod pallet {
 		///
 		/// [CC]:	1 Unit of Community Currency
 		/// NI:		Nominal Income. Unit = [CC]
-		/// FCF:	Fee Conversion Factor. Unit = [1/ KKSM] <- Kilo-KSM to be able to adjust fee factor
-		/// in both ways. CB:		Balance in Community Currency [CC]
+		/// FCF:	Fee Conversion Factor. Unit = [1/ KKSM] <- Kilo-KSM to be able to adjust fee
+		/// factor in both ways. CB:		Balance in Community Currency [CC]
 		///
 		/// The following equation should hold for fee design:
 		///  KSM * FCF * NI = CB -> FCF = CB / (NI * KSM)
@@ -164,6 +164,8 @@ pub mod pallet {
 		Transferred(CommunityIdentifier, T::AccountId, T::AccountId, BalanceType),
 		/// Token issuance success `[community_id, beneficiary, amount]`
 		Issued(CommunityIdentifier, T::AccountId, BalanceType),
+		/// Token burn success `[community_id, who, amount]`
+		Burned(CommunityIdentifier, T::AccountId, BalanceType),
 		/// fee conversion factor updated successfully
 		FeeConversionFactorUpdated(FeeConversionFactorType),
 	}
@@ -272,47 +274,47 @@ impl<T: Config> Pallet<T> {
 
 	pub fn do_transfer(
 		cid: CommunityIdentifier,
-		source: T::AccountId,
-		dest: T::AccountId,
+		source: &T::AccountId,
+		dest: &T::AccountId,
 		amount: BalanceType,
 	) -> Result<BalanceType, DispatchError> {
 		// Early exist if no-op.
 		if amount == 0u128 {
-			Self::deposit_event(Event::Transferred(cid, source, dest, amount));
+			Self::deposit_event(Event::Transferred(cid, source.clone(), dest.clone(), amount));
 			return Ok(amount);
 		}
 
-		ensure!(Balance::<T>::contains_key(cid, &source), Error::<T>::NoAccount);
+		ensure!(Balance::<T>::contains_key(cid, source), Error::<T>::NoAccount);
 
-		let mut entry_from = Self::balance_entry_updated(cid, &source);
+		let mut entry_from = Self::balance_entry_updated(cid, source);
 
 		ensure!(entry_from.principal >= amount, Error::<T>::BalanceTooLow);
 
 		if source == dest {
-			<Balance<T>>::insert(cid, &source, entry_from);
+			<Balance<T>>::insert(cid, source, entry_from);
 			return Ok(amount);
 		}
 
-		if !Balance::<T>::contains_key(cid, &dest) {
+		if !Balance::<T>::contains_key(cid, dest) {
 			ensure!(amount > T::ExistentialDeposit::get(), Error::<T>::ExistentialDeposit);
-			Self::new_account(&dest)?;
+			Self::new_account(dest)?;
 			Self::deposit_event(Event::Endowed { cid, who: dest.clone(), balance: amount });
 		}
 
-		let mut entry_to = Self::balance_entry_updated(cid, &dest);
+		let mut entry_to = Self::balance_entry_updated(cid, dest);
 
 		entry_from.principal = entry_from.principal.saturating_sub(amount);
 		entry_to.principal = entry_to.principal.saturating_add(amount);
 
-		<Balance<T>>::insert(cid, &source, entry_from);
-		<Balance<T>>::insert(cid, &dest, entry_to);
+		<Balance<T>>::insert(cid, source, entry_from);
+		<Balance<T>>::insert(cid, dest, entry_to);
 
-		Self::deposit_event(Event::Transferred(cid, source.clone(), dest, amount));
+		Self::deposit_event(Event::Transferred(cid, source.clone(), dest.clone(), amount));
 
 		// remove account if it falls beloe existential deposit
-		entry_from = Self::balance_entry_updated(cid, &source);
+		entry_from = Self::balance_entry_updated(cid, source);
 		if entry_from.principal < T::ExistentialDeposit::get() {
-			Self::remove_account(cid, &source)?;
+			Self::remove_account(cid, source)?;
 		}
 
 		Ok(amount)
@@ -360,6 +362,7 @@ impl<T: Config> Pallet<T> {
 
 		<TotalIssuance<T>>::insert(community_id, entry_tot);
 		<Balance<T>>::insert(community_id, who, entry_who);
+		Self::deposit_event(Event::Burned(community_id, who.clone(), amount));
 		Ok(())
 	}
 

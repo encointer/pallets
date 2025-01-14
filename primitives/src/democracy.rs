@@ -9,7 +9,10 @@ use crate::{
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
-use crate::{ceremonies::ReputationCountType, common::PalletString, scheduler::CeremonyIndexType};
+use crate::{
+	ceremonies::ReputationCountType, common::PalletString, scheduler::CeremonyIndexType,
+	treasuries::SwapNativeOption,
+};
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
@@ -49,7 +52,7 @@ pub enum ProposalAccessPolicy {
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum ProposalAction<AccountId, Balance> {
+pub enum ProposalAction<AccountId, Balance, Moment> {
 	AddLocation(CommunityIdentifier, Location),
 	RemoveLocation(CommunityIdentifier, Location),
 	UpdateCommunityMetadata(CommunityIdentifier, CommunityMetadataType),
@@ -58,6 +61,7 @@ pub enum ProposalAction<AccountId, Balance> {
 	SetInactivityTimeout(InactivityTimeoutType),
 	Petition(Option<CommunityIdentifier>, PalletString),
 	SpendNative(Option<CommunityIdentifier>, AccountId, Balance),
+	IssueSwapNativeOption(CommunityIdentifier, AccountId, SwapNativeOption<Balance, Moment>),
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -72,9 +76,10 @@ pub enum ProposalActionIdentifier {
 	SetInactivityTimeout,
 	Petition(Option<CommunityIdentifier>),
 	SpendNative(Option<CommunityIdentifier>),
+	IssueSwapNativeOption(CommunityIdentifier),
 }
 
-impl<AccountId, Balance> ProposalAction<AccountId, Balance> {
+impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
 	pub fn get_access_policy(&self) -> ProposalAccessPolicy {
 		match self {
 			ProposalAction::AddLocation(cid, _) => ProposalAccessPolicy::Community(*cid),
@@ -88,6 +93,7 @@ impl<AccountId, Balance> ProposalAction<AccountId, Balance> {
 			ProposalAction::Petition(None, _) => ProposalAccessPolicy::Global,
 			ProposalAction::SpendNative(Some(cid), ..) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::SpendNative(None, ..) => ProposalAccessPolicy::Global,
+			ProposalAction::IssueSwapNativeOption(cid, ..) => ProposalAccessPolicy::Community(*cid),
 		}
 	}
 
@@ -108,6 +114,8 @@ impl<AccountId, Balance> ProposalAction<AccountId, Balance> {
 				ProposalActionIdentifier::Petition(*maybe_cid),
 			ProposalAction::SpendNative(maybe_cid, ..) =>
 				ProposalActionIdentifier::SpendNative(*maybe_cid),
+			ProposalAction::IssueSwapNativeOption(cid, ..) =>
+				ProposalActionIdentifier::IssueSwapNativeOption(*cid),
 		}
 	}
 
@@ -122,6 +130,7 @@ impl<AccountId, Balance> ProposalAction<AccountId, Balance> {
 			ProposalAction::SetInactivityTimeout(_) => true,
 			ProposalAction::Petition(_, _) => false,
 			ProposalAction::SpendNative(_, _, _) => false,
+			ProposalAction::IssueSwapNativeOption(..) => false,
 		}
 	}
 }
@@ -153,7 +162,7 @@ impl<Moment: PartialEq> ProposalState<Moment> {
 pub struct Proposal<Moment, AccountId, Balance> {
 	pub start: Moment,
 	pub start_cindex: CeremonyIndexType,
-	pub action: ProposalAction<AccountId, Balance>,
+	pub action: ProposalAction<AccountId, Balance, Moment>,
 	pub state: ProposalState<Moment>,
 	pub electorate_size: ReputationCountType,
 }
