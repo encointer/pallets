@@ -103,7 +103,7 @@ macro_rules! impl_frame_system {
 			type PreInherents = ();
 			type PostInherents = ();
 			type PostTransactions = ();
-			type ExtensionsWeightInfo = ()
+			type ExtensionsWeightInfo = ();
 		}
 	};
 }
