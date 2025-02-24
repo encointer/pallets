@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_NIGHTLY: 2024-11-19
 
 jobs:
   cancel_previous_runs:
@@ -26,8 +27,7 @@ jobs:
         os: [ ubuntu-latest ]
         check: [ cargo build --release,
                  cargo test --all --features runtime-benchmarks --features try-runtime,
-                 cargo +nightly-2024-04-14 fmt --all -- --check,
-                 cargo clippy --all-features -- -D warnings
+                 cargo clippy --all-features --all-targets -- -D warnings
         ]
     steps:
       - uses: actions/checkout@v3
@@ -35,19 +35,26 @@ jobs:
       - name: Install protoc
         run: sudo apt-get install protobuf-compiler
 
-      - name: Install nightly toolchain
-        # align nightly version with https://github.com/polkadot-fellows/runtimes/blob/7157d41176bebf128aa2e29e72ed184844446b19/.github/env#L2C22-L2C32
-        run: rustup toolchain install nightly-2024-04-14 --profile minimal --component rustfmt
-
       - name: Setup Rust toolchain
         run: rustup show
 
       - uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ matrix.rust-target }}-${{ matrix.check }}
+          key: ${{ matrix.check }}
 
       - name: ${{ matrix.check }}
         run: ${{ matrix.check }}
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install nightly toolchain
+        run: rustup toolchain install nightly-${{ env.RUST_NIGHTLY }} --profile minimal --component rustfmt
+
+      - name: cargo fmt (nightly)
+        run: cargo +nightly-${{ env.RUST_NIGHTLY }} fmt --all -- --check
 
   cargo-toml-fmt:
     runs-on: ubuntu-latest

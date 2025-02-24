@@ -1,4 +1,4 @@
 [toolchain]
-channel = "1.81.0" # align with https://github.com/polkadot-fellows/runtimes/blob/main/.github/env#L1
-profile = "default" # include rustfmt, clippy
+channel = "1.81.0"                   # align with https://github.com/polkadot-fellows/runtimes/blob/main/.github/env#L1
+profile = "default"                  # include rustfmt, clippy
 targets = ["wasm32-unknown-unknown"]

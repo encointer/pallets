@@ -128,7 +128,7 @@ fn timestamp_callback_works() {
 fn push_one_day_works() {
 	new_test_ext(ONE_DAY).execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
-		let genesis_time: u64 = 0 * TEN_MIN + 1;
+		let genesis_time: u64 = 1;
 
 		System::set_block_number(0);
 		set_timestamp(genesis_time);
@@ -158,7 +158,7 @@ fn push_one_day_works() {
 fn resync_catches_up_short_cycle_times_at_genesis_during_first_registering_phase() {
 	new_test_ext(TEN_MIN).execute_with(|| {
 		// CASE1: genesis happens during first REGISTERING phase of the day
-		let genesis_time: u64 = 0 * TEN_MIN + 1;
+		let genesis_time: u64 = 1;
 
 		System::set_block_number(0);
 
