@@ -459,8 +459,7 @@ fn attest_attendee_for_alien_participant_fails() {
 		register_alice_bob_ferdie(cid);
 		register_charlie_dave_eve(cid);
 
-		let participants: Vec<AccountId> =
-			add_population(99, 0).iter().map(account_id).collect();
+		let participants: Vec<AccountId> = add_population(99, 0).iter().map(account_id).collect();
 		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
 			RuntimeOrigin::signed(master()),
 			100u8
@@ -2334,8 +2333,7 @@ fn get_meetup_participants_works() {
 		let cid = perform_bootstrapping_ceremony(None, 1);
 		let cindex = EncointerScheduler::current_ceremony_index();
 
-		let participants: Vec<AccountId> =
-			add_population(12, 0).iter().map(account_id).collect();
+		let participants: Vec<AccountId> = add_population(12, 0).iter().map(account_id).collect();
 
 		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[0].clone());
 		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[1].clone());
@@ -3442,37 +3440,22 @@ fn participants_assigned_matches_participants_registered() {
 		let alice = account_id(&AccountKeyring::Alice.pair());
 
 		let bootstrappers: Vec<AccountId> = vec![alice];
-		let reputables: Vec<AccountId> =
-			add_population(28, 10).iter().map(account_id).collect();
-		let endorsees: Vec<AccountId> =
-			add_population(2, 100).iter().map(account_id).collect();
-		let newbies: Vec<AccountId> =
-			add_population(15, 200).iter().map(account_id).collect();
+		let reputables: Vec<AccountId> = add_population(28, 10).iter().map(account_id).collect();
+		let endorsees: Vec<AccountId> = add_population(2, 100).iter().map(account_id).collect();
+		let newbies: Vec<AccountId> = add_population(15, 200).iter().map(account_id).collect();
 
 		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 1, bootstrappers[0].clone());
 
 		for (i, reputable) in reputables.clone().into_iter().enumerate() {
-			ReputableRegistry::<TestRuntime>::insert(
-				(cid, cindex),
-				(i + 1) as u64,
-				reputable,
-			);
+			ReputableRegistry::<TestRuntime>::insert((cid, cindex), (i + 1) as u64, reputable);
 		}
 
 		for (i, endorsee) in endorsees.clone().into_iter().enumerate() {
-			EndorseeRegistry::<TestRuntime>::insert(
-				(cid, cindex),
-				(i + 1) as u64,
-				endorsee,
-			);
+			EndorseeRegistry::<TestRuntime>::insert((cid, cindex), (i + 1) as u64, endorsee);
 		}
 
 		for (i, newbie) in newbies.clone().into_iter().enumerate() {
-			NewbieRegistry::<TestRuntime>::insert(
-				(cid, cindex),
-				(i + 1) as u64,
-				newbie,
-			);
+			NewbieRegistry::<TestRuntime>::insert((cid, cindex), (i + 1) as u64, newbie);
 		}
 
 		AssignmentCounts::<TestRuntime>::insert(

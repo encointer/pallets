@@ -223,145 +223,79 @@ fn vote_yields_majority_works() {
 
 #[test]
 fn num_attestations_matches_vote_works() {
-	assert!(
-		num_attestations_matches_vote(
-			&vec![0, 1, 2, 3],
-			&vec![
-				vec![1, 2, 3],
-				vec![0, 2, 3],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-			4
-		)
-	);
+	assert!(num_attestations_matches_vote(
+		&vec![0, 1, 2, 3],
+		&vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+		4
+	));
 
-	assert!(
-		!num_attestations_matches_vote(
-			&vec![0, 1, 2, 3],
-			&vec![vec![1, 2, 3], vec![0, 2], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
-			4
-		)
-	);
+	assert!(!num_attestations_matches_vote(
+		&vec![0, 1, 2, 3],
+		&vec![vec![1, 2, 3], vec![0, 2], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+		4
+	));
 }
 
 #[test]
 fn attestation_graph_is_fully_connected_works() {
-	assert!(
-		attestation_graph_is_fully_connected(
-			vec![0, 1, 2, 3],
-			vec![
-				vec![1, 2, 3],
-				vec![0, 2, 3],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-		)
-	);
+	assert!(attestation_graph_is_fully_connected(
+		vec![0, 1, 2, 3],
+		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+	));
 
-	assert!(
-		!attestation_graph_is_fully_connected(
-			vec![0, 1, 2, 3],
-			vec![
-				vec![1, 2, 3],
-				vec![0, 2, 4],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-		)
-	);
+	assert!(!attestation_graph_is_fully_connected(
+		vec![0, 1, 2, 3],
+		vec![vec![1, 2, 3], vec![0, 2, 4], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+	));
 }
 
 #[test]
 fn early_rewards_possible_works() {
-	assert!(
-		early_rewards_possible(
-			vec![0, 1, 2, 3],
-			vec![
-				vec![1, 2, 3],
-				vec![0, 2, 3],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-			5,
-			4,
-			true
-		)
-	);
+	assert!(early_rewards_possible(
+		vec![0, 1, 2, 3],
+		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+		5,
+		4,
+		true
+	));
 }
 #[test]
 fn early_rewards_possible_works_unanimous_vote() {
-	assert!(
-		!early_rewards_possible(
-			vec![0, 1, 2, 3],
-			vec![
-				vec![1, 2, 3],
-				vec![0, 2, 3],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-			5,
-			4,
-			false
-		)
-	);
+	assert!(!early_rewards_possible(
+		vec![0, 1, 2, 3],
+		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+		5,
+		4,
+		false
+	));
 }
 #[test]
 fn early_rewards_possible_works_vote_is_not_majority() {
-	assert!(
-		!early_rewards_possible(
-			vec![0, 1, 2, 3],
-			vec![
-				vec![1, 2, 3],
-				vec![0, 2, 3],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-			5,
-			2,
-			true
-		)
-	);
+	assert!(!early_rewards_possible(
+		vec![0, 1, 2, 3],
+		vec![vec![1, 2, 3], vec![0, 2, 3], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+		5,
+		2,
+		true
+	));
 }
 #[test]
 fn early_rewards_possible_works_attesttations_do_not_match_vote() {
-	assert!(
-		!early_rewards_possible(
-			vec![0, 1, 2, 3],
-			vec![
-				vec![1, 2, 3],
-				vec![0, 2, 3, 4],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-			5,
-			4,
-			true
-		)
-	);
+	assert!(!early_rewards_possible(
+		vec![0, 1, 2, 3],
+		vec![vec![1, 2, 3], vec![0, 2, 3, 4], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+		5,
+		4,
+		true
+	));
 }
 #[test]
 fn early_rewards_possible_works_attestation_graph_is_not_fully_connected() {
-	assert!(
-		!early_rewards_possible(
-			vec![0, 1, 2, 3],
-			vec![
-				vec![1, 2, 3],
-				vec![0, 2, 4],
-				vec![0, 1, 3],
-				vec![0, 1, 2],
-				vec![0, 1, 2, 3, 4, 5]
-			],
-			5,
-			4,
-			true
-		)
-	);
+	assert!(!early_rewards_possible(
+		vec![0, 1, 2, 3],
+		vec![vec![1, 2, 3], vec![0, 2, 4], vec![0, 1, 3], vec![0, 1, 2], vec![0, 1, 2, 3, 4, 5]],
+		5,
+		4,
+		true
+	));
 }

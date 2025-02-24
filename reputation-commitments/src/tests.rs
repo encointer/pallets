@@ -269,7 +269,7 @@ fn purging_works() {
 
 		ext.execute_with(|| {
 			System::set_block_number(System::block_number() + 1); // this is needed to assert events
-													  // re-register because of different ext
+														 // re-register because of different ext
 			let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 			let cid2 = register_test_community::<TestRuntime>(None, 10.0, 10.0);
 

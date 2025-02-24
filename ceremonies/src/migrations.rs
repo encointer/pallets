@@ -201,8 +201,10 @@ mod test {
 			assert_eq!(StorageVersion::get::<Pallet<TestRuntime>>(), 0);
 			// Insert some values into the v0 storage:
 
-			let cids = [CommunityIdentifier::from_str("111112Fvv9e").unwrap(),
-				CommunityIdentifier::from_str("333332Fvv9e").unwrap()];
+			let cids = [
+				CommunityIdentifier::from_str("111112Fvv9e").unwrap(),
+				CommunityIdentifier::from_str("333332Fvv9e").unwrap(),
+			];
 
 			let attestations_0 =
 				vec![AccountId::from(AccountKeyring::Alice), AccountId::from(AccountKeyring::Bob)];
@@ -337,21 +339,9 @@ mod test {
 			let cid = CommunityIdentifier::from_str("111112Fvv9e").unwrap();
 			let cid2 = CommunityIdentifier::from_str("111112Fvv9f").unwrap();
 
-			v1::ParticipantReputation::<TestRuntime>::insert(
-				(cid, 1),
-				alice.clone(),
-				old_rep,
-			);
-			v1::ParticipantReputation::<TestRuntime>::insert(
-				(cid, 2),
-				bob.clone(),
-				old_rep,
-			);
-			v1::ParticipantReputation::<TestRuntime>::insert(
-				(cid2, 0),
-				alice.clone(),
-				old_rep,
-			);
+			v1::ParticipantReputation::<TestRuntime>::insert((cid, 1), alice.clone(), old_rep);
+			v1::ParticipantReputation::<TestRuntime>::insert((cid, 2), bob.clone(), old_rep);
+			v1::ParticipantReputation::<TestRuntime>::insert((cid2, 0), alice.clone(), old_rep);
 			// Migrate.
 			let state = v2::MigrateToV2::<TestRuntime>::pre_upgrade().unwrap();
 			let _weight = v2::MigrateToV2::<TestRuntime>::on_runtime_upgrade();
