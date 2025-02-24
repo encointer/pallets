@@ -27,7 +27,7 @@ jobs:
         os: [ ubuntu-latest ]
         check: [ cargo build --release,
                  cargo test --all --features runtime-benchmarks --features try-runtime,
-                 cargo clippy --all-features -- -D warnings
+                 cargo clippy --all-features --all-targets -- -D warnings
         ]
     steps:
       - uses: actions/checkout@v3
