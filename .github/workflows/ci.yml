@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_NIGHTLY: 2024-11-19
 
 jobs:
   cancel_previous_runs:
@@ -26,7 +27,6 @@ jobs:
         os: [ ubuntu-latest ]
         check: [ cargo build --release,
                  cargo test --all --features runtime-benchmarks --features try-runtime,
-                 cargo +nightly-2024-04-14 fmt --all -- --check,
                  cargo clippy --all-features -- -D warnings
         ]
     steps:
@@ -48,6 +48,17 @@ jobs:
 
       - name: ${{ matrix.check }}
         run: ${{ matrix.check }}
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install nightly toolchain
+        run: rustup toolchain install nightly-{{ env.RUST_NIGHTLY }} --profile minimal --component rustfmt
+
+      - name: cargo fmt (nightly)
+        run: cargo +nightly-{{ env.RUST_NIGHTLY }} fmt --all -- --check,
 
   cargo-toml-fmt:
     runs-on: ubuntu-latest
