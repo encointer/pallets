@@ -29,6 +29,10 @@ members = [
     'vouches',
 ]
 
+[workspace.lints.clippy]
+manual_inspect = { level = "allow", priority = 2 }              # Needs substrate fix in `#[pallet]`
+multiple_bound_locations = { level = "allow", priority = 2 }    # Needs substrate fix in `#[benchmark]`
+
 [workspace.dependencies]
 # local pin
 encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-features = false, version = "14.1.0" }
