@@ -228,13 +228,11 @@ mod tests {
 
 	#[test]
 	fn validate_equal_mapping_works() {
-		assert_eq!(
-			validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2326, s2: 1099 }, 427),
-			false
+		assert!(
+			!validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2326, s2: 1099 }, 427)
 		);
-		assert_eq!(
-			validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2325, s2: 1099 }, 427),
-			true
+		assert!(
+			validate_equal_mapping(2761, AssignmentParams { m: 2753, s1: 2325, s2: 1099 }, 427)
 		);
 	}
 

@@ -159,7 +159,7 @@ mod tests {
 	#[test]
 	pub fn bip340_from_str_works() {
 		let zero_key_str = "0x0000000000000000000000000000000000000000000000000000000000000000";
-		let zero_key: Bip340 = Bip340::from_str(&zero_key_str).unwrap();
+		let zero_key: Bip340 = Bip340::from_str(zero_key_str).unwrap();
 		assert_eq!(zero_key, Bip340::new([0u8; 32]));
 	}
 
@@ -179,14 +179,14 @@ mod tests {
 	#[test]
 	pub fn bip340_deserialize_works() {
 		let zero_key_str = "\"0x0000000000000000000000000000000000000000000000000000000000000000\"";
-		let zero_key: Bip340 = serde_json::from_str(&zero_key_str).unwrap();
+		let zero_key: Bip340 = serde_json::from_str(zero_key_str).unwrap();
 		assert_eq!(zero_key, Bip340::new([0u8; 32]));
 	}
 
 	#[test]
 	pub fn bip340_deserialize_without_prefix_works() {
 		let zero_key_str = "\"0000000000000000000000000000000000000000000000000000000000000000\"";
-		let zero_key: Bip340 = serde_json::from_str(&zero_key_str).unwrap();
+		let zero_key: Bip340 = serde_json::from_str(zero_key_str).unwrap();
 		assert_eq!(zero_key, Bip340::new([0u8; 32]));
 	}
 
