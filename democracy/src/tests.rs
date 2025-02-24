@@ -33,13 +33,13 @@ use encointer_primitives::{
 	treasuries::SwapNativeOption,
 };
 use frame_support::{
+	__private::bounded_vec,
 	assert_err, assert_ok,
 	traits::{OnFinalize, OnInitialize},
 };
 use mock::{new_test_ext, EncointerDemocracy, RuntimeOrigin, System, TestRuntime};
 use sp_runtime::BoundedVec;
 use std::str::FromStr as StdFromStr;
-use frame_support::__private::bounded_vec;
 use test_utils::{
 	helpers::{
 		account_id, add_population, event_at_index, get_num_events, last_event,
@@ -153,19 +153,20 @@ fn proposal_submission_for_same_proposal_id_works_for_different_community() {
 		assert_ne!(cid, cid2);
 
 		let proposal_action =
-			ProposalAction::<AccountId, NominalIncomeType, Moment>::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+			ProposalAction::<AccountId, NominalIncomeType, Moment>::UpdateNominalIncome(
+				cid,
+				NominalIncomeType::from(100u32),
+			);
 
 		let proposal_action2 =
 			ProposalAction::UpdateNominalIncome(cid2, NominalIncomeType::from(100u32));
 
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
 
-		assert_ok!(
-			EncointerDemocracy::submit_proposal(
-				RuntimeOrigin::signed(alice()),
-				proposal_action2.clone()
-			),
-		);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice()),
+			proposal_action2.clone()
+		),);
 	});
 }
 
@@ -177,17 +178,14 @@ fn proposal_submission_for_works_for_local_if_there_is_a_global_with_same_propos
 		let proposal_action =
 			ProposalAction::<AccountId, NominalIncomeType, Moment>::Petition(None, bounded_vec![]);
 
-		let proposal_action2 =
-			ProposalAction::Petition(Some(cid), bounded_vec![]);
+		let proposal_action2 = ProposalAction::Petition(Some(cid), bounded_vec![]);
 
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
 
-		assert_ok!(
-			EncointerDemocracy::submit_proposal(
-				RuntimeOrigin::signed(alice()),
-				proposal_action2.clone()
-			),
-		);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice()),
+			proposal_action2.clone()
+		),);
 	});
 }
 
@@ -196,20 +194,19 @@ fn proposal_submission_for_works_for_global_if_there_is_a_local_with_same_propos
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 
-		let proposal_action =
-			ProposalAction::<AccountId, NominalIncomeType, Moment>::Petition(Some(cid), bounded_vec![]);
+		let proposal_action = ProposalAction::<AccountId, NominalIncomeType, Moment>::Petition(
+			Some(cid),
+			bounded_vec![],
+		);
 
-		let proposal_action2 =
-			ProposalAction::Petition(None, bounded_vec![]);
+		let proposal_action2 = ProposalAction::Petition(None, bounded_vec![]);
 
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
 
-		assert_ok!(
-			EncointerDemocracy::submit_proposal(
-				RuntimeOrigin::signed(alice()),
-				proposal_action2.clone()
-			),
-		);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice()),
+			proposal_action2.clone()
+		),);
 	});
 }
 
