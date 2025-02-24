@@ -600,9 +600,9 @@ fn new_community_near_dateline_fails() {
 }
 
 /// for the following test we are looking at the following neighboring geo hashes
-/// sbh2m	sbh2q	sbh2r
-/// sbh2j	sbh2n	sbh2p
-/// kzurv	kzury	kzurz
+/// sbh2m   sbh2q   sbh2r
+/// sbh2j   sbh2n   sbh2p
+/// kzurv   kzury   kzurz
 /// the hash in the center(sbh2n) has the following specs:
 /// center: lat: 0.02197265625 , lon: 40.01220703125
 /// lat min: 0
@@ -710,9 +710,9 @@ fn get_relevant_neighbor_buckets_works() {
 }
 
 /// for the following test we are looking at the following neighboring geo hashes
-/// sbh2m	sbh2q	sbh2r
-/// sbh2j	sbh2n	sbh2p
-/// kzurv	kzury	kzurz
+/// sbh2m   sbh2q   sbh2r
+/// sbh2j   sbh2n   sbh2p
+/// kzurv   kzury   kzurz
 /// the hash in the center(sbh2n) has the following specs:
 /// center: lat: 0.02197265625 , lon: 40.01220703125
 /// lat min: 0

@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
+// Have to disable it for the whole module as it does not work on
+// a function annotated with rstest.
+#![allow(clippy::too_many_arguments)]
+
 use super::*;
 use approx::assert_abs_diff_eq;
 use encointer_primitives::{
@@ -180,7 +184,7 @@ fn attest_all(
 /// Fully attest all attendees with the new
 /// `attest_attendees` extrinsic.
 fn fully_attest_attendees(
-	attendees: &Vec<AccountId>,
+	attendees: Vec<AccountId>,
 	cid: CommunityIdentifier,
 	n_participants: u32,
 ) {
@@ -209,7 +213,7 @@ fn fully_attest_meetup(cid: CommunityIdentifier, mindex: MeetupIndexType) {
 		EncointerCeremonies::get_meetup_participants((cid, cindex), mindex).unwrap();
 	let n_participants = meetup_participants.len() as u32;
 
-	fully_attest_attendees(&meetup_participants, cid, n_participants);
+	fully_attest_attendees(meetup_participants, cid, n_participants);
 }
 
 fn create_locations(n_locations: u32) -> Vec<Location> {
@@ -251,7 +255,8 @@ fn perform_bootstrapping_ceremony(
 	run_to_next_phase();
 	// Attesting
 
-	fully_attest_attendees(&bootstrappers, cid, bootstrappers.len().try_into().unwrap());
+	let bootstrapper_count = bootstrappers.len();
+	fully_attest_attendees(bootstrappers, cid, bootstrapper_count.try_into().unwrap());
 
 	run_to_next_phase();
 	// Registering
@@ -290,7 +295,7 @@ fn registering_participant_works() {
 
 		let newbies = add_population(2, 2);
 		let newbie_1 = account_id(&newbies[0]);
-		let newbie_2 = account_id(&newbies[01]);
+		let newbie_2 = account_id(&newbies[1]);
 		IssuedRewards::<TestRuntime>::insert((cid, cindex - 1), 0, MeetupResult::Ok);
 		assert_ok!(register(newbie_1.clone(), cid, None));
 		assert_eq!(EncointerCeremonies::newbie_count((cid, cindex)), 1);
@@ -455,7 +460,7 @@ fn attest_attendee_for_alien_participant_fails() {
 		register_charlie_dave_eve(cid);
 
 		let participants: Vec<AccountId> =
-			add_population(99, 0).iter().map(|b| account_id(&b)).collect();
+			add_population(99, 0).iter().map(account_id).collect();
 		assert_ok!(EncointerCeremonies::set_endorsement_tickets_per_bootstrapper(
 			RuntimeOrigin::signed(master()),
 			100u8
@@ -593,10 +598,10 @@ fn claim_rewards_works() {
 
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 3).into()));
 
-		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 3);
+		assert_eq!(EncointerCeremonies::reputation_count((cid, cindex)), 3);
 		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 3);
 
-		for sender in vec![alice.clone(), bob.clone(), charlie.clone()].iter() {
+		for sender in [alice.clone(), bob.clone(), charlie.clone()].iter() {
 			let result: f64 = EncointerBalances::balance(cid, sender).lossy_into();
 			assert_abs_diff_eq!(
 				result,
@@ -617,7 +622,7 @@ fn claim_rewards_works() {
 			));
 		}
 
-		for sender in vec![eve.clone(), ferdie.clone()].iter() {
+		for sender in [eve.clone(), ferdie.clone()].iter() {
 			assert_eq!(EncointerBalances::balance(cid, sender), ZERO);
 			assert_eq!(
 				EncointerCeremonies::participant_reputation((cid, cindex), sender),
@@ -651,7 +656,7 @@ fn claim_rewards_works() {
 		));
 
 		// Claiming twice does not work for any of the meetup participants
-		for sender in vec![alice, bob, charlie, dave, ferdie].iter() {
+		for sender in [alice, bob, charlie, dave, ferdie].iter() {
 			assert_err!(
 				EncointerCeremonies::claim_rewards(
 					RuntimeOrigin::signed(sender.clone()),
@@ -711,7 +716,7 @@ fn claim_rewards_works_with_one_missing_attestation() {
 
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
-		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::reputation_count((cid, cindex)), 6);
 		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 6);
 	});
 }
@@ -779,8 +784,8 @@ fn global_reputation_count_works() {
 		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
 		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(dave), cid2, None).ok();
 
-		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 3);
-		assert_eq!(EncointerCeremonies::reputation_count(&(cid2, cindex)), 3);
+		assert_eq!(EncointerCeremonies::reputation_count((cid, cindex)), 3);
+		assert_eq!(EncointerCeremonies::reputation_count((cid2, cindex)), 3);
 		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 6);
 	});
 }
@@ -841,7 +846,7 @@ fn claim_rewards_can_only_be_called_for_valid_meetup_indices() {
 		}
 
 		for index in
-			vec![0, 1 + meetup_count, 2 + meetup_count, 2 * meetup_count - 1, 2 * meetup_count + 1]
+			[0, 1 + meetup_count, 2 + meetup_count, 2 * meetup_count - 1, 2 * meetup_count + 1]
 		{
 			assert_err!(
 				EncointerCeremonies::claim_rewards(
@@ -947,7 +952,7 @@ fn meetup_marked_as_completed_in_registration_when_claim_rewards_validation_erro
 				cid,
 				i as u32,
 				BoundedVec::try_from(
-					attestees.into_iter().map(|pa| account_id(pa)).collect::<Vec<AccountId>>(),
+					attestees.into_iter().map(account_id).collect::<Vec<AccountId>>(),
 				)
 				.unwrap(),
 			)
@@ -1033,7 +1038,7 @@ fn claim_rewards_can_be_called_by_non_participant() {
 
 		// everybody should receive their reward
 		assert!(event_deposited::<TestRuntime>(Event::RewardsIssued(cid, 1, 6).into()));
-		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 6);
+		assert_eq!(EncointerCeremonies::reputation_count((cid, cindex)), 6);
 		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 6);
 	});
 }
@@ -1069,7 +1074,7 @@ fn early_rewards_works() {
 		// Attesting
 
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve, ferdie];
-		fully_attest_attendees(&all_participants, cid, 6);
+		fully_attest_attendees(all_participants, cid, 6);
 
 		// Still attesting phase
 		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
@@ -1111,14 +1116,14 @@ fn early_rewards_with_one_noshow_works() {
 		// Ferdie is missing
 		let all_participants = vec![alice.clone(), bob, charlie, dave, eve];
 
-		fully_attest_attendees(&all_participants, cid, 5);
+		fully_attest_attendees(all_participants, cid, 5);
 
 		// Still attesting phase
 		EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(alice), cid, None).ok();
 
 		// everybody should receive their reward
 		assert_eq!(last_event::<TestRuntime>(), Some(Event::RewardsIssued(cid, 1, 5).into()));
-		assert_eq!(EncointerCeremonies::reputation_count(&(cid, cindex)), 5);
+		assert_eq!(EncointerCeremonies::reputation_count((cid, cindex)), 5);
 		assert_eq!(EncointerCeremonies::global_reputation_count(cindex), 5);
 	})
 }
@@ -1188,27 +1193,27 @@ fn bootstrapping_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex - 1), &account_id(&alice)),
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), account_id(&alice)),
 			Reputation::VerifiedUnlinked
 		);
 		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex - 1), &account_id(&bob)),
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), account_id(&bob)),
 			Reputation::VerifiedUnlinked
 		);
 		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex - 1), &account_id(&charlie)),
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), account_id(&charlie)),
 			Reputation::VerifiedUnlinked
 		);
 		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex - 1), &account_id(&dave)),
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), account_id(&dave)),
 			Reputation::VerifiedUnlinked
 		);
 		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex - 1), &account_id(&eve)),
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), account_id(&eve)),
 			Reputation::VerifiedUnlinked
 		);
 		assert_eq!(
-			EncointerCeremonies::participant_reputation((cid, cindex - 1), &account_id(&ferdie)),
+			EncointerCeremonies::participant_reputation((cid, cindex - 1), account_id(&ferdie)),
 			Reputation::VerifiedUnlinked
 		);
 	});
@@ -1453,7 +1458,7 @@ fn endorsing_newbie_for_next_ceremony_works_after_registering_phase() {
 			cid,
 			account_id(&zoran)
 		));
-		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex + 1), &account_id(&zoran)));
+		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex + 1), account_id(&zoran)));
 
 		run_to_next_phase();
 
@@ -1463,7 +1468,7 @@ fn endorsing_newbie_for_next_ceremony_works_after_registering_phase() {
 			cid,
 			account_id(&bogdan)
 		));
-		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex + 1), &account_id(&bogdan)));
+		assert!(Endorsees::<TestRuntime>::contains_key((cid, cindex + 1), account_id(&bogdan)));
 	});
 }
 
@@ -1984,7 +1989,7 @@ fn grow_population_and_removing_community_works() {
 			EncointerScheduler::current_ceremony_index().saturating_sub(reputation_lifetime);
 
 		// only sanity check. Community removal is better tested in the communities pallet.
-		assert_eq!(EncointerCommunities::community_identifiers().contains(&cid), false);
+		assert!(!EncointerCommunities::community_identifiers().contains(&cid));
 
 		assert_eq!(BurnedBootstrapperNewbieTickets::<TestRuntime>::iter_prefix(cid).next(), None);
 
@@ -1994,38 +1999,38 @@ fn grow_population_and_removing_community_works() {
 				None
 			);
 			assert_eq!(BootstrapperIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
-			assert_eq!(BootstrapperCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert!(!BootstrapperCount::<TestRuntime>::contains_key((cid, cindex)));
 
 			assert_eq!(ReputableRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
 			assert_eq!(ReputableIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
-			assert_eq!(ReputableCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert!(!ReputableCount::<TestRuntime>::contains_key((cid, cindex)));
 
 			assert_eq!(EndorseeRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
 			assert_eq!(EndorseeIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
-			assert_eq!(EndorseeCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert!(!EndorseeCount::<TestRuntime>::contains_key((cid, cindex)));
 
 			assert_eq!(NewbieRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
 			assert_eq!(NewbieIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
-			assert_eq!(NewbieCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert!(!NewbieCount::<TestRuntime>::contains_key((cid, cindex)));
 
-			assert_eq!(AssignmentCounts::<TestRuntime>::contains_key((cid, cindex)), false);
-			assert_eq!(Assignments::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert!(!AssignmentCounts::<TestRuntime>::contains_key((cid, cindex)));
+			assert!(!Assignments::<TestRuntime>::contains_key((cid, cindex)));
 
 			assert_eq!(
 				ParticipantReputation::<TestRuntime>::iter_prefix((cid, cindex)).next(),
 				None
 			);
 
-			assert_eq!(ReputationCount::<TestRuntime>::contains_key((cid, cindex)), false);
-			assert_eq!(GlobalReputationCount::<TestRuntime>::contains_key(cindex), false);
+			assert!(!ReputationCount::<TestRuntime>::contains_key((cid, cindex)));
+			assert!(!GlobalReputationCount::<TestRuntime>::contains_key(cindex));
 
 			assert_eq!(Endorsees::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
-			assert_eq!(EndorseesCount::<TestRuntime>::contains_key((cid, cindex)), false);
-			assert_eq!(MeetupCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert!(!EndorseesCount::<TestRuntime>::contains_key((cid, cindex)));
+			assert!(!MeetupCount::<TestRuntime>::contains_key((cid, cindex)));
 
 			assert_eq!(AttestationRegistry::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
 			assert_eq!(AttestationIndex::<TestRuntime>::iter_prefix((cid, cindex)).next(), None);
-			assert_eq!(AttestationCount::<TestRuntime>::contains_key((cid, cindex)), false);
+			assert!(!AttestationCount::<TestRuntime>::contains_key((cid, cindex)));
 
 			assert_eq!(
 				MeetupParticipantCountVote::<TestRuntime>::iter_prefix((cid, cindex)).next(),
@@ -2039,7 +2044,7 @@ fn grow_population_and_removing_community_works() {
 				None
 			);
 
-			assert_eq!(InactivityCounters::<TestRuntime>::contains_key(cid), false);
+			assert!(!InactivityCounters::<TestRuntime>::contains_key(cid));
 		}
 	});
 }
@@ -2277,7 +2282,7 @@ fn get_meetup_location_works() {
 			.iter()
 			.map(|o| o.unwrap())
 			.combinations(2)
-			.all(|v| v.get(0) != v.get(1)));
+			.all(|v| v.first() != v.get(1)));
 	});
 }
 
@@ -2330,7 +2335,7 @@ fn get_meetup_participants_works() {
 		let cindex = EncointerScheduler::current_ceremony_index();
 
 		let participants: Vec<AccountId> =
-			add_population(12, 0).iter().map(|b| account_id(b)).collect();
+			add_population(12, 0).iter().map(account_id).collect();
 
 		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 1, participants[0].clone());
 		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 2, participants[1].clone());
@@ -3258,7 +3263,7 @@ fn get_aggregated_account_data_works() {
 		assert_eq!(personal.meetup_time, Some(correct_meetup_time(&cid, 1)));
 
 		let meetup_registry = personal.meetup_registry.unwrap();
-		let expected_meetup_registry = vec![bootstrapper, bootstrapper2, reputable, reputable2];
+		let expected_meetup_registry = [bootstrapper, bootstrapper2, reputable, reputable2];
 		assert_eq!(meetup_registry.len(), 4);
 		assert!(meetup_registry.iter().all(|item| expected_meetup_registry.contains(item)));
 	});
@@ -3297,7 +3302,7 @@ fn attest_attendees_works() {
 		);
 
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 1);
-		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), &account_id(&alice)), 1);
+		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), account_id(&alice)), 1);
 		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), 1).unwrap();
 		// attestation for self is ignored
 		assert!(wit_vec.len() == 1);
@@ -3317,7 +3322,7 @@ fn attest_attendees_works() {
 		);
 
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 2);
-		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), &account_id(&bob)), 2);
+		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), account_id(&bob)), 2);
 		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), 2).unwrap();
 		assert!(wit_vec.len() == 2);
 		assert!(wit_vec.contains(&account_id(&alice)));
@@ -3351,7 +3356,7 @@ fn attest_attendees_works() {
 		.unwrap();
 
 		assert_eq!(EncointerCeremonies::attestation_count((cid, cindex)), 3);
-		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), &account_id(&ferdie)), 3);
+		assert_eq!(EncointerCeremonies::attestation_index((cid, cindex), account_id(&ferdie)), 3);
 		let wit_vec = EncointerCeremonies::attestation_registry((cid, cindex), 3).unwrap();
 		assert!(wit_vec.len() == 1);
 		assert!(wit_vec.contains(&account_id(&bob)));
@@ -3378,35 +3383,35 @@ fn has_reputation_works() {
 
 		assert_eq!(cindex, 3);
 
-		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+		assert!(!EncointerCeremonies::has_reputation(&alice, &cid));
 
 		// acausal cindex
 		EncointerCeremonies::fake_reputation((cid, 4), &alice, Reputation::VerifiedUnlinked);
 
-		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+		assert!(!EncointerCeremonies::has_reputation(&alice, &cid));
 
 		// reputation of different community doesn't count
 		EncointerCeremonies::fake_reputation((cid2, 1), &alice, Reputation::VerifiedUnlinked);
 
-		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+		assert!(!EncointerCeremonies::has_reputation(&alice, &cid));
 
 		// reputation type does not qualify
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::Unverified);
 
-		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+		assert!(!EncointerCeremonies::has_reputation(&alice, &cid));
 
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::UnverifiedReputable);
 
-		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), false);
+		assert!(!EncointerCeremonies::has_reputation(&alice, &cid));
 
 		// reputation type qualifies
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedLinked(1));
 
-		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), true);
+		assert!(EncointerCeremonies::has_reputation(&alice, &cid));
 
 		EncointerCeremonies::fake_reputation((cid, 1), &alice, Reputation::VerifiedUnlinked);
 
-		assert_eq!(EncointerCeremonies::has_reputation(&alice, &cid), true);
+		assert!(EncointerCeremonies::has_reputation(&alice, &cid));
 	});
 }
 
@@ -3438,35 +3443,35 @@ fn participants_assigned_matches_participants_registered() {
 
 		let bootstrappers: Vec<AccountId> = vec![alice];
 		let reputables: Vec<AccountId> =
-			add_population(28, 10).iter().map(|b| account_id(b)).collect();
+			add_population(28, 10).iter().map(account_id).collect();
 		let endorsees: Vec<AccountId> =
-			add_population(2, 100).iter().map(|b| account_id(b)).collect();
+			add_population(2, 100).iter().map(account_id).collect();
 		let newbies: Vec<AccountId> =
-			add_population(15, 200).iter().map(|b| account_id(b)).collect();
+			add_population(15, 200).iter().map(account_id).collect();
 
 		BootstrapperRegistry::<TestRuntime>::insert((cid, cindex), 1, bootstrappers[0].clone());
 
-		for i in 0..reputables.len() {
+		for (i, reputable) in reputables.clone().into_iter().enumerate() {
 			ReputableRegistry::<TestRuntime>::insert(
 				(cid, cindex),
 				(i + 1) as u64,
-				reputables[i].clone(),
+				reputable,
 			);
 		}
 
-		for i in 0..endorsees.len() {
+		for (i, endorsee) in endorsees.clone().into_iter().enumerate() {
 			EndorseeRegistry::<TestRuntime>::insert(
 				(cid, cindex),
 				(i + 1) as u64,
-				endorsees[i].clone(),
+				endorsee,
 			);
 		}
 
-		for i in 0..newbies.len() {
+		for (i, newbie) in newbies.clone().into_iter().enumerate() {
 			NewbieRegistry::<TestRuntime>::insert(
 				(cid, cindex),
 				(i + 1) as u64,
-				newbies[i].clone(),
+				newbie,
 			);
 		}
 
@@ -3520,20 +3525,20 @@ fn validate_reputation_works() {
 
 		// fails because too old
 		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedUnlinked);
-		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 2), false);
+		assert!(!EncointerCeremonies::validate_reputation(&alice, &cid, 2));
 		EncointerCeremonies::fake_reputation((cid, 2), &alice, Reputation::VerifiedLinked(2));
-		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 2), false);
+		assert!(!EncointerCeremonies::validate_reputation(&alice, &cid, 2));
 
 		// fails because not verifieds
 		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::UnverifiedReputable);
-		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), false);
+		assert!(!EncointerCeremonies::validate_reputation(&alice, &cid, 7));
 		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::Unverified);
-		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), false);
+		assert!(!EncointerCeremonies::validate_reputation(&alice, &cid, 7));
 
 		// passes
 		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::VerifiedUnlinked);
-		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), true);
+		assert!(EncointerCeremonies::validate_reputation(&alice, &cid, 7));
 		EncointerCeremonies::fake_reputation((cid, 7), &alice, Reputation::VerifiedLinked(7));
-		assert_eq!(EncointerCeremonies::validate_reputation(&alice, &cid, 7), true);
+		assert!(EncointerCeremonies::validate_reputation(&alice, &cid, 7));
 	});
 }
