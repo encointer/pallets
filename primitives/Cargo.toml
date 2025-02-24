@@ -8,6 +8,9 @@ homepage = "https://encointer.org"
 repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
+[lints]
+workspace = true
+
 [dependencies]
 bs58 = { workspace = true }
 crc = { workspace = true }
@@ -49,7 +52,5 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
 ]
-runtime-benchmarks = [
-    "frame-support/runtime-benchmarks",
-]
+runtime-benchmarks = ["frame-support/runtime-benchmarks"]
 try-runtime = []

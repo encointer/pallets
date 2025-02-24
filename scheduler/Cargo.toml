@@ -8,6 +8,9 @@ homepage = "https://encointer.org"
 repository = "https://github.com/encointer/pallets"
 license = "GPL-3.0-or-later"
 
+[lints]
+workspace = true
+
 [dependencies]
 impl-trait-for-tuples = { workspace = true }
 log = { workspace = true }

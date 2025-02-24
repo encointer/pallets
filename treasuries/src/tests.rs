@@ -81,12 +81,12 @@ fn swap_native_partial_works(burn: bool) {
 		let beneficiary = AccountId::from(AccountKeyring::Alice);
 		let native_allowance: BalanceOf<TestRuntime> = 110_000_000;
 		let rate_float = 0.000_000_2;
-		let rate = Some(BalanceType::from_num(rate_float));
+		let rate = BalanceType::from_num(rate_float);
 		let cid = CommunityIdentifier::default();
 		let swap_option: SwapNativeOption<Balance, Moment> = SwapNativeOption {
 			cid,
 			native_allowance,
-			rate,
+			rate: Some(rate),
 			do_burn: burn,
 			valid_from: None,
 			valid_until: None,
@@ -137,7 +137,7 @@ fn swap_native_partial_works(burn: bool) {
 				pallet_encointer_balances::Event::<TestRuntime>::Burned(
 					cid,
 					beneficiary.clone(),
-					BalanceType::from_num(swap_native_amount) * rate.unwrap()
+					BalanceType::from_num(swap_native_amount) * rate
 				)
 				.into()
 			));
@@ -147,7 +147,7 @@ fn swap_native_partial_works(burn: bool) {
 					cid,
 					beneficiary.clone(),
 					treasury.clone(),
-					BalanceType::from_num(swap_native_amount) * rate.unwrap()
+					BalanceType::from_num(swap_native_amount) * rate
 				)
 				.into()
 			));

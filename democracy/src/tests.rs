@@ -49,7 +49,7 @@ use test_utils::{
 };
 
 fn create_cid() -> CommunityIdentifier {
-	return register_test_community::<TestRuntime>(None, 0.0, 0.0);
+	register_test_community::<TestRuntime>(None, 0.0, 0.0)
 }
 
 fn alice() -> AccountId {
@@ -630,7 +630,7 @@ fn do_update_proposal_state_works() {
 		// propsal is passing
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 100 });
 
-		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
+		assert!(!EncointerDemocracy::do_update_proposal_state(1).unwrap());
 		assert_eq!(
 			EncointerDemocracy::proposals(1).unwrap().state,
 			ProposalState::Confirming { since: 0 }
@@ -639,17 +639,17 @@ fn do_update_proposal_state_works() {
 		// not passing anymore
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 0 });
 
-		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
+		assert!(!EncointerDemocracy::do_update_proposal_state(1).unwrap());
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
 		// nothing changes if repeated
-		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
+		assert!(!EncointerDemocracy::do_update_proposal_state(1).unwrap());
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Ongoing);
 
 		// passing
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 100 });
 
-		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), false);
+		assert!(!EncointerDemocracy::do_update_proposal_state(1).unwrap());
 		assert_eq!(
 			EncointerDemocracy::proposals(1).unwrap().state,
 			ProposalState::Confirming { since: 0 }
@@ -662,7 +662,7 @@ fn do_update_proposal_state_works() {
 		// should even work if proposal is too old before update is called.
 		advance_n_blocks(41);
 		// proposal is enacted
-		assert_eq!(EncointerDemocracy::do_update_proposal_state(1).unwrap(), true);
+		assert!(EncointerDemocracy::do_update_proposal_state(1).unwrap());
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);
 		assert_eq!(
 			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()).unwrap(),
@@ -755,23 +755,23 @@ fn is_passing_works() {
 
 		// turnout below threshold
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 1, ayes: 1 });
-		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), false);
+		assert!(!EncointerDemocracy::is_passing(1).unwrap());
 
 		// low turnout, 60 % approval
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 10, ayes: 6 });
-		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), false);
+		assert!(!EncointerDemocracy::is_passing(1).unwrap());
 
 		// low turnout 90 % approval
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 10, ayes: 9 });
-		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), true);
+		assert!(EncointerDemocracy::is_passing(1).unwrap());
 
 		// high turnout, 60 % approval
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 60 });
-		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), true);
+		assert!(EncointerDemocracy::is_passing(1).unwrap());
 
 		// high turnout 90 % approval
 		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 90 });
-		assert_eq!(EncointerDemocracy::is_passing(1).unwrap(), true);
+		assert!(EncointerDemocracy::is_passing(1).unwrap());
 	});
 }
 
@@ -992,14 +992,14 @@ fn enact_update_demurrage_works() {
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
 
-		assert!(EncointerBalances::demurrage_per_block(&cid) != demurrage);
+		assert!(EncointerBalances::demurrage_per_block(cid) != demurrage);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
 
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
-		assert_eq!(EncointerBalances::demurrage_per_block(&cid), demurrage);
+		assert_eq!(EncointerBalances::demurrage_per_block(cid), demurrage);
 	});
 }
 
