@@ -58,7 +58,7 @@ pub type AccountId = <<MultiSignature as Verify>::Signer as IdentifyAccount>::Ac
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 
 pub type BlockNumber = u64;
-pub type Balance = u64;
+pub type Balance = u128;
 
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 
@@ -91,7 +91,7 @@ macro_rules! impl_frame_system {
 			type BlockHashCount = BlockHashCount;
 			type Version = ();
 			type PalletInfo = PalletInfo;
-			type AccountData = pallet_balances::AccountData<u64>;
+			type AccountData = pallet_balances::AccountData<Balance>;
 			type OnNewAccount = ();
 			type OnKilledAccount = ();
 			type SystemWeightInfo = ();
@@ -136,8 +136,8 @@ macro_rules! impl_timestamp {
 parameter_types! {
 	pub const TransferFee: Balance = 0;
 	pub const CreationFee: Balance = 0;
-	pub const TransactionBaseFee: u64 = 0;
-	pub const TransactionByteFee: u64 = 0;
+	pub const TransactionBaseFee: Balance = 0;
+	pub const TransactionByteFee: Balance = 0;
 }
 
 #[macro_export]
@@ -147,7 +147,7 @@ macro_rules! impl_balances {
 			type Balance = Balance;
 			type RuntimeEvent = RuntimeEvent;
 			type DustRemoval = ();
-			type ExistentialDeposit = frame_support::traits::ConstU64<1>;
+			type ExistentialDeposit = frame_support::traits::ConstU128<1>;
 			type AccountStore = System;
 			type WeightInfo = ();
 			type MaxLocks = ();

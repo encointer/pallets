@@ -74,26 +74,32 @@ fn treasury_getter_works() {
 		)
 	});
 }
-#[rstest(burn, case(false), case(true))]
-fn swap_native_partial_works(burn: bool) {
+#[rstest(
+	burn,
+	native_allowance,
+	rate_float,
+	//case(false, 10_000_000_000_000, 0.1),
+	case(true, 10_000_000_000_000, 0.1),
+	case(false, 110_000_000, 0.000_000_2),
+	case(true, 110_000_000, 0.000_000_2)
+)]
+fn swap_native_partial_works(burn: bool, native_allowance: Balance, rate_float: f64) {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
 		let beneficiary = AccountId::from(AccountKeyring::Alice);
-		let native_allowance: BalanceOf<TestRuntime> = 110_000_000;
-		let rate_float = 0.000_000_2;
-		let rate = BalanceType::from_num(rate_float);
+		let rate = Some(BalanceType::from_num(rate_float));
 		let cid = CommunityIdentifier::default();
 		let swap_option: SwapNativeOption<Balance, Moment> = SwapNativeOption {
 			cid,
 			native_allowance,
-			rate: Some(rate),
+			rate,
 			do_burn: burn,
 			valid_from: None,
 			valid_until: None,
 		};
 
 		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
-		Balances::make_free_balance_be(&treasury, 500_000_000);
+		Balances::make_free_balance_be(&treasury, native_allowance * 2);
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(100)).unwrap();
 
 		assert_ok!(EncointerTreasuries::do_issue_swap_native_option(
@@ -103,14 +109,14 @@ fn swap_native_partial_works(burn: bool) {
 		));
 		assert_eq!(EncointerTreasuries::swap_native_options(cid, &beneficiary), Some(swap_option));
 
-		let swap_native_amount = 50_000_000;
+		let swap_native_amount = native_allowance / 10;
 		assert_ok!(EncointerTreasuries::swap_native(
 			RuntimeOrigin::signed(beneficiary.clone()),
 			cid,
 			swap_native_amount
 		));
 
-		assert_eq!(Balances::free_balance(&treasury), 450_000_000);
+		assert_eq!(Balances::free_balance(&treasury), native_allowance * 2 - native_allowance / 10);
 		assert_eq!(Balances::free_balance(&beneficiary), swap_native_amount);
 		assert_abs_diff_eq!(
 			EncointerBalances::balance(cid, &beneficiary).to_num::<f64>(),
@@ -122,7 +128,7 @@ fn swap_native_partial_works(burn: bool) {
 			EncointerTreasuries::swap_native_options(cid, &beneficiary)
 				.unwrap()
 				.native_allowance,
-			60_000_000
+			native_allowance * 9 / 10
 		);
 		assert!(event_deposited::<TestRuntime>(
 			Event::<TestRuntime>::SpentNative {
@@ -137,7 +143,7 @@ fn swap_native_partial_works(burn: bool) {
 				pallet_encointer_balances::Event::<TestRuntime>::Burned(
 					cid,
 					beneficiary.clone(),
-					BalanceType::from_num(swap_native_amount) * rate
+					BalanceType::from_num(swap_native_amount) * rate.unwrap()
 				)
 				.into()
 			));
@@ -147,7 +153,7 @@ fn swap_native_partial_works(burn: bool) {
 					cid,
 					beneficiary.clone(),
 					treasury.clone(),
-					BalanceType::from_num(swap_native_amount) * rate
+					BalanceType::from_num(swap_native_amount) * rate.unwrap()
 				)
 				.into()
 			));
