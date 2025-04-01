@@ -121,6 +121,9 @@ pub mod pallet {
 			)
 			.checked_mul(rate)
 			.ok_or(Error::<T>::SwapOverflow)?;
+
+			// Useful for debugging in tests. Enable if desired.
+			// println!("Swapping => {cc_amount:?} CC => {desired_native_amount:?}  pKSM");
 			if swap_option.do_burn {
 				<pallet_encointer_balances::Pallet<T>>::burn(cid, &sender, cc_amount)?;
 			} else {
