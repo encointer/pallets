@@ -101,7 +101,8 @@ fn swap_native_partial_works(burn: bool, native_allowance: Balance, rate_float: 
 
 		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
 		Balances::make_free_balance_be(&treasury, native_allowance * 2);
-		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(community_balance)).unwrap();
+		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(community_balance))
+			.unwrap();
 
 		assert_ok!(EncointerTreasuries::do_issue_swap_native_option(
 			cid,
