@@ -1,9 +1,11 @@
 use core::fmt::Debug;
 use std::marker::PhantomData;
+use frame_support::traits::fungible;
 use frame_support::traits::tokens::{PaymentStatus};
+use frame_support::traits::tokens::Preservation::Expendable;
 use scale_info::TypeInfo;
 use sp_runtime::codec::{FullCodec, MaxEncodedLen};
-use sp_runtime::{DispatchError, TokenError};
+use sp_runtime::{DispatchError};
 
 /// Can be implemented by `PayFromAccount` using a `fungible` impl, but can also be implemented with
 /// XCM/Asset and made generic over assets.
@@ -15,8 +17,7 @@ pub trait Payout {
 	type Balance;
 	/// AccountId
 	type AccountId;
-	/// The type by which we identify the beneficiaries to whom a payment may be made.
-	type Beneficiary;
+
 	/// The type for the kinds of asset that are going to be paid.
 	///
 	/// The unit type can be used here to indicate there's only one kind of asset to do payments
@@ -30,12 +31,12 @@ pub trait Payout {
 	/// mechanism (likely an event, but possibly not on this chain).
 	fn pay(
 		from: &Self::AccountId,
-		to: &Self::Beneficiary,
+		to: &Self::AccountId,
 		asset_kind: Self::AssetKind,
 		amount: Self::Balance,
 	) -> Result<Self::Id, Self::Error>;
 
-	fn is_asset_supported(asset_id: &Self::AccountId) -> bool;
+	fn is_asset_supported(asset_id: &Self::AssetKind) -> bool;
 
 	/// Check how a payment has proceeded. `id` must have been previously returned by `pay` for
 	/// the result of this call to be meaningful. Once this returns anything other than
@@ -44,9 +45,10 @@ pub trait Payout {
 	fn check_payment(id: Self::Id) -> PaymentStatus;
 	/// Ensure that a call to pay with the given parameters will be successful if done immediately
 	/// after this call. Used in benchmarking code.
+	// Todo: check if we want to keep these things
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_successful(
-		who: &Self::Beneficiary,
+		who: &Self::AccountId,
 		asset_kind: Self::AssetKind,
 		amount: Self::Balance,
 	);
@@ -57,35 +59,39 @@ pub trait Payout {
 }
 
 /// Simple struct to be used for testing.
-pub struct NoAssetPayout<AccountId, Balance>(PhantomData<(AccountId, Balance)>);
+pub struct NativePayout<AccountId, Fungible>(PhantomData<(AccountId, Fungible)>);
 
-impl<AccountId, Balance> Payout for NoAssetPayout<AccountId, Balance> {
-	type Balance = Balance;
+impl<AccountId, Fungible> Payout for NativePayout<AccountId, Fungible>
+where
+	AccountId: Eq + Clone,
+	Fungible: fungible::Mutate<AccountId>,
+{
+	type Balance = Fungible::Balance;
 	type AccountId = AccountId;
-	type Beneficiary = AccountId;
 	type AssetKind = ();
 	type Id = ();
 	type Error = DispatchError;
-
-	fn pay(_: &Self::AccountId, _: &Self::Beneficiary, _: Self::AssetKind, _: Self::Balance) -> Result<Self::Id, Self::Error> {
-		Err(DispatchError::Token(TokenError::Unsupported))
+	fn pay(
+		from: &Self::AccountId,
+		to: &Self::AccountId,
+		_: Self::AssetKind,
+		amount: Self::Balance,
+	) -> Result<Self::Id, Self::Error> {
+		<Fungible as fungible::Mutate<_>>::transfer(&from, to, amount, Expendable)?;
+		Ok(())
 	}
 
-	fn is_asset_supported(_: &Self::AccountId) -> bool {
-		false
+	fn is_asset_supported(_: &Self::AssetKind) -> bool {
+		true
 	}
 
-	fn check_payment(_: Self::Id) -> PaymentStatus {
+	fn check_payment(_: ()) -> PaymentStatus {
 		PaymentStatus::Success
 	}
-
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_successful(who: &Self::Beneficiary, asset_kind: Self::AssetKind, amount: Self::Balance) {
-		todo!()
+	fn ensure_successful(to: &Self::AccountId, _: Self::AssetKind, amount: Self::Balance) {
+		<Fungible as fungible::Mutate<_>>::mint_into(to, amount).unwrap();
 	}
-
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_concluded(id: Self::Id) {
-		todo!()
-	}
+	fn ensure_concluded(_: Self::Id) {}
 }

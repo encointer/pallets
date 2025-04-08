@@ -83,7 +83,6 @@ pub mod pallet {
 		/// Type for processing spends of [Self::AssetKind] in favor of [`Self::Beneficiary`].
 		type Paymaster: Payout<
 			AccountId = Self::AccountId,
-			Beneficiary = Self::AccountId,
 			AssetKind = Self::AssetKind,
 			Balance = BalanceOf<Self>,
 		>;
