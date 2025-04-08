@@ -602,8 +602,8 @@ pub mod pallet {
 				ProposalAction::IssueSwapNativeOption(cid, ref owner, swap_option) => {
 					TreasuriesPallet::<T>::do_issue_swap_native_option(cid, owner, swap_option)?;
 				},
-				ProposalAction::SpendAsset(_, _, _, _) => {}
-				ProposalAction::IssueSwapAssetOption(_, _, _) => {}
+				ProposalAction::SpendAsset(_, _, _, _) => {},
+				ProposalAction::IssueSwapAssetOption(_, _, _) => {},
 			};
 
 			proposal.state = ProposalState::Enacted;

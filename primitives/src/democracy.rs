@@ -10,14 +10,15 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 use crate::{
-	ceremonies::ReputationCountType, common::PalletString, scheduler::CeremonyIndexType,
-	treasuries::SwapNativeOption,
+	ceremonies::ReputationCountType,
+	common::PalletString,
+	scheduler::CeremonyIndexType,
+	treasuries::{SwapAssetOption, SwapNativeOption},
 };
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 use sp_runtime::BoundedVec;
-use crate::treasuries::SwapAssetOption;
 
 pub type ProposalIdType = u128;
 pub type VoteCountType = u128;
