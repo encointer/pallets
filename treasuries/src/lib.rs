@@ -48,6 +48,7 @@ pub type BalanceOf<T> =
 pub mod pallet {
 	use super::*;
 	use encointer_primitives::treasuries::SwapNativeOption;
+	use encointer_primitives::treasuries::SwapAssetOption;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
 
@@ -94,6 +95,20 @@ pub mod pallet {
 		SwapNativeOption<BalanceOf<T>, T::Moment>,
 		OptionQuery,
 	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn swap_asset_options)]
+	pub type SwapAssetOptions<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		Blake2_128Concat,
+		T::AccountId,
+		SwapAssetOption<BalanceOf<T>, T::Moment, T::AssetKind>,
+		OptionQuery,
+	>;
+
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
@@ -165,13 +180,13 @@ pub mod pallet {
 		}
 
 		pub fn do_spend_native(
-			maybecid: Option<CommunityIdentifier>,
+			maybe_cid: Option<CommunityIdentifier>,
 			beneficiary: &T::AccountId,
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
-			let treasury = Self::get_community_treasury_account_unchecked(maybecid);
+			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
 			T::Currency::transfer(&treasury, beneficiary, amount, KeepAlive)?;
-			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybecid, amount, beneficiary);
+			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybe_cid, amount, beneficiary);
 			Self::deposit_event(Event::SpentNative {
 				treasury,
 				beneficiary: beneficiary.clone(),
