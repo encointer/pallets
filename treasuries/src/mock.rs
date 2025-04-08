@@ -21,6 +21,7 @@ use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{parameter_types, PalletId};
 use sp_runtime::BuildStorage;
 use test_utils::*;
+use crate::payout::NoAssetPayout;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
@@ -49,6 +50,8 @@ impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = TreasuriesPalletId;
+	type AssetKind = ();
+	type Paymaster = NoAssetPayout<AccountId, Balance>;
 	type WeightInfo = ();
 }
 

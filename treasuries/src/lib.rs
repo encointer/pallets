@@ -19,7 +19,7 @@
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
 use frame_support::{
-	traits::{Currency, ExistenceRequirement::KeepAlive, Get, tokens::Pay},
+	traits::{Currency, ExistenceRequirement::KeepAlive, Get},
 	PalletId,
 };
 use frame_system::ensure_signed;
@@ -32,11 +32,13 @@ const LOG: &str = "encointer";
 
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
+pub use payout::Payout;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(test)]
 mod mock;
+mod payout;
 #[cfg(test)]
 mod tests;
 mod weights;
@@ -47,8 +49,7 @@ pub type BalanceOf<T> =
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use encointer_primitives::treasuries::SwapNativeOption;
-	use encointer_primitives::treasuries::SwapAssetOption;
+	use encointer_primitives::treasuries::{SwapAssetOption, SwapNativeOption};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
 
@@ -76,10 +77,16 @@ pub mod pallet {
 		// type SwapCooldownPeriod: Get<T::Moment>;
 
 		/// Type parameter representing the asset kinds to be spent from the treasury.
+		/// This can be the unit type if only native is supported.
 		type AssetKind: Parameter + MaxEncodedLen;
 
 		/// Type for processing spends of [Self::AssetKind] in favor of [`Self::Beneficiary`].
-		type Paymaster: Pay<Beneficiary = Self::AccountId, AssetKind = Self::AssetKind>;
+		type Paymaster: Payout<
+			AccountId = Self::AccountId,
+			Beneficiary = Self::AccountId,
+			AssetKind = Self::AssetKind,
+			Balance = BalanceOf<Self>,
+		>;
 
 		type WeightInfo: WeightInfo;
 	}
@@ -107,7 +114,6 @@ pub mod pallet {
 		SwapAssetOption<BalanceOf<T>, T::Moment, T::AssetKind>,
 		OptionQuery,
 	>;
-
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
@@ -195,6 +201,23 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		pub fn do_spend_asset(
+			maybe_cid: Option<CommunityIdentifier>,
+			beneficiary: &T::AccountId,
+			asset_id: T::AssetKind,
+			amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
+			T::Paymaster::pay(&treasury, beneficiary, asset_id, amount)?;
+			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybe_cid, amount, beneficiary);
+			Self::deposit_event(Event::SpentNative {
+				treasury,
+				beneficiary: beneficiary.clone(),
+				amount,
+			});
+			Ok(().into())
+		}
+
 		/// store a swap option possibly replacing any previously existing option
 		pub fn do_issue_swap_native_option(
 			cid: CommunityIdentifier,
@@ -202,6 +225,17 @@ pub mod pallet {
 			option: SwapNativeOption<BalanceOf<T>, T::Moment>,
 		) -> DispatchResultWithPostInfo {
 			SwapNativeOptions::<T>::insert(cid, who, option);
+			Self::deposit_event(Event::GrantedSwapNativeOption { cid, who: who.clone() });
+			Ok(().into())
+		}
+
+		/// store a swap option possibly replacing any previously existing option
+		pub fn do_issue_swap_asset_option(
+			cid: CommunityIdentifier,
+			who: &T::AccountId,
+			option: SwapAssetOption<BalanceOf<T>, T::Moment, T::AssetKind>,
+		) -> DispatchResultWithPostInfo {
+			SwapAssetOptions::<T>::insert(cid, who, option);
 			Self::deposit_event(Event::GrantedSwapNativeOption { cid, who: who.clone() });
 			Ok(().into())
 		}
@@ -216,9 +250,20 @@ pub mod pallet {
 			beneficiary: T::AccountId,
 			amount: BalanceOf<T>,
 		},
+		SpentAsset {
+			treasury: T::AccountId,
+			beneficiary: T::AccountId,
+			asset_id: T::AssetKind,
+			amount: BalanceOf<T>,
+		},
 		GrantedSwapNativeOption {
 			cid: CommunityIdentifier,
 			who: T::AccountId,
+		},
+		GrantedSwapAssetOption {
+			cid: CommunityIdentifier,
+			who: T::AccountId,
+			asset_id: T::AssetKind,
 		},
 	}
 
