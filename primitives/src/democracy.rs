@@ -17,6 +17,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 use sp_runtime::BoundedVec;
+use crate::treasuries::SwapAssetOption;
 
 pub type ProposalIdType = u128;
 pub type VoteCountType = u128;
@@ -52,7 +53,7 @@ pub enum ProposalAccessPolicy {
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub enum ProposalAction<AccountId, Balance, Moment> {
+pub enum ProposalAction<AccountId, Balance, Moment, AssetId> {
 	AddLocation(CommunityIdentifier, Location),
 	RemoveLocation(CommunityIdentifier, Location),
 	UpdateCommunityMetadata(CommunityIdentifier, CommunityMetadataType),
@@ -62,6 +63,8 @@ pub enum ProposalAction<AccountId, Balance, Moment> {
 	Petition(Option<CommunityIdentifier>, PalletString),
 	SpendNative(Option<CommunityIdentifier>, AccountId, Balance),
 	IssueSwapNativeOption(CommunityIdentifier, AccountId, SwapNativeOption<Balance, Moment>),
+	SpendAsset(Option<CommunityIdentifier>, AccountId, Balance, AssetId),
+	IssueSwapAssetOption(CommunityIdentifier, AccountId, SwapAssetOption<Balance, Moment, AssetId>),
 }
 
 #[derive(Encode, Decode, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
@@ -77,9 +80,11 @@ pub enum ProposalActionIdentifier {
 	Petition(Option<CommunityIdentifier>),
 	SpendNative(Option<CommunityIdentifier>),
 	IssueSwapNativeOption(CommunityIdentifier),
+	SpendAsset(Option<CommunityIdentifier>),
+	IssueSwapAssetOption(CommunityIdentifier),
 }
 
-impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
+impl<AccountId, Balance, Moment, AssetId> ProposalAction<AccountId, Balance, Moment, AssetId> {
 	pub fn get_access_policy(&self) -> ProposalAccessPolicy {
 		match self {
 			ProposalAction::AddLocation(cid, _) => ProposalAccessPolicy::Community(*cid),
@@ -94,6 +99,9 @@ impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
 			ProposalAction::SpendNative(Some(cid), ..) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::SpendNative(None, ..) => ProposalAccessPolicy::Global,
 			ProposalAction::IssueSwapNativeOption(cid, ..) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::SpendAsset(Some(cid), ..) => ProposalAccessPolicy::Community(*cid),
+			ProposalAction::SpendAsset(None, ..) => ProposalAccessPolicy::Global,
+			ProposalAction::IssueSwapAssetOption(cid, ..) => ProposalAccessPolicy::Community(*cid),
 		}
 	}
 
@@ -116,6 +124,10 @@ impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
 				ProposalActionIdentifier::SpendNative(*maybe_cid),
 			ProposalAction::IssueSwapNativeOption(cid, ..) =>
 				ProposalActionIdentifier::IssueSwapNativeOption(*cid),
+			ProposalAction::SpendAsset(maybe_cid, ..) =>
+				ProposalActionIdentifier::SpendNative(*maybe_cid),
+			ProposalAction::IssueSwapAssetOption(cid, ..) =>
+				ProposalActionIdentifier::IssueSwapNativeOption(*cid),
 		}
 	}
 
@@ -131,6 +143,8 @@ impl<AccountId, Balance, Moment> ProposalAction<AccountId, Balance, Moment> {
 			ProposalAction::Petition(_, _) => false,
 			ProposalAction::SpendNative(_, _, _) => false,
 			ProposalAction::IssueSwapNativeOption(..) => false,
+			ProposalAction::SpendAsset(_, _, _, _) => false,
+			ProposalAction::IssueSwapAssetOption(..) => false,
 		}
 	}
 }
@@ -159,10 +173,10 @@ impl<Moment: PartialEq> ProposalState<Moment> {
 #[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
-pub struct Proposal<Moment, AccountId, Balance> {
+pub struct Proposal<Moment, AccountId, Balance, AssetId> {
 	pub start: Moment,
 	pub start_cindex: CeremonyIndexType,
-	pub action: ProposalAction<AccountId, Balance, Moment>,
+	pub action: ProposalAction<AccountId, Balance, Moment, AssetId>,
 	pub state: ProposalState<Moment>,
 	pub electorate_size: ReputationCountType,
 }

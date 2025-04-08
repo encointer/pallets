@@ -19,7 +19,7 @@
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
 use frame_support::{
-	traits::{Currency, ExistenceRequirement::KeepAlive, Get},
+	traits::{Currency, ExistenceRequirement::KeepAlive, Get, tokens::Pay},
 	PalletId,
 };
 use frame_system::ensure_signed;
@@ -73,6 +73,12 @@ pub mod pallet {
 		// /// the minimum period an account has to wait between two swaps
 		// #[pallet::constant]
 		// type SwapCooldownPeriod: Get<T::Moment>;
+
+		/// Type parameter representing the asset kinds to be spent from the treasury.
+		type AssetKind: Parameter + MaxEncodedLen;
+
+		/// Type for processing spends of [Self::AssetKind] in favor of [`Self::Beneficiary`].
+		type Paymaster: Pay<Beneficiary = Self::AccountId, AssetKind = Self::AssetKind>;
 
 		type WeightInfo: WeightInfo;
 	}

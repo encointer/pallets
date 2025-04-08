@@ -83,6 +83,8 @@ pub mod pallet {
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(PhantomData<T>);
 
+	pub type AssetKindOf<T> = <T as pallet_encointer_treasuries::Config>::AssetKind;
+
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
@@ -128,7 +130,7 @@ pub mod pallet {
 		},
 		ProposalSubmitted {
 			proposal_id: ProposalIdType,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
 		},
 		VotePlaced {
 			proposal_id: ProposalIdType,
@@ -191,7 +193,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		ProposalIdType,
-		Proposal<T::Moment, T::AccountId, BalanceOf<T>>,
+		Proposal<T::Moment, T::AccountId, BalanceOf<T>, AssetKindOf<T>>,
 		OptionQuery,
 	>;
 
@@ -247,7 +249,7 @@ pub mod pallet {
         )]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into());
@@ -497,7 +499,7 @@ pub mod pallet {
 
 		pub fn get_electorate(
 			start_cindex: CeremonyIndexType,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
 		) -> Result<ReputationCountType, Error<T>> {
 			let voting_cindexes = Self::voting_cindexes(start_cindex)?;
 
@@ -600,6 +602,8 @@ pub mod pallet {
 				ProposalAction::IssueSwapNativeOption(cid, ref owner, swap_option) => {
 					TreasuriesPallet::<T>::do_issue_swap_native_option(cid, owner, swap_option)?;
 				},
+				ProposalAction::SpendAsset(_, _, _, _) => {}
+				ProposalAction::IssueSwapAssetOption(_, _, _) => {}
 			};
 
 			proposal.state = ProposalState::Enacted;
