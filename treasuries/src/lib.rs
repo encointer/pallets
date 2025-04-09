@@ -165,6 +165,51 @@ pub mod pallet {
 			Self::do_spend_native(Some(cid), &sender, desired_native_amount)?;
 			Ok(().into())
 		}
+
+		/// swap native tokens for community currency subject to an existing swap option for the
+		/// sender account.
+		#[pallet::call_index(1)]
+		#[pallet::weight((<T as Config>::WeightInfo::swap_asset(), DispatchClass::Normal, Pays::Yes))]
+		pub fn swap_asset(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			desired_asset_amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			let swap_option =
+				Self::swap_asset_options(cid, &sender).ok_or(<Error<T>>::NoValidSwapOption)?;
+			ensure!(
+				swap_option.asset_allowance >= desired_asset_amount,
+				Error::<T>::InsufficientAllowance
+			);
+
+			// Note: We have no means of checking the treasury balance as it lives on another chain.
+			let treasury_account = Self::get_community_treasury_account_unchecked(Some(cid));
+
+			let rate = swap_option.rate.ok_or(Error::<T>::SwapRateNotDefined)?;
+			let cc_amount = Self::cc_amount(desired_asset_amount, rate)?;
+
+			// Useful for debugging in tests. Enable if desired.
+			// println!("Swapping => {cc_amount:?} CC => {desired_native_amount:?}  pKSM");
+			if swap_option.do_burn {
+				<pallet_encointer_balances::Pallet<T>>::burn(cid, &sender, cc_amount)?;
+			} else {
+				<pallet_encointer_balances::Pallet<T>>::do_transfer(
+					cid,
+					&sender,
+					&treasury_account,
+					cc_amount,
+				)?;
+			}
+
+			let new_swap_option = SwapAssetOption {
+				asset_allowance: swap_option.asset_allowance - desired_asset_amount,
+				..swap_option
+			};
+			<SwapAssetOptions<T>>::insert(cid, &sender, new_swap_option);
+			Self::do_spend_native(Some(cid), &sender, desired_asset_amount)?;
+			Ok(().into())
+		}
 	}
 	impl<T: Config> Pallet<T>
 	where
@@ -216,11 +261,12 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
-			T::Paymaster::pay(&treasury, beneficiary, asset_id, amount)?;
+			T::Paymaster::pay(&treasury, beneficiary, asset_id.clone(), amount)?;
 			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybe_cid, amount, beneficiary);
-			Self::deposit_event(Event::SpentNative {
+			Self::deposit_event(Event::SpentAsset {
 				treasury,
 				beneficiary: beneficiary.clone(),
+				asset_id,
 				amount,
 			});
 			Ok(().into())

@@ -56,3 +56,60 @@ pub struct SwapAssetOption<NativeBalance, Moment, AssetId> {
 	/// the latest time of validity for this option
 	pub valid_until: Option<Moment>,
 }
+
+impl<NativeBalance: Clone, Moment> SwapOption for SwapNativeOption<NativeBalance, Moment> {
+
+	type Balance = NativeBalance;
+
+	fn cid(&self) -> CommunityIdentifier {
+		self.cid
+	}
+
+	fn allowance(&self) -> NativeBalance {
+		self.native_allowance.clone()
+	}
+
+	fn rate(&self) -> Option<BalanceType> {
+		self.rate
+	}
+
+	fn do_burn(&self) -> bool {
+		self.do_burn
+	}
+}
+
+impl<NativeBalance: Clone, Moment, AssetId> SwapOption for SwapAssetOption<NativeBalance, Moment, AssetId> {
+
+	type Balance = NativeBalance;
+
+	fn cid(&self) -> CommunityIdentifier {
+		self.cid
+	}
+
+	fn allowance(&self) -> NativeBalance {
+		self.asset_allowance.clone()
+	}
+
+	fn rate(&self) -> Option<BalanceType> {
+		self.rate
+	}
+
+	fn do_burn(&self) -> bool {
+		self.do_burn
+	}
+}
+
+/// Some convenience method for both our swap methods
+pub trait SwapOption {
+
+	type Balance;
+
+	fn cid(&self) -> CommunityIdentifier;
+	/// The community currency amount based on the desired native amount
+	/// and the rate.
+	fn allowance(&self) -> Self::Balance;
+
+	fn rate(&self) -> Option<BalanceType>;
+
+	fn do_burn(&self) -> bool;
+}
