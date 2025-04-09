@@ -30,6 +30,7 @@ pub use sp_keyring::AccountKeyring;
 // reexports for macro resolution
 pub use encointer_primitives::storage;
 pub use frame_system;
+pub use helpers::TestPay;
 pub use pallet_balances;
 pub use pallet_encointer_balances;
 pub use pallet_encointer_ceremonies;
@@ -37,7 +38,6 @@ pub use pallet_encointer_communities;
 pub use pallet_encointer_scheduler;
 pub use pallet_timestamp;
 pub use sp_runtime;
-pub use helpers::TestPay;
 
 pub use sp_core::H256;
 pub use sp_runtime::traits::{BlakeTwo256, Verify};

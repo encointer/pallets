@@ -17,7 +17,7 @@
 //! Unit tests for the encointer_treasuries module.
 
 use super::*;
-use crate::mock::{paid, Balances, EncointerBalances, EncointerTreasuries, RuntimeOrigin, System};
+use crate::mock::{Balances, EncointerBalances, EncointerTreasuries, RuntimeOrigin, System};
 use approx::assert_abs_diff_eq;
 use encointer_primitives::treasuries::{SwapAssetOption, SwapNativeOption};
 use frame_support::{assert_err, assert_ok};

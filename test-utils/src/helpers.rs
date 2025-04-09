@@ -14,16 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::cell::RefCell;
-use std::collections::BTreeMap;
 use crate::{AccountId, Balance};
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
-use frame_support::traits::tokens::PaymentStatus;
+use frame_support::{
+	pallet_prelude::DispatchResultWithPostInfo,
+	traits::{tokens::PaymentStatus, OriginTrait},
+};
+use pallet_encointer_treasuries::Payout;
 use sp_core::{sr25519, Encode, Pair, U256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DispatchError;
-use pallet_encointer_treasuries::Payout;
+use std::{cell::RefCell, collections::BTreeMap};
 
 /// shorthand to convert Pair to AccountId
 pub fn account_id(pair: &sr25519::Pair) -> AccountId {

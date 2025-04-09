@@ -17,11 +17,9 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use crate::Payout;
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{parameter_types, traits::tokens::PaymentStatus, PalletId};
-use sp_runtime::{BuildStorage, DispatchError};
-use std::{cell::RefCell, collections::BTreeMap};
+use frame_support::{parameter_types, PalletId};
+use sp_runtime::{BuildStorage};
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -52,7 +50,7 @@ impl dut::Config for TestRuntime {
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = TreasuriesPalletId;
 	type AssetKind = AssetId;
-	type Paymaster = TestPay;
+	type Paymaster = test_utils::TestPay;
 	type WeightInfo = ();
 }
 
