@@ -25,7 +25,10 @@ use mock::{new_test_ext, TestRuntime};
 use rstest::rstest;
 use sp_core::crypto::Ss58Codec;
 use std::str::FromStr;
-use test_utils::{helpers::*, *};
+use test_utils::{
+	helpers::{event_deposited, last_event},
+	AccountId, AccountKeyring, Balance, Moment,
+};
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -352,7 +355,7 @@ fn swap_asset_partial_works(burn: bool, asset_allowance: Balance, rate_float: f6
 
 		// The paymaster tracks in our test implementation how much has been paid to the
 		// beneficiary.
-		assert_eq!(paid(beneficiary.clone(), asset_id), swap_asset_amount);
+		assert_eq!(crate::mock::paid(beneficiary.clone(), asset_id), swap_asset_amount);
 
 		let swap_native = BalanceType::from_num::<u64>(swap_asset_amount.try_into().unwrap());
 		assert_abs_diff_eq!(
