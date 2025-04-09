@@ -153,7 +153,7 @@ fn proposal_submission_for_same_proposal_id_works_for_different_community() {
 		assert_ne!(cid, cid2);
 
 		let proposal_action =
-			ProposalAction::<AccountId, NominalIncomeType, Moment>::UpdateNominalIncome(
+			ProposalAction::<AccountId, NominalIncomeType, Moment, AssetId>::UpdateNominalIncome(
 				cid,
 				NominalIncomeType::from(100u32),
 			);
@@ -176,7 +176,7 @@ fn proposal_submission_for_works_for_local_if_there_is_a_global_with_same_propos
 		let cid = create_cid();
 
 		let proposal_action =
-			ProposalAction::<AccountId, NominalIncomeType, Moment>::Petition(None, bounded_vec![]);
+			ProposalAction::<AccountId, NominalIncomeType, Moment, AssetId>::Petition(None, bounded_vec![]);
 
 		let proposal_action2 = ProposalAction::Petition(Some(cid), bounded_vec![]);
 
@@ -194,7 +194,7 @@ fn proposal_submission_for_works_for_global_if_there_is_a_local_with_same_propos
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 
-		let proposal_action = ProposalAction::<AccountId, NominalIncomeType, Moment>::Petition(
+		let proposal_action = ProposalAction::<AccountId, NominalIncomeType, Moment, AssetId>::Petition(
 			Some(cid),
 			bounded_vec![],
 		);
@@ -476,7 +476,7 @@ fn do_update_proposal_state_fails_with_inexistent_proposal() {
 fn do_update_proposal_state_fails_with_wrong_state() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
-		let proposal: Proposal<Moment, AccountId, Balance> = Proposal {
+		let proposal: Proposal<Moment, AccountId, Balance, AssetId> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -485,7 +485,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
 
-		let proposal2: Proposal<Moment, AccountId, Balance> = Proposal {
+		let proposal2: Proposal<Moment, AccountId, Balance, AssetId> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -494,7 +494,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(2, proposal2);
 
-		let proposal3: Proposal<Moment, AccountId, Balance> = Proposal {
+		let proposal3: Proposal<Moment, AccountId, Balance, AssetId> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),

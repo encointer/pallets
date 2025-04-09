@@ -37,6 +37,7 @@ pub use pallet_encointer_communities;
 pub use pallet_encointer_scheduler;
 pub use pallet_timestamp;
 pub use sp_runtime;
+pub use helpers::TestPay;
 
 pub use sp_core::H256;
 pub use sp_runtime::traits::{BlakeTwo256, Verify};
@@ -211,6 +212,9 @@ macro_rules! impl_encointer_reputation_commitments {
 parameter_types! {
 	pub const TreasuriesPalletId: PalletId = PalletId(*b"trsrysId");
 }
+
+pub type AssetId = u32;
+
 #[macro_export]
 macro_rules! impl_encointer_treasuries {
 	($t:ident) => {
@@ -218,6 +222,8 @@ macro_rules! impl_encointer_treasuries {
 			type RuntimeEvent = RuntimeEvent;
 			type Currency = pallet_balances::Pallet<TestRuntime>;
 			type PalletId = TreasuriesPalletId;
+			type AssetKind = AssetId;
+			type Paymaster = TestPay;
 			type WeightInfo = ();
 		}
 	};

@@ -21,6 +21,7 @@ use sp_runtime::{
 	BuildStorage,
 };
 use test_utils::*;
+pub use test_utils::AssetId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 

@@ -7872,6 +7872,7 @@ dependencies = [
  "pallet-encointer-ceremonies",
  "pallet-encointer-communities",
  "pallet-encointer-scheduler",
+ "pallet-encointer-treasuries",
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-core",

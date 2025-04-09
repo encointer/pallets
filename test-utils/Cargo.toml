@@ -22,6 +22,7 @@ pallet-encointer-balances = { workspace = true, features = ["std"] }
 pallet-encointer-ceremonies = { workspace = true, features = ["std"] }
 pallet-encointer-communities = { workspace = true, features = ["std"] }
 pallet-encointer-scheduler = { workspace = true, features = ["std"] }
+pallet-encointer-treasuries = { workspace = true, features = ["std"] }
 
 # substrate deps
 frame-benchmarking = { workspace = true, features = ["std"] }
