@@ -70,10 +70,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 thread_local! {
-	pub static PAID: RefCell<BTreeMap<(AccountId, u32), Balance>> = RefCell::new(BTreeMap::new());
-	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = RefCell::new(BTreeMap::new());
-	pub static LAST_ID: RefCell<u64> = RefCell::new(0u64);
-
+	pub static PAID: RefCell<BTreeMap<(AccountId, u32), Balance>> = const { RefCell::new(BTreeMap::new()) };
+	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = const { RefCell::new(BTreeMap::new()) };
+	pub static LAST_ID: RefCell<u64> = const { RefCell::new(0u64) };
 }
 
 /// paid balance for a given account and asset ids
