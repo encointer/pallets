@@ -20,7 +20,7 @@ use crate as dut;
 use crate::Payout;
 use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{parameter_types, traits::tokens::PaymentStatus, PalletId};
-use sp_runtime::{BuildStorage, DispatchError, Saturating};
+use sp_runtime::{BuildStorage, DispatchError};
 use std::{cell::RefCell, collections::BTreeMap};
 use test_utils::*;
 
@@ -81,16 +81,6 @@ pub fn paid(who: AccountId, asset_id: u32) -> Balance {
 	PAID.with(|p| p.borrow().get(&(who, asset_id)).cloned().unwrap_or(0))
 }
 
-/// reduce paid balance for a given account and asset ids
-pub fn unpay(who: AccountId, asset_id: u32, amount: Balance) {
-	PAID.with(|p| p.borrow_mut().entry((who, asset_id)).or_default().saturating_reduce(amount))
-}
-
-/// set status for a given payment id
-pub fn set_status(id: u64, s: PaymentStatus) {
-	STATUS.with(|m| m.borrow_mut().insert(id, s));
-}
-
 pub type AssetId = u32;
 
 pub struct TestPay;
@@ -125,7 +115,5 @@ impl Payout for TestPay {
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_successful(_: &Self::AccountId, _: Self::AssetKind, _: Self::Balance) {}
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_concluded(id: Self::Id) {
-		set_status(id, PaymentStatus::Failure)
-	}
+	fn ensure_concluded(_: Self::Id) {}
 }
