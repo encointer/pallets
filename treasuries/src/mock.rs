@@ -16,16 +16,13 @@
 
 //! Mock runtime for the encointer_balances module
 
-use std::cell::RefCell;
-use std::collections::BTreeMap;
 use crate as dut;
-use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{parameter_types, PalletId};
-use frame_support::traits::tokens::PaymentStatus;
-use sp_runtime::{BuildStorage, Saturating};
-use sp_runtime::DispatchError;
-use test_utils::*;
 use crate::Payout;
+use encointer_primitives::balances::{BalanceType, Demurrage};
+use frame_support::{parameter_types, traits::tokens::PaymentStatus, PalletId};
+use sp_runtime::{BuildStorage, DispatchError, Saturating};
+use std::{cell::RefCell, collections::BTreeMap};
+use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
@@ -78,7 +75,6 @@ thread_local! {
 	pub static LAST_ID: RefCell<u64> = RefCell::new(0u64);
 
 }
-
 
 /// paid balance for a given account and asset ids
 fn paid(who: AccountId, asset_id: u32) -> Balance {

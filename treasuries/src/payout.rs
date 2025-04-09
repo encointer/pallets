@@ -1,8 +1,10 @@
 use core::fmt::Debug;
-use frame_support::traits::tokens::{PaymentStatus};
+use frame_support::traits::tokens::PaymentStatus;
 use scale_info::TypeInfo;
-use sp_runtime::codec::{FullCodec, MaxEncodedLen};
-use sp_runtime::{DispatchError};
+use sp_runtime::{
+	codec::{FullCodec, MaxEncodedLen},
+	DispatchError,
+};
 
 /// Can be implemented by `PayFromAccount` using a `fungible` impl, but can also be implemented with
 /// XCM/Asset and made generic over assets.
@@ -44,11 +46,7 @@ pub trait Payout {
 	/// after this call. Used in benchmarking code.
 	// Todo: check if we want to keep these things
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_successful(
-		who: &Self::AccountId,
-		asset_kind: Self::AssetKind,
-		amount: Self::Balance,
-	);
+	fn ensure_successful(who: &Self::AccountId, asset_kind: Self::AssetKind, amount: Self::Balance);
 	/// Ensure that a call to `check_payment` with the given parameters will return either `Success`
 	/// or `Failure`.
 	#[cfg(feature = "runtime-benchmarks")]
