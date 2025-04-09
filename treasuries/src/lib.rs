@@ -206,8 +206,8 @@ pub mod pallet {
 				asset_allowance: swap_option.asset_allowance - desired_asset_amount,
 				..swap_option
 			};
-			<SwapAssetOptions<T>>::insert(cid, &sender, new_swap_option);
-			Self::do_spend_native(Some(cid), &sender, desired_asset_amount)?;
+			<SwapAssetOptions<T>>::insert(cid, &sender, &new_swap_option);
+			Self::do_spend_asset(Some(cid), &sender, new_swap_option.asset_id, desired_asset_amount)?;
 			Ok(().into())
 		}
 	}

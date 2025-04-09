@@ -51,7 +51,7 @@ impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = TreasuriesPalletId;
-	type AssetKind = u32;
+	type AssetKind = AssetId;
 	type Paymaster = TestPay;
 	type WeightInfo = ();
 }
@@ -77,26 +77,28 @@ thread_local! {
 }
 
 /// paid balance for a given account and asset ids
-fn paid(who: AccountId, asset_id: u32) -> Balance {
+pub fn paid(who: AccountId, asset_id: u32) -> Balance {
 	PAID.with(|p| p.borrow().get(&(who, asset_id)).cloned().unwrap_or(0))
 }
 
 /// reduce paid balance for a given account and asset ids
-fn unpay(who: AccountId, asset_id: u32, amount: Balance) {
+pub fn unpay(who: AccountId, asset_id: u32, amount: Balance) {
 	PAID.with(|p| p.borrow_mut().entry((who, asset_id)).or_default().saturating_reduce(amount))
 }
 
 /// set status for a given payment id
-fn set_status(id: u64, s: PaymentStatus) {
+pub fn set_status(id: u64, s: PaymentStatus) {
 	STATUS.with(|m| m.borrow_mut().insert(id, s));
 }
 
+pub type AssetId = u32;
+
 pub struct TestPay;
 impl Payout for TestPay {
-	type AccountId = AccountId;
 	type Balance = Balance;
+	type AccountId = AccountId;
+	type AssetKind = AssetId;
 	type Id = u64;
-	type AssetKind = u32;
 	type Error = DispatchError;
 
 	fn pay(
@@ -113,7 +115,7 @@ impl Payout for TestPay {
 		}))
 	}
 
-	fn is_asset_supported(asset_id: &Self::AssetKind) -> bool {
+	fn is_asset_supported(_: &Self::AssetKind) -> bool {
 		true
 	}
 
