@@ -1,8 +1,5 @@
 use core::fmt::Debug;
-use std::marker::PhantomData;
-use frame_support::traits::fungible;
 use frame_support::traits::tokens::{PaymentStatus};
-use frame_support::traits::tokens::Preservation::Expendable;
 use scale_info::TypeInfo;
 use sp_runtime::codec::{FullCodec, MaxEncodedLen};
 use sp_runtime::{DispatchError};
@@ -56,42 +53,4 @@ pub trait Payout {
 	/// or `Failure`.
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_concluded(id: Self::Id);
-}
-
-/// Simple struct to be used for testing.
-pub struct NativePayout<AccountId, Fungible>(PhantomData<(AccountId, Fungible)>);
-
-impl<AccountId, Fungible> Payout for NativePayout<AccountId, Fungible>
-where
-	AccountId: Eq + Clone,
-	Fungible: fungible::Mutate<AccountId>,
-{
-	type Balance = Fungible::Balance;
-	type AccountId = AccountId;
-	type AssetKind = ();
-	type Id = ();
-	type Error = DispatchError;
-	fn pay(
-		from: &Self::AccountId,
-		to: &Self::AccountId,
-		_: Self::AssetKind,
-		amount: Self::Balance,
-	) -> Result<Self::Id, Self::Error> {
-		<Fungible as fungible::Mutate<_>>::transfer(&from, to, amount, Expendable)?;
-		Ok(())
-	}
-
-	fn is_asset_supported(_: &Self::AssetKind) -> bool {
-		true
-	}
-
-	fn check_payment(_: ()) -> PaymentStatus {
-		PaymentStatus::Success
-	}
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_successful(to: &Self::AccountId, _: Self::AssetKind, amount: Self::Balance) {
-		<Fungible as fungible::Mutate<_>>::mint_into(to, amount).unwrap();
-	}
-	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_concluded(_: Self::Id) {}
 }

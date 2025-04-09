@@ -16,12 +16,16 @@
 
 //! Mock runtime for the encointer_balances module
 
+use std::cell::RefCell;
+use std::collections::BTreeMap;
 use crate as dut;
 use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{parameter_types, PalletId};
-use sp_runtime::BuildStorage;
+use frame_support::traits::tokens::PaymentStatus;
+use sp_runtime::{BuildStorage, Saturating};
+use sp_runtime::DispatchError;
 use test_utils::*;
-use crate::payout::NativePayout;
+use crate::Payout;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 
@@ -50,8 +54,8 @@ impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = TreasuriesPalletId;
-	type AssetKind = ();
-	type Paymaster = NativePayout<AccountId, Balances>;
+	type AssetKind = u32;
+	type Paymaster = TestPay;
 	type WeightInfo = ();
 }
 
@@ -66,4 +70,64 @@ impl_balances!(TestRuntime, System);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 	t.into()
+}
+
+thread_local! {
+	pub static PAID: RefCell<BTreeMap<(AccountId, u32), Balance>> = RefCell::new(BTreeMap::new());
+	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = RefCell::new(BTreeMap::new());
+	pub static LAST_ID: RefCell<u64> = RefCell::new(0u64);
+
+}
+
+
+/// paid balance for a given account and asset ids
+fn paid(who: AccountId, asset_id: u32) -> Balance {
+	PAID.with(|p| p.borrow().get(&(who, asset_id)).cloned().unwrap_or(0))
+}
+
+/// reduce paid balance for a given account and asset ids
+fn unpay(who: AccountId, asset_id: u32, amount: Balance) {
+	PAID.with(|p| p.borrow_mut().entry((who, asset_id)).or_default().saturating_reduce(amount))
+}
+
+/// set status for a given payment id
+fn set_status(id: u64, s: PaymentStatus) {
+	STATUS.with(|m| m.borrow_mut().insert(id, s));
+}
+
+pub struct TestPay;
+impl Payout for TestPay {
+	type AccountId = AccountId;
+	type Balance = Balance;
+	type Id = u64;
+	type AssetKind = u32;
+	type Error = DispatchError;
+
+	fn pay(
+		_from: &Self::AccountId,
+		to: &Self::AccountId,
+		asset_kind: Self::AssetKind,
+		amount: Self::Balance,
+	) -> Result<Self::Id, Self::Error> {
+		PAID.with(|paid| *paid.borrow_mut().entry((to.clone(), asset_kind)).or_default() += amount);
+		Ok(LAST_ID.with(|lid| {
+			let x = *lid.borrow();
+			lid.replace(x + 1);
+			x
+		}))
+	}
+
+	fn is_asset_supported(asset_id: &Self::AssetKind) -> bool {
+		true
+	}
+
+	fn check_payment(id: Self::Id) -> PaymentStatus {
+		STATUS.with(|s| s.borrow().get(&id).cloned().unwrap_or(PaymentStatus::Unknown))
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_successful(_: &Self::AccountId, _: Self::AssetKind, _: Self::Balance) {}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_concluded(id: Self::Id) {
+		set_status(id, PaymentStatus::Failure)
+	}
 }
