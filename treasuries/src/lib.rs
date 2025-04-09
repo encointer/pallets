@@ -142,11 +142,7 @@ pub mod pallet {
 				Error::<T>::InsufficientNativeFunds
 			);
 			let rate = swap_option.rate.ok_or(Error::<T>::SwapRateNotDefined)?;
-			let cc_amount = BalanceType::from_num::<u64>(
-				desired_native_amount.try_into().or(Err(Error::<T>::SwapOverflow))?,
-			)
-			.checked_mul(rate)
-			.ok_or(Error::<T>::SwapOverflow)?;
+			let cc_amount = Self::cc_amount(desired_native_amount, rate)?;
 
 			// Useful for debugging in tests. Enable if desired.
 			// println!("Swapping => {cc_amount:?} CC => {desired_native_amount:?}  pKSM");
@@ -160,6 +156,7 @@ pub mod pallet {
 					cc_amount,
 				)?;
 			}
+
 			let new_swap_option = SwapNativeOption {
 				native_allowance: swap_option.native_allowance - desired_native_amount,
 				..swap_option
@@ -182,6 +179,18 @@ pub mod pallet {
 			let treasury_id_hash: H256 = T::Hashing::hash_of(&treasury_identifier).into();
 			T::AccountId::decode(&mut treasury_id_hash.as_bytes())
 				.expect("32 bytes can always construct an AccountId32")
+		}
+
+		pub fn cc_amount(
+			desired_native_amount: BalanceOf<T>,
+			rate: BalanceType,
+		) -> Result<BalanceType, Error<T>> {
+			let native_u64: u64 =
+				desired_native_amount.try_into().or(Err(Error::<T>::SwapOverflow))?;
+
+			BalanceType::from_num::<u64>(native_u64)
+				.checked_mul(rate)
+				.ok_or(Error::<T>::SwapOverflow)
 		}
 
 		pub fn do_spend_native(
