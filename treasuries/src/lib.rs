@@ -207,7 +207,12 @@ pub mod pallet {
 				..swap_option
 			};
 			<SwapAssetOptions<T>>::insert(cid, &sender, &new_swap_option);
-			Self::do_spend_asset(Some(cid), &sender, new_swap_option.asset_id, desired_asset_amount)?;
+			Self::do_spend_asset(
+				Some(cid),
+				&sender,
+				new_swap_option.asset_id,
+				desired_asset_amount,
+			)?;
 			Ok(().into())
 		}
 	}

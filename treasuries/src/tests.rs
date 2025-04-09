@@ -336,11 +336,7 @@ fn swap_asset_partial_works(burn: bool, asset_allowance: Balance, rate_float: f6
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(community_balance))
 			.unwrap();
 
-		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(
-			cid,
-			&beneficiary,
-			swap_option
-		));
+		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(cid, &beneficiary, swap_option));
 		assert_eq!(EncointerTreasuries::swap_asset_options(cid, &beneficiary), Some(swap_option));
 
 		let swap_asset_amount = asset_allowance / 10;
@@ -350,8 +346,9 @@ fn swap_asset_partial_works(burn: bool, asset_allowance: Balance, rate_float: f6
 			swap_asset_amount
 		));
 
-		// The treasury does not lose money in this case. In real life it will happen on another chain.
-		// assert_eq!(Balances::free_balance(&treasury), asset_allowance * 2 - asset_allowance / 10);
+		// The treasury does not lose money in this case. In real life it will happen on another
+		// chain. assert_eq!(Balances::free_balance(&treasury), asset_allowance * 2 -
+		// asset_allowance / 10);
 
 		// The paymaster tracks in our test implementation how much has been paid to the
 		// beneficiary.
@@ -377,7 +374,7 @@ fn swap_asset_partial_works(burn: bool, asset_allowance: Balance, rate_float: f6
 				asset_id,
 				amount: swap_asset_amount
 			}
-				.into()
+			.into()
 		));
 		if burn {
 			assert!(event_deposited::<TestRuntime>(
@@ -386,7 +383,7 @@ fn swap_asset_partial_works(burn: bool, asset_allowance: Balance, rate_float: f6
 					beneficiary.clone(),
 					BalanceType::from_num(swap_asset_amount) * rate
 				)
-					.into()
+				.into()
 			));
 		} else {
 			assert!(event_deposited::<TestRuntime>(
@@ -396,7 +393,7 @@ fn swap_asset_partial_works(burn: bool, asset_allowance: Balance, rate_float: f6
 					treasury.clone(),
 					BalanceType::from_num(swap_asset_amount) * rate
 				)
-					.into()
+				.into()
 			));
 		}
 	});
@@ -441,11 +438,7 @@ fn swap_asset_insufficient_cc_fails(burn: bool) {
 
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
 
-		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(
-			cid,
-			&beneficiary,
-			swap_option
-		));
+		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(cid, &beneficiary, swap_option));
 		assert_eq!(EncointerTreasuries::swap_asset_options(cid, &beneficiary), Some(swap_option));
 
 		let swap_asset_amount = 50_000_000;
@@ -502,7 +495,6 @@ fn swap_asset_insufficient_cc_fails(burn: bool) {
 // 	});
 // }
 
-
 #[rstest(burn, case(false), case(true))]
 fn swap_asset_insufficient_allowance_fails(burn: bool) {
 	new_test_ext().execute_with(|| {
@@ -527,11 +519,7 @@ fn swap_asset_insufficient_allowance_fails(burn: bool) {
 		Balances::make_free_balance_be(&treasury, 51_000_000);
 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
 
-		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(
-			cid,
-			&beneficiary,
-			swap_option
-		));
+		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(cid, &beneficiary, swap_option));
 		assert_eq!(EncointerTreasuries::swap_asset_options(cid, &beneficiary), Some(swap_option));
 
 		let swap_native_amount = 50_000_000;

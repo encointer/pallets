@@ -58,7 +58,6 @@ pub struct SwapAssetOption<NativeBalance, Moment, AssetId> {
 }
 
 impl<NativeBalance: Clone, Moment> SwapOption for SwapNativeOption<NativeBalance, Moment> {
-
 	type Balance = NativeBalance;
 
 	fn cid(&self) -> CommunityIdentifier {
@@ -78,8 +77,9 @@ impl<NativeBalance: Clone, Moment> SwapOption for SwapNativeOption<NativeBalance
 	}
 }
 
-impl<NativeBalance: Clone, Moment, AssetId> SwapOption for SwapAssetOption<NativeBalance, Moment, AssetId> {
-
+impl<NativeBalance: Clone, Moment, AssetId> SwapOption
+	for SwapAssetOption<NativeBalance, Moment, AssetId>
+{
 	type Balance = NativeBalance;
 
 	fn cid(&self) -> CommunityIdentifier {
@@ -101,7 +101,6 @@ impl<NativeBalance: Clone, Moment, AssetId> SwapOption for SwapAssetOption<Nativ
 
 /// Some convenience method for both our swap methods
 pub trait SwapOption {
-
 	type Balance;
 
 	fn cid(&self) -> CommunityIdentifier;
