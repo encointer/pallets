@@ -215,6 +215,26 @@ pub mod pallet {
 			)?;
 			Ok(().into())
 		}
+
+		/// Only used for testing
+		#[pallet::call_index(2)]
+		#[pallet::weight((<T as Config>::WeightInfo::swap_asset(), DispatchClass::Normal, Pays::Yes))]
+		pub fn test_asset_pay(
+			origin: OriginFor<T>,
+			cid: Option<CommunityIdentifier>,
+			asset_id: T::AssetKind,
+			desired_asset_amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+
+			Self::do_spend_asset(
+				cid,
+				&sender,
+				asset_id,
+				desired_asset_amount,
+			)?;
+			Ok(().into())
+		}
 	}
 	impl<T: Config> Pallet<T>
 	where
@@ -266,7 +286,11 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
-			T::Paymaster::pay(&treasury, beneficiary, asset_id.clone(), amount)?;
+			T::Paymaster::pay(&treasury, beneficiary, asset_id.clone(), amount)
+				.map_err(|e| {
+					log::error!(target: LOG, "Paymaster payout error: {:?}", e);
+					Error::<T>::PayoutError
+				})?;
 			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybe_cid, amount, beneficiary);
 			Self::deposit_event(Event::SpentAsset {
 				treasury,
@@ -334,5 +358,6 @@ pub mod pallet {
 		SwapOverflow,
 		InsufficientNativeFunds,
 		InsufficientAllowance,
+		PayoutError,
 	}
 }

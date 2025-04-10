@@ -3,7 +3,6 @@ use frame_support::traits::tokens::PaymentStatus;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	codec::{FullCodec, MaxEncodedLen},
-	DispatchError,
 };
 
 /// Can be implemented by `PayFromAccount` using a `fungible` impl, but can also be implemented with
@@ -25,7 +24,7 @@ pub trait Payout {
 	/// An identifier given to an individual payment.
 	type Id: FullCodec + MaxEncodedLen + TypeInfo + Clone + Eq + PartialEq + Debug + Copy;
 	/// An error which could be returned by the Pay type
-	type Error: Debug + Into<DispatchError>;
+	type Error: Debug;
 	/// Make a payment and return an identifier for later evaluation of success in some off-chain
 	/// mechanism (likely an event, but possibly not on this chain).
 	fn pay(
