@@ -227,12 +227,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 
-			Self::do_spend_asset(
-				cid,
-				&sender,
-				asset_id,
-				desired_asset_amount,
-			)?;
+			Self::do_spend_asset(cid, &sender, asset_id, desired_asset_amount)?;
 			Ok(().into())
 		}
 	}
@@ -286,11 +281,10 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
-			T::Paymaster::pay(&treasury, beneficiary, asset_id.clone(), amount)
-				.map_err(|e| {
-					log::error!(target: LOG, "Paymaster payout error: {:?}", e);
-					Error::<T>::PayoutError
-				})?;
+			T::Paymaster::pay(&treasury, beneficiary, asset_id.clone(), amount).map_err(|e| {
+				log::error!(target: LOG, "Paymaster payout error: {:?}", e);
+				Error::<T>::PayoutError
+			})?;
 			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybe_cid, amount, beneficiary);
 			Self::deposit_event(Event::SpentAsset {
 				treasury,
