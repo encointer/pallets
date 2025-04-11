@@ -20,6 +20,7 @@ use sp_runtime::{
 	traits::{ConstU128, ConstU64},
 	BuildStorage,
 };
+pub use test_utils::AssetId;
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
