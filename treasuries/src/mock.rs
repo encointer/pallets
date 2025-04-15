@@ -109,7 +109,7 @@ impl Transfer for TestPay {
 		STATUS.with(|s| s.borrow().get(&id).cloned().unwrap_or(PaymentStatus::Unknown))
 	}
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_successful(_: &Self::Transactor, _: Self::AssetKind, _: Self::Balance) {}
+	fn ensure_successful(_: &Self::Payer, _: &Self::Beneficiary, _: Self::AssetKind, _: Self::Balance) {}
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_concluded(_: Self::Id) {}
 }
