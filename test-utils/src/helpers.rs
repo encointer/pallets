@@ -145,14 +145,14 @@ pub type AssetId = u32;
 pub struct TestPay;
 impl Payout for TestPay {
 	type Balance = Balance;
-	type AccountId = AccountId;
+	type Transactor = AccountId;
 	type AssetKind = AssetId;
 	type Id = u64;
 	type Error = DispatchError;
 
 	fn pay(
-		_from: &Self::AccountId,
-		to: &Self::AccountId,
+		_from: &Self::Transactor,
+		to: &Self::Transactor,
 		asset_kind: Self::AssetKind,
 		amount: Self::Balance,
 	) -> Result<Self::Id, Self::Error> {
@@ -172,7 +172,7 @@ impl Payout for TestPay {
 		STATUS.with(|s| s.borrow().get(&id).cloned().unwrap_or(PaymentStatus::Unknown))
 	}
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_successful(_: &Self::AccountId, _: Self::AssetKind, _: Self::Balance) {}
+	fn ensure_successful(_: &Self::Transactor, _: Self::AssetKind, _: Self::Balance) {}
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_concluded(_: Self::Id) {}
 }
