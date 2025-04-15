@@ -44,7 +44,11 @@ pub trait Payout {
 	/// Ensure that a call to pay with the given parameters will be successful if done immediately
 	/// after this call. Used in benchmarking code.
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_successful(who: &Self::Transactor, asset_kind: Self::AssetKind, amount: Self::Balance);
+	fn ensure_successful(
+		who: &Self::Transactor,
+		asset_kind: Self::AssetKind,
+		amount: Self::Balance,
+	);
 	/// Ensure that a call to `check_payment` with the given parameters will return either `Success`
 	/// or `Failure`.
 	#[cfg(feature = "runtime-benchmarks")]
