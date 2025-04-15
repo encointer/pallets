@@ -32,7 +32,7 @@ const LOG: &str = "encointer";
 
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
-pub use payout::Payout;
+pub use payout::Transfer;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -81,8 +81,9 @@ pub mod pallet {
 		type AssetKind: Parameter + MaxEncodedLen;
 
 		/// Type for processing spends of [Self::AssetKind] in favor of [`Self::Beneficiary`].
-		type Paymaster: Payout<
-			Transactor = Self::AccountId,
+		type Paymaster: Transfer<
+			Payer = Self::AccountId,
+			Beneficiary = Self::AccountId,
 			AssetKind = Self::AssetKind,
 			Balance = BalanceOf<Self>,
 		>;
@@ -281,7 +282,7 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
-			T::Paymaster::pay(&treasury, beneficiary, asset_id.clone(), amount).map_err(|e| {
+			T::Paymaster::transfer(&treasury, beneficiary, asset_id.clone(), amount).map_err(|e| {
 				log::error!(target: LOG, "Paymaster payout error: {:?}", e);
 				Error::<T>::PayoutError
 			})?;

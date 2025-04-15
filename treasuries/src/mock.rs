@@ -17,7 +17,7 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
-use crate::Payout;
+use crate::Transfer;
 use encointer_primitives::balances::{BalanceType, Demurrage};
 use frame_support::{parameter_types, traits::tokens::PaymentStatus, PalletId};
 use sp_runtime::{BuildStorage, DispatchError};
@@ -83,16 +83,17 @@ pub fn paid(who: AccountId, asset_id: u32) -> Balance {
 pub type AssetId = u32;
 
 pub struct TestPay;
-impl Payout for TestPay {
+impl Transfer for TestPay {
 	type Balance = Balance;
-	type Transactor = AccountId;
+	type Payer = AccountId;
+	type Beneficiary = AccountId;
 	type AssetKind = AssetId;
 	type Id = u64;
 	type Error = DispatchError;
 
-	fn pay(
-		_from: &Self::Transactor,
-		to: &Self::Transactor,
+	fn transfer(
+		_from: &Self::Payer,
+		to: &Self::Beneficiary,
 		asset_kind: Self::AssetKind,
 		amount: Self::Balance,
 	) -> Result<Self::Id, Self::Error> {
@@ -102,10 +103,6 @@ impl Payout for TestPay {
 			lid.replace(x + 1);
 			x
 		}))
-	}
-
-	fn is_asset_supported(_: &Self::AssetKind) -> bool {
-		true
 	}
 
 	fn check_payment(id: Self::Id) -> PaymentStatus {

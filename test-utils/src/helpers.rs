@@ -20,7 +20,7 @@ use frame_support::{
 	pallet_prelude::DispatchResultWithPostInfo,
 	traits::{tokens::PaymentStatus, OriginTrait},
 };
-use pallet_encointer_treasuries::Payout;
+use pallet_encointer_treasuries::Transfer;
 use sp_core::{sr25519, Encode, Pair, U256};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DispatchError;
@@ -143,16 +143,17 @@ pub fn paid(who: AccountId, asset_id: u32) -> Balance {
 pub type AssetId = u32;
 
 pub struct TestPay;
-impl Payout for TestPay {
+impl Transfer for TestPay {
 	type Balance = Balance;
-	type Transactor = AccountId;
+	type Payer = AccountId;
+	type Beneficiary = AccountId;
 	type AssetKind = AssetId;
 	type Id = u64;
 	type Error = DispatchError;
 
-	fn pay(
-		_from: &Self::Transactor,
-		to: &Self::Transactor,
+	fn transfer(
+		_from: &Self::Payer,
+		to: &Self::Beneficiary,
 		asset_kind: Self::AssetKind,
 		amount: Self::Balance,
 	) -> Result<Self::Id, Self::Error> {
@@ -164,15 +165,23 @@ impl Payout for TestPay {
 		}))
 	}
 
-	fn is_asset_supported(_: &Self::AssetKind) -> bool {
-		true
-	}
-
 	fn check_payment(id: Self::Id) -> PaymentStatus {
 		STATUS.with(|s| s.borrow().get(&id).cloned().unwrap_or(PaymentStatus::Unknown))
 	}
+
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_successful(_: &Self::Transactor, _: Self::AssetKind, _: Self::Balance) {}
+	fn ensure_successful(
+		_from: &Self::Payer,
+		_to: &Self::Beneficiary,
+		_asset_kind: Self::AssetKind,
+		_amount: Self::Balance,
+	) {
+		todo!()
+	}
+	/// Ensure that a call to `check_payment` with the given parameters will return either `Success`
+	/// or `Failure`.
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_concluded(_: Self::Id) {}
+	fn ensure_concluded(_id: Self::Id) {
+		todo!()
+	}
 }

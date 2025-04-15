@@ -10,13 +10,18 @@ use sp_runtime::codec::{FullCodec, MaxEncodedLen};
 /// account for the payment.
 ///
 /// After initial testing with encointer, we intend to upstream this.
-pub trait Payout {
+pub trait Transfer {
 	/// The type by which we measure units of the currency in which we make payments.
 	type Balance;
-	/// The type by which we identify the transactors (sender, recipient) involved in the transfer.
+	/// The type by which identify the payer involved in the transfer.
 	///
 	/// This is usually and AccountId or a Location.
-	type Transactor;
+	type Payer;
+
+	/// The type by which we identify the beneficiary involved in the transfer.
+	///
+	/// This is usually and AccountId or a Location.
+	type Beneficiary;
 
 	/// The type for the kinds of asset that are going to be paid.
 	///
@@ -29,9 +34,9 @@ pub trait Payout {
 	type Error: Debug;
 	/// Make a payment and return an identifier for later evaluation of success in some off-chain
 	/// mechanism (likely an event, but possibly not on this chain).
-	fn pay(
-		from: &Self::Transactor,
-		to: &Self::Transactor,
+	fn transfer(
+		from: &Self::Payer,
+		to: &Self::Beneficiary,
 		asset_kind: Self::AssetKind,
 		amount: Self::Balance,
 	) -> Result<Self::Id, Self::Error>;
@@ -45,7 +50,8 @@ pub trait Payout {
 	/// after this call. Used in benchmarking code.
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_successful(
-		who: &Self::Transactor,
+		from: &Self::Payer,
+		to: &Self::Beneficiary,
 		asset_kind: Self::AssetKind,
 		amount: Self::Balance,
 	);
