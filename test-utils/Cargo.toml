@@ -22,6 +22,7 @@ pallet-encointer-balances = { workspace = true, features = ["std"] }
 pallet-encointer-ceremonies = { workspace = true, features = ["std"] }
 pallet-encointer-communities = { workspace = true, features = ["std"] }
 pallet-encointer-scheduler = { workspace = true, features = ["std"] }
+pallet-encointer-treasuries = { workspace = true, features = ["std"] }
 
 # substrate deps
 frame-benchmarking = { workspace = true, features = ["std"] }
@@ -44,6 +45,7 @@ runtime-benchmarks = [
     "pallet-encointer-ceremonies/runtime-benchmarks",
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-scheduler/runtime-benchmarks",
+    "pallet-encointer-treasuries/runtime-benchmarks",
     "encointer-primitives/runtime-benchmarks",
     "frame-benchmarking/runtime-benchmarks",
     "pallet-balances/runtime-benchmarks",
@@ -59,6 +61,7 @@ try-runtime = [
     "frame-support/try-runtime",
     "frame-system/try-runtime",
     "pallet-balances/try-runtime",
+    "pallet-encointer-treasuries/try-runtime",
     "pallet-timestamp/try-runtime",
     "sp-runtime/try-runtime",
 ]

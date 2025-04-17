@@ -17,9 +17,11 @@
 //! Mock runtime for the encointer_balances module
 
 use crate as dut;
+use crate::Transfer;
 use encointer_primitives::balances::{BalanceType, Demurrage};
-use frame_support::{parameter_types, PalletId};
-use sp_runtime::BuildStorage;
+use frame_support::{parameter_types, traits::tokens::PaymentStatus, PalletId};
+use sp_runtime::{BuildStorage, DispatchError};
+use std::{cell::RefCell, collections::BTreeMap};
 use test_utils::*;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
@@ -49,7 +51,11 @@ impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type PalletId = TreasuriesPalletId;
+	type AssetKind = AssetId;
+	type Paymaster = TestPay;
 	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 // boilerplate
@@ -63,4 +69,55 @@ impl_balances!(TestRuntime, System);
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::<TestRuntime>::default().build_storage().unwrap();
 	t.into()
+}
+
+thread_local! {
+	pub static PAID: RefCell<BTreeMap<(AccountId, u32), Balance>> = const { RefCell::new(BTreeMap::new()) };
+	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = const { RefCell::new(BTreeMap::new()) };
+	pub static LAST_ID: RefCell<u64> = const { RefCell::new(0u64) };
+}
+
+/// paid balance for a given account and asset ids
+pub fn paid(who: AccountId, asset_id: u32) -> Balance {
+	PAID.with(|p| p.borrow().get(&(who, asset_id)).cloned().unwrap_or(0))
+}
+
+pub type AssetId = u32;
+
+pub struct TestPay;
+impl Transfer for TestPay {
+	type Balance = Balance;
+	type Payer = AccountId;
+	type Beneficiary = AccountId;
+	type AssetKind = AssetId;
+	type Id = u64;
+	type Error = DispatchError;
+
+	fn transfer(
+		_from: &Self::Payer,
+		to: &Self::Beneficiary,
+		asset_kind: Self::AssetKind,
+		amount: Self::Balance,
+	) -> Result<Self::Id, Self::Error> {
+		PAID.with(|paid| *paid.borrow_mut().entry((to.clone(), asset_kind)).or_default() += amount);
+		Ok(LAST_ID.with(|lid| {
+			let x = *lid.borrow();
+			lid.replace(x + 1);
+			x
+		}))
+	}
+
+	fn check_payment(id: Self::Id) -> PaymentStatus {
+		STATUS.with(|s| s.borrow().get(&id).cloned().unwrap_or(PaymentStatus::Unknown))
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_successful(
+		_: &Self::Payer,
+		_: &Self::Beneficiary,
+		_: Self::AssetKind,
+		_: Self::Balance,
+	) {
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_concluded(_: Self::Id) {}
 }
