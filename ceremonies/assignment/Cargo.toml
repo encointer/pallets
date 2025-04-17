@@ -24,4 +24,9 @@ sp-core = { workspace = true, features = ["std"] }
 
 [features]
 default = ["std"]
-std = ["encointer-primitives/std", "sp-runtime/std", "sp-std/std"]
+std = [
+	"encointer-primitives/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-core/std"
+]
