@@ -38,9 +38,9 @@ pub use transfer::Transfer;
 mod benchmarking;
 #[cfg(test)]
 mod mock;
-mod transfer;
 #[cfg(test)]
 mod tests;
+mod transfer;
 mod weights;
 
 pub type BalanceOf<T> =

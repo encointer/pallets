@@ -2,9 +2,9 @@ use crate::*;
 use encointer_primitives::treasuries::{SwapAssetOption, SwapNativeOption};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+use parity_scale_codec::Encode;
 use sp_core::crypto::FromEntropy;
 use sp_runtime::SaturatedConversion;
-use parity_scale_codec::Encode;
 
 pub trait ArgumentsFactory<AssetKind> {
 	/// Factory function for an asset kind.
