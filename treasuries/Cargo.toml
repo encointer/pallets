@@ -65,6 +65,7 @@ runtime-benchmarks = [
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-reputation-commitments/runtime-benchmarks",
     "pallet-timestamp/runtime-benchmarks",
+    "test-utils/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-system/try-runtime",

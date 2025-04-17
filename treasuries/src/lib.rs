@@ -88,6 +88,10 @@ pub mod pallet {
 			Balance = BalanceOf<Self>,
 		>;
 
+		/// Helper type for benchmarks.
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: crate::benchmarking::ArgumentsFactory<Self::AssetKind>;
+
 		type WeightInfo: WeightInfo;
 	}
 

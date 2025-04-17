@@ -54,6 +54,8 @@ impl dut::Config for TestRuntime {
 	type AssetKind = AssetId;
 	type Paymaster = TestPay;
 	type WeightInfo = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 // boilerplate

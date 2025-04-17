@@ -45,6 +45,7 @@ runtime-benchmarks = [
     "pallet-encointer-ceremonies/runtime-benchmarks",
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-scheduler/runtime-benchmarks",
+    "pallet-encointer-treasuries/runtime-benchmarks",
 ]
 try-runtime = [
     "pallet-encointer-balances/try-runtime",

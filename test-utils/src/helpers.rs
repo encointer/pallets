@@ -171,17 +171,12 @@ impl Transfer for TestPay {
 
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_successful(
-		_from: &Self::Payer,
-		_to: &Self::Beneficiary,
-		_asset_kind: Self::AssetKind,
-		_amount: Self::Balance,
+		_: &Self::Payer,
+		_: &Self::Beneficiary,
+		_: Self::AssetKind,
+		_: Self::Balance,
 	) {
-		todo!()
 	}
-	/// Ensure that a call to `check_payment` with the given parameters will return either `Success`
-	/// or `Failure`.
 	#[cfg(feature = "runtime-benchmarks")]
-	fn ensure_concluded(_id: Self::Id) {
-		todo!()
-	}
+	fn ensure_concluded(_: Self::Id) {}
 }
