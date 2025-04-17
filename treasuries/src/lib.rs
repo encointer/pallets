@@ -32,13 +32,13 @@ const LOG: &str = "encointer";
 
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
-pub use payout::Transfer;
+pub use transfer::Transfer;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(test)]
 mod mock;
-mod payout;
+mod transfer;
 #[cfg(test)]
 mod tests;
 mod weights;

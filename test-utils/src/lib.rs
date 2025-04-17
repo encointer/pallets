@@ -225,6 +225,8 @@ macro_rules! impl_encointer_treasuries {
 			type AssetKind = AssetId;
 			type Paymaster = TestPay;
 			type WeightInfo = ();
+			#[cfg(feature = "runtime-benchmarks")]
+			type BenchmarkHelper = ();
 		}
 	};
 }
