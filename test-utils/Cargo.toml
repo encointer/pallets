@@ -44,10 +44,21 @@ runtime-benchmarks = [
     "pallet-encointer-ceremonies/runtime-benchmarks",
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-scheduler/runtime-benchmarks",
+    "encointer-primitives/runtime-benchmarks",
+    "frame-benchmarking/runtime-benchmarks",
+    "pallet-balances/runtime-benchmarks",
+    "pallet-timestamp/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
     "pallet-encointer-balances/try-runtime",
     "pallet-encointer-ceremonies/try-runtime",
     "pallet-encointer-communities/try-runtime",
     "pallet-encointer-scheduler/try-runtime",
+    "encointer-primitives/try-runtime",
+    "frame-support/try-runtime",
+    "frame-system/try-runtime",
+    "pallet-balances/try-runtime",
+    "pallet-timestamp/try-runtime",
+    "sp-runtime/try-runtime",
 ]

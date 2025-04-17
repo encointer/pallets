@@ -65,6 +65,7 @@ std = [
     "sp-io/std",
     "sp-runtime/std",
     "sp-std/std",
+    "sp-application-crypto?/std",
 ]
 
 runtime-benchmarks = [
@@ -75,6 +76,11 @@ runtime-benchmarks = [
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-scheduler/runtime-benchmarks",
     "sp-application-crypto",
+    "encointer-primitives/runtime-benchmarks",
+    "frame-benchmarking/runtime-benchmarks",
+    "pallet-timestamp/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
+    "test-utils/runtime-benchmarks",
 ]
 
 try-runtime = [
@@ -82,6 +88,11 @@ try-runtime = [
     "pallet-encointer-communities/try-runtime",
     "pallet-encointer-scheduler/try-runtime",
     "frame-system/try-runtime",
+    "encointer-primitives/try-runtime",
+    "frame-support/try-runtime",
+    "pallet-timestamp/try-runtime",
+    "sp-runtime/try-runtime",
+    "test-utils/try-runtime",
 ]
 
 mocks = []

@@ -50,6 +50,8 @@ std = [
     "sp-core/std",
     "sp-runtime/std",
     "sp-std/std",
+    "frame-benchmarking?/std",
+    "sp-io/std",
 ]
 runtime-benchmarks = [
     "approx",
@@ -58,9 +60,17 @@ runtime-benchmarks = [
     "frame-system/runtime-benchmarks",
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-reputation-commitments/runtime-benchmarks",
+    "encointer-primitives/runtime-benchmarks",
+    "frame-benchmarking/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
+    "test-utils/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-system/try-runtime",
     "pallet-encointer-communities/try-runtime",
     "pallet-encointer-reputation-commitments/try-runtime",
+    "encointer-primitives/try-runtime",
+    "frame-support/try-runtime",
+    "sp-runtime/try-runtime",
+    "test-utils/try-runtime",
 ]

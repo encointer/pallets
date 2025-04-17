@@ -1,0 +1,39 @@
+# Various checks to verify the cargo workspace and its crates are correctly configured.
+name: "Workspace features"
+
+on:
+  push:
+    branches: [ master, 'polkadot-v[0-9]+.[0-9]+.[0-9]+' ]
+  pull_request:
+    branches: [ master ]
+
+# cancel previous runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check workspace features
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Dont clone historic commits.
+
+      - name: Set rust version via common env file
+        run: cat .github/env >> $GITHUB_ENV
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "${{env.RUST_STABLE_VERSION}}"
+
+      - name: Install Zepter
+        run: cargo install --locked -q zepter && zepter --version
+
+      - name: Check features
+        run: |
+          zepter run check
