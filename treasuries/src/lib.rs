@@ -35,7 +35,7 @@ pub use pallet::*;
 pub use transfer::Transfer;
 
 #[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
+pub mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
