@@ -15,14 +15,14 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::common::BoundedIpfsCid;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 
 /// Did the attester meet the attestee physically, virtually or through asynchronous messages?
-#[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+#[derive(Default, Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum PresenceType {
 	/// could be "I have exchanged messages with the person I vouch for"
@@ -43,7 +43,7 @@ pub enum PresenceType {
 /// The nature of a vouch
 /// this set is most likely incomplete. we leave gaps in the encoding to have room for more kinds
 /// which still results in meaningful order
-#[derive(Default, Encode, Decode, Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+#[derive(Default, Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum VouchKind {
 	/// Unspecified. This should generally be handeled as an invalid vouch or an alien use case
@@ -67,7 +67,7 @@ pub enum VouchKind {
 pub type Rating = u8;
 
 /// additional information about the attestee's qualities
-#[derive(Default, Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+#[derive(Default, Encode, Decode, DecodeWithMemTracking,Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum VouchQuality {
 	/// Don't want to submit additional information
@@ -79,7 +79,7 @@ pub enum VouchQuality {
 	Rating(Rating),
 }
 
-#[derive(Default, Encode, Decode, PartialEq, Eq, RuntimeDebug, Clone, TypeInfo, MaxEncodedLen)]
+#[derive(Default, Encode, Decode, DecodeWithMemTracking,PartialEq, Eq, RuntimeDebug, Clone, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub struct Vouch<Moment> {
 	/// protected vouches can't be purged. unprotected ones can be lazily purged after a

@@ -2,7 +2,7 @@ use encointer_primitives::communities::CommunityIdentifier;
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use pallet_encointer_treasuries_rpc_runtime_api::TreasuriesApi as TreasuriesRuntimeApi;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;

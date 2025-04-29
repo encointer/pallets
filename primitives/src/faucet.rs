@@ -15,7 +15,7 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{communities::CommunityIdentifier, reputation_commitments::PurposeIdType};
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
 use scale_info::TypeInfo;
 use sp_core::{bounded::BoundedVec, ConstU32, MaxEncodedLen, RuntimeDebug};
 
@@ -25,7 +25,7 @@ use sp_std::vec::Vec;
 pub type WhiteListType = BoundedVec<CommunityIdentifier, ConstU32<1024>>;
 pub type FaucetNameType = BoundedVec<u8, ConstU32<64>>;
 
-#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, MaxEncodedLen, TypeInfo)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking,Eq, PartialEq, RuntimeDebug, Default, MaxEncodedLen, TypeInfo)]
 pub struct Faucet<AccountId, Balance> {
 	pub name: FaucetNameType,
 	pub purpose_id: PurposeIdType,

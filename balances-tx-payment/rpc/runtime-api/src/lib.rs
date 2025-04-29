@@ -20,10 +20,10 @@
 
 use core::fmt;
 use frame_support::pallet_prelude::TypeInfo;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
 
 /// Error type of this RPC api.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking,Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum Error {
 	/// The call to runtime failed.
 	RuntimeError,

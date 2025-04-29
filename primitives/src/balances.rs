@@ -16,7 +16,7 @@
 
 use ep_core::fixed::types::I64F64;
 use log::{trace, warn};
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 use sp_std::fmt::Debug;

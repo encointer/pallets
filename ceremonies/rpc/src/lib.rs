@@ -16,7 +16,7 @@
 
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
 use parking_lot::RwLock;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;

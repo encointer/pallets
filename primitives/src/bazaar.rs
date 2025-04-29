@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 
@@ -23,7 +23,7 @@ use crate::{common::PalletString, communities::CommunityIdentifier};
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, DecodeWithMemTracking,Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessIdentifier<AccountId> {
@@ -40,7 +40,7 @@ impl<AccountId> BusinessIdentifier<AccountId> {
 }
 
 /// Data structure used for organizing the pallet's storage.
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking,Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessData {
@@ -59,7 +59,7 @@ impl BusinessData {
 /// Structure that contains the [BusinessData] including its controller account.
 ///
 /// Intended as a return value for RPC requests.
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking,Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct Business<AccountId> {
@@ -75,7 +75,7 @@ impl<AccountId> Business<AccountId> {
 
 pub type OfferingIdentifier = u32;
 
-#[derive(Encode, Decode, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking,Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct OfferingData {

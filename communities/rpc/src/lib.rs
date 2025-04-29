@@ -24,7 +24,7 @@ use encointer_primitives::{
 use encointer_rpc::Error;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use pallet_encointer_communities_rpc_runtime_api::CommunitiesApi as CommunitiesRuntimeApi;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
 use parking_lot::RwLock;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;

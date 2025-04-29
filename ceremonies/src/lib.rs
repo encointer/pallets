@@ -46,7 +46,7 @@ use frame_support::{
 use frame_system::ensure_signed;
 use log::{debug, error, info, trace, warn};
 use pallet_encointer_scheduler::OnCeremonyPhaseChange;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedSlice;
 use sp_runtime::traits::{IdentifyAccount, Member, Verify};

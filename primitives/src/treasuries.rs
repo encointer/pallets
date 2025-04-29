@@ -1,12 +1,12 @@
 use crate::{balances::BalanceType, communities::CommunityIdentifier};
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 
 #[derive(
-	Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen,
+	Encode, Decode,Default, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
