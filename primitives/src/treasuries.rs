@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::RuntimeDebug;
 
 #[derive(
-	Encode, Decode,Default, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen,
+	Encode, Decode, DecodeWithMemTracking, Default, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]

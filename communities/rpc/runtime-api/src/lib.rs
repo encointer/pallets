@@ -26,7 +26,7 @@ use encointer_primitives::{
 	common::PalletString,
 	communities::{CommunityIdentifier, Location},
 };
-use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
+use parity_scale_codec::{Decode, Encode};
 
 sp_api::decl_runtime_apis! {
 

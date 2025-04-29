@@ -3,7 +3,7 @@ use encointer_primitives::{
 	communities::CommunityIdentifier,
 	scheduler::CeremonyIndexType,
 };
-use parity_scale_codec::{Decode, DecodeWithMemTracking,EncodeLike};
+use parity_scale_codec::{Decode, EncodeLike};
 pub fn remove_participant_from_registry<Index, Registry, Count, AccountId>(
 	cid: CommunityIdentifier,
 	cindex: CeremonyIndexType,

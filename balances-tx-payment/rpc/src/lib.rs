@@ -26,7 +26,7 @@ use jsonrpsee::{
 pub use pallet_transaction_payment::RuntimeDispatchInfo;
 use pallet_transaction_payment::{FeeDetails, InclusionFee};
 use pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi;
-use parity_scale_codec::{Codec, Decode, DecodeWithMemTracking,Encode};
+use parity_scale_codec::{Codec, Decode, Encode};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;

@@ -193,6 +193,7 @@ fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 #[derive(
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	Copy,
 	Clone,
 	PartialEq,

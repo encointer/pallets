@@ -105,11 +105,9 @@ sp-inherents = "36.0.0"
 sp-keyring = "41.0.0"
 sp-keystore = "0.42.0"
 
-#[patch."https://github.com/encointer/substrate-fixed"]
-#substrate-fixed = { path = "../substrate-fixed"}
-#
-#[patch."https://github.com/encointer/typenum"]
-#typenum = { path = "../typenum"}
+[patch.crates-io]
+substrate-fixed = { path = "../substrate-fixed"}
+typenum = { path = "../typenum"}
 
 #[patch."https://github.com/encointer/geohash"]
 #geohash = { path = "../geohash"}
