@@ -15,10 +15,10 @@
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::AccountId;
+use crate::AccountKeyring;
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
 use sp_core::{sr25519, Encode, Pair, U256};
-use sp_keyring::AccountKeyring;
 use sp_runtime::DispatchError;
 
 /// shorthand to convert Pair to AccountId

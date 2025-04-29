@@ -25,7 +25,7 @@ use sp_core::crypto::AccountId32;
 use sp_runtime::{generic, traits::IdentifyAccount, MultiSignature, Perbill};
 
 // convenience reexport such that the tests do not need to put sp-keyring in the Cargo.toml.
-pub use sp_keyring::AccountKeyring;
+pub use sp_keyring::Sr25519Keyring as AccountKeyring;
 
 // reexports for macro resolution
 pub use encointer_primitives::storage;
