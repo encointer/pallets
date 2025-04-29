@@ -23,7 +23,17 @@ pub mod v1 {
 	use super::*;
 
 	#[derive(
-		Default, Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+		Default,
+		Encode,
+		Decode,
+		DecodeWithMemTracking,
+		Copy,
+		Clone,
+		PartialEq,
+		Eq,
+		RuntimeDebug,
+		TypeInfo,
+		MaxEncodedLen,
 	)]
 	pub enum Reputation {
 		// no attestations for attendance claim

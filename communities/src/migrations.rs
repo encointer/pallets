@@ -17,7 +17,9 @@ mod v0 {
 
 	pub type IpfsCid = UnboundedPalletString;
 
-	#[derive(Encode, Decode, DecodeWithMemTracking,Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+	#[derive(
+		Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo,
+	)]
 	pub struct UnboundedCommunityMetadata {
 		/// utf8 encoded name
 		pub name: UnboundedPalletString,
@@ -101,7 +103,16 @@ pub mod v1 {
 	use encointer_primitives::{common::BoundedIpfsCid, communities::CommunityRules};
 
 	#[derive(
-		Encode, Decode, DecodeWithMemTracking,Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+		Encode,
+		Decode,
+		DecodeWithMemTracking,
+		Default,
+		Clone,
+		PartialEq,
+		Eq,
+		RuntimeDebug,
+		TypeInfo,
+		MaxEncodedLen,
 	)]
 	pub struct CommunityMetadataV1 {
 		/// utf8 encoded name

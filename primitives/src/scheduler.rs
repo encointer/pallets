@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 
 #[cfg(feature = "serde_derive")]
@@ -22,7 +22,19 @@ use serde::{Deserialize, Serialize};
 
 pub type CeremonyIndexType = u32;
 
-#[derive(Default, Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Default,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Debug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CeremonyPhaseType {
 	#[default]

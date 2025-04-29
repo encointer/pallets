@@ -16,7 +16,7 @@
 
 use crate::bs58_verify::{Bs58Error, Bs58verify};
 use frame_support::traits::Len;
-use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -75,7 +75,17 @@ pub fn validate_ipfs_cid(cid: &BoundedIpfsCid) -> Result<(), IpfsValidationError
 	Bs58verify::verify(cid.as_bytes_or_noop()).map_err(IpfsValidationError::InvalidBase58)
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking,Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum IpfsValidationError {
 	/// Invalid length supplied. Should be 46. Is: \[length\]

@@ -1,5 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::{vec, vec::Vec};
@@ -339,7 +339,9 @@ impl<T> GetOrErr for Vec<T> {
 
 #[derive(
 	Encode,
-	Decode,DecodeWithMemTracking,Clone,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
 	Copy,
 	PartialEq,
 	Eq,
@@ -357,7 +359,9 @@ pub enum MeetupValidationError {
 }
 #[derive(
 	Encode,
-	Decode,DecodeWithMemTracking,Clone,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
 	Copy,
 	PartialEq,
 	Eq,

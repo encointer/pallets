@@ -19,7 +19,7 @@ use crate::{
 	communities::{CommunityIdentifier, Location},
 	scheduler::CeremonyPhaseType,
 };
-use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -47,7 +47,17 @@ pub type MeetupData<AccountId, Moment> =
 pub type ReputationCountType = u128;
 
 #[derive(
-	Default, Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Default,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum Reputation {
@@ -76,7 +86,18 @@ impl Reputation {
 	}
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum ParticipantType {
 	// participant is a bootstrapper for this community
@@ -90,7 +111,7 @@ pub enum ParticipantType {
 }
 
 #[derive(
-	Encode, Decode,Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -209,7 +230,17 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
 
 /// Reputation that is linked to a specific community
 #[derive(
-	Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -227,7 +258,17 @@ impl CommunityReputation {
 pub type AccountIdFor<Signature> = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 #[derive(
-	Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -274,7 +315,17 @@ where
 }
 
 #[derive(
-	Encode, Decode, DecodeWithMemTracking,Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -292,7 +343,17 @@ impl AssignmentCount {
 }
 
 #[derive(
-	Encode, Decode, DecodeWithMemTracking,Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -306,7 +367,17 @@ pub struct Assignment {
 // Todo: abstract AssignmentParams trait and use two different structs: AssignmentParams,
 // LocationAssignmentParams
 #[derive(
-	Encode, Decode, DecodeWithMemTracking,Default, Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -336,7 +407,7 @@ pub fn reputation_cache_dirty_key<Account: Encode>(account: &Account) -> Vec<u8>
 	(consts::REPUTATION_CACHE_DIRTY_KEY, account).encode()
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking,Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AggregatedAccountDataPersonal<AccountId, Moment> {
@@ -348,7 +419,17 @@ pub struct AggregatedAccountDataPersonal<AccountId, Moment> {
 }
 
 #[derive(
-	Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -357,7 +438,7 @@ pub struct AggregatedAccountDataGlobal {
 	pub ceremony_index: CeremonyIndexType,
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking,Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AggregatedAccountData<AccountId, Moment> {
@@ -366,7 +447,17 @@ pub struct AggregatedAccountData<AccountId, Moment> {
 }
 
 #[derive(
-	Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -375,7 +466,9 @@ pub struct CeremonyInfo {
 	pub ceremony_index: CeremonyIndexType,
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking,Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo)]
+#[derive(
+	Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct ReputationCacheValue {
@@ -383,7 +476,18 @@ pub struct ReputationCacheValue {
 	pub reputation: Vec<(CeremonyIndexType, CommunityReputation)>,
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking,Copy, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum MeetupResult {
 	Ok,

@@ -1,4 +1,4 @@
-use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::{
 	crypto::{AccountId32, ByteArray},
@@ -9,7 +9,18 @@ use sp_core::{
 ///
 /// Very similar to the `AccountId32`, but it is purposely different
 /// as it does not implement the SS58 codec.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, DecodeWithMemTracking,MaxEncodedLen, TypeInfo)]
+#[derive(
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	TypeInfo,
+)]
 pub struct Bip340([u8; 32]);
 
 impl Bip340 {

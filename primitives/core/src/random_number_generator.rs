@@ -18,7 +18,7 @@
 //! A simple pseudo random number generator that allows a stream of random numbers to be efficiently
 //! created from a single initial seed hash.
 
-use parity_scale_codec::{Decode, DecodeWithMemTracking,Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::traits::{Hash, TrailingZeroInput};
 
@@ -46,7 +46,7 @@ use sp_runtime::traits::{Hash, TrailingZeroInput};
 /// If you're persisting it over blocks, be aware that the sequence will start to repeat. This won't
 /// be a practical issue unless you're using tiny hash types (e.g. 64-bit) and pulling hundred of
 /// megabytes of data from it.
-#[derive(Encode, Decode, DecodeWithMemTracking,TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo)]
 pub struct RandomNumberGenerator<Hashing: Hash> {
 	current: Hashing::Output,
 	offset: u32,

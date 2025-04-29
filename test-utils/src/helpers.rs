@@ -14,8 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::AccountId;
-use crate::AccountKeyring;
+use crate::{AccountId, AccountKeyring};
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
 use sp_core::{sr25519, Encode, Pair, U256};
