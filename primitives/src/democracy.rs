@@ -81,7 +81,7 @@ pub enum ProposalAccessPolicy {
 	Community(CommunityIdentifier),
 }
 
-#[derive(Encode, Decode, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, DecodeWithMemTracking, RuntimeDebug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub enum ProposalAction<AccountId, Balance, Moment> {
