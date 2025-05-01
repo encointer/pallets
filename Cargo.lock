@@ -1400,7 +1400,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d162beedaa69905488a8da94f5ac3edb4dd4788b732fadb7bd120b2625c1976"
 dependencies = [
  "data-encoding",
- "syn 1.0.109",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -7746,7 +7746,9 @@ dependencies = [
 
 [[package]]
 name = "substrate-fixed"
-version = "0.5.9"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a58670b92bb23e63b32b32167ff4edf8a34a2d53a2bdfcd60a6d8ead57bd563"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -7756,9 +7758,9 @@ dependencies = [
 
 [[package]]
 name = "substrate-geohash"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa2aad67d4ac1b37d97338ab6fd18fd5ec79c35a24112028e6feda0d67142e9a"
+checksum = "9c822853591796a4f735f88ad603d32062090374d3c1c8118c62c28d6f85a683"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -7782,9 +7784,9 @@ dependencies = [
 
 [[package]]
 name = "substrate-typenum"
-version = "1.16.0"
+version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0f0091e93c2c75b233ae39424c52cb8a662c0811fb68add149e20e5d7e8a788"
+checksum = "9cd64d3efe988228b8496698197ee60cfbfcedbf226961300e559870c1a3e8e0"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -8341,7 +8343,9 @@ dependencies = [
 
 [[package]]
 name = "typenum"
-version = "1.16.0"
+version = "1.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
 name = "uint"

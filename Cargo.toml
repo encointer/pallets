@@ -59,8 +59,8 @@ pallet-encointer-treasuries-rpc-runtime-api = { path = "treasuries/rpc/runtime-a
 array-bytes = "6.1.0"
 bs58 = { version = "0.5.0", default-features = false, features = ["alloc"] }
 crc = "3.2.1"
-fixed = { package = "substrate-fixed", default-features = false, version = "0.5.9" }
-geohash = { package = "substrate-geohash", version = "0.13.0" }
+fixed = { package = "substrate-fixed", default-features = false, version = "0.6.0" }
+geohash = { package = "substrate-geohash", version = "0.14.0" }
 impl-serde = { version = "0.5.0", default-features = false }
 impl-trait-for-tuples = { version = "0.2.2", default-features = false }
 log = { version = "0.4.20", default-features = false }
@@ -105,9 +105,7 @@ sp-inherents = "36.0.0"
 sp-keyring = "41.0.0"
 sp-keystore = "0.42.0"
 
-[patch.crates-io]
-substrate-fixed = { path = "../substrate-fixed"}
-typenum = { path = "../typenum"}
-
-#[patch."https://github.com/encointer/geohash"]
+#[patch.crates-io]
+#substrate-fixed = { path = "../substrate-fixed"}
+#typenum = { path = "../typenum"}
 #geohash = { path = "../geohash"}
