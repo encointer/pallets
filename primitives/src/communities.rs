@@ -19,7 +19,7 @@ use bs58;
 use crc::{Crc, CRC_32_CKSUM};
 use ep_core::{bip340::Bip340, fixed::types::I64F64};
 use geohash::GeoHash as GeohashGeneric;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
@@ -92,7 +92,18 @@ pub fn validate_demurrage(demurrage: &Demurrage) -> Result<(), RangeError> {
 }
 
 #[derive(
-	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, PartialOrd, Ord, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Default,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -193,6 +204,7 @@ fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 #[derive(
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	Copy,
 	Clone,
 	PartialEq,
@@ -220,7 +232,17 @@ impl Location {
 }
 
 #[derive(
-	Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, PartialOrd, Ord, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -231,6 +253,7 @@ pub enum AnnouncementSigner {
 #[derive(
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	Copy,
 	Clone,
 	PartialEq,
@@ -251,7 +274,17 @@ pub enum CommunityRules {
 	BeeDance,
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CommunityMetadata {
@@ -271,7 +304,7 @@ pub struct CommunityMetadata {
 	pub rules: CommunityRules,
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CidName {
@@ -357,7 +390,17 @@ impl Default for CommunityMetadata {
 	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum CommunityMetadataError {
 	/// Invalid ascii character at \[index\]

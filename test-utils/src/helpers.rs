@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::AccountId;
+use crate::{AccountId, AccountKeyring};
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
 use sp_core::{sr25519, Encode, Pair, U256};
-use sp_keyring::AccountKeyring;
 use sp_runtime::DispatchError;
 
 /// shorthand to convert Pair to AccountId
@@ -28,7 +27,7 @@ pub fn account_id(pair: &sr25519::Pair) -> AccountId {
 
 /// All well-known keys are bootstrappers for easy testing afterwards
 pub fn bootstrappers() -> Vec<sr25519::Pair> {
-	return [
+	[
 		AccountKeyring::Alice,
 		AccountKeyring::Bob,
 		AccountKeyring::Charlie,
@@ -38,7 +37,7 @@ pub fn bootstrappers() -> Vec<sr25519::Pair> {
 	]
 	.iter()
 	.map(|k| k.pair())
-	.collect();
+	.collect()
 }
 
 /// register a simple test community with a specified location and defined bootstrappers
