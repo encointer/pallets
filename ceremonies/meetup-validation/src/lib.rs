@@ -1,13 +1,31 @@
+// Copyright (c) 2019 Alain Brenzikofer
+// This file is part of Encointer
+//
+// Encointer is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Encointer is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
+
+//! Validates the participant rewards distribution based on their votes and attestations.
+//!
+//! The participant vecs are vecs of participant ids. The `participant_vote` and
+//! `participant_attestations` vecs (and their derived vecs) are indexed by the participant index,
+//! i.e. `participant_votes[i]` holds the vote of participant i.
+
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_std::{vec, vec::Vec};
-
-/// This module is about finding which participants get their rewards based on their votes and
-/// attestations. The participant vecs are always vecs of participant ids
-/// The partitipant_vote and partcipant_attestations vecs (and their derived vecs) are indexed by
-/// the participant index ie. participant_votes[i] holds the vote of participant i
 
 type ParticipantIndex = usize;
 type Participants = Vec<ParticipantIndex>;
