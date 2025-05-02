@@ -28,7 +28,6 @@ use sp_std::vec::Vec;
 /// Substrate runtimes provide no string type. Hence, for arbitrary data of varying length the
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
 /// utf8 decode bytes into a string.
-
 pub type PalletString = BoundedVec<u8, ConstU32<256>>;
 
 pub trait FromStr: Sized {
