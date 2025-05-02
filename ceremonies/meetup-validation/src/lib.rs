@@ -90,8 +90,7 @@ fn num_attestations_matches_vote(
 	participant_attestations
 		.iter()
 		.enumerate()
-		.map(|(i, v)| !(legit_participants.contains(&i)) || v.len() == (n_confirmed - 1) as usize)
-		.all(|item| item)
+		.all(|(i, v)| !(legit_participants.contains(&i)) || v.len() == (n_confirmed - 1) as usize)
 }
 
 fn attestation_graph_is_fully_connected(

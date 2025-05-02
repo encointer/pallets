@@ -27,7 +27,7 @@ pub fn account_id(pair: &sr25519::Pair) -> AccountId {
 
 /// All well-known keys are bootstrappers for easy testing afterwards
 pub fn bootstrappers() -> Vec<sr25519::Pair> {
-	return [
+	[
 		AccountKeyring::Alice,
 		AccountKeyring::Bob,
 		AccountKeyring::Charlie,
@@ -37,7 +37,7 @@ pub fn bootstrappers() -> Vec<sr25519::Pair> {
 	]
 	.iter()
 	.map(|k| k.pair())
-	.collect();
+	.collect()
 }
 
 /// register a simple test community with a specified location and defined bootstrappers
