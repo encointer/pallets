@@ -1721,7 +1721,7 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 
 [[package]]
 name = "encointer-balances-tx-payment"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1741,7 +1741,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-balances-tx-payment-rpc-runtime-api",
  "encointer-primitives",
@@ -1764,7 +1764,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc-runtime-api"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1776,7 +1776,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-ceremonies-assignment"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "sp-core",
@@ -1786,7 +1786,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-meetup-validation"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -1800,7 +1800,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "15.4.0"
+version = "16.4.0"
 dependencies = [
  "approx",
  "bs58",
@@ -1823,7 +1823,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-rpc"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "jsonrpsee",
  "jsonrpsee-core",
@@ -1884,7 +1884,7 @@ checksum = "e48c92028aaa870e83d51c64e5d4e0b6981b360c522198c23959f219a4e1b15b"
 
 [[package]]
 name = "ep-core"
-version = "15.0.0"
+version = "16.0.0"
 dependencies = [
  "array-bytes",
  "impl-serde",
@@ -4664,7 +4664,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "15.2.0"
+version = "16.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4684,7 +4684,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4702,7 +4702,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4721,7 +4721,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4732,7 +4732,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -4761,7 +4761,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4780,7 +4780,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4791,7 +4791,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4812,7 +4812,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4832,7 +4832,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -4842,7 +4842,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "15.4.0"
+version = "16.4.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4872,7 +4872,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-faucet"
-version = "15.2.0"
+version = "16.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4893,7 +4893,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-commitments"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4916,7 +4916,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4935,7 +4935,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries"
-version = "15.4.1"
+version = "16.4.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4959,7 +4959,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries-rpc"
-version = "15.3.0"
+version = "16.3.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4980,7 +4980,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries-rpc-runtime-api"
-version = "15.3.0"
+version = "16.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -4992,7 +4992,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-vouches"
-version = "15.1.0"
+version = "16.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -7912,7 +7912,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "test-utils"
-version = "15.3.0"
+version = "16.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
