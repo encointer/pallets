@@ -16,7 +16,7 @@
 
 use ep_core::fixed::types::I64F64;
 use log::{trace, warn};
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::RuntimeDebug;
 use sp_std::fmt::Debug;
@@ -49,7 +49,17 @@ pub type Demurrage = I64F64;
 pub type FeeConversionFactorType = u128;
 
 #[derive(
-	Encode, Decode, Default, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	RuntimeDebug,
+	Clone,
+	Copy,
+	PartialEq,
+	Eq,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]

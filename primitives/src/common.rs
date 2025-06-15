@@ -16,7 +16,7 @@
 
 use crate::bs58_verify::{Bs58Error, Bs58verify};
 use frame_support::traits::Len;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,6 @@ use sp_std::vec::Vec;
 /// Substrate runtimes provide no string type. Hence, for arbitrary data of varying length the
 /// `Vec<u8>` is used. In the polkadot-js the typedef `Text` is used to automatically
 /// utf8 decode bytes into a string.
-
 pub type PalletString = BoundedVec<u8, ConstU32<256>>;
 
 pub trait FromStr: Sized {
@@ -75,7 +74,17 @@ pub fn validate_ipfs_cid(cid: &BoundedIpfsCid) -> Result<(), IpfsValidationError
 	Bs58verify::verify(cid.as_bytes_or_noop()).map_err(IpfsValidationError::InvalidBase58)
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Clone,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 pub enum IpfsValidationError {
 	/// Invalid length supplied. Should be 46. Is: \[length\]
