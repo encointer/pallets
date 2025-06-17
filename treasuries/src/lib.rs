@@ -227,12 +227,12 @@ pub mod pallet {
 		pub fn test_asset_pay(
 			origin: OriginFor<T>,
 			cid: Option<CommunityIdentifier>,
-			asset_id: T::AssetKind,
+			asset_id: Box<T::AssetKind>,
 			desired_asset_amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 
-			Self::do_spend_asset(cid, &sender, asset_id, desired_asset_amount)?;
+			Self::do_spend_asset(cid, &sender, *asset_id, desired_asset_amount)?;
 			Ok(().into())
 		}
 	}
