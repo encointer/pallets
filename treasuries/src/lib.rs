@@ -16,7 +16,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
 use core::marker::PhantomData;
+use alloc::boxed::Box;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
 use frame_support::{
 	traits::{Currency, ExistenceRequirement::KeepAlive, Get},
