@@ -456,7 +456,7 @@ fn swap_asset_insufficient_cc_fails(burn: bool) {
 	});
 }
 
-// Note: We don't know the treasury balance on the other chain. 
+// Note: We don't know the treasury balance on the other chain.
 // Hence, we don't test `swap_asset_insufficient_treasury_funds_fails`.
 
 #[rstest(burn, case(false), case(true))]
