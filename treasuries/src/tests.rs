@@ -456,47 +456,8 @@ fn swap_asset_insufficient_cc_fails(burn: bool) {
 	});
 }
 
-// Todo: We don't know the treasury balance on the other chain. Hence, we don't check.
-// #[rstest(burn, case(false), case(true))]
-// fn swap_asset_insufficient_treasury_funds_fails(burn: bool) {
-// 	new_test_ext().execute_with(|| {
-// 		System::set_block_number(System::block_number() + 1); // this is needed to assert events
-// 		let beneficiary = AccountId::from(AccountKeyring::Alice);
-// 		let asset_allowance: BalanceOf<TestRuntime> = 100_000_000;
-// 		let rate_float = 0.000_000_2;
-// 		let rate = Some(BalanceType::from_num(rate_float));
-// 		let cid = CommunityIdentifier::default();
-// 		let asset_id = 1;
-// 		let swap_option = SwapAssetOption {
-// 			cid,
-// 			asset_allowance,
-// 			asset_id,
-// 			rate,
-// 			do_burn: burn,
-// 			valid_from: None,
-// 			valid_until: None,
-// 		};
-//
-// 		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
-//
-// 		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(
-// 			cid,
-// 			&beneficiary,
-// 			swap_option
-// 		));
-// 		assert_eq!(EncointerTreasuries::swap_asset_options(cid, &beneficiary), Some(swap_option));
-//
-// 		let swap_native_amount = 50_000_000;
-// 		assert_err!(
-// 			EncointerTreasuries::swap_asset(
-// 				RuntimeOrigin::signed(beneficiary.clone()),
-// 				cid,
-// 				swap_native_amount
-// 			),
-// 			Error::<TestRuntime>::InsufficientNativeFunds
-// 		);
-// 	});
-// }
+// Note: We don't know the treasury balance on the other chain. 
+// Hence, we don't test `swap_asset_insufficient_treasury_funds_fails`.
 
 #[rstest(burn, case(false), case(true))]
 fn swap_asset_insufficient_allowance_fails(burn: bool) {
