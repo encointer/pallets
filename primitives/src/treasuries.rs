@@ -41,7 +41,17 @@ pub struct SwapNativeOption<NativeBalance, Moment> {
 }
 
 #[derive(
-	Encode, Decode, DecodeWithMemTracking, Default, RuntimeDebug, Clone, Copy, PartialEq, Eq, TypeInfo, MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	RuntimeDebug,
+	Clone,
+	Copy,
+	PartialEq,
+	Eq,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]

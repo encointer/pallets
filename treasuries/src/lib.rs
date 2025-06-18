@@ -18,8 +18,8 @@
 
 extern crate alloc;
 
-use core::marker::PhantomData;
 use alloc::boxed::Box;
+use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
 use frame_support::{
 	traits::{Currency, ExistenceRequirement::KeepAlive, Get},

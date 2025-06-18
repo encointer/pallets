@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{AccountId, Balance, AccountKeyring};
+use crate::{AccountId, AccountKeyring, Balance};
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
 use frame_support::{
 	pallet_prelude::DispatchResultWithPostInfo,
