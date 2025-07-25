@@ -58,8 +58,8 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config + pallet_encointer_balances::Config + pallet_timestamp::Config
 	{
-        #[allow(deprecated)]
-        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		#[allow(deprecated)]
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId>;
 
 		/// The treasuries' pallet id, used for deriving sovereign account IDs per community.
