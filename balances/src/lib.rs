@@ -109,7 +109,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
 			<FeeConversionFactor<T>>::put(fee_conversion_factor);
-			info!(target: LOG, "set fee conversion factor to {}", fee_conversion_factor);
+			info!(target: LOG, "set fee conversion factor to {fee_conversion_factor}");
 			Self::deposit_event(Event::FeeConversionFactorUpdated(fee_conversion_factor));
 			Ok(().into())
 		}
@@ -341,7 +341,7 @@ impl<T: Config> Pallet<T> {
 		<Balance<T>>::insert(community_id, who, entry_who);
 
 		Self::deposit_event(Event::Issued(community_id, who.clone(), amount));
-		debug!(target: LOG, "issue {:?} for {:?}", amount, who);
+		debug!(target: LOG, "issue {amount:?} for {who:?}");
 		Ok(())
 	}
 

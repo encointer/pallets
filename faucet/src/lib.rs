@@ -152,7 +152,7 @@ pub mod pallet {
 				Faucet { name: name.clone(), purpose_id, whitelist, drip_amount, creator: from },
 			);
 
-			info!(target: LOG, "faucet created: {:?}, {:?}", name, faucet_account);
+			info!(target: LOG, "faucet created: {name:?}, {faucet_account:?}");
 			Self::deposit_event(Event::FaucetCreated(faucet_account, name));
 
 			Ok(().into())
@@ -224,7 +224,7 @@ pub mod pallet {
 				AllowDeath,
 			)?;
 
-			info!(target: LOG, "faucet dissolved {:?}", faucet_account);
+			info!(target: LOG, "faucet dissolved {faucet_account:?}");
 			Self::deposit_event(Event::FaucetDissolved(faucet_account));
 			Ok(().into())
 		}
@@ -258,7 +258,7 @@ pub mod pallet {
 				AllowDeath,
 			)?;
 
-			info!(target: LOG, "faucet closed {:?}", faucet_account);
+			info!(target: LOG, "faucet closed {faucet_account:?}");
 			Self::deposit_event(Event::FaucetClosed(faucet_account));
 
 			Ok(().into())
@@ -272,7 +272,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::ControllerOrigin::ensure_origin(origin)?;
 			<ReserveAmount<T>>::put(reserve_amount);
-			info!(target: LOG, "reserve amount set to {:?} s", reserve_amount);
+			info!(target: LOG, "reserve amount set to {reserve_amount:?} s");
 			Self::deposit_event(Event::ReserveAmountUpdated(reserve_amount));
 			Ok(().into())
 		}

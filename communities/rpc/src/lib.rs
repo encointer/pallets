@@ -83,7 +83,7 @@ where
 	pub fn cache_dirty(&self) -> bool {
 		match self.storage.read().get(STORAGE_PREFIX, CACHE_DIRTY_KEY) {
 			Some(d) => Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
-				log::error!("Cache dirty bit: {:?}", e);
+				log::error!("Cache dirty bit: {e:?}");
 				log::info!("Defaulting to dirty == true");
 				true
 			}),
@@ -158,7 +158,7 @@ where
 
 		match self.get_storage(CIDS_KEY)? {
 			Some(cids) => {
-				log::info!("Using cached community list: {:?}", cids);
+				log::info!("Using cached community list: {cids:?}");
 				Ok(cids)
 			},
 			None => Err(Error::OffchainStorageNotFound(format!("{CIDS_KEY:?}")).into()),
@@ -201,5 +201,5 @@ where
 
 /// This should never happen!
 fn warn_storage_inconsistency(cid: &CommunityIdentifier) {
-	log::warn!("Storage inconsistency. Could not find cid: {:?} in offchain storage. This is a fatal bug in the pallet", cid)
+	log::warn!("Storage inconsistency. Could not find cid: {cid:?} in offchain storage. This is a fatal bug in the pallet")
 }

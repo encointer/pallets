@@ -242,9 +242,7 @@ pub mod v2 {
 
 			log::info!(
 				target: TARGET,
-				"Running migration with current storage version {:?} / onchain {:?}",
-				current_version,
-				onchain_version
+				"Running migration with current storage version {current_version:?} / onchain {onchain_version:?}"
 			);
 
 			let mut translated = 0u64;
@@ -260,7 +258,7 @@ pub mod v2 {
 					|k: CommunityIdentifier, meta: UnboundedCommunityMetadata| {
 						info!(
 							target: TARGET,
-							"     Migrating community metadata from v0 to v2 for {:?}...", k
+							"     Migrating community metadata from v0 to v2 for {k:?}..."
 						);
 						translated.saturating_inc();
 						Some(meta.migrate_to_v2())
@@ -271,7 +269,7 @@ pub mod v2 {
 					|k: CommunityIdentifier, meta: CommunityMetadataV1| {
 						info!(
 							target: TARGET,
-							"     Migrating community metadata from v1 to v2 for {:?}...", k
+							"     Migrating community metadata from v1 to v2 for {k:?}..."
 						);
 						translated.saturating_inc();
 						Some(meta.migrate_to_v2())

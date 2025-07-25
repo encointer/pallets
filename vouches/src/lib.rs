@@ -73,7 +73,7 @@ pub mod pallet {
 					Ok(().into())
 				},
 			)?;
-			info!(target: LOG, "vouching: {:?} for {:?}, vouch type: {:?}, quality: {:?}", attester, attestee, vouch_kind, quality);
+			info!(target: LOG, "vouching: {attester:?} for {attestee:?}, vouch type: {vouch_kind:?}, quality: {quality:?}");
 			Self::deposit_event(Event::VouchedFor { attestee, attester, vouch_kind });
 			Ok(().into())
 		}
