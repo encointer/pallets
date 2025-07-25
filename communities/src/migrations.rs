@@ -169,14 +169,13 @@ pub mod v2 {
 			);
 
 			let cid_count = v0::CommunityIdentifiers::<T>::get().len() as u32;
-			log::info!(target: TARGET, "{} cids will be migrated.", cid_count,);
+			log::info!(target: TARGET, "{cid_count} cids will be migrated.");
 			ensure!(cid_count <= T::MaxCommunityIdentifiers::get(), "too many cids");
 
 			let cmeta_count = v0::CommunityMetadata::<T>::iter().count() as u32;
 			log::info!(
 				target: TARGET,
-				"{} community metadata entried will be migrated.",
-				cmeta_count,
+				"{cmeta_count} community metadata entried will be migrated.",
 			);
 
 			let cids_by_geohash = v0::CommunityIdentifiersByGeohash::<T>::iter();
@@ -191,8 +190,7 @@ pub mod v2 {
 			}
 			log::info!(
 				target: TARGET,
-				"{} cids by geohash will be migrated.",
-				cids_by_geohash_count,
+				"{cids_by_geohash_count} cids by geohash will be migrated."
 			);
 
 			let locations_by_geohash = v0::Locations::<T>::iter();
@@ -207,8 +205,7 @@ pub mod v2 {
 			}
 			log::info!(
 				target: TARGET,
-				"{} locations by geohash will be migrated.",
-				locations_by_geohash_count,
+				"{locations_by_geohash_count} locations by geohash will be migrated.",
 			);
 
 			let bootstrappers = v0::Bootstrappers::<T>::iter();
@@ -218,7 +215,7 @@ pub mod v2 {
 				ensure!(count <= T::MaxBootstrappers::get(), "too many bootstrappers");
 				bootstrappers_count += count
 			}
-			log::info!(target: TARGET, "{} bootstrappers will be migrated.", bootstrappers_count,);
+			log::info!(target: TARGET, "{bootstrappers_count} bootstrappers will be migrated.");
 
 			// For community metadata, we do not need any checks, because the data is bounded
 			// already due to the CommmunityMetadata validate() function.
@@ -324,14 +321,13 @@ pub mod v2 {
 				"must migrate all bootstrappers"
 			);
 
-			log::info!(target: TARGET, "{} community identifiers migrated", new_cids_count);
+			log::info!(target: TARGET, "{new_cids_count} community identifiers migrated");
 			log::info!(
 				target: TARGET,
-				"{} community identifiers by geohash migrated",
-				new_cids_by_geohash_count
+				"{new_cids_by_geohash_count} community identifiers by geohash migrated"
 			);
-			log::info!(target: TARGET, "{} locations migrated", new_locations_by_geohash_count);
-			log::info!(target: TARGET, "{} bootstrappers migrated", new_bootstrappers_count);
+			log::info!(target: TARGET, "{new_locations_by_geohash_count} locations migrated");
+			log::info!(target: TARGET, "{new_bootstrappers_count} bootstrappers migrated");
 			Ok(())
 		}
 	}
