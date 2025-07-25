@@ -76,7 +76,8 @@ pub mod pallet {
 		+ pallet_encointer_reputation_commitments::Config
 		+ pallet_encointer_communities::Config
 	{
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        #[allow(deprecated)]
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
 		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 		type WeightInfo: WeightInfo;

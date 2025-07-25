@@ -64,7 +64,8 @@ pub mod pallet {
 		+ pallet_encointer_scheduler::Config
 		+ pallet_encointer_balances::Config
 	{
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        #[allow(deprecated)]
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Required origin for updating a community (though can always be Root).
 		type CommunityMaster: EnsureOrigin<Self::RuntimeOrigin>;

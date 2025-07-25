@@ -48,7 +48,8 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
-		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+        #[allow(deprecated)]
+        type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Required origin to interfere with the scheduling (though can always be Root)
 		type CeremonyMaster: EnsureOrigin<Self::RuntimeOrigin>;
