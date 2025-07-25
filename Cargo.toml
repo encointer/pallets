@@ -33,6 +33,7 @@ members = [
 manual_inspect = { level = "allow", priority = 2 }           # Needs substrate fix in `#[pallet]`
 multiple_bound_locations = { level = "allow", priority = 2 } # Needs substrate fix in `#[benchmark]`
 zero_prefixed_literal = { level = "allow" }                  # Better recognition of fixed-point types
+useless_conversion = { level = "allow", priority = 2 }       # Types may change
 
 [workspace.dependencies]
 # local pin
