@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-treasuries-rpc"
-version = "16.3.0"
+version = "19.3.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Treasuries pallet rpc for the Encointer blockchain runtime"
