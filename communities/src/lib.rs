@@ -64,6 +64,7 @@ pub mod pallet {
 		+ pallet_encointer_scheduler::Config
 		+ pallet_encointer_balances::Config
 	{
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Required origin for updating a community (though can always be Root).
@@ -158,7 +159,7 @@ pub mod pallet {
 			sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
 			Self::deposit_event(Event::CommunityRegistered(cid));
-			info!(target: LOG, "registered community with cid: {:?}", cid);
+			info!(target: LOG, "registered community with cid: {cid:?}");
 			Ok(().into())
 		}
 
@@ -254,7 +255,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 			<MinSolarTripTimeS<T>>::put(min_solar_trip_time_s);
-			info!(target: LOG, "set min solar trip time to {} s", min_solar_trip_time_s);
+			info!(target: LOG, "set min solar trip time to {min_solar_trip_time_s} s");
 			Self::deposit_event(Event::MinSolarTripTimeSUpdated(min_solar_trip_time_s));
 			Ok(().into())
 		}
@@ -268,7 +269,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CommunityMaster::ensure_origin(origin)?;
 			<MaxSpeedMps<T>>::put(max_speed_mps);
-			info!(target: LOG, "set max speed mps to {}", max_speed_mps);
+			info!(target: LOG, "set max speed mps to {max_speed_mps}");
 			Self::deposit_event(Event::MaxSpeedMpsUpdated(max_speed_mps));
 			Ok(().into())
 		}
@@ -454,7 +455,7 @@ impl<T: Config> Pallet<T> {
 		}
 		sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
-		info!(target: LOG, "added location {:?} to community with cid: {:?}", location, cid);
+		info!(target: LOG, "added location {location:?} to community with cid: {cid:?}");
 		Self::deposit_event(Event::LocationAdded(cid, location));
 		Ok(().into())
 	}
@@ -468,7 +469,7 @@ impl<T: Config> Pallet<T> {
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon)
 			.map_err(|_| <Error<T>>::InvalidLocationForGeohash)?;
 		Self::remove_location_intern(cid, location, geo_hash);
-		info!(target: LOG, "removed location {:?} to community with cid: {:?}", location, cid);
+		info!(target: LOG, "removed location {location:?} to community with cid: {cid:?}");
 		Self::deposit_event(Event::LocationRemoved(cid, location));
 		Ok(().into())
 	}
@@ -486,7 +487,7 @@ impl<T: Config> Pallet<T> {
 		sp_io::offchain_index::set(&cid.encode(), &community_metadata.name.encode());
 		sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
 
-		info!(target: LOG, "updated community metadata for cid: {:?}", cid);
+		info!(target: LOG, "updated community metadata for cid: {cid:?}");
 		Self::deposit_event(Event::MetadataUpdated(cid));
 
 		Ok(().into())
@@ -500,7 +501,7 @@ impl<T: Config> Pallet<T> {
 		<pallet_encointer_balances::Pallet<T>>::set_demurrage(&cid, demurrage)
 			.map_err(|_| <Error<T>>::InvalidDemurrage)?;
 
-		info!(target: LOG, " updated demurrage for cid: {:?}", cid);
+		info!(target: LOG, " updated demurrage for cid: {cid:?}");
 		Self::deposit_event(Event::DemurrageUpdated(cid, demurrage));
 
 		Ok(().into())
@@ -514,7 +515,7 @@ impl<T: Config> Pallet<T> {
 
 		<NominalIncome<T>>::insert(cid, nominal_income);
 
-		info!(target: LOG, " updated nominal income for cid: {:?}", cid);
+		info!(target: LOG, " updated nominal income for cid: {cid:?}");
 		Self::deposit_event(Event::NominalIncomeUpdated(cid, nominal_income));
 
 		Ok(().into())
@@ -541,7 +542,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn remove_community(cid: CommunityIdentifier) {
-		info!(target: LOG, "removing community {:?}", cid);
+		info!(target: LOG, "removing community {cid:?}");
 		for (geo_hash, locations) in <Locations<T>>::iter_prefix(cid) {
 			for location in locations {
 				Self::remove_location_intern(cid, location, geo_hash.clone());
@@ -733,7 +734,7 @@ impl<T: Config> Pallet<T> {
 		// prohibit proximity to dateline
 		let dateline_proxy = Location { lat: location.lat, lon: DATELINE_LON };
 		if Self::haversine_distance(location, &dateline_proxy) < DATELINE_DISTANCE_M {
-			warn!(target: LOG, "location too close to dateline: {:?}", location);
+			warn!(target: LOG, "location too close to dateline: {location:?}");
 			return Err(<Error<T>>::MinimumDistanceViolationToDateLine)?;
 		}
 

@@ -89,7 +89,7 @@ pub mod v1 {
 				ensure!(count <= T::MaxAttestations::get(), "too many attestations");
 				attestation_count += count;
 			}
-			log::info!(target: TARGET, "{} attestations will be migrated.", attestation_count,);
+			log::info!(target: TARGET, "{attestation_count} attestations will be migrated.");
 
 			Ok((attestation_count).encode())
 		}
@@ -128,7 +128,7 @@ pub mod v1 {
 				"must migrate all attestations"
 			);
 
-			log::info!(target: TARGET, "{} attestations migrated", new_attestation_count);
+			log::info!(target: TARGET, "{new_attestation_count} attestations migrated");
 			Ok(())
 		}
 	}
@@ -146,7 +146,7 @@ pub mod v2 {
 			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1, "can only upgrade from version 1");
 
 			let reputation_count = v1::ParticipantReputation::<T>::iter().count() as u32;
-			log::info!(target: TARGET, "{} reputation entries will be migrated.", reputation_count);
+			log::info!(target: TARGET, "{reputation_count} reputation entries will be migrated.");
 
 			Ok((reputation_count).encode())
 		}
@@ -190,7 +190,7 @@ pub mod v2 {
 
 			assert_eq!(old_reputation_count, new_reputation_count, "must migrate all reputations");
 
-			log::info!(target: TARGET, "{} reputation entries migrated", new_reputation_count);
+			log::info!(target: TARGET, "{new_reputation_count} reputation entries migrated");
 			Ok(())
 		}
 	}

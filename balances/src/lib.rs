@@ -67,6 +67,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// the default demurrage rate applied to community balances
 		#[pallet::constant]
@@ -108,7 +109,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CeremonyMaster::ensure_origin(origin)?;
 			<FeeConversionFactor<T>>::put(fee_conversion_factor);
-			info!(target: LOG, "set fee conversion factor to {}", fee_conversion_factor);
+			info!(target: LOG, "set fee conversion factor to {fee_conversion_factor}");
 			Self::deposit_event(Event::FeeConversionFactorUpdated(fee_conversion_factor));
 			Ok(().into())
 		}
@@ -340,7 +341,7 @@ impl<T: Config> Pallet<T> {
 		<Balance<T>>::insert(community_id, who, entry_who);
 
 		Self::deposit_event(Event::Issued(community_id, who.clone(), amount));
-		debug!(target: LOG, "issue {:?} for {:?}", amount, who);
+		debug!(target: LOG, "issue {amount:?} for {who:?}");
 		Ok(())
 	}
 

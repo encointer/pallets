@@ -55,6 +55,7 @@ pub mod pallet {
 		+ pallet_encointer_ceremonies::Config
 		+ pallet_encointer_communities::Config
 	{
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
 	}
@@ -94,7 +95,7 @@ pub mod pallet {
 
 			<CurrentPurposeId<T>>::put(next_id);
 			<Purposes<T>>::insert(current_id, descriptor.clone());
-			info!(target: LOG, "commitment purpose registered: {:?}, {:?}", current_id, descriptor);
+			info!(target: LOG, "commitment purpose registered: {current_id:?}, {descriptor:?}");
 			Self::deposit_event(Event::RegisteredCommitmentPurpose(current_id, descriptor));
 			Ok(current_id)
 		}
@@ -148,7 +149,7 @@ pub mod pallet {
 			for cid in cids.into_iter() {
 				<Commitments<T>>::remove_prefix((cid, cindex), None);
 			}
-			info!(target: LOG, "commitment registry purged at cindex {:?}", cindex);
+			info!(target: LOG, "commitment registry purged at cindex {cindex:?}");
 			Self::deposit_event(Event::CommitmentRegistryPurged(cindex));
 		}
 	}

@@ -32,9 +32,7 @@ pub mod v1 {
 
 			log::info!(
 				target: TARGET,
-				"Running migration with current storage version {:?} / onchain {:?}",
-				current_version,
-				onchain_version
+				"Running migration with current storage version {current_version:?} / onchain {onchain_version:?}",
 			);
 
 			if onchain_version >= 1 {
