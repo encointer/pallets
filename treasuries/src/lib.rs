@@ -292,7 +292,7 @@ pub mod pallet {
 			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
 			T::Paymaster::transfer(&treasury, beneficiary, asset_id.clone(), amount).map_err(
 				|e| {
-					log::error!(target: LOG, "Paymaster payout error: {:?}", e);
+					log::error!(target: LOG, "Paymaster payout error: {e:?}");
 					Error::<T>::PayoutError
 				},
 			)?;
