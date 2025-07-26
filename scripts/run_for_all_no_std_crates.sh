@@ -1,3 +1,5 @@
+export RUSTFLAGS="$RUSTFLAGS --cfg substrate_runtime"
+
 find . -name "Cargo.toml" | while read -r CARGO_TOML; do
   DIR=$(dirname "$CARGO_TOML")
   echo "Checking in directory: $DIR"
