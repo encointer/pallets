@@ -118,7 +118,7 @@ fn fmt(cid: &CommunityIdentifier, f: &mut Formatter<'_>) -> fmt::Result {
 	match sp_std::str::from_utf8(&cid.geohash) {
 		Ok(geohash_str) => write!(f, "{}{}", geohash_str, bs58::encode(cid.digest).into_string()),
 		Err(e) => {
-			log::error!("[Cid.fmt] {:?}", e);
+			log::error!("[Cid.fmt] {e:?}");
 			Err(fmt::Error)
 		},
 	}
@@ -181,7 +181,7 @@ impl FromStr for CommunityIdentifier {
 		let mut geohash: [u8; 5] = [0u8; 5];
 		let mut digest: [u8; 4] = [0u8; 4];
 
-		geohash.clone_from_slice(cid[..5].as_bytes());
+		geohash.clone_from_slice(&cid.as_bytes()[..5]);
 		digest.clone_from_slice(&bs58::decode(&cid[5..]).into_vec().map_err(decorate_bs58_err)?);
 
 		Ok(Self { geohash, digest })

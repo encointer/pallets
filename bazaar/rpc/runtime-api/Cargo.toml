@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "16.1.0"
+version = "19.1.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Bazaar rpc runtime API for the Encointer blockchain runtime"

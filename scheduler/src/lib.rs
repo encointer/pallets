@@ -48,6 +48,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Required origin to interfere with the scheduling (though can always be Root)
@@ -207,7 +208,7 @@ impl<T: Config> Pallet<T> {
 			CeremonyPhaseType::Attesting => {
 				let next_ceremony_index = current_ceremony_index.saturating_add(1);
 				<CurrentCeremonyIndex<T>>::put(next_ceremony_index);
-				info!(target: LOG, "new ceremony phase with index {}", next_ceremony_index);
+				info!(target: LOG, "new ceremony phase with index {next_ceremony_index}");
 				CeremonyPhaseType::Registering
 			},
 		};
@@ -218,7 +219,7 @@ impl<T: Config> Pallet<T> {
 		<CurrentPhase<T>>::put(next_phase);
 		T::OnCeremonyPhaseChange::on_ceremony_phase_change(next_phase);
 		Self::deposit_event(Event::PhaseChangedTo(next_phase));
-		info!(target: LOG, "phase changed to: {:?}", next_phase);
+		info!(target: LOG, "phase changed to: {next_phase:?}");
 		Ok(())
 	}
 
@@ -253,7 +254,7 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 		<NextPhaseTimestamp<T>>::put(tnext);
-		info!(target: LOG, "next phase change at: {:?}", tnext);
+		info!(target: LOG, "next phase change at: {tnext:?}");
 		Ok(())
 	}
 

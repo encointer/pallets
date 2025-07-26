@@ -76,6 +76,7 @@ pub mod pallet {
 		+ pallet_encointer_reputation_commitments::Config
 		+ pallet_encointer_communities::Config
 	{
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId> + NamedReservableCurrency<Self::AccountId>;
 		type ControllerOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -151,7 +152,7 @@ pub mod pallet {
 				Faucet { name: name.clone(), purpose_id, whitelist, drip_amount, creator: from },
 			);
 
-			info!(target: LOG, "faucet created: {:?}, {:?}", name, faucet_account);
+			info!(target: LOG, "faucet created: {name:?}, {faucet_account:?}");
 			Self::deposit_event(Event::FaucetCreated(faucet_account, name));
 
 			Ok(().into())
@@ -223,7 +224,7 @@ pub mod pallet {
 				AllowDeath,
 			)?;
 
-			info!(target: LOG, "faucet dissolved {:?}", faucet_account);
+			info!(target: LOG, "faucet dissolved {faucet_account:?}");
 			Self::deposit_event(Event::FaucetDissolved(faucet_account));
 			Ok(().into())
 		}
@@ -257,7 +258,7 @@ pub mod pallet {
 				AllowDeath,
 			)?;
 
-			info!(target: LOG, "faucet closed {:?}", faucet_account);
+			info!(target: LOG, "faucet closed {faucet_account:?}");
 			Self::deposit_event(Event::FaucetClosed(faucet_account));
 
 			Ok(().into())
@@ -271,7 +272,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::ControllerOrigin::ensure_origin(origin)?;
 			<ReserveAmount<T>>::put(reserve_amount);
-			info!(target: LOG, "reserve amount set to {:?} s", reserve_amount);
+			info!(target: LOG, "reserve amount set to {reserve_amount:?} s");
 			Self::deposit_event(Event::ReserveAmountUpdated(reserve_amount));
 			Ok(().into())
 		}

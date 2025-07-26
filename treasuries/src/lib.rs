@@ -63,6 +63,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config + pallet_encointer_balances::Config + pallet_timestamp::Config
 	{
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type Currency: Currency<Self::AccountId>;
 
@@ -273,7 +274,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
 			T::Currency::transfer(&treasury, beneficiary, amount, KeepAlive)?;
-			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybe_cid, amount, beneficiary);
+			info!(target: LOG, "treasury spent native: {maybecid:?}, {amount:?} to {beneficiary:?}");
 			Self::deposit_event(Event::SpentNative {
 				treasury,
 				beneficiary: beneficiary.clone(),
@@ -295,7 +296,7 @@ pub mod pallet {
 					Error::<T>::PayoutError
 				},
 			)?;
-			info!(target: LOG, "treasury spent native: {:?}, {:?} to {:?}", maybe_cid, amount, beneficiary);
+			info!(target: LOG, "treasury spent native: {maybe_cid:?}, {amount:?} to {beneficiary:?}");
 			Self::deposit_event(Event::SpentAsset {
 				treasury,
 				beneficiary: beneficiary.clone(),

@@ -94,6 +94,7 @@ pub mod pallet {
 		+ pallet_encointer_reputation_commitments::Config
 		+ pallet_encointer_treasuries::Config
 	{
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		type WeightInfo: WeightInfo;

@@ -91,12 +91,12 @@ where
 	pub fn cache_dirty(&self, key: &[u8]) -> bool {
 		match self.storage.read().get(STORAGE_PREFIX, key) {
 			Some(d) => Decode::decode(&mut d.as_slice()).unwrap_or_else(|e| {
-				log::error!("Cache dirty bit: {:?}", e);
-				log::info!("{:?}: Defaulting to dirty == true", key);
+				log::error!("Cache dirty bit: {e:?}");
+				log::info!("{key:?}: Defaulting to dirty == true");
 				true
 			}),
 			None => {
-				log::warn!("{:?}: Cache dirty bit is none.", key);
+				log::warn!("{key:?}: Cache dirty bit is none.");
 				true
 			},
 		}

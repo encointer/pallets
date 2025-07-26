@@ -114,7 +114,7 @@ pub fn assert_dispatch_err(actual: DispatchResultWithPostInfo, expected: Dispatc
 }
 
 pub fn almost_eq(a: u128, b: u128, delta: u128) -> bool {
-	let diff = if a > b { a - b } else { b - a };
+	let diff = a.abs_diff(b);
 	diff < delta
 }
 

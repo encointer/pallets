@@ -83,6 +83,7 @@ pub mod pallet {
 		+ pallet_encointer_balances::Config
 		+ pallet_encointer_scheduler::Config
 	{
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		type CeremonyMaster: EnsureOrigin<Self::RuntimeOrigin>;
@@ -182,7 +183,7 @@ pub mod pallet {
 			// invalidate reputation cache
 			sp_io::offchain_index::set(&reputation_cache_dirty_key(&sender), &true.encode());
 
-			debug!(target: LOG, "registered participant: {:?} as {:?}", sender, participant_type);
+			debug!(target: LOG, "registered participant: {sender:?} as {participant_type:?}");
 			Self::deposit_event(Event::ParticipantRegistered(cid, participant_type, sender));
 
 			Ok(().into())
@@ -396,7 +397,7 @@ pub mod pallet {
 				Self::register(cid, cindex, &newbie, false)?;
 			}
 
-			debug!(target: LOG, "bootstrapper {:?} endorsed newbie: {:?}", sender, newbie);
+			debug!(target: LOG, "bootstrapper {sender:?} endorsed newbie: {newbie:?}");
 			Self::deposit_event(Event::EndorsedParticipant(cid, sender, newbie));
 
 			Ok(().into())
@@ -462,7 +463,7 @@ pub mod pallet {
 						MeetupValidationError::BallotEmpty => {
 							debug!(
 								target: LOG,
-								"ballot empty for meetup {:?}, cid: {:?}", meetup_index, cid
+								"ballot empty for meetup {meetup_index:?}, cid: {cid:?}"
 							);
 							(
 								Err(<Error<T>>::VotesNotDependable.into()),
@@ -472,9 +473,7 @@ pub mod pallet {
 						MeetupValidationError::NoDependableVote => {
 							debug!(
 								target: LOG,
-								"ballot doesn't reach dependable majority for meetup {:?}, cid: {:?}",
-								meetup_index,
-								cid
+								"ballot doesn't reach dependable majority for meetup {meetup_index:?}, cid: {cid:?}",
 							);
 							(
 								Err(<Error<T>>::VotesNotDependable.into()),
@@ -484,7 +483,7 @@ pub mod pallet {
 						MeetupValidationError::IndexOutOfBounds => {
 							debug!(
 								target: LOG,
-								"index out of bounds for meetup {:?}, cid: {:?}", meetup_index, cid
+								"index out of bounds for meetup {meetup_index:?}, cid: {cid:?}"
 							);
 							(
 								Err(<Error<T>>::MeetupValidationIndexOutOfBounds.into()),
@@ -514,7 +513,7 @@ pub mod pallet {
 			{
 				debug!(
 					target: LOG,
-					"early rewards not possible for meetup {:?}, cid: {:?}", meetup_index, cid
+					"early rewards not possible for meetup {meetup_index:?}, cid: {cid:?}"
 				);
 				return Err(<Error<T>>::EarlyRewardsNotPossible.into());
 			}
@@ -564,8 +563,7 @@ pub mod pallet {
 			<EndorsementTicketsPerBootstrapper<T>>::put(endorsement_tickets_per_bootstrapper);
 			info!(
 				target: LOG,
-				"set endorsement tickets per bootstrapper to {}",
-				endorsement_tickets_per_bootstrapper
+				"set endorsement tickets per bootstrapper to {endorsement_tickets_per_bootstrapper}"
 			);
 			Self::deposit_event(Event::EndorsementTicketsPerBootstrapperUpdated(
 				endorsement_tickets_per_bootstrapper,
@@ -583,7 +581,7 @@ pub mod pallet {
 			<EndorsementTicketsPerReputable<T>>::put(endorsement_tickets_per_reputable);
 			info!(
 				target: LOG,
-				"set endorsement tickets per reputable to {}", endorsement_tickets_per_reputable
+				"set endorsement tickets per reputable to {endorsement_tickets_per_reputable}"
 			);
 			Self::deposit_event(Event::EndorsementTicketsPerReputableUpdated(
 				endorsement_tickets_per_reputable,
@@ -599,7 +597,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<ReputationLifetime<T>>::put(reputation_lifetime);
-			info!(target: LOG, "set reputation lifetime to {}", reputation_lifetime);
+			info!(target: LOG, "set reputation lifetime to {reputation_lifetime}");
 			Self::deposit_event(Event::ReputationLifetimeUpdated(reputation_lifetime));
 			Ok(().into())
 		}
@@ -623,7 +621,7 @@ pub mod pallet {
 			}
 
 			<MeetupTimeOffset<T>>::put(meetup_time_offset);
-			info!(target: LOG, "set meetup time offset to {} ms", meetup_time_offset);
+			info!(target: LOG, "set meetup time offset to {meetup_time_offset} ms");
 			Self::deposit_event(Event::MeetupTimeOffsetUpdated(meetup_time_offset));
 			Ok(().into())
 		}
@@ -636,7 +634,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<TimeTolerance<T>>::put(time_tolerance);
-			info!(target: LOG, "set meetup time tolerance to {:?}", time_tolerance);
+			info!(target: LOG, "set meetup time tolerance to {time_tolerance:?}");
 			Self::deposit_event(Event::TimeToleranceUpdated(time_tolerance));
 			Ok(().into())
 		}
@@ -649,7 +647,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 			<LocationTolerance<T>>::put(location_tolerance);
-			info!(target: LOG, "set meetup location tolerance to {}", location_tolerance);
+			info!(target: LOG, "set meetup location tolerance to {location_tolerance}");
 			Self::deposit_event(Event::LocationToleranceUpdated(location_tolerance));
 			Ok(().into())
 		}
@@ -1133,7 +1131,7 @@ impl<T: Config> Pallet<T> {
 		inactivity_timeout: InactivityTimeoutType,
 	) -> DispatchResultWithPostInfo {
 		<InactivityTimeout<T>>::put(inactivity_timeout);
-		info!(target: LOG, "set inactivity timeout to {}", inactivity_timeout);
+		info!(target: LOG, "set inactivity timeout to {inactivity_timeout}");
 		Self::deposit_event(Event::InactivityTimeoutUpdated(inactivity_timeout));
 		Ok(().into())
 	}
@@ -1357,7 +1355,7 @@ impl<T: Config> Pallet<T> {
 		let cid = cc.1;
 		let cindex = cc.0;
 
-		info!(target: LOG, "purging ceremony index {} history for {:?}", cindex, cid);
+		info!(target: LOG, "purging ceremony index {cindex} history for {cid:?}");
 
 		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
 		<BootstrapperIndex<T>>::remove_prefix(cc, None);
@@ -1403,7 +1401,7 @@ impl<T: Config> Pallet<T> {
 		for cid in cids.into_iter() {
 			Self::purge_community_ceremony_internal((cid, cindex));
 		}
-		debug!(target: LOG, "purged registry for ceremony {}", cindex);
+		debug!(target: LOG, "purged registry for ceremony {cindex}", );
 	}
 
 	fn generate_meetup_assignment_params(
@@ -1498,9 +1496,7 @@ impl<T: Config> Pallet<T> {
 		let num_registered_newbies = Self::newbie_count(community_ceremony);
 		debug!(
 			target: LOG,
-			"Number of registered bootstrappers {:?}, endorsees {:?}, reputables {:?}, newbies {:?}",
-			num_registered_bootstrappers, num_registered_endorsees, num_registered_reputables,
-			num_registered_newbies
+			"Number of registered bootstrappers {num_registered_bootstrappers:?}, endorsees {num_registered_endorsees:?}, reputables {num_registered_reputables:?}, newbies {num_registered_newbies:?}",
 		);
 
 		let max_num_meetups = min(
@@ -1527,11 +1523,7 @@ impl<T: Config> Pallet<T> {
 		);
 		info!(
 			target: LOG,
-			"Number of assigned bootstrappers {:?}, endorsees {:?}, reputables {:?}, newbies {:?}",
-			num_registered_bootstrappers,
-			num_assigned_endorsees,
-			num_assigned_reputables,
-			num_assigned_newbies
+			"Number of assigned bootstrappers {num_registered_bootstrappers:?}, endorsees {num_assigned_endorsees:?}, reputables {num_assigned_reputables:?}, newbies {num_assigned_newbies:?}",
 		);
 		Ok(AssignmentCount {
 			bootstrappers: num_registered_bootstrappers,
@@ -1595,7 +1587,7 @@ impl<T: Config> Pallet<T> {
 			{
 				error!(
 					target: LOG,
-					"Could not generate meetup assignment params for cid: {:?}. {:?}", cid, e
+					"Could not generate meetup assignment params for cid: {cid:?}. {e:?}"
 				);
 			}
 		}
@@ -1685,7 +1677,7 @@ impl<T: Config> Pallet<T> {
 		if meetup_index > meetup_count || meetup_index < 1 {
 			error!(
 				target: LOG,
-				"Invalid meetup index {}, meetup_count is {}", meetup_index, meetup_count
+				"Invalid meetup index {meetup_index}, meetup_count is {meetup_count}"
 			);
 			return Err(<Error<T>>::InvalidMeetupIndex);
 		}
@@ -1812,7 +1804,7 @@ impl<T: Config> Pallet<T> {
 			let participant = &meetup_participants
 				.get(*i)
 				.ok_or(Error::<T>::MeetupValidationIndexOutOfBounds)?;
-			trace!(target: LOG, "participant merits reward: {:?}", participant);
+			trace!(target: LOG, "participant merits reward: {participant:?}");
 
 			if <pallet_encointer_balances::Pallet<T>>::issue(cid, participant, reward).is_ok() {
 				<ParticipantReputation<T>>::insert(
@@ -1895,13 +1887,13 @@ impl<T: Config> Pallet<T> {
 		let mut verified_attestees = vec![];
 		for attestee in attestations.iter() {
 			if attestee == &participant {
-				warn!(target: LOG, "ignoring attestation for self: {:?}", attestee);
+				warn!(target: LOG, "ignoring attestation for self: {attestee:?}");
 				continue;
 			};
 			if !meetup_participants.contains(attestee) {
 				warn!(
 					target: LOG,
-					"ignoring attestation that isn't a meetup participant: {:?}", attestee
+					"ignoring attestation that isn't a meetup participant: {attestee:?}"
 				);
 				continue;
 			};
@@ -1930,7 +1922,7 @@ impl<T: Config> Pallet<T> {
 		);
 		<AttestationIndex<T>>::insert((cid, cindex), &participant, idx);
 		let verified_count = verified_attestees.len() as u32;
-		debug!(target: LOG, "successfully registered {} attestations", verified_count);
+		debug!(target: LOG, "successfully registered {verified_count} attestations");
 		Self::deposit_event(Event::AttestationsRegistered(
 			*cid,
 			meetup_index,

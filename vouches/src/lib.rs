@@ -44,6 +44,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+		#[allow(deprecated)]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type WeightInfo: WeightInfo;
 		#[pallet::constant]
@@ -72,7 +73,7 @@ pub mod pallet {
 					Ok(().into())
 				},
 			)?;
-			info!(target: LOG, "vouching: {:?} for {:?}, vouch type: {:?}, quality: {:?}", attester, attestee, vouch_kind, quality);
+			info!(target: LOG, "vouching: {attester:?} for {attestee:?}, vouch type: {vouch_kind:?}, quality: {quality:?}");
 			Self::deposit_event(Event::VouchedFor { attestee, attester, vouch_kind });
 			Ok(().into())
 		}
