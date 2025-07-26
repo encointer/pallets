@@ -274,7 +274,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
 			T::Currency::transfer(&treasury, beneficiary, amount, KeepAlive)?;
-			info!(target: LOG, "treasury spent native: {maybecid:?}, {amount:?} to {beneficiary:?}");
+			info!(target: LOG, "treasury spent native: {maybe_cid:?}, {amount:?} to {beneficiary:?}");
 			Self::deposit_event(Event::SpentNative {
 				treasury,
 				beneficiary: beneficiary.clone(),
