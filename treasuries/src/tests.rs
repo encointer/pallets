@@ -19,13 +19,16 @@
 use super::*;
 use crate::mock::{Balances, EncointerBalances, EncointerTreasuries, RuntimeOrigin, System};
 use approx::assert_abs_diff_eq;
-use encointer_primitives::treasuries::SwapNativeOption;
+use encointer_primitives::treasuries::{SwapAssetOption, SwapNativeOption};
 use frame_support::{assert_err, assert_ok};
 use mock::{new_test_ext, TestRuntime};
 use rstest::rstest;
 use sp_core::crypto::Ss58Codec;
 use std::str::FromStr;
-use test_utils::{helpers::*, *};
+use test_utils::{
+	helpers::{event_deposited, last_event},
+	AccountId, AccountKeyring, Balance, Moment,
+};
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -295,6 +298,197 @@ fn swap_native_insufficient_allowance_fails(burn: bool) {
 		let swap_native_amount = 50_000_000;
 		assert_err!(
 			EncointerTreasuries::swap_native(
+				RuntimeOrigin::signed(beneficiary.clone()),
+				cid,
+				swap_native_amount
+			),
+			Error::<TestRuntime>::InsufficientAllowance
+		);
+	});
+}
+
+#[rstest(
+	burn,
+	asset_allowance,
+	rate_float,
+	case(false, 10_000_000_000_000, 0.000000000001),
+	case(true, 10_000_000_000_000, 0.000000000001),
+	case(false, 110_000_000, 0.000_000_2),
+	case(true, 110_000_000, 0.000_000_2)
+)]
+fn swap_asset_partial_works(burn: bool, asset_allowance: Balance, rate_float: f64) {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let rate = BalanceType::from_num(rate_float);
+		let cid = CommunityIdentifier::default();
+		let community_balance = 10_000.0;
+		let asset_id = 1;
+		let swap_option = SwapAssetOption {
+			cid,
+			asset_id,
+			asset_allowance,
+			rate: Some(rate),
+			do_burn: burn,
+			valid_from: None,
+			valid_until: None,
+		};
+
+		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
+		Balances::make_free_balance_be(&treasury, asset_allowance * 2);
+		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(community_balance))
+			.unwrap();
+
+		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(cid, &beneficiary, swap_option));
+		assert_eq!(EncointerTreasuries::swap_asset_options(cid, &beneficiary), Some(swap_option));
+
+		let swap_asset_amount = asset_allowance / 10;
+		assert_ok!(EncointerTreasuries::swap_asset(
+			RuntimeOrigin::signed(beneficiary.clone()),
+			cid,
+			swap_asset_amount
+		));
+
+		// The treasury does not lose money in this case. In real life it will happen on another
+		// chain. assert_eq!(Balances::free_balance(&treasury), asset_allowance * 2 -
+		// asset_allowance / 10);
+
+		// The paymaster tracks in our test implementation how much has been paid to the
+		// beneficiary.
+		assert_eq!(crate::mock::paid(beneficiary.clone(), asset_id), swap_asset_amount);
+
+		let swap_native = BalanceType::from_num::<u64>(swap_asset_amount.try_into().unwrap());
+		assert_abs_diff_eq!(
+			EncointerBalances::balance(cid, &beneficiary).to_num::<f64>(),
+			community_balance - swap_native.to_num::<f64>() * rate_float,
+			epsilon = 0.0001
+		);
+		// remaining allowance must decrease
+		assert_eq!(
+			EncointerTreasuries::swap_asset_options(cid, &beneficiary)
+				.unwrap()
+				.asset_allowance,
+			asset_allowance * 9 / 10
+		);
+		assert!(event_deposited::<TestRuntime>(
+			Event::<TestRuntime>::SpentAsset {
+				treasury: treasury.clone(),
+				beneficiary: beneficiary.clone(),
+				asset_id,
+				amount: swap_asset_amount
+			}
+			.into()
+		));
+		if burn {
+			assert!(event_deposited::<TestRuntime>(
+				pallet_encointer_balances::Event::<TestRuntime>::Burned(
+					cid,
+					beneficiary.clone(),
+					BalanceType::from_num(swap_asset_amount) * rate
+				)
+				.into()
+			));
+		} else {
+			assert!(event_deposited::<TestRuntime>(
+				pallet_encointer_balances::Event::<TestRuntime>::Transferred(
+					cid,
+					beneficiary.clone(),
+					treasury.clone(),
+					BalanceType::from_num(swap_asset_amount) * rate
+				)
+				.into()
+			));
+		}
+	});
+}
+
+#[test]
+fn swap_asset_without_option_fails() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let cid = CommunityIdentifier::default();
+		let swap_native_amount = 50_000_000;
+		assert_err!(
+			EncointerTreasuries::swap_asset(
+				RuntimeOrigin::signed(beneficiary.clone()),
+				cid,
+				swap_native_amount
+			),
+			Error::<TestRuntime>::NoValidSwapOption
+		);
+	});
+}
+#[rstest(burn, case(false), case(true))]
+fn swap_asset_insufficient_cc_fails(burn: bool) {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let asset_allowance: BalanceOf<TestRuntime> = 100_000_000;
+		let rate_float = 0.000_000_2;
+		let rate = Some(BalanceType::from_num(rate_float));
+		let cid = CommunityIdentifier::default();
+		let asset_id = 1;
+		let swap_option = SwapAssetOption {
+			cid,
+			asset_allowance,
+			asset_id,
+			rate,
+			do_burn: burn,
+			valid_from: None,
+			valid_until: None,
+		};
+
+		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
+
+		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(cid, &beneficiary, swap_option));
+		assert_eq!(EncointerTreasuries::swap_asset_options(cid, &beneficiary), Some(swap_option));
+
+		let swap_asset_amount = 50_000_000;
+		assert_err!(
+			EncointerTreasuries::swap_asset(
+				RuntimeOrigin::signed(beneficiary.clone()),
+				cid,
+				swap_asset_amount
+			),
+			pallet_encointer_balances::Error::<TestRuntime>::BalanceTooLow
+		);
+	});
+}
+
+// Note: We don't know the treasury balance on the other chain.
+// Hence, we don't test `swap_asset_insufficient_treasury_funds_fails`.
+
+#[rstest(burn, case(false), case(true))]
+fn swap_asset_insufficient_allowance_fails(burn: bool) {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let asset_allowance: BalanceOf<TestRuntime> = 49_000_000;
+		let rate_float = 0.000_000_2;
+		let rate = Some(BalanceType::from_num(rate_float));
+		let cid = CommunityIdentifier::default();
+		let asset_id = 1;
+		let swap_option = SwapAssetOption {
+			cid,
+			asset_allowance,
+			asset_id,
+			rate,
+			do_burn: burn,
+			valid_from: None,
+			valid_until: None,
+		};
+
+		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
+		Balances::make_free_balance_be(&treasury, 51_000_000);
+		EncointerBalances::issue(cid, &beneficiary, BalanceType::from_num(1)).unwrap();
+
+		assert_ok!(EncointerTreasuries::do_issue_swap_asset_option(cid, &beneficiary, swap_option));
+		assert_eq!(EncointerTreasuries::swap_asset_options(cid, &beneficiary), Some(swap_option));
+
+		let swap_native_amount = 50_000_000;
+		assert_err!(
+			EncointerTreasuries::swap_asset(
 				RuntimeOrigin::signed(beneficiary.clone()),
 				cid,
 				swap_native_amount

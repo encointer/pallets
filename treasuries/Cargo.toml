@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-treasuries"
-version = "20.4.0"
+version = "20.5.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Treasuries pallet for the Encointer blockchain runtime"
@@ -67,10 +67,10 @@ runtime-benchmarks = [
     "pallet-encointer-communities/runtime-benchmarks",
     "pallet-encointer-reputation-commitments/runtime-benchmarks",
     "pallet-timestamp/runtime-benchmarks",
+    "test-utils/runtime-benchmarks",
     "encointer-primitives/runtime-benchmarks",
     "frame-benchmarking/runtime-benchmarks",
     "sp-runtime/runtime-benchmarks",
-    "test-utils/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-system/try-runtime",

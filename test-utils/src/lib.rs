@@ -30,6 +30,7 @@ pub use sp_keyring::Sr25519Keyring as AccountKeyring;
 // reexports for macro resolution
 pub use encointer_primitives::storage;
 pub use frame_system;
+pub use helpers::TestPay;
 pub use pallet_balances;
 pub use pallet_encointer_balances;
 pub use pallet_encointer_ceremonies;
@@ -211,6 +212,9 @@ macro_rules! impl_encointer_reputation_commitments {
 parameter_types! {
 	pub const TreasuriesPalletId: PalletId = PalletId(*b"trsrysId");
 }
+
+pub type AssetId = u32;
+
 #[macro_export]
 macro_rules! impl_encointer_treasuries {
 	($t:ident) => {
@@ -218,7 +222,11 @@ macro_rules! impl_encointer_treasuries {
 			type RuntimeEvent = RuntimeEvent;
 			type Currency = pallet_balances::Pallet<TestRuntime>;
 			type PalletId = TreasuriesPalletId;
+			type AssetKind = AssetId;
+			type Paymaster = TestPay;
 			type WeightInfo = ();
+			#[cfg(feature = "runtime-benchmarks")]
+			type BenchmarkHelper = ();
 		}
 	};
 }

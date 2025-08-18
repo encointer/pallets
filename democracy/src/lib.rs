@@ -83,6 +83,8 @@ pub mod pallet {
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(PhantomData<T>);
 
+	pub type AssetKindOf<T> = <T as pallet_encointer_treasuries::Config>::AssetKind;
+
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
@@ -129,7 +131,7 @@ pub mod pallet {
 		},
 		ProposalSubmitted {
 			proposal_id: ProposalIdType,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
 		},
 		VotePlaced {
 			proposal_id: ProposalIdType,
@@ -192,7 +194,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		ProposalIdType,
-		Proposal<T::Moment, T::AccountId, BalanceOf<T>>,
+		Proposal<T::Moment, T::AccountId, BalanceOf<T>, AssetKindOf<T>>,
 		OptionQuery,
 	>;
 
@@ -248,7 +250,7 @@ pub mod pallet {
         )]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into());
@@ -498,7 +500,7 @@ pub mod pallet {
 
 		pub fn get_electorate(
 			start_cindex: CeremonyIndexType,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment>,
+			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
 		) -> Result<ReputationCountType, Error<T>> {
 			let voting_cindexes = Self::voting_cindexes(start_cindex)?;
 
@@ -600,6 +602,21 @@ pub mod pallet {
 				},
 				ProposalAction::IssueSwapNativeOption(cid, ref owner, swap_option) => {
 					TreasuriesPallet::<T>::do_issue_swap_native_option(cid, owner, swap_option)?;
+				},
+				ProposalAction::SpendAsset(maybe_cid, ref beneficiary, amount, ref asset_id) => {
+					TreasuriesPallet::<T>::do_spend_asset(
+						maybe_cid,
+						beneficiary,
+						asset_id.clone(),
+						amount,
+					)?;
+				},
+				ProposalAction::IssueSwapAssetOption(cid, ref owner, ref swap_option) => {
+					TreasuriesPallet::<T>::do_issue_swap_asset_option(
+						cid,
+						owner,
+						swap_option.clone(),
+					)?;
 				},
 			};
 

@@ -14,11 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::{AccountId, AccountKeyring};
+use crate::{AccountId, AccountKeyring, Balance};
 use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
-use frame_support::{pallet_prelude::DispatchResultWithPostInfo, traits::OriginTrait};
+use frame_support::{
+	pallet_prelude::DispatchResultWithPostInfo,
+	traits::{tokens::PaymentStatus, OriginTrait},
+};
+use pallet_encointer_treasuries::Transfer;
 use sp_core::{sr25519, Encode, Pair, U256};
 use sp_runtime::DispatchError;
+use std::{cell::RefCell, collections::BTreeMap};
 
 /// shorthand to convert Pair to AccountId
 pub fn account_id(pair: &sr25519::Pair) -> AccountId {
@@ -121,4 +126,56 @@ pub fn add_population(amount: usize, current_popuplation_size: usize) -> Vec<sr2
 		participants.push(sr25519::Pair::from_seed_slice(&entropy.encode()[..]).unwrap());
 	}
 	participants
+}
+
+thread_local! {
+	pub static PAID: RefCell<BTreeMap<(AccountId, u32), Balance>> = const { RefCell::new(BTreeMap::new()) };
+	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = const { RefCell::new(BTreeMap::new()) };
+	pub static LAST_ID: RefCell<u64> = const { RefCell::new(0u64) };
+}
+
+/// paid balance for a given account and asset ids
+pub fn paid(who: AccountId, asset_id: u32) -> Balance {
+	PAID.with(|p| p.borrow().get(&(who, asset_id)).cloned().unwrap_or(0))
+}
+
+pub type AssetId = u32;
+
+pub struct TestPay;
+impl Transfer for TestPay {
+	type Balance = Balance;
+	type Payer = AccountId;
+	type Beneficiary = AccountId;
+	type AssetKind = AssetId;
+	type Id = u64;
+	type Error = DispatchError;
+
+	fn transfer(
+		_from: &Self::Payer,
+		to: &Self::Beneficiary,
+		asset_kind: Self::AssetKind,
+		amount: Self::Balance,
+	) -> Result<Self::Id, Self::Error> {
+		PAID.with(|paid| *paid.borrow_mut().entry((to.clone(), asset_kind)).or_default() += amount);
+		Ok(LAST_ID.with(|lid| {
+			let x = *lid.borrow();
+			lid.replace(x + 1);
+			x
+		}))
+	}
+
+	fn check_payment(id: Self::Id) -> PaymentStatus {
+		STATUS.with(|s| s.borrow().get(&id).cloned().unwrap_or(PaymentStatus::Unknown))
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_successful(
+		_: &Self::Payer,
+		_: &Self::Beneficiary,
+		_: Self::AssetKind,
+		_: Self::Balance,
+	) {
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn ensure_concluded(_: Self::Id) {}
 }

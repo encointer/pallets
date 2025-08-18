@@ -30,7 +30,7 @@ use encointer_primitives::{
 		NominalIncome as NominalIncomeType,
 	},
 	democracy::{ProposalAction, ProposalActionIdentifier, ProposalState, Tally, Vote},
-	treasuries::SwapNativeOption,
+	treasuries::{SwapAssetOption, SwapNativeOption},
 };
 use frame_support::{
 	__private::bounded_vec,
@@ -42,7 +42,7 @@ use sp_runtime::BoundedVec;
 use std::str::FromStr as StdFromStr;
 use test_utils::{
 	helpers::{
-		account_id, add_population, event_at_index, get_num_events, last_event,
+		account_id, add_population, event_at_index, get_num_events, last_event, paid,
 		register_test_community,
 	},
 	*,
@@ -153,7 +153,7 @@ fn proposal_submission_for_same_proposal_id_works_for_different_community() {
 		assert_ne!(cid, cid2);
 
 		let proposal_action =
-			ProposalAction::<AccountId, NominalIncomeType, Moment>::UpdateNominalIncome(
+			ProposalAction::<AccountId, NominalIncomeType, Moment, AssetId>::UpdateNominalIncome(
 				cid,
 				NominalIncomeType::from(100u32),
 			);
@@ -176,7 +176,10 @@ fn proposal_submission_for_works_for_local_if_there_is_a_global_with_same_propos
 		let cid = create_cid();
 
 		let proposal_action =
-			ProposalAction::<AccountId, NominalIncomeType, Moment>::Petition(None, bounded_vec![]);
+			ProposalAction::<AccountId, NominalIncomeType, Moment, AssetId>::Petition(
+				None,
+				bounded_vec![],
+			);
 
 		let proposal_action2 = ProposalAction::Petition(Some(cid), bounded_vec![]);
 
@@ -194,10 +197,11 @@ fn proposal_submission_for_works_for_global_if_there_is_a_local_with_same_propos
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
 
-		let proposal_action = ProposalAction::<AccountId, NominalIncomeType, Moment>::Petition(
-			Some(cid),
-			bounded_vec![],
-		);
+		let proposal_action =
+			ProposalAction::<AccountId, NominalIncomeType, Moment, AssetId>::Petition(
+				Some(cid),
+				bounded_vec![],
+			);
 
 		let proposal_action2 = ProposalAction::Petition(None, bounded_vec![]);
 
@@ -476,7 +480,7 @@ fn do_update_proposal_state_fails_with_inexistent_proposal() {
 fn do_update_proposal_state_fails_with_wrong_state() {
 	new_test_ext().execute_with(|| {
 		let cid = create_cid();
-		let proposal: Proposal<Moment, AccountId, Balance> = Proposal {
+		let proposal: Proposal<Moment, AccountId, Balance, AssetId> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -485,7 +489,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(1, proposal);
 
-		let proposal2: Proposal<Moment, AccountId, Balance> = Proposal {
+		let proposal2: Proposal<Moment, AccountId, Balance, AssetId> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -494,7 +498,7 @@ fn do_update_proposal_state_fails_with_wrong_state() {
 		};
 		Proposals::<TestRuntime>::insert(2, proposal2);
 
-		let proposal3: Proposal<Moment, AccountId, Balance> = Proposal {
+		let proposal3: Proposal<Moment, AccountId, Balance, AssetId> = Proposal {
 			start: Moment::from(1u64),
 			start_cindex: 1,
 			action: ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32)),
@@ -1123,6 +1127,41 @@ fn enact_spend_native_works() {
 		assert_eq!(Balances::free_balance(&beneficiary), amount);
 	});
 }
+
+#[test]
+fn enact_spend_asset_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let amount: BalanceOf<TestRuntime> = 100_000_000;
+		let cid = CommunityIdentifier::default();
+
+		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
+		Balances::make_free_balance_be(&treasury, 500_000_000);
+
+		let alice = alice();
+		let asset_id = 1;
+		let proposal_action =
+			ProposalAction::SpendAsset(Some(cid), beneficiary.clone(), amount, asset_id);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		// directly inject the proposal into the enactment queue
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
+		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+
+		// assert_eq!(Balances::free_balance(&treasury), 400_000_000);
+		assert_eq!(paid(alice, asset_id), amount);
+	});
+}
+
 #[test]
 fn enact_issue_swap_native_option_works() {
 	new_test_ext().execute_with(|| {
@@ -1158,6 +1197,46 @@ fn enact_issue_swap_native_option_works() {
 		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
 
 		assert_eq!(EncointerTreasuries::swap_native_options(cid, beneficiary), Some(swap_option));
+	});
+}
+
+#[test]
+fn enact_issue_swap_asset_option_works() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(System::block_number() + 1); // this is needed to assert events
+		let beneficiary = AccountId::from(AccountKeyring::Alice);
+		let asset_allowance: BalanceOf<TestRuntime> = 100_000_000;
+		let rate = Some(BalanceType::from_num(1.5));
+		let cid = CommunityIdentifier::default();
+		let asset_id = 1;
+		let swap_option = SwapAssetOption {
+			cid,
+			asset_allowance,
+			asset_id,
+			rate,
+			do_burn: true,
+			valid_from: None,
+			valid_until: None,
+		};
+
+		let alice = alice();
+		let proposal_action =
+			ProposalAction::IssueSwapAssetOption(cid, beneficiary.clone(), swap_option);
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			proposal_action.clone()
+		));
+
+		// directly inject the proposal into the enactment queue
+		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+
+		run_to_next_phase();
+		// first assigning phase after proposal lifetime ended
+
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action.get_identifier()), None);
+
+		assert_eq!(EncointerTreasuries::swap_asset_options(cid, beneficiary), Some(swap_option));
 	});
 }
 #[test]

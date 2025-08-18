@@ -1,8 +1,25 @@
 use crate::*;
-use encointer_primitives::treasuries::SwapNativeOption;
+use encointer_primitives::treasuries::{SwapAssetOption, SwapNativeOption};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+use parity_scale_codec::Encode;
+use sp_core::crypto::FromEntropy;
 use sp_runtime::SaturatedConversion;
+
+pub trait ArgumentsFactory<AssetKind> {
+	/// Factory function for an asset kind.
+	fn create_asset_kind(seed: u32) -> AssetKind;
+}
+
+/// Implementation that expects the parameters implement the [`FromEntropy`] trait.
+impl<AssetKind> ArgumentsFactory<AssetKind> for ()
+where
+	AssetKind: FromEntropy,
+{
+	fn create_asset_kind(seed: u32) -> AssetKind {
+		AssetKind::from_entropy(&mut seed.encode().as_slice()).unwrap()
+	}
+}
 
 benchmarks! {
 	where_clause {
@@ -31,6 +48,29 @@ benchmarks! {
 	} : _(RawOrigin::Signed(alice.clone()), cid, 50_000_000u64.saturated_into())
 	verify {
 		assert_eq!(<T as Config>::Currency::free_balance(&alice), 50_000_000u64.saturated_into());
+	}
+	swap_asset {
+		let cid = CommunityIdentifier::default();
+		let alice: T::AccountId = account("alice", 1, 1);
+		let asset_id = T::BenchmarkHelper::create_asset_kind(1);
+
+		pallet_encointer_balances::Pallet::<T>::issue(cid, &alice, BalanceType::from_num(12i32)).unwrap();
+		let swap_option = SwapAssetOption {
+			cid,
+			asset_allowance: 100_000_000u64.saturated_into(),
+			asset_id,
+			rate: Some(BalanceType::from_num(0.000_000_2)),
+			do_burn: false,
+			valid_from: None,
+			valid_until: None,
+		};
+		Pallet::<T>::do_issue_swap_asset_option(
+			cid,
+			&alice,
+			swap_option
+		).unwrap();
+	} : _(RawOrigin::Signed(alice.clone()), cid, 50_000_000u64.saturated_into())
+	verify {
 	}
 }
 

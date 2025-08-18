@@ -16,6 +16,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+use alloc::boxed::Box;
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
 use frame_support::{
@@ -32,13 +35,15 @@ const LOG: &str = "encointer";
 
 pub use crate::weights::WeightInfo;
 pub use pallet::*;
+pub use transfer::Transfer;
 
 #[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
+pub mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+mod transfer;
 mod weights;
 
 pub type BalanceOf<T> =
@@ -47,7 +52,7 @@ pub type BalanceOf<T> =
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use encointer_primitives::treasuries::SwapNativeOption;
+	use encointer_primitives::treasuries::{SwapAssetOption, SwapNativeOption};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
 
@@ -75,6 +80,22 @@ pub mod pallet {
 		// #[pallet::constant]
 		// type SwapCooldownPeriod: Get<T::Moment>;
 
+		/// Type parameter representing the asset kinds to be spent from the treasury.
+		/// This can be the unit type if only native is supported.
+		type AssetKind: Parameter + MaxEncodedLen;
+
+		/// Type for processing spends of [Self::AssetKind] in favor of [`Self::Beneficiary`].
+		type Paymaster: Transfer<
+			Payer = Self::AccountId,
+			Beneficiary = Self::AccountId,
+			AssetKind = Self::AssetKind,
+			Balance = BalanceOf<Self>,
+		>;
+
+		/// Helper type for benchmarks.
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: crate::benchmarking::ArgumentsFactory<Self::AssetKind>;
+
 		type WeightInfo: WeightInfo;
 	}
 
@@ -89,6 +110,19 @@ pub mod pallet {
 		SwapNativeOption<BalanceOf<T>, T::Moment>,
 		OptionQuery,
 	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn swap_asset_options)]
+	pub type SwapAssetOptions<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		CommunityIdentifier,
+		Blake2_128Concat,
+		T::AccountId,
+		SwapAssetOption<BalanceOf<T>, T::Moment, T::AssetKind>,
+		OptionQuery,
+	>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
@@ -117,11 +151,7 @@ pub mod pallet {
 				Error::<T>::InsufficientNativeFunds
 			);
 			let rate = swap_option.rate.ok_or(Error::<T>::SwapRateNotDefined)?;
-			let cc_amount = BalanceType::from_num::<u64>(
-				desired_native_amount.try_into().or(Err(Error::<T>::SwapOverflow))?,
-			)
-			.checked_mul(rate)
-			.ok_or(Error::<T>::SwapOverflow)?;
+			let cc_amount = Self::cc_amount(desired_native_amount, rate)?;
 
 			// Useful for debugging in tests. Enable if desired.
 			// println!("Swapping => {cc_amount:?} CC => {desired_native_amount:?}  pKSM");
@@ -135,12 +165,78 @@ pub mod pallet {
 					cc_amount,
 				)?;
 			}
+
 			let new_swap_option = SwapNativeOption {
 				native_allowance: swap_option.native_allowance - desired_native_amount,
 				..swap_option
 			};
 			<SwapNativeOptions<T>>::insert(cid, &sender, new_swap_option);
 			Self::do_spend_native(Some(cid), &sender, desired_native_amount)?;
+			Ok(().into())
+		}
+
+		/// swap native tokens for community currency subject to an existing swap option for the
+		/// sender account.
+		#[pallet::call_index(1)]
+		#[pallet::weight((<T as Config>::WeightInfo::swap_asset(), DispatchClass::Normal, Pays::Yes))]
+		pub fn swap_asset(
+			origin: OriginFor<T>,
+			cid: CommunityIdentifier,
+			desired_asset_amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			let swap_option =
+				Self::swap_asset_options(cid, &sender).ok_or(<Error<T>>::NoValidSwapOption)?;
+			ensure!(
+				swap_option.asset_allowance >= desired_asset_amount,
+				Error::<T>::InsufficientAllowance
+			);
+
+			// Note: We have no means of checking the treasury balance as it lives on another chain.
+			let treasury_account = Self::get_community_treasury_account_unchecked(Some(cid));
+
+			let rate = swap_option.rate.ok_or(Error::<T>::SwapRateNotDefined)?;
+			let cc_amount = Self::cc_amount(desired_asset_amount, rate)?;
+
+			// Useful for debugging in tests. Enable if desired.
+			// println!("Swapping => {cc_amount:?} CC => {desired_native_amount:?}  pKSM");
+			if swap_option.do_burn {
+				<pallet_encointer_balances::Pallet<T>>::burn(cid, &sender, cc_amount)?;
+			} else {
+				<pallet_encointer_balances::Pallet<T>>::do_transfer(
+					cid,
+					&sender,
+					&treasury_account,
+					cc_amount,
+				)?;
+			}
+
+			let new_swap_option = SwapAssetOption {
+				asset_allowance: swap_option.asset_allowance - desired_asset_amount,
+				..swap_option
+			};
+			<SwapAssetOptions<T>>::insert(cid, &sender, &new_swap_option);
+			Self::do_spend_asset(
+				Some(cid),
+				&sender,
+				new_swap_option.asset_id,
+				desired_asset_amount,
+			)?;
+			Ok(().into())
+		}
+
+		/// Only used for testing
+		#[pallet::call_index(2)]
+		#[pallet::weight((<T as Config>::WeightInfo::swap_asset(), DispatchClass::Normal, Pays::Yes))]
+		pub fn test_asset_pay(
+			origin: OriginFor<T>,
+			cid: Option<CommunityIdentifier>,
+			asset_id: Box<T::AssetKind>,
+			desired_asset_amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+
+			Self::do_spend_asset(cid, &sender, *asset_id, desired_asset_amount)?;
 			Ok(().into())
 		}
 	}
@@ -159,17 +255,52 @@ pub mod pallet {
 				.expect("32 bytes can always construct an AccountId32")
 		}
 
+		pub fn cc_amount(
+			desired_native_amount: BalanceOf<T>,
+			rate: BalanceType,
+		) -> Result<BalanceType, Error<T>> {
+			let native_u64: u64 =
+				desired_native_amount.try_into().or(Err(Error::<T>::SwapOverflow))?;
+
+			BalanceType::from_num::<u64>(native_u64)
+				.checked_mul(rate)
+				.ok_or(Error::<T>::SwapOverflow)
+		}
+
 		pub fn do_spend_native(
-			maybecid: Option<CommunityIdentifier>,
+			maybe_cid: Option<CommunityIdentifier>,
 			beneficiary: &T::AccountId,
 			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
-			let treasury = Self::get_community_treasury_account_unchecked(maybecid);
+			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
 			T::Currency::transfer(&treasury, beneficiary, amount, KeepAlive)?;
-			info!(target: LOG, "treasury spent native: {maybecid:?}, {amount:?} to {beneficiary:?}");
+			info!(target: LOG, "treasury spent native: {maybe_cid:?}, {amount:?} to {beneficiary:?}");
 			Self::deposit_event(Event::SpentNative {
 				treasury,
 				beneficiary: beneficiary.clone(),
+				amount,
+			});
+			Ok(().into())
+		}
+
+		pub fn do_spend_asset(
+			maybe_cid: Option<CommunityIdentifier>,
+			beneficiary: &T::AccountId,
+			asset_id: T::AssetKind,
+			amount: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
+			let treasury = Self::get_community_treasury_account_unchecked(maybe_cid);
+			T::Paymaster::transfer(&treasury, beneficiary, asset_id.clone(), amount).map_err(
+				|e| {
+					log::error!(target: LOG, "Paymaster payout error: {e:?}");
+					Error::<T>::PayoutError
+				},
+			)?;
+			info!(target: LOG, "treasury spent native: {maybe_cid:?}, {amount:?} to {beneficiary:?}");
+			Self::deposit_event(Event::SpentAsset {
+				treasury,
+				beneficiary: beneficiary.clone(),
+				asset_id,
 				amount,
 			});
 			Ok(().into())
@@ -185,6 +316,17 @@ pub mod pallet {
 			Self::deposit_event(Event::GrantedSwapNativeOption { cid, who: who.clone() });
 			Ok(().into())
 		}
+
+		/// store a swap option possibly replacing any previously existing option
+		pub fn do_issue_swap_asset_option(
+			cid: CommunityIdentifier,
+			who: &T::AccountId,
+			option: SwapAssetOption<BalanceOf<T>, T::Moment, T::AssetKind>,
+		) -> DispatchResultWithPostInfo {
+			SwapAssetOptions::<T>::insert(cid, who, option);
+			Self::deposit_event(Event::GrantedSwapNativeOption { cid, who: who.clone() });
+			Ok(().into())
+		}
 	}
 
 	#[pallet::event]
@@ -196,9 +338,20 @@ pub mod pallet {
 			beneficiary: T::AccountId,
 			amount: BalanceOf<T>,
 		},
+		SpentAsset {
+			treasury: T::AccountId,
+			beneficiary: T::AccountId,
+			asset_id: T::AssetKind,
+			amount: BalanceOf<T>,
+		},
 		GrantedSwapNativeOption {
 			cid: CommunityIdentifier,
 			who: T::AccountId,
+		},
+		GrantedSwapAssetOption {
+			cid: CommunityIdentifier,
+			who: T::AccountId,
+			asset_id: T::AssetKind,
 		},
 	}
 
@@ -210,5 +363,6 @@ pub mod pallet {
 		SwapOverflow,
 		InsufficientNativeFunds,
 		InsufficientAllowance,
+		PayoutError,
 	}
 }
