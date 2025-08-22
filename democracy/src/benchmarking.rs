@@ -1,5 +1,3 @@
-
-
 use crate::{Pallet as EncointerDemocracy, *};
 use alloc::boxed::Box;
 use encointer_primitives::{

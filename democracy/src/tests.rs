@@ -831,7 +831,8 @@ fn proposal_happy_flow() {
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 		assert_eq!(
 			last_event::<TestRuntime>(),
 			Some(
@@ -900,7 +901,8 @@ fn enact_add_location_works() {
 		let proposal_action = ProposalAction::AddLocation(cid, location);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 
@@ -928,7 +930,8 @@ fn enact_remove_location_works() {
 		let proposal_action = ProposalAction::RemoveLocation(cid, location);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 
@@ -959,7 +962,8 @@ fn enact_update_community_metadata_works() {
 		let proposal_action = ProposalAction::UpdateCommunityMetadata(cid, community_metadata);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -986,7 +990,8 @@ fn enact_update_demurrage_works() {
 		let proposal_action = ProposalAction::UpdateDemurrage(cid, demurrage);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1011,7 +1016,8 @@ fn enact_update_nominal_income_works() {
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1033,7 +1039,8 @@ fn enact_set_inactivity_timeout_works() {
 			ProposalAction::SetInactivityTimeout(InactivityTimeoutType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1064,7 +1071,8 @@ fn enact_petition_works() {
 		let proposal_action = ProposalAction::Petition(Some(cid), petition_text.clone());
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1103,7 +1111,8 @@ fn enact_spend_native_works() {
 		let proposal_action = ProposalAction::SpendNative(Some(cid), beneficiary.clone(), amount);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1136,7 +1145,8 @@ fn enact_spend_asset_works() {
 			ProposalAction::SpendAsset(Some(cid), beneficiary.clone(), amount, asset_id);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1174,7 +1184,8 @@ fn enact_issue_swap_native_option_works() {
 			ProposalAction::IssueSwapNativeOption(cid, beneficiary.clone(), swap_option);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1213,7 +1224,8 @@ fn enact_issue_swap_asset_option_works() {
 			ProposalAction::IssueSwapAssetOption(cid, beneficiary.clone(), swap_option);
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
@@ -1240,7 +1252,8 @@ fn enactment_error_fires_event() {
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(13037u32));
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice.clone()),
-			Box::new(proposal_action.clone())		));
+			Box::new(proposal_action.clone())
+		));
 
 		// directly inject the proposal into the enactment queue
 		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
