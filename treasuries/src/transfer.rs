@@ -1,4 +1,3 @@
-
 use core::fmt::Debug;
 use frame_support::traits::tokens::PaymentStatus;
 use scale_info::TypeInfo;
