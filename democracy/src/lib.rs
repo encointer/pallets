@@ -18,6 +18,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+use alloc::{boxed::Box, string::ToString};
 use encointer_primitives::{
 	ceremonies::ReputationCountType,
 	common::PalletString,
@@ -42,11 +45,6 @@ pub use weights::WeightInfo;
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
 
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(not(feature = "std"))]
-use alloc::string::ToString;
 use frame_support::traits::Currency;
 // Logger target
 //const LOG: &str = "encointer";
@@ -250,7 +248,9 @@ pub mod pallet {
         )]
 		pub fn submit_proposal(
 			origin: OriginFor<T>,
-			proposal_action: ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
+			proposal_action: Box<
+				ProposalAction<T::AccountId, BalanceOf<T>, T::Moment, AssetKindOf<T>>,
+			>,
 		) -> DispatchResultWithPostInfo {
 			if Self::enactment_queue(proposal_action.clone().get_identifier()).is_some() {
 				return Err(Error::<T>::ProposalWaitingForEnactment.into());
@@ -266,8 +266,8 @@ pub mod pallet {
 				start: now,
 				start_cindex: cindex,
 				state: ProposalState::Ongoing,
-				action: proposal_action.clone(),
-				electorate_size: Self::get_electorate(cindex, proposal_action.clone())?,
+				action: *proposal_action.clone(),
+				electorate_size: Self::get_electorate(cindex, *proposal_action.clone())?,
 			};
 
 			let proposal_identifier =
@@ -285,7 +285,7 @@ pub mod pallet {
 			<Tallies<T>>::insert(next_proposal_id, Tally { turnout: 0, ayes: 0 });
 			Self::deposit_event(Event::ProposalSubmitted {
 				proposal_id: next_proposal_id,
-				proposal_action,
+				proposal_action: *proposal_action,
 			});
 			Ok(().into())
 		}

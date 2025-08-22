@@ -1,4 +1,5 @@
 use crate::{Pallet as EncointerDemocracy, *};
+use alloc::boxed::Box;
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::CommunityIdentifier,
@@ -37,7 +38,7 @@ benchmarks! {
 		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
 		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".as_bytes().to_vec()).unwrap());
 		assert!(<Proposals<T>>::iter().next().is_none());
-	}: _(RawOrigin::Signed(zoran), proposal_action)
+	}: _(RawOrigin::Signed(zoran), Box::new(proposal_action))
 	verify {
 		assert!(<Proposals<T>>::iter().next().is_some());
 	}
@@ -64,7 +65,7 @@ benchmarks! {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 		assert_ok!(EncointerDemocracy::<T>::submit_proposal(
 			RawOrigin::Signed(zoran.clone()).into(),
-			proposal_action
+			Box::new(proposal_action)
 		));
 
 		assert_eq!(<Tallies<T>>::get(1).unwrap().ayes, 0);
@@ -86,7 +87,7 @@ benchmarks! {
 		let proposal_action = ProposalAction::SetInactivityTimeout(8);
 		assert_ok!(EncointerDemocracy::<T>::submit_proposal(
 			RawOrigin::Signed(zoran.clone()).into(),
-			proposal_action
+			Box::new(proposal_action)
 		));
 
 
