@@ -71,6 +71,7 @@ benchmarks! {
 			swap_option
 		).unwrap();
 
+		// `ensure_successful` ignore every argument except for `asset_id` in practice.
 		T::Paymaster::ensure_successful(&alice, &alice, asset_id, asset_allowance.into());
 
 	} : _(RawOrigin::Signed(alice.clone()), cid, 50_000_000u64.saturated_into())
