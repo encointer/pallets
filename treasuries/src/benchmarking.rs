@@ -53,12 +53,13 @@ benchmarks! {
 		let cid = CommunityIdentifier::default();
 		let alice: T::AccountId = account("alice", 1, 1);
 		let asset_id = T::BenchmarkHelper::create_asset_kind(1);
+		let asset_allowance = 100_000_000u32;
 
 		pallet_encointer_balances::Pallet::<T>::issue(cid, &alice, BalanceType::from_num(12i32)).unwrap();
 		let swap_option = SwapAssetOption {
 			cid,
-			asset_allowance: 100_000_000u64.saturated_into(),
-			asset_id,
+			asset_allowance: asset_allowance.into(),
+			asset_id: asset_id.clone(),
 			rate: Some(BalanceType::from_num(0.000_000_2)),
 			do_burn: false,
 			valid_from: None,
@@ -69,6 +70,9 @@ benchmarks! {
 			&alice,
 			swap_option
 		).unwrap();
+
+		T::Paymaster::ensure_successful(&alice, &alice, asset_id, asset_allowance.into());
+
 	} : _(RawOrigin::Signed(alice.clone()), cid, 50_000_000u64.saturated_into())
 	verify {
 	}
