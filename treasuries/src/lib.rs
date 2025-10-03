@@ -305,8 +305,9 @@ pub mod pallet {
 			who: &T::AccountId,
 			option: SwapAssetOption<BalanceOf<T>, T::Moment, T::AssetKind>,
 		) -> DispatchResultWithPostInfo {
+			let asset_id = option.asset_id.clone();
 			SwapAssetOptions::<T>::insert(cid, who, option);
-			Self::deposit_event(Event::GrantedSwapNativeOption { cid, who: who.clone() });
+			Self::deposit_event(Event::GrantedSwapAssetOption { cid, who: who.clone(), asset_id });
 			Ok(().into())
 		}
 	}
