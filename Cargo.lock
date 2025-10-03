@@ -1814,7 +1814,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "20.5.0"
+version = "20.5.1"
 dependencies = [
  "approx",
  "bs58",
@@ -5041,7 +5041,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries"
-version = "20.7.0"
+version = "20.7.1"
 dependencies = [
  "approx",
  "encointer-primitives",
