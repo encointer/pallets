@@ -179,9 +179,9 @@ impl<AccountId, Balance, Moment, AssetId> ProposalAction<AccountId, Balance, Mom
 			ProposalAction::IssueSwapNativeOption(cid, ..) =>
 				ProposalActionIdentifier::IssueSwapNativeOption(*cid),
 			ProposalAction::SpendAsset(maybe_cid, ..) =>
-				ProposalActionIdentifier::SpendNative(*maybe_cid),
+				ProposalActionIdentifier::SpendAsset(*maybe_cid),
 			ProposalAction::IssueSwapAssetOption(cid, ..) =>
-				ProposalActionIdentifier::IssueSwapNativeOption(*cid),
+				ProposalActionIdentifier::IssueSwapAssetOption(*cid),
 		}
 	}
 
