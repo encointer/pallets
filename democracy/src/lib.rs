@@ -450,9 +450,9 @@ pub mod pallet {
 			let proposal_action_identifier = proposal.action.clone().get_identifier();
 			let last_approved_proposal_for_action =
 				Self::last_approved_proposal_for_action(proposal_action_identifier);
-			let proposal_cancelled_by_other = proposal.action.supersedes_same_action()
-				&& last_approved_proposal_for_action.is_some()
-				&& proposal.start < last_approved_proposal_for_action.unwrap().0;
+			let proposal_cancelled_by_other = proposal.action.supersedes_same_action() &&
+				last_approved_proposal_for_action.is_some() &&
+				proposal.start < last_approved_proposal_for_action.unwrap().0;
 			let proposal_too_old = now - proposal.start > T::ProposalLifetime::get();
 			if proposal_cancelled_by_other {
 				proposal.state =
@@ -463,8 +463,8 @@ pub mod pallet {
 					// confirming
 					if let ProposalState::Confirming { since } = proposal.state {
 						// confirmed longer than period
-						if now.checked_sub(&since).unwrap_or_default()
-							> T::ConfirmationPeriod::get()
+						if now.checked_sub(&since).unwrap_or_default() >
+							T::ConfirmationPeriod::get()
 						{
 							proposal.state = ProposalState::Approved;
 							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
@@ -505,9 +505,8 @@ pub mod pallet {
 			let voting_cindexes = Self::voting_cindexes(start_cindex)?;
 
 			let electorate = match proposal_action.get_access_policy() {
-				ProposalAccessPolicy::Community(cid) => {
-					Self::community_electorate(cid, voting_cindexes)
-				},
+				ProposalAccessPolicy::Community(cid) =>
+					Self::community_electorate(cid, voting_cindexes),
 				ProposalAccessPolicy::Global => Self::global_electorate(voting_cindexes),
 			};
 

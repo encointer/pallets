@@ -143,9 +143,8 @@ impl<AccountId, Balance, Moment, AssetId> ProposalAction<AccountId, Balance, Mom
 		match self {
 			ProposalAction::AddLocation(cid, _) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::RemoveLocation(cid, _) => ProposalAccessPolicy::Community(*cid),
-			ProposalAction::UpdateCommunityMetadata(cid, _) => {
-				ProposalAccessPolicy::Community(*cid)
-			},
+			ProposalAction::UpdateCommunityMetadata(cid, _) =>
+				ProposalAccessPolicy::Community(*cid),
 			ProposalAction::UpdateDemurrage(cid, _) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::UpdateNominalIncome(cid, _) => ProposalAccessPolicy::Community(*cid),
 			ProposalAction::SetInactivityTimeout(_) => ProposalAccessPolicy::Global,
@@ -163,36 +162,26 @@ impl<AccountId, Balance, Moment, AssetId> ProposalAction<AccountId, Balance, Mom
 	pub fn get_identifier(&self) -> ProposalActionIdentifier {
 		match self {
 			ProposalAction::AddLocation(cid, _) => ProposalActionIdentifier::AddLocation(*cid),
-			ProposalAction::RemoveLocation(cid, _) => {
-				ProposalActionIdentifier::RemoveLocation(*cid)
-			},
-			ProposalAction::UpdateCommunityMetadata(cid, _) => {
-				ProposalActionIdentifier::UpdateCommunityMetadata(*cid)
-			},
-			ProposalAction::UpdateDemurrage(cid, _) => {
-				ProposalActionIdentifier::UpdateDemurrage(*cid)
-			},
-			ProposalAction::UpdateNominalIncome(cid, _) => {
-				ProposalActionIdentifier::UpdateNominalIncome(*cid)
-			},
-			ProposalAction::SetInactivityTimeout(_) => {
-				ProposalActionIdentifier::SetInactivityTimeout
-			},
-			ProposalAction::Petition(maybe_cid, _) => {
-				ProposalActionIdentifier::Petition(*maybe_cid)
-			},
-			ProposalAction::SpendNative(maybe_cid, ..) => {
-				ProposalActionIdentifier::SpendNative(*maybe_cid)
-			},
-			ProposalAction::IssueSwapNativeOption(cid, ..) => {
-				ProposalActionIdentifier::IssueSwapNativeOption(*cid)
-			},
-			ProposalAction::SpendAsset(maybe_cid, ..) => {
-				ProposalActionIdentifier::SpendAsset(*maybe_cid)
-			},
-			ProposalAction::IssueSwapAssetOption(cid, ..) => {
-				ProposalActionIdentifier::IssueSwapAssetOption(*cid)
-			},
+			ProposalAction::RemoveLocation(cid, _) =>
+				ProposalActionIdentifier::RemoveLocation(*cid),
+			ProposalAction::UpdateCommunityMetadata(cid, _) =>
+				ProposalActionIdentifier::UpdateCommunityMetadata(*cid),
+			ProposalAction::UpdateDemurrage(cid, _) =>
+				ProposalActionIdentifier::UpdateDemurrage(*cid),
+			ProposalAction::UpdateNominalIncome(cid, _) =>
+				ProposalActionIdentifier::UpdateNominalIncome(*cid),
+			ProposalAction::SetInactivityTimeout(_) =>
+				ProposalActionIdentifier::SetInactivityTimeout,
+			ProposalAction::Petition(maybe_cid, _) =>
+				ProposalActionIdentifier::Petition(*maybe_cid),
+			ProposalAction::SpendNative(maybe_cid, ..) =>
+				ProposalActionIdentifier::SpendNative(*maybe_cid),
+			ProposalAction::IssueSwapNativeOption(cid, ..) =>
+				ProposalActionIdentifier::IssueSwapNativeOption(*cid),
+			ProposalAction::SpendAsset(maybe_cid, ..) =>
+				ProposalActionIdentifier::SpendAsset(*maybe_cid),
+			ProposalAction::IssueSwapAssetOption(cid, ..) =>
+				ProposalActionIdentifier::IssueSwapAssetOption(*cid),
 		}
 	}
 

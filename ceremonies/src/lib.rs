@@ -280,8 +280,8 @@ pub mod pallet {
 						);
 
 						ensure!(
-							Self::participant_reputation(cc, &sender)
-								== Reputation::VerifiedLinked(cindex),
+							Self::participant_reputation(cc, &sender) ==
+								Reputation::VerifiedLinked(cindex),
 							Error::<T>::ReputationMustBeLinked
 						);
 
@@ -316,8 +316,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			ensure!(
-				<pallet_encointer_scheduler::Pallet<T>>::current_phase()
-					== CeremonyPhaseType::Attesting,
+				<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
+					CeremonyPhaseType::Attesting,
 				Error::<T>::AttestationPhaseRequired
 			);
 			ensure!(
@@ -373,8 +373,8 @@ pub mod pallet {
 			);
 
 			let mut cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
-			if <pallet_encointer_scheduler::Pallet<T>>::current_phase()
-				!= CeremonyPhaseType::Registering
+			if <pallet_encointer_scheduler::Pallet<T>>::current_phase() !=
+				CeremonyPhaseType::Registering
 			{
 				cindex += 1; //safe; cindex comes from within, will not overflow at +1/d
 			}
@@ -417,9 +417,8 @@ pub mod pallet {
 			match current_phase {
 				CeremonyPhaseType::Registering => cindex -= 1,
 				CeremonyPhaseType::Attesting => (),
-				CeremonyPhaseType::Assigning => {
-					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into())
-				},
+				CeremonyPhaseType::Assigning =>
+					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into()),
 			}
 
 			let meetup_index = match maybe_meetup_index {
@@ -509,8 +508,8 @@ pub mod pallet {
 					}
 				},
 			};
-			if current_phase == CeremonyPhaseType::Attesting
-				&& !participant_judgements.early_rewards_possible
+			if current_phase == CeremonyPhaseType::Attesting &&
+				!participant_judgements.early_rewards_possible
 			{
 				debug!(
 					target: LOG,
@@ -610,8 +609,8 @@ pub mod pallet {
 			meetup_time_offset: MeetupTimeOffsetType,
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
-			if <pallet_encointer_scheduler::Pallet<T>>::current_phase()
-				!= CeremonyPhaseType::Registering
+			if <pallet_encointer_scheduler::Pallet<T>>::current_phase() !=
+				CeremonyPhaseType::Registering
 			{
 				return Err(<Error<T>>::WrongPhaseForChangingMeetupTimeOffset.into());
 			}
@@ -1264,8 +1263,8 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		participant: &T::AccountId,
 	) -> Result<(), Error<T>> {
-		if <pallet_encointer_scheduler::Pallet<T>>::current_phase()
-			!= CeremonyPhaseType::Registering
+		if <pallet_encointer_scheduler::Pallet<T>>::current_phase() !=
+			CeremonyPhaseType::Registering
 		{
 			return Err(<Error<T>>::WrongPhaseForUnregistering);
 		}
@@ -1315,10 +1314,10 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		sender: &T::AccountId,
 	) -> bool {
-		<BootstrapperIndex<T>>::contains_key((cid, cindex), sender)
-			|| <ReputableIndex<T>>::contains_key((cid, cindex), sender)
-			|| <EndorseeIndex<T>>::contains_key((cid, cindex), sender)
-			|| <NewbieIndex<T>>::contains_key((cid, cindex), sender)
+		<BootstrapperIndex<T>>::contains_key((cid, cindex), sender) ||
+			<ReputableIndex<T>>::contains_key((cid, cindex), sender) ||
+			<EndorseeIndex<T>>::contains_key((cid, cindex), sender) ||
+			<NewbieIndex<T>>::contains_key((cid, cindex), sender)
 	}
 
 	/// Will burn the `sender`'s newbie tickets if he has some.
@@ -1330,18 +1329,18 @@ impl<T: Config> Pallet<T> {
 		cindex: CeremonyIndexType,
 		sender: &T::AccountId,
 	) -> Result<(), Error<T>> {
-		if Self::has_reputation(sender, &cid)
-			&& <BurnedReputableNewbieTickets<T>>::get((cid, cindex), sender)
-				< Self::endorsement_tickets_per_reputable()
+		if Self::has_reputation(sender, &cid) &&
+			<BurnedReputableNewbieTickets<T>>::get((cid, cindex), sender) <
+				Self::endorsement_tickets_per_reputable()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
 			<BurnedReputableNewbieTickets<T>>::mutate((cid, cindex), sender, |b| *b += 1);
 			return Ok(());
 		}
 
-		if <pallet_encointer_communities::Pallet<T>>::bootstrappers(cid).contains(sender)
-			&& <BurnedBootstrapperNewbieTickets<T>>::get(cid, sender)
-				< Self::endorsement_tickets_per_bootstrapper()
+		if <pallet_encointer_communities::Pallet<T>>::bootstrappers(cid).contains(sender) &&
+			<BurnedBootstrapperNewbieTickets<T>>::get(cid, sender) <
+				Self::endorsement_tickets_per_bootstrapper()
 		{
 			// safe; limited by AMOUNT_NEWBIE_TICKETS
 			<BurnedBootstrapperNewbieTickets<T>>::mutate(cid, sender, |b| *b += 1);
@@ -1508,8 +1507,8 @@ impl<T: Config> Pallet<T> {
 		//safe; number of assigned bootstrappers <= max_num_meetups <=num_assigned_bootstrappers +
 		// num_reputables
 		let mut seats_left =
-			max_num_meetups.checked_mul(meetup_multiplier).ok_or(Error::<T>::CheckedMath)?
-				- num_registered_bootstrappers;
+			max_num_meetups.checked_mul(meetup_multiplier).ok_or(Error::<T>::CheckedMath)? -
+				num_registered_bootstrappers;
 
 		let num_assigned_reputables = min(num_registered_reputables, seats_left);
 		seats_left -= num_assigned_reputables; //safe; given by minimum above
@@ -1519,8 +1518,8 @@ impl<T: Config> Pallet<T> {
 
 		let num_assigned_newbies = min(
 			min(num_registered_newbies, seats_left),
-			(num_registered_bootstrappers + num_assigned_reputables + num_assigned_endorsees)
-				/ T::MeetupNewbieLimitDivider::get(), //safe; sum equals total
+			(num_registered_bootstrappers + num_assigned_reputables + num_assigned_endorsees) /
+				T::MeetupNewbieLimitDivider::get(), //safe; sum equals total
 		);
 		info!(
 			target: LOG,
@@ -1766,8 +1765,8 @@ impl<T: Config> Pallet<T> {
 
 	// this function only works during ATTESTING, so we're keeping it for private use
 	pub(crate) fn get_meetup_time(location: Location) -> Option<T::Moment> {
-		if !(<pallet_encointer_scheduler::Pallet<T>>::current_phase()
-			== CeremonyPhaseType::Attesting)
+		if !(<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
+			CeremonyPhaseType::Attesting)
 		{
 			return None;
 		}

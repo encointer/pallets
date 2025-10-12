@@ -121,8 +121,8 @@ fn haversine_distance_works() {
 
 		// pole to pole
 		assert_abs_diff_eq!(
-			f64::from(EncointerCommunities::haversine_distance(&NORTH_POLE, &SOUTH_POLE) as i32)
-				* 0.001,
+			f64::from(EncointerCommunities::haversine_distance(&NORTH_POLE, &SOUTH_POLE) as i32) *
+				0.001,
 			12742.0,
 			epsilon = 0.1
 		);

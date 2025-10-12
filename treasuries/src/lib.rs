@@ -143,8 +143,8 @@ pub mod pallet {
 			);
 			let treasury_account = Self::get_community_treasury_account_unchecked(Some(cid));
 			ensure!(
-				T::Currency::free_balance(&treasury_account) - T::Currency::minimum_balance()
-					>= desired_native_amount,
+				T::Currency::free_balance(&treasury_account) - T::Currency::minimum_balance() >=
+					desired_native_amount,
 				Error::<T>::InsufficientNativeFunds
 			);
 			let rate = swap_option.rate.ok_or(Error::<T>::SwapRateNotDefined)?;
