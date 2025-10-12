@@ -1,6 +1,6 @@
 [package]
 name = "encointer-balances-tx-payment-rpc"
-version = "20.1.0"
+version = "20.1.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Balances tx payment rpc for the Encointer blockchain runtime"
