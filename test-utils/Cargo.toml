@@ -1,6 +1,6 @@
 [package]
 name = "test-utils"
-version = "20.3.0"
+version = "20.3.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Test utils for the Encointer blockchain runtime"
