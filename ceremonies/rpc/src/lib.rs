@@ -157,7 +157,7 @@ where
 
 		if !self.offchain_indexing {
 			return Err(
-				Error::OffchainIndexingDisabled("ceremonies_getReputations".to_string()).into()
+				Error::OffchainIndexingDisabled("encointer_getReputations".to_string()).into()
 			);
 		}
 
