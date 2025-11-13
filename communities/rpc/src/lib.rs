@@ -149,7 +149,9 @@ where
 {
 	fn communities_get_all(&self, at: Option<<Block as BlockT>::Hash>) -> RpcResult<Vec<CidName>> {
 		if !self.offchain_indexing {
-			return Err(Error::OffchainIndexingDisabled("encointer_getAllCommunities".to_string()).into());
+			return Err(
+				Error::OffchainIndexingDisabled("encointer_getAllCommunities".to_string()).into()
+			);
 		}
 
 		if self.cache_dirty() {
