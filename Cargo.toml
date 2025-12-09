@@ -74,17 +74,17 @@ serde = { version = "1.0.197", default-features = false, features = ["derive", "
 thiserror = "2.0.11"
 
 # polkadot-sdk [no_std]
-frame-benchmarking = { version = "43.0.0", default-features = false }
-frame-support = { version = "43.0.0", default-features = false }
-frame-system = { version = "43.0.0", default-features = false }
-pallet-asset-tx-payment = { version = "43.0.0", default-features = false }
-pallet-balances = { version = "44.0.0", default-features = false }
-pallet-timestamp = { version = "42.0.0", default-features = false }
-pallet-transaction-payment = { version = "43.0.0", default-features = false }
+frame-benchmarking = { version = "44.0.0", default-features = false }
+frame-support = { version = "44.0.0", default-features = false }
+frame-system = { version = "44.0.0", default-features = false }
+pallet-asset-tx-payment = { version = "44.0.0", default-features = false }
+pallet-balances = { version = "45.0.0", default-features = false }
+pallet-timestamp = { version = "43.0.0", default-features = false }
+pallet-transaction-payment = { version = "44.0.0", default-features = false }
 sp-api = { version = "39.0.0", default-features = false }
 sp-application-crypto = { version = "43.0.0", default-features = false }
 sp-arithmetic = { version = "28.0.0", default-features = false }
-sp-core = { version = "38.1.0", default-features = false }
+sp-core = { version = "38.0.1", default-features = false }
 sp-io = { version = "43.0.0", default-features = false }
 sp-runtime = { version = "44.0.0", default-features = false }
 sp-std = { version = "14.0.0", default-features = false }
@@ -93,9 +93,9 @@ sp-std = { version = "14.0.0", default-features = false }
 jsonrpsee = { version = "0.24.7", features = ["client-core", "server", "macros"] }
 jsonrpsee-core = { version = "0.24.7" }
 jsonrpsee-types = { version = "0.24.7" }
-pallet-transaction-payment-rpc = { version = "46.0.0" }
-sc-rpc = "48.0.0"
-sc-rpc-api = "0.52.0"
+pallet-transaction-payment-rpc = { version = "47.0.0" }
+sc-rpc = "49.0.0"
+sc-rpc-api = "0.53.0"
 sp-blockchain = "42.0.0"
 sp-rpc = "36.0.1"
 
