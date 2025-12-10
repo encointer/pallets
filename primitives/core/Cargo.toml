@@ -1,6 +1,6 @@
 [package]
 name = "ep-core"
-version = "20.0.1"
+version = "20.0.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Core primitives for the Encointer blockchain runtime"

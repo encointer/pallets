@@ -1,6 +1,6 @@
 [package]
 name = "encointer-rpc"
-version = "20.1.2"
+version = "20.1.3"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "RPC for the Encointer blockchain runtime"
