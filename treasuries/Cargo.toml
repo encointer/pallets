@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-treasuries"
-version = "20.7.2"
+version = "21.7.2"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Treasuries pallet for the Encointer blockchain runtime"
