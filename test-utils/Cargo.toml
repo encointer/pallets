@@ -1,6 +1,6 @@
 [package]
 name = "test-utils"
-version = "20.3.1"
+version = "21.3.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Test utils for the Encointer blockchain runtime"
@@ -31,8 +31,6 @@ frame-system = { workspace = true, features = ["std"] }
 pallet-balances = { workspace = true, features = ["std"] }
 pallet-timestamp = { workspace = true, features = ["std"] }
 sp-core = { workspace = true, features = ["std"] }
-sp-inherents = { workspace = true }
-sp-io = { workspace = true, features = ["std"] }
 sp-keyring = { workspace = true }
 sp-runtime = { workspace = true, features = ["std"] }
 sp-std = { workspace = true, features = ["std"] }

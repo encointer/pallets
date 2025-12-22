@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-balances"
-version = "20.2.1"
+version = "21.2.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Balances pallet for the Encointer blockchain runtime"
