@@ -4847,7 +4847,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "21.1.1"
+version = "21.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -8064,7 +8064,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "test-utils"
-version = "21.3.1"
+version = "21.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -8080,8 +8080,6 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-core",
- "sp-inherents",
- "sp-io",
  "sp-keyring",
  "sp-runtime",
  "sp-std",
