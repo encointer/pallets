@@ -214,6 +214,7 @@ checksum = "1f3a13b34da09176a8baba701233fdffbaa7c1b1192ce031a3da4e55ce1f1a56"
 dependencies = [
  "ark-ec 0.4.2",
  "ark-ff 0.4.2",
+ "ark-r1cs-std",
  "ark-relations",
  "ark-serialize 0.4.2",
  "ark-snark",
@@ -222,6 +223,7 @@ dependencies = [
  "derivative",
  "digest 0.10.7",
  "sha2 0.10.9",
+ "tracing",
 ]
 
 [[package]]
@@ -5067,6 +5069,7 @@ name = "pallet-encointer-offline-payment"
 version = "0.1.0"
 dependencies = [
  "ark-bn254",
+ "ark-crypto-primitives",
  "ark-ec 0.4.2",
  "ark-ff 0.4.2",
  "ark-groth16",

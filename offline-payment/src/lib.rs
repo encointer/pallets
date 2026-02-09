@@ -53,6 +53,11 @@ const LOG: &str = "encointer::offline-payment";
 pub use pallet::*;
 pub mod verifier;
 
+#[cfg(feature = "std")]
+pub mod circuit;
+#[cfg(feature = "std")]
+pub mod prover;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(test)]
