@@ -4978,6 +4978,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-offline-payment"
+version = "0.1.0"
+dependencies = [
+ "encointer-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-encointer-balances",
+ "pallet-encointer-communities",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+]
+
+[[package]]
 name = "pallet-encointer-reputation-commitments"
 version = "21.1.0"
 dependencies = [
