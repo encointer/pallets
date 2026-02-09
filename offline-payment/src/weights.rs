@@ -19,6 +19,7 @@ use frame_support::weights::Weight;
 pub trait WeightInfo {
 	fn register_offline_identity() -> Weight;
 	fn submit_offline_payment() -> Weight;
+	fn set_verification_key() -> Weight;
 }
 
 impl WeightInfo for () {
@@ -27,7 +28,12 @@ impl WeightInfo for () {
 	}
 
 	fn submit_offline_payment() -> Weight {
-		// In production with ZK: this would be higher due to pairing operations
-		Weight::from_parts(50_000, 0)
+		// Higher due to ZK pairing operations
+		Weight::from_parts(500_000_000, 0)
+	}
+
+	fn set_verification_key() -> Weight {
+		// VK deserialization validation
+		Weight::from_parts(100_000_000, 0)
 	}
 }

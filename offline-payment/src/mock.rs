@@ -39,12 +39,14 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub const MaxProofSize: u32 = 256;
+	pub const MaxVkSize: u32 = 2048;
 }
 
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type MaxProofSize = MaxProofSize;
+	type MaxVkSize = MaxVkSize;
 }
 
 // boilerplate
