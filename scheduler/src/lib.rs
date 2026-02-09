@@ -224,9 +224,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn get_cycle_duration() -> T::Moment {
-		<PhaseDurations<T>>::get(CeremonyPhaseType::Registering)
-			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Assigning)
-			+ <PhaseDurations<T>>::get(CeremonyPhaseType::Attesting)
+		<PhaseDurations<T>>::get(CeremonyPhaseType::Registering) +
+			<PhaseDurations<T>>::get(CeremonyPhaseType::Assigning) +
+			<PhaseDurations<T>>::get(CeremonyPhaseType::Attesting)
 	}
 
 	// we need to resync in two situations:

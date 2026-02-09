@@ -53,15 +53,12 @@ pub mod v1 {
 			linked_cindex: CeremonyIndexType,
 		) -> encointer_primitives::ceremonies::Reputation {
 			match self {
-				Reputation::UnverifiedReputable => {
-					encointer_primitives::ceremonies::Reputation::UnverifiedReputable
-				},
-				Reputation::VerifiedLinked => {
-					encointer_primitives::ceremonies::Reputation::VerifiedLinked(linked_cindex)
-				},
-				Reputation::VerifiedUnlinked => {
-					encointer_primitives::ceremonies::Reputation::VerifiedUnlinked
-				},
+				Reputation::UnverifiedReputable =>
+					encointer_primitives::ceremonies::Reputation::UnverifiedReputable,
+				Reputation::VerifiedLinked =>
+					encointer_primitives::ceremonies::Reputation::VerifiedLinked(linked_cindex),
+				Reputation::VerifiedUnlinked =>
+					encointer_primitives::ceremonies::Reputation::VerifiedUnlinked,
 				Reputation::Unverified => encointer_primitives::ceremonies::Reputation::Unverified,
 			}
 		}
