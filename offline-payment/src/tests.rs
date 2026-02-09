@@ -62,7 +62,7 @@ fn register_offline_identity_works() {
 			commitment
 		));
 
-		assert_eq!(OfflineIdentities::<TestRuntime>::get(&alice()), Some(commitment));
+		assert_eq!(OfflineIdentities::<TestRuntime>::get(alice()), Some(commitment));
 
 		// Check event
 		System::assert_last_event(
@@ -108,8 +108,8 @@ fn different_accounts_can_register_different_commitments() {
 			commitment2
 		));
 
-		assert_eq!(OfflineIdentities::<TestRuntime>::get(&alice()), Some(commitment1));
-		assert_eq!(OfflineIdentities::<TestRuntime>::get(&bob()), Some(commitment2));
+		assert_eq!(OfflineIdentities::<TestRuntime>::get(alice()), Some(commitment1));
+		assert_eq!(OfflineIdentities::<TestRuntime>::get(bob()), Some(commitment2));
 	});
 }
 
@@ -277,13 +277,13 @@ fn nullifier_storage_works() {
 		let nullifier = test_nullifier();
 
 		// Initially not used
-		assert!(!UsedNullifiers::<TestRuntime>::contains_key(&nullifier));
+		assert!(!UsedNullifiers::<TestRuntime>::contains_key(nullifier));
 
 		// Mark as used
-		UsedNullifiers::<TestRuntime>::insert(&nullifier, ());
+		UsedNullifiers::<TestRuntime>::insert(nullifier, ());
 
 		// Now it's used
-		assert!(UsedNullifiers::<TestRuntime>::contains_key(&nullifier));
+		assert!(UsedNullifiers::<TestRuntime>::contains_key(nullifier));
 	});
 }
 
@@ -328,10 +328,12 @@ fn balance_to_bytes_works() {
 
 #[test]
 fn e2e_zk_payment_works() {
-	use crate::circuit::{compute_commitment, compute_nullifier, poseidon_config};
-	use crate::prover::{
-		bytes32_to_field, field_to_bytes32, generate_proof, proof_to_bytes, TrustedSetup,
-		TEST_SETUP_SEED,
+	use crate::{
+		circuit::{compute_commitment, poseidon_config},
+		prover::{
+			bytes32_to_field, field_to_bytes32, generate_proof, proof_to_bytes, TrustedSetup,
+			TEST_SETUP_SEED,
+		},
 	};
 	use ark_bn254::Fr;
 	use parity_scale_codec::Encode;
@@ -346,7 +348,10 @@ fn e2e_zk_payment_works() {
 		// Step 2: Set the verification key via sudo
 		let bounded_vk: BoundedVec<u8, MaxVkSize> =
 			BoundedVec::try_from(vk_bytes).expect("VK too large");
-		assert_ok!(EncointerOfflinePayment::set_verification_key(RuntimeOrigin::root(), bounded_vk));
+		assert_ok!(EncointerOfflinePayment::set_verification_key(
+			RuntimeOrigin::root(),
+			bounded_vk
+		));
 
 		// Step 3: Setup - create community and fund Alice
 		let cid = setup_community_with_balance(&alice(), BalanceType::from_num(100));
@@ -416,10 +421,11 @@ fn e2e_zk_payment_works() {
 		);
 
 		// Step 9: Verify nullifier is marked as used (double-spend prevention)
-		assert!(UsedNullifiers::<TestRuntime>::contains_key(&nullifier));
+		assert!(UsedNullifiers::<TestRuntime>::contains_key(nullifier));
 
 		// Step 10: Try to double-spend - should fail
-		let bounded_proof2: BoundedVec<u8, MaxProofSize> = BoundedVec::try_from(vec![0u8; 128]).unwrap();
+		let bounded_proof2: BoundedVec<u8, MaxProofSize> =
+			BoundedVec::try_from(vec![0u8; 128]).unwrap();
 		let proof_struct2 = Groth16ProofBytes { proof_bytes: bounded_proof2 };
 		assert_noop!(
 			EncointerOfflinePayment::submit_offline_payment(
@@ -448,7 +454,10 @@ fn e2e_invalid_proof_rejected() {
 		let vk_bytes = setup.verifying_key_bytes();
 		let bounded_vk: BoundedVec<u8, MaxVkSize> =
 			BoundedVec::try_from(vk_bytes).expect("VK too large");
-		assert_ok!(EncointerOfflinePayment::set_verification_key(RuntimeOrigin::root(), bounded_vk));
+		assert_ok!(EncointerOfflinePayment::set_verification_key(
+			RuntimeOrigin::root(),
+			bounded_vk
+		));
 
 		// Setup community
 		let cid = setup_community_with_balance(&alice(), BalanceType::from_num(100));

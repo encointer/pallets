@@ -122,9 +122,9 @@ fn early_rewards_possible(
 	n_confirmed: u32,
 	vote_is_unanimous: bool,
 ) -> bool {
-	if vote_is_unanimous &&
-		vote_yields_majority(num_total_participants, n_confirmed) &&
-		num_attestations_matches_vote(
+	if vote_is_unanimous
+		&& vote_yields_majority(num_total_participants, n_confirmed)
+		&& num_attestations_matches_vote(
 			&legit_participants,
 			&participant_attestations,
 			n_confirmed,

@@ -173,7 +173,9 @@ where
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<Vec<Location>> {
 		if !self.offchain_indexing {
-			return Err(Error::OffchainIndexingDisabled("encointer_getLocations".to_string()).into());
+			return Err(
+				Error::OffchainIndexingDisabled("encointer_getLocations".to_string()).into()
+			);
 		}
 
 		if self.cache_dirty() {

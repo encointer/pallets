@@ -194,8 +194,9 @@ impl FromStr for CommunityIdentifier {
 fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 	use bs58::decode::Error as Bs58Err;
 	match err {
-		Bs58Err::InvalidCharacter { character, index } =>
-			Bs58Err::InvalidCharacter { character, index: index + 5 },
+		Bs58Err::InvalidCharacter { character, index } => {
+			Bs58Err::InvalidCharacter { character, index: index + 5 }
+		},
 		err => err,
 	}
 }

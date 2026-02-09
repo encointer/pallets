@@ -240,8 +240,8 @@ pub mod pallet {
 
 			ensure!(from == faucet.creator, <Error<T>>::NotCreator);
 			ensure!(
-				<T as Config>::Currency::free_balance(&faucet_account) <
-					faucet.drip_amount.saturating_mul(2u32.saturated_into()),
+				<T as Config>::Currency::free_balance(&faucet_account)
+					< faucet.drip_amount.saturating_mul(2u32.saturated_into()),
 				<Error<T>>::FaucetNotEmpty
 			);
 
