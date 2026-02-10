@@ -54,9 +54,9 @@ pub use pallet::*;
 pub mod verifier;
 
 #[cfg(feature = "std")]
-pub mod circuit;
+pub use encointer_offline_payment_core::circuit;
 #[cfg(feature = "std")]
-pub mod prover;
+pub use encointer_offline_payment_core::prover;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;

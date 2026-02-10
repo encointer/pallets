@@ -1,12 +1,8 @@
 // FFI wrapper for Encointer offline payment ZK prover.
 //
-// Reuses circuit.rs and prover.rs from the pallet crate via #[path].
-// These modules are pure arkworks code with no substrate dependencies.
+// Uses the core crate for circuit and prover logic.
 
-#[path = "../../src/circuit.rs"]
-pub mod circuit;
-#[path = "../../src/prover.rs"]
-pub mod prover;
+pub use encointer_offline_payment_core::{circuit, prover};
 
 use blake2::{digest::consts::U32, Blake2b, Digest};
 

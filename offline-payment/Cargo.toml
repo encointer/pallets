@@ -29,6 +29,7 @@ ark-snark = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
 
 # local deps
+encointer-offline-payment-core = { path = "core", default-features = false }
 encointer-primitives = { workspace = true }
 pallet-encointer-balances = { workspace = true }
 pallet-encointer-communities = { workspace = true }
@@ -51,6 +52,7 @@ rand = "0.8"
 [features]
 default = ["std"]
 std = [
+    "encointer-offline-payment-core/std",
     "encointer-primitives/std",
     "frame-support/std",
     "frame-system/std",

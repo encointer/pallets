@@ -1959,6 +1959,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "encointer-offline-payment-core"
+version = "0.1.0"
+dependencies = [
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec 0.4.2",
+ "ark-ff 0.4.2",
+ "ark-groth16",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize 0.4.2",
+ "ark-snark",
+ "ark-std 0.4.0",
+]
+
+[[package]]
 name = "encointer-primitives"
 version = "21.5.0"
 dependencies = [
@@ -5078,6 +5094,7 @@ dependencies = [
  "ark-serialize 0.4.2",
  "ark-snark",
  "ark-std 0.4.0",
+ "encointer-offline-payment-core",
  "encointer-primitives",
  "frame-benchmarking",
  "frame-support",
