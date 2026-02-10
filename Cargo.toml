@@ -17,6 +17,7 @@ members = [
     'communities/rpc/runtime-api',
     'democracy',
     'faucet',
+    'offline-payment',
     'primitives',
     'primitives/core',
     'reputation-commitments',
@@ -50,6 +51,7 @@ pallet-encointer-communities = { path = "communities", default-features = false,
 pallet-encointer-reputation-commitments = { path = "reputation-commitments", default-features = false, version = "21.1.0" }
 pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "21.1.0" }
 pallet-encointer-treasuries = { path = "treasuries", default-features = false, version = "21.4.0" }
+pallet-encointer-offline-payment = { path = "offline-payment", default-features = false, version = "0.1.0" }
 test-utils = { path = "test-utils" }
 # rpc apis
 encointer-balances-tx-payment-rpc-runtime-api = { path = "balances-tx-payment/rpc/runtime-api", version = "21.1.0" }
