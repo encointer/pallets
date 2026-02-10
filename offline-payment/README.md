@@ -36,7 +36,7 @@ SETTLEMENT (either party online):
   9. Marks nullifier as used
 ```
 
-**Stack:** Circom circuit, Poseidon hash, Groth16 proving system, `mopro` Flutter plugin for mobile proof generation, custom Substrate pallet with `ark-groth16` verifier.
+**Stack:** Pure Rust arkworks circuit (ark-r1cs-std), Poseidon hash (ark-crypto-primitives), Groth16 proving system (ark-groth16), custom Substrate pallet with on-chain verification.
 
 ---
 
@@ -77,70 +77,91 @@ Total QR payload:         ~450 bytes → ~600 chars base64 → QR version 11 (61
 
 ## 4. ZK Circuit
 
-### 4.1 Circuit definition (Circom)
+### 4.1 Circuit definition (arkworks R1CS)
 
-**File: `circuits/offline_payment.circom`**
+**File: `src/circuit.rs`**
 
-```circom
-pragma circom 2.1.0;
+```rust
+use ark_bn254::Fr;
+use ark_crypto_primitives::sponge::poseidon::{constraints::PoseidonSpongeVar, PoseidonConfig};
+use ark_r1cs_std::{fields::fp::FpVar, prelude::*};
+use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError};
 
-include "node_modules/circomlib/circuits/poseidon.circom";
-include "node_modules/circomlib/circuits/bitify.circom";
-include "node_modules/circomlib/circuits/comparators.circom";
-
-template OfflinePayment() {
-    // --- Public inputs ---
-    signal input commitment;       // Poseidon(zk_secret), registered on-chain
-    signal input recipient;        // Poseidon(recipient_pubkey)
-    signal input amount;           // transfer amount as field element
-    signal input cid_hash;         // Poseidon(community_identifier)
-    signal input nullifier;        // unique payment identifier
-
-    // --- Private inputs (witness) ---
-    signal input zk_secret;        // derived from account seed
-    signal input nonce_secret;     // random per-payment
-
-    // --- Constraint 1: prove key ownership ---
-    // commitment == Poseidon(zk_secret)
-    component key_hash = Poseidon(1);
-    key_hash.inputs[0] <== zk_secret;
-    commitment === key_hash.out;
-
-    // --- Constraint 2: nullifier correctness ---
-    // nullifier == Poseidon(zk_secret, nonce_secret)
-    component null_hash = Poseidon(2);
-    null_hash.inputs[0] <== zk_secret;
-    null_hash.inputs[1] <== nonce_secret;
-    nullifier === null_hash.out;
-
-    // --- Constraint 3: amount is positive and bounded ---
-    // amount fits in 128 bits (matches Substrate u128 / FixedU128)
-    component amount_bits = Num2Bits(128);
-    amount_bits.in <== amount;
-
-    // --- Constraint 4: bind all public inputs ---
-    // (implicit — they're part of the SNARK verification equation)
+/// The offline payment circuit
+pub struct OfflinePaymentCircuit {
+    pub poseidon_config: PoseidonConfig<Fr>,
+    // Public inputs
+    pub commitment: Fr,      // Poseidon(zk_secret), registered on-chain
+    pub recipient_hash: Fr,  // hash of recipient account
+    pub amount: Fr,          // transfer amount as field element
+    pub cid_hash: Fr,        // hash of community identifier
+    pub nullifier: Fr,       // unique payment identifier
+    // Private inputs (witnesses)
+    pub zk_secret: Fr,       // derived from account seed
+    pub nonce: Fr,           // random per-payment
 }
 
-component main {public [commitment, recipient, amount, cid_hash, nullifier]}
-    = OfflinePayment();
+impl ConstraintSynthesizer<Fr> for OfflinePaymentCircuit {
+    fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
+        // Allocate public inputs
+        let commitment_var = FpVar::new_input(cs.clone(), || Ok(self.commitment))?;
+        let nullifier_var = FpVar::new_input(cs.clone(), || Ok(self.nullifier))?;
+        // ... recipient_hash, amount, cid_hash also as public inputs
+
+        // Allocate private witnesses
+        let zk_secret_var = FpVar::new_witness(cs.clone(), || Ok(self.zk_secret))?;
+        let nonce_var = FpVar::new_witness(cs.clone(), || Ok(self.nonce))?;
+
+        // Constraint 1: commitment = Poseidon(zk_secret)
+        let mut commitment_sponge = PoseidonSpongeVar::new(cs.clone(), &self.poseidon_config);
+        commitment_sponge.absorb(&vec![zk_secret_var.clone()])?;
+        let computed_commitment = commitment_sponge.squeeze_field_elements(1)?[0].clone();
+        computed_commitment.enforce_equal(&commitment_var)?;
+
+        // Constraint 2: nullifier = Poseidon(zk_secret, nonce)
+        let mut nullifier_sponge = PoseidonSpongeVar::new(cs.clone(), &self.poseidon_config);
+        nullifier_sponge.absorb(&vec![zk_secret_var, nonce_var])?;
+        let computed_nullifier = nullifier_sponge.squeeze_field_elements(1)?[0].clone();
+        computed_nullifier.enforce_equal(&nullifier_var)?;
+
+        Ok(())
+    }
+}
 ```
 
 ### 4.2 Constraint count
 
-| Component | Constraints |
-|---|---|
-| Poseidon(1) — key derivation | ~240 |
-| Poseidon(2) — nullifier | ~240 |
-| Num2Bits(128) — range check | ~128 |
-| **Total** | **~608** |
+The circuit generates constraints for two Poseidon sponge operations on the BN254 scalar field.
 
 ### 4.3 Trusted setup
 
-- **Phase 1:** Use Hermez Perpetual Powers of Tau `powersOfTau28_hez_final_10.ptau` (pre-computed, 70+ contributors, sufficient for 2^10 = 1024 constraints)
-- **Phase 2:** Circuit-specific, run with snarkjs. Minimum 3 independent contributors from the encointer community. Produces `circuit_final.zkey` (proving key) and `verification_key.json`
+**File: `src/prover.rs`**
 
-Artifacts shipped with the app: `circuit_final.zkey` (~few hundred KB for this circuit size), `offline_payment.wasm` (witness generator)
+The trusted setup uses arkworks' Groth16 circuit-specific setup:
+
+```rust
+use ark_groth16::Groth16;
+use ark_bn254::Bn254;
+
+pub struct TrustedSetup {
+    pub proving_key: ProvingKey<Bn254>,
+    pub verifying_key: VerifyingKey<Bn254>,
+}
+
+impl TrustedSetup {
+    pub fn generate_with_seed(seed: u64) -> Self {
+        let mut rng = StdRng::seed_from_u64(seed);
+        let circuit = OfflinePaymentCircuit::new(/* dummy values */);
+        let (pk, vk) = Groth16::<Bn254>::circuit_specific_setup(circuit, &mut rng)
+            .expect("Setup failed");
+        Self { proving_key: pk, verifying_key: vk }
+    }
+}
+```
+
+**For production:** Use a proper MPC ceremony rather than a deterministic seed. The test seed (`TEST_SETUP_SEED`) is for development only.
+
+Artifacts: Serialized `ProvingKey<Bn254>` and `VerifyingKey<Bn254>` (arkworks canonical serialization)
 
 ---
 
@@ -270,10 +291,21 @@ sp-crypto-ec-utils = { version = "0.15", default-features = false }
 
 ### 5.3 Poseidon hash on-chain
 
-The pallet must compute `Poseidon(recipient_pubkey)` and `Poseidon(cid)` to reconstruct public inputs. Use the `light-poseidon` Rust crate (same parameters as circomlib to ensure consistency):
+The pallet uses `ark-crypto-primitives` for Poseidon hashing, ensuring consistency between the circuit constraints and on-chain verification:
 
-```toml
-light-poseidon = { version = "0.3", default-features = false }
+```rust
+use ark_crypto_primitives::sponge::{
+    poseidon::{PoseidonConfig, PoseidonSponge},
+    CryptographicSponge,
+};
+
+pub fn poseidon_hash(config: &PoseidonConfig<Fr>, inputs: &[Fr]) -> Fr {
+    let mut sponge = PoseidonSponge::new(config);
+    for input in inputs {
+        sponge.absorb(input);
+    }
+    sponge.squeeze_field_elements::<Fr>(1)[0]
+}
 ```
 
 ### 5.4 Nullifier storage growth
@@ -298,36 +330,52 @@ Recommend option 1 for simplicity — the seller is motivated to submit (they wa
 
 ### 6.1 Stack choice
 
-**Mopro Flutter plugin** (`mopro_flutter_package`) wrapping arkworks Groth16 via Rust FFI.
+**Pure arkworks Rust** compiled to mobile via FFI. The prover uses:
+- `ark-groth16` for Groth16 proving
+- `ark-bn254` for the BN254 curve
+- `ark-crypto-primitives` for Poseidon hashing
 
-Workflow:
-1. Write circuit in Circom (section 4)
-2. Compile: `circom offline_payment.circom --r1cs --wasm --sym`
-3. Trusted setup: `snarkjs groth16 setup ... → circuit_final.zkey`
-4. Ship `circuit_final.zkey` + `offline_payment.wasm` as Flutter assets
-5. At runtime: call `mopro.generateProof(zkeyPath, witnessInputs)` → returns proof bytes + public inputs
+**File: `src/prover.rs`**
 
-**Fallback** if mopro Flutter plugin is too immature: build a custom Rust FFI bridge using `dart:ffi` + `ark-circom` crate. The FFI surface is two functions: `generate_proof(zkey_bytes, witness_json) → (proof_bytes, public_inputs)` and `verify_proof(vk_bytes, proof_bytes, public_inputs) → bool`.
+```rust
+pub fn generate_proof(
+    proving_key: &ProvingKey<Bn254>,
+    zk_secret: Fr,
+    nonce: Fr,
+    recipient_hash: Fr,
+    amount: Fr,
+    cid_hash: Fr,
+) -> Option<(Proof<Bn254>, Vec<Fr>)> {
+    let config = poseidon_config();
+    let circuit = OfflinePaymentCircuit::new(
+        config, zk_secret, nonce, recipient_hash, amount, cid_hash
+    );
+    let public_inputs = circuit.public_inputs();
+    let proof = Groth16::<Bn254>::prove(proving_key, circuit, &mut rng).ok()?;
+    Some((proof, public_inputs))
+}
+```
+
+For mobile integration: build the arkworks crate as a shared library and call via `dart:ffi` / `flutter_rust_bridge`.
 
 ### 6.2 Expected performance
 
-For ~608 constraints on a mid-range Android phone:
+For the circuit on a mid-range Android phone:
 - Proof generation: **200ms – 1s** (arkworks native via FFI)
 - Witness generation: negligible (2 Poseidon hashes)
 - Total user-perceived latency: **< 2s** — acceptable for a payment flow
 
 ### 6.3 ZK secret derivation
 
-In the Flutter app, derive `zk_secret` deterministically from the account seed so the user never needs to manage a separate key:
+Derive `zk_secret` deterministically from the account seed:
 
-```dart
-// Pseudo-code — actual implementation uses light-poseidon Dart binding or precomputed via FFI
-final accountSeed = keyringAccount.pair.secretKey.bytes; // 32 bytes
-final domainSep = utf8.encode("encointer-offline-ecash");
-final zkSecret = poseidonHash([...accountSeed, ...domainSep]);
+```rust
+// Use the same Poseidon config as the circuit
+let config = poseidon_config();
+let zk_secret = poseidon_hash(&config, &[account_seed_field, domain_separator_field]);
 ```
 
-The Poseidon hash must use identical parameters (t=3, BN254 field, circomlib constants) on both the app side and in the circuit. Use `light-poseidon` Rust crate called via FFI for consistency.
+The Poseidon parameters must match exactly between the mobile prover and the on-chain verification.
 
 ---
 
@@ -377,7 +425,7 @@ When offline AND offline identity is registered:
    b. Compute `nullifier = Poseidon(zk_secret, nonce_secret)`
    c. Compute `recipient_hash = Poseidon(recipient_pubkey)`
    d. Compute `cid_hash = Poseidon(cid_bytes)`
-   e. Call mopro/FFI: `generateProof(zkey, {zk_secret, nonce_secret, commitment, recipient_hash, amount, cid_hash, nullifier})`
+   e. Call arkworks FFI: `generate_proof(proving_key, zk_secret, nonce, recipient_hash, amount, cid_hash)`
    f. Encode proof + public inputs + metadata into `OfflinePaymentQrCode`
    g. Display QR code for seller to scan
 3. Store proof locally for self-settlement attempt
@@ -389,7 +437,7 @@ When offline AND offline identity is registered:
 
 When QR scanner detects `encointer-offlinepay`:
 1. Decode proof, public inputs, and metadata
-2. (Optional) Verify proof locally via mopro `verifyProof()` — fast, gives immediate confidence
+2. (Optional) Verify proof locally via arkworks FFI — fast, gives immediate confidence
 3. Display: sender identity, amount, community symbol, reputation count
 4. Show trust indicator based on reputation (e.g., "Verified in N ceremonies")
 5. Accept / Decline buttons
@@ -464,8 +512,8 @@ Add handler for `QrCodeContext.offlinepay` → navigate to `ReceiveOfflinePaymen
 |-------|--------|-----------|
 | **Chain** | Create | `pallet-offline-payment` (Rust, Substrate) |
 | **Chain** | Modify | Runtime — add pallet to construct_runtime!, integrate ark-groth16 |
-| **Circuit** | Create | `circuits/offline_payment.circom` |
-| **Circuit** | Create | Trusted setup artifacts (`.zkey`, `.wasm`, `verification_key.json`) |
+| **Circuit** | Create | `src/circuit.rs` (arkworks R1CS) |
+| **Circuit** | Create | Trusted setup artifacts (serialized `ProvingKey`, `VerifyingKey`) |
 | **App** | Create | `service/offline/offline_identity_service.dart` — registration |
 | **App** | Create | `service/offline/settlement_service.dart` — auto-settle |
 | **App** | Create | `store/offline_payment/offline_payment_store.dart` — persistence |
@@ -476,9 +524,8 @@ Add handler for `QrCodeContext.offlinepay` → navigate to `ReceiveOfflinePaymen
 | **App** | Modify | `page/qr_scan/qr_scan_service.dart` — handle new QR |
 | **App** | Modify | `page/assets/transfer/payment_confirmation_page/index.dart` — offline mode |
 | **App** | Modify | `store/app.dart` — init new stores |
-| **App** | Add dep | `mopro_flutter_package` or custom Rust FFI for Groth16 proving |
-| **App** | Add dep | `light-poseidon` via FFI for consistent Poseidon hashing |
-| **App** | Add asset | `circuit_final.zkey`, `offline_payment.wasm` |
+| **App** | Add dep | Custom Rust FFI for arkworks Groth16 proving (via `flutter_rust_bridge`) |
+| **App** | Add asset | Serialized arkworks `ProvingKey<Bn254>` |
 
 ---
 
@@ -486,21 +533,33 @@ Add handler for `QrCodeContext.offlinepay` → navigate to `ReceiveOfflinePaymen
 
 ### 8.1 Circuit tests
 
-```bash
-# Compile circuit
-circom circuits/offline_payment.circom --r1cs --wasm --sym -o build/
+**File: `src/circuit.rs` (tests module)**
 
-# Generate witness and verify
-snarkjs groth16 fullprove input.json build/offline_payment.wasm circuit_final.zkey \
-  proof.json public.json
-snarkjs groth16 verify verification_key.json public.json proof.json
+```rust
+#[test]
+fn test_circuit_constraints_satisfied() {
+    let config = poseidon_config();
+    let circuit = OfflinePaymentCircuit::new(
+        config, zk_secret, nonce, recipient_hash, amount, cid_hash
+    );
+    let cs = ConstraintSystem::<Fr>::new_ref();
+    circuit.generate_constraints(cs.clone()).unwrap();
+    assert!(cs.is_satisfied().unwrap());
+}
+
+#[test]
+fn test_circuit_with_wrong_commitment_fails() {
+    // Tamper with commitment → constraints not satisfied
+}
 ```
+
+Run with: `cargo test -p pallet-encointer-offline-payment`
 
 Test cases:
 - Valid proof with correct witness → verifies
-- Wrong `zk_secret` → proof generation fails / verification fails
-- Mismatched nullifier → verification fails
-- Amount = 0 or negative → range check fails
+- Wrong `zk_secret` → constraint violation
+- Mismatched nullifier → constraint violation
+- Tampered commitment → constraint violation
 
 ### 8.2 Pallet unit tests
 
@@ -524,7 +583,7 @@ Standard Substrate pallet tests (`#[cfg(test)]`):
 
 - `OfflinePaymentQrCode` round-trip (encode → decode)
 - `OfflinePaymentStore` persistence
-- Proof generation via mopro/FFI produces valid proof (verify locally)
+- Proof generation via arkworks FFI produces valid proof (verify locally)
 - Settlement service submits on connectivity restore
 - Duplicate settlement (both parties submit) → one succeeds, other gets `NullifierAlreadyUsed`, both mark `confirmed`
 
@@ -536,51 +595,23 @@ Two emulators, both in airplane mode:
 3. Enable network on seller's device → auto-settlement → balance updated
 4. Enable network on buyer's device → sees `NullifierAlreadyUsed` → marks confirmed
 
-# Discussion:
+---
 
-Why I picked Circom:                                                                                                                              
-                                                                                                                                                
-  1. Mobile prover availability. Mopro (the only Flutter ZK plugin) wraps ark-circom — it reads Circom's .zkey + .wasm format natively. There is no 
-  equivalent Noir/Barretenberg Flutter plugin. Using Noir means compiling Barretenberg (large C++ codebase) for Android/iOS and writing custom    
-  platform channel bridges from scratch.
-  2. Proof size → QR fit. Groth16 proofs are ~192 bytes (~256 chars base64). Noir's default UltraPlonk backend produces ~868 byte proofs (~1,160
-  chars base64). With metadata, the Noir QR payload hits ~1,400 chars — still fits (QR v17, 85×85) but noticeably denser and harder to scan than the
-   Groth16 version (QR v11, 61×61).
-  3. Substrate verification. Multiple working Groth16 verifier pallets exist (substrate-groth16, zkVerify). No UltraPlonk/Barretenberg verifier
-  pallet exists for Substrate — you'd write one from scratch.
+## 9. Implementation Notes
 
-  Where Noir wins:
+### Why pure arkworks Rust
 
-  - No trusted setup. UltraPlonk uses a universal SRS (no per-circuit ceremony). This eliminates the Phase 2 ceremony entirely — a real security and
-   operational advantage.
-  - Better DX. Rust-like syntax, type system, Nargo package manager vs. Circom's signal-based DSL.
-  - Built-in Poseidon in noir-stdlib — no circomlib dependency.
-  - Momentum. Aztec-backed, more active development trajectory.
+The implementation uses arkworks directly (not Circom) for several reasons:
 
-  The honest trade-off: Circom is the pragmatic choice today because of the mobile toolchain gap. Noir is architecturally superior (especially the
-  no-trusted-setup property) but requires building the Flutter FFI bridge to Barretenberg and writing a custom Substrate UltraPlonk verifier — both
-  significant efforts.
+1. **Single language stack.** Both circuit definition and on-chain verification use the same Rust/arkworks codebase. No context switching between Circom DSL and Rust, no format translation between `.zkey`/`.wasm` and arkworks types.
 
-  If the project timeline allows, Noir + custom Barretenberg FFI + custom verifier pallet is the better long-term investment. If you want the
-  shortest path to a working prototype, Circom + Mopro + existing Groth16 pallet patterns wins.   
+2. **Mobile cross-compilation.** arkworks is pure Rust with zero system dependencies — it compiles cleanly to `aarch64-apple-ios` and `aarch64-linux-android`. Use `flutter_rust_bridge` or `dart:ffi` to expose the prover to Flutter.
 
+3. **Consistent Poseidon.** Using `ark-crypto-primitives::sponge::poseidon` in both the circuit and on-chain code guarantees identical hash outputs. No risk of parameter mismatch between circomlib and a separate Rust implementation.
 
-The app needs to work with iOS and android. does that affect your choice circom/noir or other ffi? 
+4. **Proof size.** Groth16 proofs are ~192 bytes (~256 chars base64), fitting comfortably in a QR code (version 11, 61×61).
 
-● Yes, it reinforces Circom + Groth16 via arkworks/Mopro. Here's why:                                                                               
-   
-  Rust FFI (arkworks, what Mopro uses): Rust has first-class cross-compilation targets for both aarch64-apple-ios and aarch64-linux-android.        
-  flutter_rust_bridge generates the Dart↔Rust FFI bindings for both platforms from a single Rust codebase. cargo-ndk handles Android NDK
-  integration. arkworks is pure Rust with zero system dependencies — it compiles cleanly to both targets. Mopro was specifically built for this (iOS
-   + Android mobile proving) and its Flutter plugin targets both.                  
+### Trade-offs
 
-  C++ FFI (Barretenberg, what Noir uses): Barretenberg is a large C++ codebase with CMake, threading, and platform-specific assembly optimizations.
-  Cross-compiling C++ for Android (NDK toolchain) and iOS (Xcode) simultaneously is significantly more painful than Rust. No Flutter plugin exists —
-   you'd write platform channels in both Kotlin and Swift, each calling the native C++ library through JNI / C bridging respectively. Two separate
-  build integrations to maintain.
-
-  Bottom line: The iOS + Android requirement makes the Rust-based stack (arkworks → Mopro → Flutter) the clear winner. The C++ cross-compilation
-  overhead for Barretenberg across two mobile platforms is a project in itself.
-
-  I'll keep the plan as Circom + Groth16 + Mopro. If Mopro's Flutter plugin (v0.0.1) turns out too immature, the fallback is a custom dart:ffi
-  bridge to arkworks — still Rust, still cross-compiles cleanly to both platforms. Want me to finalize the plan as-is?
+- **Trusted setup required.** Groth16 requires a per-circuit trusted setup ceremony. For production, use MPC with multiple independent contributors.
+- **Circuit changes require new setup.** Any modification to the circuit constraints requires regenerating the proving/verifying keys.
