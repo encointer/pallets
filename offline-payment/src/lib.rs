@@ -310,7 +310,8 @@ pub mod pallet {
 				Error::<T>::NullifierAlreadyUsed
 			);
 
-			// 3. Check sender has sufficient balance (fail-fast before expensive proof verification)
+			// 3. Check sender has sufficient balance (fail-fast before expensive proof
+			//    verification)
 			ensure!(
 				pallet_encointer_balances::Pallet::<T>::balance(cid, &sender) >= amount,
 				Error::<T>::InsufficientBalance
