@@ -242,6 +242,39 @@ fn submit_offline_payment_fails_when_sender_equals_recipient() {
 	});
 }
 
+#[test]
+fn submit_offline_payment_fails_with_insufficient_balance() {
+	new_test_ext().execute_with(|| {
+		let commitment = test_commitment();
+		let nullifier = test_nullifier();
+		let amount = BalanceType::from_num(200); // More than Alice has
+
+		let cid = setup_community_with_balance(&alice(), BalanceType::from_num(100));
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+
+		let proof_bytes: BoundedVec<u8, MaxProofSize> =
+			BoundedVec::try_from(vec![0u8; 128]).unwrap();
+		let proof = Groth16ProofBytes { proof_bytes };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				amount,
+				cid,
+				nullifier
+			),
+			Error::<TestRuntime>::InsufficientBalance
+		);
+	});
+}
+
 // ============ Set Verification Key Tests ============
 
 #[test]

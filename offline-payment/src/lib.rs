@@ -233,6 +233,8 @@ pub mod pallet {
 		AmountMustBePositive,
 		/// Sender cannot be the same as recipient
 		SenderEqualsRecipient,
+		/// Sender has insufficient balance for this payment
+		InsufficientBalance,
 	}
 
 	#[pallet::call]
@@ -308,18 +310,24 @@ pub mod pallet {
 				Error::<T>::NullifierAlreadyUsed
 			);
 
-			// 3. Get verification key
+			// 3. Check sender has sufficient balance (fail-fast before expensive proof verification)
+			ensure!(
+				pallet_encointer_balances::Pallet::<T>::balance(cid, &sender) >= amount,
+				Error::<T>::InsufficientBalance
+			);
+
+			// 4. Get verification key
 			let vk_bytes = VerificationKey::<T>::get().ok_or(Error::<T>::NoVerificationKey)?;
 
-			// 4. Deserialize verification key
+			// 5. Deserialize verification key
 			let vk = verifier::Groth16VerifyingKey::from_bytes(&vk_bytes)
 				.ok_or(Error::<T>::VkDeserializationFailed)?;
 
-			// 5. Deserialize proof
+			// 6. Deserialize proof
 			let zk_proof = verifier::Groth16Proof::from_bytes(&proof.proof_bytes)
 				.ok_or(Error::<T>::ProofDeserializationFailed)?;
 
-			// 6. Construct public inputs
+			// 7. Construct public inputs
 			let recipient_hash = hash_recipient(&recipient.encode());
 			let cid_hash = hash_cid(&cid);
 			let amount_bytes = balance_to_bytes(amount);
@@ -332,16 +340,16 @@ pub mod pallet {
 				&nullifier,
 			);
 
-			// 7. Verify the ZK proof
+			// 8. Verify the ZK proof
 			ensure!(
 				verifier::verify_groth16_proof(&vk, &zk_proof, &public_inputs),
 				Error::<T>::InvalidProof
 			);
 
-			// 8. Execute transfer
+			// 9. Execute transfer
 			pallet_encointer_balances::Pallet::<T>::do_transfer(cid, &sender, &recipient, amount)?;
 
-			// 9. Mark nullifier as used
+			// 10. Mark nullifier as used
 			UsedNullifiers::<T>::insert(nullifier, ());
 
 			info!(
