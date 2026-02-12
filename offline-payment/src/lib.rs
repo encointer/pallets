@@ -58,7 +58,7 @@ pub mod circuit;
 #[cfg(feature = "std")]
 pub mod prover;
 
-#[cfg(all(feature = "runtime-benchmarks", feature = "std"))]
+#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 #[cfg(test)]
 mod mock;
