@@ -476,6 +476,104 @@ fn e2e_zk_payment_works() {
 }
 
 #[test]
+fn generate_benchmark_fixtures() {
+	use crate::{
+		circuit::{compute_commitment, poseidon_config},
+		prover::{
+			bytes32_to_field, field_to_bytes32, proof_to_bytes, TrustedSetup, TEST_SETUP_SEED,
+		},
+	};
+	use ark_bn254::Fr;
+	use parity_scale_codec::Encode;
+	use sp_io::hashing::blake2_256;
+	use sp_runtime::codec::DecodeAll;
+
+	// Reproduce frame_benchmarking::account() logic
+	fn bench_account(
+		name: &str,
+		index: u32,
+		seed: u32,
+	) -> <TestRuntime as frame_system::Config>::AccountId {
+		let entropy = (name, index, seed).using_encoded(blake2_256);
+		<TestRuntime as frame_system::Config>::AccountId::decode_all(&mut &entropy[..]).unwrap()
+	}
+
+	// Same accounts as the benchmark
+	let _sender = bench_account("sender", 0, 0);
+	let recipient = bench_account("recipient", 1, 1);
+
+	// Same community as create_community() in benchmark
+	use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
+	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+	let bs: Vec<<TestRuntime as frame_system::Config>::AccountId> = vec![
+		bench_account("alice", 1, 1),
+		bench_account("bob", 2, 2),
+		bench_account("charlie", 3, 3),
+	];
+	let cid = CommunityIdentifier::new(location, bs).unwrap();
+
+	// Same proof parameters as the benchmark
+	let poseidon = poseidon_config();
+	let zk_secret = Fr::from(12345u64);
+	let nonce = Fr::from(67890u64);
+	let amount = BalanceType::from_num(10);
+
+	let commitment_field = compute_commitment(&poseidon, &zk_secret);
+	let commitment = field_to_bytes32(&commitment_field);
+	let recipient_hash = bytes32_to_field(&crate::hash_recipient(&recipient.encode()));
+	let cid_hash = bytes32_to_field(&crate::hash_cid(&cid));
+	let amount_field = bytes32_to_field(&crate::balance_to_bytes(amount));
+
+	// Generate trusted setup and proof with deterministic RNG
+	let setup = TrustedSetup::generate_with_seed(TEST_SETUP_SEED);
+	let vk_bytes = setup.verifying_key_bytes();
+
+	use crate::circuit::OfflinePaymentCircuit;
+	use ark_groth16::Groth16;
+	use ark_snark::SNARK;
+	use ark_std::rand::{rngs::StdRng, SeedableRng};
+
+	let circuit = OfflinePaymentCircuit::new(
+		poseidon,
+		zk_secret,
+		nonce,
+		recipient_hash,
+		amount_field,
+		cid_hash,
+	);
+	let public_inputs = circuit.public_inputs();
+	let mut rng = StdRng::seed_from_u64(42); // deterministic
+	let proof = Groth16::<ark_bn254::Bn254>::prove(&setup.proving_key, circuit, &mut rng)
+		.expect("proving failed");
+	let proof_bytes = proof_to_bytes(&proof);
+	let nullifier = field_to_bytes32(&public_inputs[4]);
+
+	// Verify it works
+	assert!(crate::prover::verify_proof(&setup.verifying_key, &proof, &public_inputs));
+
+	fn bytes_to_rust_array(name: &str, bytes: &[u8]) {
+		print!("const {}: [u8; {}] = [\n\t", name, bytes.len());
+		for (i, b) in bytes.iter().enumerate() {
+			if i > 0 && i % 15 == 0 {
+				print!("\n\t");
+			}
+			if i + 1 < bytes.len() {
+				print!("0x{b:02x}, ");
+			} else {
+				print!("0x{b:02x},");
+			}
+		}
+		println!("\n];");
+	}
+
+	println!("// ===== BENCHMARK FIXTURE DATA =====");
+	bytes_to_rust_array("VK_BYTES", &vk_bytes);
+	bytes_to_rust_array("PROOF_BYTES", &proof_bytes);
+	bytes_to_rust_array("COMMITMENT", &commitment);
+	bytes_to_rust_array("NULLIFIER", &nullifier);
+}
+
+#[test]
 fn e2e_invalid_proof_rejected() {
 	use crate::prover::{TrustedSetup, TEST_SETUP_SEED};
 
