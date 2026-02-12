@@ -489,7 +489,11 @@ fn generate_benchmark_fixtures() {
 	use sp_runtime::codec::DecodeAll;
 
 	// Reproduce frame_benchmarking::account() logic
-	fn bench_account(name: &str, index: u32, seed: u32) -> <TestRuntime as frame_system::Config>::AccountId {
+	fn bench_account(
+		name: &str,
+		index: u32,
+		seed: u32,
+	) -> <TestRuntime as frame_system::Config>::AccountId {
 		let entropy = (name, index, seed).using_encoded(blake2_256);
 		<TestRuntime as frame_system::Config>::AccountId::decode_all(&mut &entropy[..]).unwrap()
 	}
@@ -524,13 +528,18 @@ fn generate_benchmark_fixtures() {
 	let setup = TrustedSetup::generate_with_seed(TEST_SETUP_SEED);
 	let vk_bytes = setup.verifying_key_bytes();
 
+	use crate::circuit::OfflinePaymentCircuit;
 	use ark_groth16::Groth16;
 	use ark_snark::SNARK;
 	use ark_std::rand::{rngs::StdRng, SeedableRng};
-	use crate::circuit::OfflinePaymentCircuit;
 
 	let circuit = OfflinePaymentCircuit::new(
-		poseidon, zk_secret, nonce, recipient_hash, amount_field, cid_hash,
+		poseidon,
+		zk_secret,
+		nonce,
+		recipient_hash,
+		amount_field,
+		cid_hash,
 	);
 	let public_inputs = circuit.public_inputs();
 	let mut rng = StdRng::seed_from_u64(42); // deterministic
