@@ -499,7 +499,7 @@ fn generate_benchmark_fixtures() {
 	}
 
 	// Same accounts as the benchmark
-	let sender = bench_account("sender", 0, 0);
+	let _sender = bench_account("sender", 0, 0);
 	let recipient = bench_account("recipient", 1, 1);
 
 	// Same community as create_community() in benchmark
