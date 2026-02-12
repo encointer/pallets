@@ -40,11 +40,8 @@ fn create_community<T: Config>() -> CommunityIdentifier {
 	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
 	let bs = vec![alice, bob, charlie];
 
-	pallet_encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(
-		RawOrigin::Root.into(),
-		1,
-	)
-	.ok();
+	pallet_encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(RawOrigin::Root.into(), 1)
+		.ok();
 	pallet_encointer_communities::Pallet::<T>::set_max_speed_mps(RawOrigin::Root.into(), 83).ok();
 
 	pallet_encointer_communities::Pallet::<T>::new_community(
