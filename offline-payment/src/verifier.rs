@@ -99,8 +99,8 @@ pub struct PublicInputs {
 	pub recipient_hash: Fr,
 	/// Amount as field element
 	pub amount: Fr,
-	/// Community ID hash = Poseidon(cid)
-	pub cid_hash: Fr,
+	/// Asset hash (community ID hash or native-token sentinel), chain-bound in extrinsic
+	pub asset_hash: Fr,
 	/// Nullifier = Poseidon(zk_secret, nonce)
 	pub nullifier: Fr,
 }
@@ -116,14 +116,14 @@ impl PublicInputs {
 		commitment: &[u8; 32],
 		recipient_hash: &[u8; 32],
 		amount: &[u8; 32],
-		cid_hash: &[u8; 32],
+		asset_hash: &[u8; 32],
 		nullifier: &[u8; 32],
 	) -> Self {
 		Self {
 			commitment: Self::bytes_to_field(commitment),
 			recipient_hash: Self::bytes_to_field(recipient_hash),
 			amount: Self::bytes_to_field(amount),
-			cid_hash: Self::bytes_to_field(cid_hash),
+			asset_hash: Self::bytes_to_field(asset_hash),
 			nullifier: Self::bytes_to_field(nullifier),
 		}
 	}
@@ -134,7 +134,7 @@ impl PublicInputs {
 			self.commitment,
 			self.recipient_hash,
 			self.amount,
-			self.cid_hash,
+			self.asset_hash,
 			self.nullifier,
 		]
 	}

@@ -31,7 +31,7 @@
 //! - Nullifier correctness: nullifier = Poseidon(zk_secret, nonce)
 //! - Amount is properly bounded (fits in 128 bits)
 //!
-//! Public inputs: commitment, recipient_hash, amount, cid_hash, nullifier
+//! Public inputs: commitment, recipient_hash, amount, chain_asset_hash, nullifier
 //! Private inputs: zk_secret, nonce
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -357,14 +357,17 @@ pub mod pallet {
 
 			// 7. Construct public inputs
 			let recipient_hash = hash_recipient(&recipient.encode());
-			let cid_hash = hash_cid(&cid);
+			let asset_hash = hash_cid(&cid);
+			let genesis_hash =
+				<frame_system::Pallet<T>>::block_hash(BlockNumberFor::<T>::default());
+			let chain_asset_hash = blake2_256(&[&asset_hash[..], genesis_hash.as_ref()].concat());
 			let amount_bytes = balance_to_bytes(amount);
 
 			let public_inputs = verifier::PublicInputs::from_bytes(
 				&commitment,
 				&recipient_hash,
 				&amount_bytes,
-				&cid_hash,
+				&chain_asset_hash,
 				&nullifier,
 			);
 
@@ -432,7 +435,10 @@ pub mod pallet {
 				.ok_or(Error::<T>::ProofDeserializationFailed)?;
 
 			let recipient_hash = hash_recipient(&recipient.encode());
-			let cid_hash = native_token_cid_hash();
+			let asset_hash = native_token_cid_hash();
+			let genesis_hash =
+				<frame_system::Pallet<T>>::block_hash(BlockNumberFor::<T>::default());
+			let chain_asset_hash = blake2_256(&[&asset_hash[..], genesis_hash.as_ref()].concat());
 			let amount_u128: u128 = amount.saturated_into();
 			let amount_bytes = native_balance_to_bytes(amount_u128);
 
@@ -440,7 +446,7 @@ pub mod pallet {
 				&commitment,
 				&recipient_hash,
 				&amount_bytes,
-				&cid_hash,
+				&chain_asset_hash,
 				&nullifier,
 			);
 
