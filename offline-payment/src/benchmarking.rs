@@ -180,8 +180,8 @@ benchmarks! {
 
 		let amount: BalanceOf<T> = 10u32.into();
 
-		// Fund sender with native token
-		T::Currency::make_free_balance_be(&sender, 100u32.into());
+		// Fund sender with enough native token (must exceed existential deposit + amount)
+		T::Currency::make_free_balance_be(&sender, 1_000_000u32.into());
 
 		let bounded_vk: BoundedVec<u8, T::MaxVkSize> =
 			BoundedVec::try_from(VK_BYTES.to_vec()).expect("VK within bounds");
