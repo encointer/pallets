@@ -409,13 +409,16 @@ fn e2e_zk_payment_works() {
 		let nonce = Fr::from(67890u64);
 		let amount = BalanceType::from_num(10);
 
-		// Hash public inputs
+		// Hash public inputs — bind asset_hash to genesis hash for cross-chain replay protection
 		let recipient_hash_bytes = crate::hash_recipient(&bob().encode());
-		let cid_hash_bytes = crate::hash_cid(&cid);
+		let asset_hash = crate::hash_cid(&cid);
+		let genesis_hash = <frame_system::Pallet<TestRuntime>>::block_hash(0u64);
+		let chain_asset_hash =
+			sp_io::hashing::blake2_256(&[&asset_hash[..], genesis_hash.as_ref()].concat());
 		let amount_bytes = crate::balance_to_bytes(amount);
 
 		let recipient_hash = bytes32_to_field(&recipient_hash_bytes);
-		let cid_hash = bytes32_to_field(&cid_hash_bytes);
+		let chain_asset_field = bytes32_to_field(&chain_asset_hash);
 		let amount_field = bytes32_to_field(&amount_bytes);
 
 		let (proof, public_inputs) = generate_proof(
@@ -424,7 +427,7 @@ fn e2e_zk_payment_works() {
 			nonce,
 			recipient_hash,
 			amount_field,
-			cid_hash,
+			chain_asset_field,
 		)
 		.expect("Proof generation failed");
 
@@ -525,7 +528,11 @@ fn generate_benchmark_fixtures() {
 	let commitment_field = compute_commitment(&poseidon, &zk_secret);
 	let commitment = field_to_bytes32(&commitment_field);
 	let recipient_hash = bytes32_to_field(&crate::hash_recipient(&recipient.encode()));
-	let cid_hash = bytes32_to_field(&crate::hash_cid(&cid));
+	// Bind asset_hash to test genesis hash for cross-chain replay protection
+	let asset_hash = crate::hash_cid(&cid);
+	let test_genesis_hash = [0x45u8; 32]; // substrate TestExternalities default ("hash 69")
+	let chain_asset_hash = blake2_256(&[&asset_hash[..], &test_genesis_hash[..]].concat());
+	let chain_asset_field = bytes32_to_field(&chain_asset_hash);
 	let amount_field = bytes32_to_field(&crate::balance_to_bytes(amount));
 
 	// Generate trusted setup and proof with deterministic RNG
@@ -543,7 +550,7 @@ fn generate_benchmark_fixtures() {
 		nonce,
 		recipient_hash,
 		amount_field,
-		cid_hash,
+		chain_asset_field,
 	);
 	let public_inputs = circuit.public_inputs();
 	let mut rng = StdRng::seed_from_u64(42); // deterministic
@@ -950,11 +957,14 @@ fn e2e_native_zk_payment_works() {
 		let amount: u128 = 100;
 
 		let recipient_hash_bytes = crate::hash_recipient(&bob().encode());
-		let cid_hash_bytes = crate::native_token_cid_hash();
+		let asset_hash = crate::native_token_cid_hash();
+		let genesis_hash = <frame_system::Pallet<TestRuntime>>::block_hash(0u64);
+		let chain_asset_hash =
+			sp_io::hashing::blake2_256(&[&asset_hash[..], genesis_hash.as_ref()].concat());
 		let amount_bytes = crate::native_balance_to_bytes(amount);
 
 		let recipient_hash = bytes32_to_field(&recipient_hash_bytes);
-		let cid_hash = bytes32_to_field(&cid_hash_bytes);
+		let chain_asset_field = bytes32_to_field(&chain_asset_hash);
 		let amount_field = bytes32_to_field(&amount_bytes);
 
 		let (proof, public_inputs) = generate_proof(
@@ -963,7 +973,7 @@ fn e2e_native_zk_payment_works() {
 			nonce,
 			recipient_hash,
 			amount_field,
-			cid_hash,
+			chain_asset_field,
 		)
 		.expect("Proof generation failed");
 
@@ -1043,7 +1053,11 @@ fn generate_native_benchmark_fixtures() {
 	let commitment_field = compute_commitment(&poseidon, &zk_secret);
 	let commitment = field_to_bytes32(&commitment_field);
 	let recipient_hash = bytes32_to_field(&crate::hash_recipient(&recipient.encode()));
-	let cid_hash = bytes32_to_field(&crate::native_token_cid_hash());
+	// Bind asset_hash to test genesis hash for cross-chain replay protection
+	let asset_hash = crate::native_token_cid_hash();
+	let test_genesis_hash = [0x45u8; 32]; // substrate TestExternalities default ("hash 69")
+	let chain_asset_hash = blake2_256(&[&asset_hash[..], &test_genesis_hash[..]].concat());
+	let chain_asset_field = bytes32_to_field(&chain_asset_hash);
 	let amount_field = bytes32_to_field(&crate::native_balance_to_bytes(amount));
 
 	let setup = TrustedSetup::generate_with_seed(TEST_SETUP_SEED);
@@ -1054,7 +1068,7 @@ fn generate_native_benchmark_fixtures() {
 		nonce,
 		recipient_hash,
 		amount_field,
-		cid_hash,
+		chain_asset_field,
 	);
 	let public_inputs = circuit.public_inputs();
 	let mut rng = StdRng::seed_from_u64(42);

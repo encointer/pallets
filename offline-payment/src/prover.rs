@@ -97,11 +97,11 @@ pub fn generate_proof(
 	nonce: Fr,
 	recipient_hash: Fr,
 	amount: Fr,
-	cid_hash: Fr,
+	asset_hash: Fr,
 ) -> Option<(Proof<Bn254>, Vec<Fr>)> {
 	let config = poseidon_config();
 	let circuit =
-		OfflinePaymentCircuit::new(config, zk_secret, nonce, recipient_hash, amount, cid_hash);
+		OfflinePaymentCircuit::new(config, zk_secret, nonce, recipient_hash, amount, asset_hash);
 
 	let public_inputs = circuit.public_inputs();
 
@@ -187,7 +187,7 @@ pub mod test_fixtures {
 		nonce_bytes: &[u8; 32],
 		recipient_hash_bytes: &[u8; 32],
 		amount_bytes: &[u8; 32],
-		cid_hash_bytes: &[u8; 32],
+		asset_hash_bytes: &[u8; 32],
 	) -> Option<(Vec<u8>, [u8; 32], [u8; 32])> {
 		let pk = get_test_pk();
 
@@ -195,10 +195,10 @@ pub mod test_fixtures {
 		let nonce = bytes32_to_field(nonce_bytes);
 		let recipient_hash = bytes32_to_field(recipient_hash_bytes);
 		let amount = bytes32_to_field(amount_bytes);
-		let cid_hash = bytes32_to_field(cid_hash_bytes);
+		let asset_hash = bytes32_to_field(asset_hash_bytes);
 
 		let (proof, public_inputs) =
-			generate_proof(pk, zk_secret, nonce, recipient_hash, amount, cid_hash)?;
+			generate_proof(pk, zk_secret, nonce, recipient_hash, amount, asset_hash)?;
 
 		let proof_bytes = proof_to_bytes(&proof);
 		let commitment_bytes = field_to_bytes32(&public_inputs[0]);
@@ -228,11 +228,17 @@ mod tests {
 		let nonce = Fr::from(123u64);
 		let recipient_hash = Fr::from(456u64);
 		let amount = Fr::from(1000u64);
-		let cid_hash = Fr::from(789u64);
+		let asset_hash = Fr::from(789u64);
 
-		let (proof, public_inputs) =
-			generate_proof(&setup.proving_key, zk_secret, nonce, recipient_hash, amount, cid_hash)
-				.expect("Proof generation failed");
+		let (proof, public_inputs) = generate_proof(
+			&setup.proving_key,
+			zk_secret,
+			nonce,
+			recipient_hash,
+			amount,
+			asset_hash,
+		)
+		.expect("Proof generation failed");
 
 		// Verify the proof
 		assert!(verify_proof(&setup.verifying_key, &proof, &public_inputs));
