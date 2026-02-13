@@ -45,6 +45,7 @@ parameter_types! {
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
+	type Currency = pallet_balances::Pallet<TestRuntime>;
 	type MaxProofSize = MaxProofSize;
 	type MaxVkSize = MaxVkSize;
 }

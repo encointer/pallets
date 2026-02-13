@@ -38,12 +38,13 @@
 
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
-use frame_support::traits::Get;
+use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use frame_system::ensure_signed;
 use log::info;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_io::hashing::blake2_256;
+use sp_runtime::SaturatedConversion;
 use sp_std::vec::Vec;
 
 pub use weights::WeightInfo;
@@ -52,6 +53,10 @@ const LOG: &str = "encointer::offline-payment";
 
 pub use pallet::*;
 pub mod verifier;
+
+/// Balance type for the native token currency
+pub type BalanceOf<T> =
+	<<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[cfg(feature = "std")]
 pub mod circuit;
@@ -146,6 +151,18 @@ pub fn balance_to_bytes(amount: BalanceType) -> [u8; 32] {
 	bytes
 }
 
+/// Compute the sentinel CID hash for native token payments.
+/// Uses `blake2_256(b"encointer-native-token")` instead of a real community identifier.
+pub fn native_token_cid_hash() -> [u8; 32] {
+	blake2_256(b"encointer-native-token")
+}
+
+/// Convert a native token u128 amount to a 32-byte field element representation.
+/// Delegates to `verifier::amount_to_bytes`.
+pub fn native_balance_to_bytes(amount: u128) -> [u8; 32] {
+	verifier::amount_to_bytes(amount)
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -167,6 +184,9 @@ pub mod pallet {
 
 		/// Weight information for extrinsics
 		type WeightInfo: WeightInfo;
+
+		/// Native token currency (e.g. `pallet_balances`)
+		type Currency: Currency<Self::AccountId>;
 
 		/// Maximum size of proof in bytes
 		#[pallet::constant]
@@ -207,6 +227,13 @@ pub mod pallet {
 			recipient: T::AccountId,
 			cid: CommunityIdentifier,
 			amount: BalanceType,
+			nullifier: [u8; 32],
+		},
+		/// Native token offline payment settled successfully
+		NativeOfflinePaymentSettled {
+			sender: T::AccountId,
+			recipient: T::AccountId,
+			amount: BalanceOf<T>,
 			nullifier: [u8; 32],
 		},
 		/// Verification key was set
@@ -361,6 +388,78 @@ pub mod pallet {
 				sender,
 				recipient,
 				cid,
+				amount,
+				nullifier,
+			});
+
+			Ok(())
+		}
+
+		/// Submit a native token offline payment ZK proof for settlement.
+		///
+		/// Same ZK circuit as CC payments, but uses a sentinel CID hash
+		/// (`blake2_256(b"encointer-native-token")`) and transfers native currency
+		/// via `T::Currency::transfer()`.
+		#[pallet::call_index(3)]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::submit_native_offline_payment())]
+		pub fn submit_native_offline_payment(
+			origin: OriginFor<T>,
+			proof: Groth16ProofBytes<T::MaxProofSize>,
+			sender: T::AccountId,
+			recipient: T::AccountId,
+			amount: BalanceOf<T>,
+			nullifier: [u8; 32],
+		) -> DispatchResult {
+			let _submitter = ensure_signed(origin)?;
+
+			ensure!(!amount.is_zero(), Error::<T>::AmountMustBePositive);
+			ensure!(sender != recipient, Error::<T>::SenderEqualsRecipient);
+
+			let commitment =
+				OfflineIdentities::<T>::get(&sender).ok_or(Error::<T>::NoOfflineIdentity)?;
+
+			ensure!(
+				!UsedNullifiers::<T>::contains_key(nullifier),
+				Error::<T>::NullifierAlreadyUsed
+			);
+
+			ensure!(T::Currency::free_balance(&sender) >= amount, Error::<T>::InsufficientBalance);
+
+			let vk_bytes = VerificationKey::<T>::get().ok_or(Error::<T>::NoVerificationKey)?;
+			let vk = verifier::Groth16VerifyingKey::from_bytes(&vk_bytes)
+				.ok_or(Error::<T>::VkDeserializationFailed)?;
+			let zk_proof = verifier::Groth16Proof::from_bytes(&proof.proof_bytes)
+				.ok_or(Error::<T>::ProofDeserializationFailed)?;
+
+			let recipient_hash = hash_recipient(&recipient.encode());
+			let cid_hash = native_token_cid_hash();
+			let amount_u128: u128 = amount.saturated_into();
+			let amount_bytes = native_balance_to_bytes(amount_u128);
+
+			let public_inputs = verifier::PublicInputs::from_bytes(
+				&commitment,
+				&recipient_hash,
+				&amount_bytes,
+				&cid_hash,
+				&nullifier,
+			);
+
+			ensure!(
+				verifier::verify_groth16_proof(&vk, &zk_proof, &public_inputs),
+				Error::<T>::InvalidProof
+			);
+
+			T::Currency::transfer(&sender, &recipient, amount, ExistenceRequirement::KeepAlive)?;
+
+			UsedNullifiers::<T>::insert(nullifier, ());
+
+			info!(
+				target: LOG,
+				"native offline payment settled: {sender:?} -> {recipient:?}, amount: {amount:?}"
+			);
+			Self::deposit_event(Event::NativeOfflinePaymentSettled {
+				sender,
+				recipient,
 				amount,
 				nullifier,
 			});
