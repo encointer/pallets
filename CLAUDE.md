@@ -62,3 +62,12 @@ The circuit proves knowledge of `zk_secret` matching a registered commitment, an
 1. **no_std errors**: Ensure `default-features = false` for all runtime deps
 2. **BalanceType conversion**: Use `BalanceType::from_num()` not `From<u64>`
 3. **Test mock setup**: See `test-utils/` for shared mock runtime helpers
+
+## Design Rules
+
+* strictly avoid panics in any pallet code. the chain could stall if there's a panic.
+* each pallet must have reasonably high unit test coverage (aim at 100%).
+* add integration tests with other pallets where it makes sense.
+* each pallet must expose benchmarks for the node.
+* be generous with dispatching events where it makes sense. We want to reproduce everything that's happened from events only.
+* add debug logging
