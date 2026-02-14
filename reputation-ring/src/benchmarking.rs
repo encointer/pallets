@@ -85,10 +85,7 @@ where
 	T::AccountId: AsRef<[u8; 32]>,
 {
 	// Set ceremony index to 7 so ceremony 6 is valid.
-	frame_support::storage::unhashed::put_raw(
-		&current_ceremony_index_key(),
-		&7u32.encode(),
-	);
+	frame_support::storage::unhashed::put_raw(&current_ceremony_index_key(), &7u32.encode());
 
 	let cid = register_community::<T>();
 	let accounts = setup_accounts::<T>(n);

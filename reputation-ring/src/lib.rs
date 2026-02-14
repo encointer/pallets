@@ -29,10 +29,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use encointer_primitives::{
-	communities::CommunityIdentifier,
-	scheduler::CeremonyIndexType,
-};
+use encointer_primitives::{communities::CommunityIdentifier, scheduler::CeremonyIndexType};
 use frame_support::{pallet_prelude::*, traits::Get};
 use pallet_encointer_communities::Pallet as CommunitiesPallet;
 
@@ -121,8 +118,9 @@ pub mod pallet {
 	pub type BandersnatchKeys<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AccountId, BandersnatchPublicKey, OptionQuery>;
 
-	/// Ordered member list (Bandersnatch pubkeys) per (community, ceremony_index, reputation_level).
-	/// The N/5 ring contains pubkeys of accounts that attended >= N of the last 5 ceremonies.
+	/// Ordered member list (Bandersnatch pubkeys) per (community, ceremony_index,
+	/// reputation_level). The N/5 ring contains pubkeys of accounts that attended >= N of the last
+	/// 5 ceremonies.
 	#[pallet::storage]
 	#[pallet::getter(fn ring_members)]
 	pub type RingMembers<T: Config> = StorageNMap<
@@ -152,10 +150,7 @@ pub mod pallet {
 		/// A Bandersnatch key was registered or updated.
 		BandersnatchKeyRegistered { account: T::AccountId, key: BandersnatchPublicKey },
 		/// Ring computation started for a community at a ceremony index.
-		RingComputationStarted {
-			community: CommunityIdentifier,
-			ceremony_index: CeremonyIndexType,
-		},
+		RingComputationStarted { community: CommunityIdentifier, ceremony_index: CeremonyIndexType },
 		/// A ring was published for a specific reputation level.
 		RingPublished {
 			community: CommunityIdentifier,
@@ -236,8 +231,7 @@ pub mod pallet {
 			);
 
 			// Validate ceremony index: must be > 0 and < current.
-			let current_cindex =
-				<pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
+			let current_cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			ensure!(
 				ceremony_index > 0 && ceremony_index < current_cindex,
 				Error::<T>::InvalidCeremonyIndex
@@ -268,18 +262,13 @@ pub mod pallet {
 			T::ChunkSize::get() as u64 + 2,
 			T::ChunkSize::get() as u64 + 1
 		))]
-		pub fn continue_ring_computation(
-			origin: OriginFor<T>,
-		) -> DispatchResultWithPostInfo {
+		pub fn continue_ring_computation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 
-			let mut state = <PendingRingComputation<T>>::get()
-				.ok_or(Error::<T>::NoComputationPending)?;
+			let mut state =
+				<PendingRingComputation<T>>::get().ok_or(Error::<T>::NoComputationPending)?;
 
-			ensure!(
-				state.phase != RingComputationPhase::Done,
-				Error::<T>::ComputationAlreadyDone
-			);
+			ensure!(state.phase != RingComputationPhase::Done, Error::<T>::ComputationAlreadyDone);
 
 			Self::process_computation_step(&mut state)?;
 
@@ -302,9 +291,7 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	/// Process one step of the multi-block ring computation.
-	fn process_computation_step(
-		state: &mut RingComputationState<T::AccountId>,
-	) -> DispatchResult {
+	fn process_computation_step(state: &mut RingComputationState<T::AccountId>) -> DispatchResult {
 		match state.phase {
 			RingComputationPhase::CollectingMembers { next_ceremony_offset } => {
 				Self::collect_members_step(state, next_ceremony_offset)?;
@@ -329,18 +316,16 @@ impl<T: Config> Pallet<T> {
 			// All 5 ceremonies scanned. Sort attendance by account for deterministic ordering.
 			state.attendance.sort_by(|a, b| a.0.cmp(&b.0));
 			// Transition to ring building phase, starting from strictest (5/5).
-			state.phase = RingComputationPhase::BuildingRing {
-				current_level: MAX_REPUTATION_LEVELS,
-			};
+			state.phase =
+				RingComputationPhase::BuildingRing { current_level: MAX_REPUTATION_LEVELS };
 			return Ok(());
 		}
 
 		let cindex = state.ceremony_index.saturating_sub(offset as u32);
 		if cindex == 0 {
 			// No ceremony at index 0; skip.
-			state.phase = RingComputationPhase::CollectingMembers {
-				next_ceremony_offset: offset + 1,
-			};
+			state.phase =
+				RingComputationPhase::CollectingMembers { next_ceremony_offset: offset + 1 };
 			Self::deposit_event(Event::MemberCollectionProgress {
 				community: state.community,
 				ceremony_index: state.ceremony_index,
@@ -366,9 +351,7 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		state.phase = RingComputationPhase::CollectingMembers {
-			next_ceremony_offset: offset + 1,
-		};
+		state.phase = RingComputationPhase::CollectingMembers { next_ceremony_offset: offset + 1 };
 
 		Self::deposit_event(Event::MemberCollectionProgress {
 			community: state.community,
@@ -409,10 +392,7 @@ impl<T: Config> Pallet<T> {
 		let bounded: BoundedVec<BandersnatchPublicKey, T::MaxRingSize> =
 			BoundedVec::try_from(members).map_err(|_| Error::<T>::RingTooLarge)?;
 
-		<RingMembers<T>>::insert(
-			(state.community, state.ceremony_index, level),
-			bounded,
-		);
+		<RingMembers<T>>::insert((state.community, state.ceremony_index, level), bounded);
 
 		Self::deposit_event(Event::RingPublished {
 			community: state.community,

@@ -6,17 +6,10 @@ use test_utils::helpers::{account_id, add_population, bootstrappers, register_te
 /// Run ring computation to completion. Returns the number of steps taken.
 fn run_computation_to_completion(caller: &test_utils::AccountId) -> u32 {
 	let mut steps = 0u32;
-	loop {
-		match EncointerReputationRing::continue_ring_computation(
-			RuntimeOrigin::signed(caller.clone()),
-		) {
-			Ok(_) => steps += 1,
-			Err(_) => {
-				// NoComputationPending or ComputationAlreadyDone means we're done.
-				break;
-			},
-		}
-		// Safety: avoid infinite loop.
+	while EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(caller.clone()))
+		.is_ok()
+	{
+		steps += 1;
 		assert!(steps < 100, "Ring computation didn't complete in 100 steps");
 	}
 	steps
@@ -107,11 +100,7 @@ fn initiate_rings_works() {
 		let alice = account_id(&bootstrappers()[0]);
 
 		// Current ceremony index is 7 (from genesis), so ceremony 6 is valid.
-		assert_ok!(EncointerReputationRing::initiate_rings(
-			RuntimeOrigin::signed(alice),
-			cid,
-			6,
-		));
+		assert_ok!(EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), cid, 6,));
 
 		let state = EncointerReputationRing::pending_ring_computation().unwrap();
 		assert_eq!(state.community, cid);
@@ -135,11 +124,7 @@ fn initiate_rings_fails_if_computation_in_progress() {
 			6,
 		));
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(
-				RuntimeOrigin::signed(alice),
-				cid,
-				5,
-			),
+			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), cid, 5,),
 			Error::<TestRuntime>::ComputationAlreadyInProgress
 		);
 	});
@@ -152,11 +137,7 @@ fn initiate_rings_fails_for_unknown_community() {
 		let fake_cid = encointer_primitives::communities::CommunityIdentifier::default();
 
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(
-				RuntimeOrigin::signed(alice),
-				fake_cid,
-				6,
-			),
+			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), fake_cid, 6,),
 			Error::<TestRuntime>::CommunityNotFound
 		);
 	});
@@ -170,21 +151,13 @@ fn initiate_rings_fails_for_invalid_ceremony_index() {
 
 		// Current index is 7. Index 7 is current (not yet complete).
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(
-				RuntimeOrigin::signed(alice.clone()),
-				cid,
-				7,
-			),
+			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice.clone()), cid, 7,),
 			Error::<TestRuntime>::InvalidCeremonyIndex
 		);
 
 		// Index 0 is invalid.
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(
-				RuntimeOrigin::signed(alice),
-				cid,
-				0,
-			),
+			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), cid, 0,),
 			Error::<TestRuntime>::InvalidCeremonyIndex
 		);
 	});
@@ -229,9 +202,9 @@ fn full_ring_computation_produces_all_5_rings() {
 
 		// Run member collection: 5 scan steps + 1 transition step = 6.
 		for _ in 0..(MAX_REPUTATION_LEVELS as u32 + 1) {
-			assert_ok!(EncointerReputationRing::continue_ring_computation(
-				RuntimeOrigin::signed(caller.clone()),
-			));
+			assert_ok!(EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(
+				caller.clone()
+			),));
 		}
 
 		// Check state: should now be in BuildingRing phase.
@@ -254,9 +227,9 @@ fn full_ring_computation_produces_all_5_rings() {
 
 		// Run ring building: 5 steps (one per level, 5/5 down to 1/5).
 		for _ in 0..MAX_REPUTATION_LEVELS {
-			assert_ok!(EncointerReputationRing::continue_ring_computation(
-				RuntimeOrigin::signed(caller.clone()),
-			));
+			assert_ok!(EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(
+				caller.clone()
+			),));
 		}
 
 		// Computation should be done (storage cleared).
@@ -307,11 +280,19 @@ fn ring_nesting_is_strict_subset() {
 		// 4 accounts with attendance 5,4,2,1 respectively.
 		let verified: Vec<(usize, u32)> = vec![
 			// Account 0: 5 ceremonies
-			(0, 2), (0, 3), (0, 4), (0, 5), (0, 6),
+			(0, 2),
+			(0, 3),
+			(0, 4),
+			(0, 5),
+			(0, 6),
 			// Account 1: 4 ceremonies
-			(1, 3), (1, 4), (1, 5), (1, 6),
+			(1, 3),
+			(1, 4),
+			(1, 5),
+			(1, 6),
 			// Account 2: 2 ceremonies
-			(2, 5), (2, 6),
+			(2, 5),
+			(2, 6),
 			// Account 3: 1 ceremony
 			(3, 6),
 		];
@@ -329,10 +310,8 @@ fn ring_nesting_is_strict_subset() {
 
 		// Verify strict nesting: ring[n+1] ⊂ ring[n].
 		for level in 1..MAX_REPUTATION_LEVELS {
-			let ring_lower =
-				EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
-			let ring_higher =
-				EncointerReputationRing::ring_members((cid, 6, level + 1)).unwrap();
+			let ring_lower = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
+			let ring_higher = EncointerReputationRing::ring_members((cid, 6, level + 1)).unwrap();
 			// Every member of the stricter ring must be in the looser ring.
 			for member in ring_higher.iter() {
 				assert!(
@@ -402,8 +381,8 @@ fn ring_members_are_deterministically_sorted() {
 		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
 
 		// Register 4 accounts with keys.
-		for i in 0..4 {
-			let acc = account_id(&bs[i]);
+		for (i, pair) in bs.iter().enumerate().take(4) {
+			let acc = account_id(pair);
 			assert_ok!(EncointerReputationRing::register_bandersnatch_key(
 				RuntimeOrigin::signed(acc.clone()),
 				fake_bandersnatch_key(i as u8 + 1),
@@ -438,9 +417,7 @@ fn continue_ring_computation_fails_when_no_computation() {
 	new_test_ext().execute_with(|| {
 		let alice = account_id(&bootstrappers()[0]);
 		assert_noop!(
-			EncointerReputationRing::continue_ring_computation(
-				RuntimeOrigin::signed(alice),
-			),
+			EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(alice),),
 			Error::<TestRuntime>::NoComputationPending
 		);
 	});
@@ -589,7 +566,7 @@ fn large_community_500_members_full_computation() {
 		// 2/5 through 5/5 should be empty (only 1 ceremony attended).
 		for level in 2..=5u8 {
 			let ring = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
-			assert_eq!(ring.len(), 0, "Ring {}/5 should be empty", level);
+			assert_eq!(ring.len(), 0, "Ring {level}/5 should be empty");
 		}
 	});
 }
@@ -701,9 +678,9 @@ fn large_community_step_count_is_predictable() {
 				RingComputationPhase::BuildingRing { .. } => building_steps += 1,
 				RingComputationPhase::Done => break,
 			}
-			assert_ok!(EncointerReputationRing::continue_ring_computation(
-				RuntimeOrigin::signed(caller.clone()),
-			));
+			assert_ok!(EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(
+				caller.clone()
+			),));
 		}
 
 		// 5 scans + 1 transition = 6 collection steps.
@@ -714,7 +691,7 @@ fn large_community_step_count_is_predictable() {
 		// All 500 members should be in every ring (all have 5/5).
 		for level in 1..=5u8 {
 			let ring = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
-			assert_eq!(ring.len(), 500, "Ring {}/5 should have 500 members", level);
+			assert_eq!(ring.len(), 500, "Ring {level}/5 should have 500 members");
 		}
 	});
 }
