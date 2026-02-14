@@ -6,7 +6,7 @@ use test_utils::helpers::{account_id, add_population, bootstrappers, register_te
 /// Run ring computation to completion. Returns the number of steps taken.
 fn run_computation_to_completion(caller: &test_utils::AccountId) -> u32 {
 	let mut steps = 0u32;
-	while EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(caller.clone()))
+	while EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(caller.clone()))
 		.is_ok()
 	{
 		steps += 1;
@@ -39,7 +39,7 @@ fn setup_community_with_reputations(
 ) {
 	for (i, pair) in accounts.iter().enumerate() {
 		let acc = account_id(pair);
-		assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 			RuntimeOrigin::signed(acc.clone()),
 			fake_bandersnatch_key(i as u8 + 1),
 		));
@@ -62,12 +62,12 @@ fn register_bandersnatch_key_works() {
 		let alice = account_id(&bootstrappers()[0]);
 		let key = fake_bandersnatch_key(42);
 
-		assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 			RuntimeOrigin::signed(alice.clone()),
 			key,
 		));
 
-		assert_eq!(EncointerReputationRing::bandersnatch_key(&alice), Some(key));
+		assert_eq!(EncointerReputationRings::bandersnatch_key(&alice), Some(key));
 	});
 }
 
@@ -78,16 +78,16 @@ fn register_bandersnatch_key_update_works() {
 		let key1 = fake_bandersnatch_key(1);
 		let key2 = fake_bandersnatch_key(2);
 
-		assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 			RuntimeOrigin::signed(alice.clone()),
 			key1,
 		));
-		assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 			RuntimeOrigin::signed(alice.clone()),
 			key2,
 		));
 
-		assert_eq!(EncointerReputationRing::bandersnatch_key(&alice), Some(key2));
+		assert_eq!(EncointerReputationRings::bandersnatch_key(&alice), Some(key2));
 	});
 }
 
@@ -100,9 +100,9 @@ fn initiate_rings_works() {
 		let alice = account_id(&bootstrappers()[0]);
 
 		// Current ceremony index is 7 (from genesis), so ceremony 6 is valid.
-		assert_ok!(EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), cid, 6,));
+		assert_ok!(EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), cid, 6,));
 
-		let state = EncointerReputationRing::pending_ring_computation().unwrap();
+		let state = EncointerReputationRings::pending_ring_computation().unwrap();
 		assert_eq!(state.community, cid);
 		assert_eq!(state.ceremony_index, 6);
 		assert_eq!(
@@ -118,13 +118,13 @@ fn initiate_rings_fails_if_computation_in_progress() {
 		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
 		let alice = account_id(&bootstrappers()[0]);
 
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(alice.clone()),
 			cid,
 			6,
 		));
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), cid, 5,),
+			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), cid, 5,),
 			Error::<TestRuntime>::ComputationAlreadyInProgress
 		);
 	});
@@ -137,7 +137,7 @@ fn initiate_rings_fails_for_unknown_community() {
 		let fake_cid = encointer_primitives::communities::CommunityIdentifier::default();
 
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), fake_cid, 6,),
+			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), fake_cid, 6,),
 			Error::<TestRuntime>::CommunityNotFound
 		);
 	});
@@ -151,13 +151,13 @@ fn initiate_rings_fails_for_invalid_ceremony_index() {
 
 		// Current index is 7. Index 7 is current (not yet complete).
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice.clone()), cid, 7,),
+			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice.clone()), cid, 7,),
 			Error::<TestRuntime>::InvalidCeremonyIndex
 		);
 
 		// Index 0 is invalid.
 		assert_noop!(
-			EncointerReputationRing::initiate_rings(RuntimeOrigin::signed(alice), cid, 0,),
+			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), cid, 0,),
 			Error::<TestRuntime>::InvalidCeremonyIndex
 		);
 	});
@@ -194,7 +194,7 @@ fn full_ring_computation_produces_all_5_rings() {
 
 		// Initiate ring computation for ceremony 6.
 		let caller = account_id(&bs[0]);
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
 			6,
@@ -202,13 +202,13 @@ fn full_ring_computation_produces_all_5_rings() {
 
 		// Run member collection: 5 scan steps + 1 transition step = 6.
 		for _ in 0..(MAX_REPUTATION_LEVELS as u32 + 1) {
-			assert_ok!(EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(
+			assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
 				caller.clone()
 			),));
 		}
 
 		// Check state: should now be in BuildingRing phase.
-		let state = EncointerReputationRing::pending_ring_computation().unwrap();
+		let state = EncointerReputationRings::pending_ring_computation().unwrap();
 		assert_eq!(
 			state.phase,
 			RingComputationPhase::BuildingRing { current_level: MAX_REPUTATION_LEVELS }
@@ -227,47 +227,52 @@ fn full_ring_computation_produces_all_5_rings() {
 
 		// Run ring building: 5 steps (one per level, 5/5 down to 1/5).
 		for _ in 0..MAX_REPUTATION_LEVELS {
-			assert_ok!(EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(
+			assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
 				caller.clone()
 			),));
 		}
 
 		// Computation should be done (storage cleared).
-		assert!(EncointerReputationRing::pending_ring_computation().is_none());
+		assert!(EncointerReputationRings::pending_ring_computation().is_none());
 
-		// Verify rings exist for all 5 levels.
+		// Verify rings exist for all 5 levels (sub_ring_index=0 for small communities).
 		let alice_key = fake_bandersnatch_key(1);
 		let bob_key = fake_bandersnatch_key(2);
 		let charlie_key = fake_bandersnatch_key(3);
 
 		// 5/5 ring: only Alice (attended all 5).
-		let ring5 = EncointerReputationRing::ring_members((cid, 6, 5)).unwrap();
+		let ring5 = EncointerReputationRings::ring_members((cid, 6, 5, 0)).unwrap();
 		assert_eq!(ring5.len(), 1);
 		assert!(ring5.contains(&alice_key));
 
 		// 4/5 ring: only Alice (Bob has 3, Charlie has 1).
-		let ring4 = EncointerReputationRing::ring_members((cid, 6, 4)).unwrap();
+		let ring4 = EncointerReputationRings::ring_members((cid, 6, 4, 0)).unwrap();
 		assert_eq!(ring4.len(), 1);
 		assert!(ring4.contains(&alice_key));
 
 		// 3/5 ring: Alice + Bob.
-		let ring3 = EncointerReputationRing::ring_members((cid, 6, 3)).unwrap();
+		let ring3 = EncointerReputationRings::ring_members((cid, 6, 3, 0)).unwrap();
 		assert_eq!(ring3.len(), 2);
 		assert!(ring3.contains(&alice_key));
 		assert!(ring3.contains(&bob_key));
 
 		// 2/5 ring: Alice + Bob (Charlie has only 1).
-		let ring2 = EncointerReputationRing::ring_members((cid, 6, 2)).unwrap();
+		let ring2 = EncointerReputationRings::ring_members((cid, 6, 2, 0)).unwrap();
 		assert_eq!(ring2.len(), 2);
 		assert!(ring2.contains(&alice_key));
 		assert!(ring2.contains(&bob_key));
 
 		// 1/5 ring: Alice + Bob + Charlie.
-		let ring1 = EncointerReputationRing::ring_members((cid, 6, 1)).unwrap();
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
 		assert_eq!(ring1.len(), 3);
 		assert!(ring1.contains(&alice_key));
 		assert!(ring1.contains(&bob_key));
 		assert!(ring1.contains(&charlie_key));
+
+		// SubRingCount should be 1 for all levels.
+		for level in 1..=5u8 {
+			assert_eq!(EncointerReputationRings::sub_ring_count((cid, 6, level)), 1);
+		}
 	});
 }
 
@@ -299,7 +304,7 @@ fn ring_nesting_is_strict_subset() {
 		setup_community_with_reputations(cid, &bs[..4], &verified);
 
 		let caller = account_id(&bs[0]);
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
 			6,
@@ -308,10 +313,11 @@ fn ring_nesting_is_strict_subset() {
 		// Run all steps to completion.
 		run_computation_to_completion(&caller);
 
-		// Verify strict nesting: ring[n+1] ⊂ ring[n].
+		// Verify strict nesting: ring[n+1] ⊂ ring[n] (single sub-ring).
 		for level in 1..MAX_REPUTATION_LEVELS {
-			let ring_lower = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
-			let ring_higher = EncointerReputationRing::ring_members((cid, 6, level + 1)).unwrap();
+			let ring_lower = EncointerReputationRings::ring_members((cid, 6, level, 0)).unwrap();
+			let ring_higher =
+				EncointerReputationRings::ring_members((cid, 6, level + 1, 0)).unwrap();
 			// Every member of the stricter ring must be in the looser ring.
 			for member in ring_higher.iter() {
 				assert!(
@@ -339,7 +345,7 @@ fn accounts_without_bandersnatch_key_are_excluded() {
 		let alice = account_id(&bs[0]);
 		let bob = account_id(&bs[1]);
 
-		assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 			RuntimeOrigin::signed(alice.clone()),
 			fake_bandersnatch_key(1),
 		));
@@ -358,7 +364,7 @@ fn accounts_without_bandersnatch_key_are_excluded() {
 		);
 
 		let caller = alice.clone();
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
 			6,
@@ -368,7 +374,7 @@ fn accounts_without_bandersnatch_key_are_excluded() {
 		run_computation_to_completion(&caller);
 
 		// Only Alice should be in the ring.
-		let ring1 = EncointerReputationRing::ring_members((cid, 6, 1)).unwrap();
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
 		assert_eq!(ring1.len(), 1);
 		assert!(ring1.contains(&fake_bandersnatch_key(1)));
 	});
@@ -383,7 +389,7 @@ fn ring_members_are_deterministically_sorted() {
 		// Register 4 accounts with keys.
 		for (i, pair) in bs.iter().enumerate().take(4) {
 			let acc = account_id(pair);
-			assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 				RuntimeOrigin::signed(acc.clone()),
 				fake_bandersnatch_key(i as u8 + 1),
 			));
@@ -395,7 +401,7 @@ fn ring_members_are_deterministically_sorted() {
 		}
 
 		let caller = account_id(&bs[0]);
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
 			6,
@@ -403,7 +409,7 @@ fn ring_members_are_deterministically_sorted() {
 
 		run_computation_to_completion(&caller);
 
-		let ring1 = EncointerReputationRing::ring_members((cid, 6, 1)).unwrap();
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
 
 		// Members should be sorted by pubkey.
 		let mut sorted = ring1.clone().into_inner();
@@ -417,7 +423,7 @@ fn continue_ring_computation_fails_when_no_computation() {
 	new_test_ext().execute_with(|| {
 		let alice = account_id(&bootstrappers()[0]);
 		assert_noop!(
-			EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(alice),),
+			EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(alice),),
 			Error::<TestRuntime>::NoComputationPending
 		);
 	});
@@ -431,7 +437,7 @@ fn account_with_3_attendances_in_correct_rings() {
 
 		// Single account with exactly 3 attendances.
 		let acc = account_id(&bs[0]);
-		assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 			RuntimeOrigin::signed(acc.clone()),
 			fake_bandersnatch_key(1),
 		));
@@ -444,7 +450,7 @@ fn account_with_3_attendances_in_correct_rings() {
 			);
 		}
 
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(acc.clone()),
 			cid,
 			6,
@@ -455,14 +461,14 @@ fn account_with_3_attendances_in_correct_rings() {
 		let key = fake_bandersnatch_key(1);
 
 		// Should be in 1/5, 2/5, 3/5.
-		assert!(EncointerReputationRing::ring_members((cid, 6, 1)).unwrap().contains(&key));
-		assert!(EncointerReputationRing::ring_members((cid, 6, 2)).unwrap().contains(&key));
-		assert!(EncointerReputationRing::ring_members((cid, 6, 3)).unwrap().contains(&key));
+		assert!(EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap().contains(&key));
+		assert!(EncointerReputationRings::ring_members((cid, 6, 2, 0)).unwrap().contains(&key));
+		assert!(EncointerReputationRings::ring_members((cid, 6, 3, 0)).unwrap().contains(&key));
 
 		// Should NOT be in 4/5 or 5/5.
-		let ring4 = EncointerReputationRing::ring_members((cid, 6, 4)).unwrap();
+		let ring4 = EncointerReputationRings::ring_members((cid, 6, 4, 0)).unwrap();
 		assert!(!ring4.contains(&key));
-		let ring5 = EncointerReputationRing::ring_members((cid, 6, 5)).unwrap();
+		let ring5 = EncointerReputationRings::ring_members((cid, 6, 5, 0)).unwrap();
 		assert!(!ring5.contains(&key));
 	});
 }
@@ -475,7 +481,7 @@ fn rings_are_per_community() {
 		let cid_b = register_test_community::<TestRuntime>(None, 2.0, 2.0);
 
 		let acc = account_id(&bs[0]);
-		assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 			RuntimeOrigin::signed(acc.clone()),
 			fake_bandersnatch_key(1),
 		));
@@ -488,7 +494,7 @@ fn rings_are_per_community() {
 		);
 
 		// Compute rings for community A.
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(acc.clone()),
 			cid_a,
 			6,
@@ -496,7 +502,7 @@ fn rings_are_per_community() {
 		run_computation_to_completion(&acc);
 
 		// Compute rings for community B.
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(acc.clone()),
 			cid_b,
 			6,
@@ -504,11 +510,11 @@ fn rings_are_per_community() {
 		run_computation_to_completion(&acc);
 
 		// Community A should have the member.
-		let ring_a = EncointerReputationRing::ring_members((cid_a, 6, 1)).unwrap();
+		let ring_a = EncointerReputationRings::ring_members((cid_a, 6, 1, 0)).unwrap();
 		assert_eq!(ring_a.len(), 1);
 
 		// Community B should have empty ring (or not exist).
-		let ring_b = EncointerReputationRing::ring_members((cid_b, 6, 1));
+		let ring_b = EncointerReputationRings::ring_members((cid_b, 6, 1, 0));
 		assert!(ring_b.is_none() || ring_b.unwrap().is_empty());
 	});
 }
@@ -523,7 +529,7 @@ fn setup_large_population(n: usize) -> Vec<test_utils::AccountId> {
 		.enumerate()
 		.map(|(i, pair)| {
 			let acc = account_id(pair);
-			assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
 				RuntimeOrigin::signed(acc.clone()),
 				fake_bandersnatch_key_u32(i as u32 + 1),
 			));
@@ -548,7 +554,7 @@ fn large_community_500_members_full_computation() {
 		}
 
 		let caller = accounts[0].clone();
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
 			6,
@@ -559,13 +565,14 @@ fn large_community_500_members_full_computation() {
 		// 6 collection steps (5 scans + 1 transition) + 5 building steps = 11.
 		assert_eq!(steps, 11);
 
-		// 1/5 ring should have all 500 members.
-		let ring1 = EncointerReputationRing::ring_members((cid, 6, 1)).unwrap();
+		// 1/5 ring: MaxRingSize=2048, so 500 fits in 1 sub-ring.
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
 		assert_eq!(ring1.len(), 500);
+		assert_eq!(EncointerReputationRings::sub_ring_count((cid, 6, 1)), 1);
 
 		// 2/5 through 5/5 should be empty (only 1 ceremony attended).
 		for level in 2..=5u8 {
-			let ring = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
+			let ring = EncointerReputationRings::ring_members((cid, 6, level, 0)).unwrap();
 			assert_eq!(ring.len(), 0, "Ring {level}/5 should be empty");
 		}
 	});
@@ -601,7 +608,7 @@ fn large_community_500_members_varied_attendance() {
 		}
 
 		let caller = accounts[0].clone();
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
 			6,
@@ -610,12 +617,12 @@ fn large_community_500_members_varied_attendance() {
 		let steps = run_computation_to_completion(&caller);
 		assert_eq!(steps, 11);
 
-		// Verify ring sizes match expected distribution.
-		let ring1 = EncointerReputationRing::ring_members((cid, 6, 1)).unwrap();
-		let ring2 = EncointerReputationRing::ring_members((cid, 6, 2)).unwrap();
-		let ring3 = EncointerReputationRing::ring_members((cid, 6, 3)).unwrap();
-		let ring4 = EncointerReputationRing::ring_members((cid, 6, 4)).unwrap();
-		let ring5 = EncointerReputationRing::ring_members((cid, 6, 5)).unwrap();
+		// Verify ring sizes match expected distribution (all fit in single sub-rings).
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
+		let ring2 = EncointerReputationRings::ring_members((cid, 6, 2, 0)).unwrap();
+		let ring3 = EncointerReputationRings::ring_members((cid, 6, 3, 0)).unwrap();
+		let ring4 = EncointerReputationRings::ring_members((cid, 6, 4, 0)).unwrap();
+		let ring5 = EncointerReputationRings::ring_members((cid, 6, 5, 0)).unwrap();
 
 		assert_eq!(ring1.len(), 500); // all 500
 		assert_eq!(ring2.len(), 450); // >= 2 attendances
@@ -657,7 +664,7 @@ fn large_community_step_count_is_predictable() {
 		}
 
 		let caller = accounts[0].clone();
-		assert_ok!(EncointerReputationRing::initiate_rings(
+		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
 			6,
@@ -668,7 +675,7 @@ fn large_community_step_count_is_predictable() {
 		let mut building_steps = 0u32;
 
 		loop {
-			let state = EncointerReputationRing::pending_ring_computation();
+			let state = EncointerReputationRings::pending_ring_computation();
 			if state.is_none() {
 				break;
 			}
@@ -678,7 +685,7 @@ fn large_community_step_count_is_predictable() {
 				RingComputationPhase::BuildingRing { .. } => building_steps += 1,
 				RingComputationPhase::Done => break,
 			}
-			assert_ok!(EncointerReputationRing::continue_ring_computation(RuntimeOrigin::signed(
+			assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
 				caller.clone()
 			),));
 		}
@@ -690,8 +697,287 @@ fn large_community_step_count_is_predictable() {
 
 		// All 500 members should be in every ring (all have 5/5).
 		for level in 1..=5u8 {
-			let ring = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
+			let ring = EncointerReputationRings::ring_members((cid, 6, level, 0)).unwrap();
 			assert_eq!(ring.len(), 500, "Ring {level}/5 should have 500 members");
 		}
 	});
+}
+
+// -- Sub-ring splitting tests --
+
+mod small_ring {
+	use super::*;
+	use crate as dut;
+	use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
+	use sp_runtime::BuildStorage;
+	use test_utils::*;
+
+	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<SmallRingRuntime>;
+
+	frame_support::construct_runtime!(
+		pub enum SmallRingRuntime
+		{
+			System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
+			Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+			EncointerScheduler: pallet_encointer_scheduler::{Pallet, Call, Storage, Config<T>, Event},
+			EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Event<T>},
+			EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Event<T>},
+			EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Event<T>},
+			EncointerReputationRings: dut::{Pallet, Call, Storage, Event<T>},
+		}
+	);
+
+	impl dut::Config for SmallRingRuntime {
+		type RuntimeEvent = RuntimeEvent;
+		type WeightInfo = ();
+		type MaxRingSize = ConstU32<16>;
+		type ChunkSize = ConstU32<100>;
+	}
+
+	impl_frame_system!(SmallRingRuntime);
+	impl_timestamp!(SmallRingRuntime, EncointerScheduler);
+	impl_balances!(SmallRingRuntime, System);
+	impl_encointer_balances!(SmallRingRuntime);
+	impl_encointer_communities!(SmallRingRuntime);
+	impl_encointer_scheduler!(SmallRingRuntime);
+	impl_encointer_ceremonies!(SmallRingRuntime);
+
+	pub fn new_test_ext() -> sp_io::TestExternalities {
+		let mut t = frame_system::GenesisConfig::<SmallRingRuntime>::default()
+			.build_storage()
+			.unwrap();
+
+		pallet_encointer_scheduler::GenesisConfig::<SmallRingRuntime> {
+			current_ceremony_index: 7,
+			phase_durations: vec![
+				(CeremonyPhaseType::Registering, ONE_DAY),
+				(CeremonyPhaseType::Assigning, ONE_DAY),
+				(CeremonyPhaseType::Attesting, ONE_DAY),
+			],
+			..Default::default()
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		pallet_encointer_ceremonies::GenesisConfig::<SmallRingRuntime> {
+			ceremony_reward: BalanceType::from_num(1),
+			location_tolerance: LOCATION_TOLERANCE,
+			time_tolerance: TIME_TOLERANCE,
+			inactivity_timeout: 12,
+			endorsement_tickets_per_bootstrapper: 50,
+			endorsement_tickets_per_reputable: 2,
+			reputation_lifetime: 5,
+			meetup_time_offset: 0,
+			..Default::default()
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		pallet_encointer_communities::GenesisConfig::<SmallRingRuntime> {
+			min_solar_trip_time_s: 1,
+			max_speed_mps: 83,
+			..Default::default()
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		t.into()
+	}
+
+	fn setup_population(n: usize) -> Vec<test_utils::AccountId> {
+		let pairs = add_population(n, 0);
+		pairs
+			.iter()
+			.enumerate()
+			.map(|(i, pair)| {
+				let acc = account_id(pair);
+				assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+					RuntimeOrigin::signed(acc.clone()),
+					fake_bandersnatch_key_u32(i as u32 + 1),
+				));
+				acc
+			})
+			.collect()
+	}
+
+	fn run_to_completion(caller: &test_utils::AccountId) -> u32 {
+		let mut steps = 0u32;
+		while EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
+			caller.clone(),
+		))
+		.is_ok()
+		{
+			steps += 1;
+			assert!(steps < 100, "Ring computation didn't complete in 100 steps");
+		}
+		steps
+	}
+
+	#[test]
+	fn sub_ring_splitting_with_small_max_ring_size() {
+		new_test_ext().execute_with(|| {
+			let cid = register_test_community::<SmallRingRuntime>(None, 1.0, 1.0);
+			let accounts = setup_population(50);
+
+			// All 50 attended ceremony 6 → 1/5 reputation.
+			for acc in &accounts {
+				pallet_encointer_ceremonies::Pallet::<SmallRingRuntime>::fake_reputation(
+					(cid, 6),
+					acc,
+					Reputation::VerifiedLinked(6),
+				);
+			}
+
+			let caller = accounts[0].clone();
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(caller.clone()),
+				cid,
+				6,
+			));
+
+			run_to_completion(&caller);
+
+			// ceil(50/16) = 4 sub-rings.
+			let count = EncointerReputationRings::sub_ring_count((cid, 6, 1));
+			assert_eq!(count, 4);
+
+			// Collect all members across sub-rings.
+			let mut all_members = Vec::new();
+			for i in 0..count {
+				let sub_ring = EncointerReputationRings::ring_members((cid, 6, 1, i)).unwrap();
+				assert!(sub_ring.len() <= 16, "Sub-ring {} has {} > 16 members", i, sub_ring.len());
+				// 50/4 = 12 or 13.
+				assert!(
+					sub_ring.len() == 12 || sub_ring.len() == 13,
+					"Sub-ring {} has {} members, expected 12 or 13",
+					i,
+					sub_ring.len()
+				);
+				all_members.extend(sub_ring.into_inner());
+			}
+
+			// Union equals full sorted member list.
+			assert_eq!(all_members.len(), 50);
+
+			// No duplicates.
+			let mut deduped = all_members.clone();
+			deduped.sort();
+			deduped.dedup();
+			assert_eq!(deduped.len(), 50);
+		});
+	}
+
+	#[test]
+	fn sub_ring_sizes_are_balanced() {
+		new_test_ext().execute_with(|| {
+			let cid = register_test_community::<SmallRingRuntime>(None, 1.0, 1.0);
+			let accounts = setup_population(35);
+
+			for acc in &accounts {
+				pallet_encointer_ceremonies::Pallet::<SmallRingRuntime>::fake_reputation(
+					(cid, 6),
+					acc,
+					Reputation::VerifiedLinked(6),
+				);
+			}
+
+			let caller = accounts[0].clone();
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(caller.clone()),
+				cid,
+				6,
+			));
+
+			run_to_completion(&caller);
+
+			// ceil(35/16) = 3 sub-rings.
+			let count = EncointerReputationRings::sub_ring_count((cid, 6, 1));
+			assert_eq!(count, 3);
+
+			// 35/3: chunks of 11 or 12.
+			let mut total = 0usize;
+			for i in 0..count {
+				let sub_ring = EncointerReputationRings::ring_members((cid, 6, 1, i)).unwrap();
+				assert!(sub_ring.len() <= 16);
+				assert!(
+					sub_ring.len() == 11 || sub_ring.len() == 12,
+					"Sub-ring {} has {} members",
+					i,
+					sub_ring.len()
+				);
+				total += sub_ring.len();
+			}
+			assert_eq!(total, 35);
+		});
+	}
+
+	#[test]
+	fn single_sub_ring_for_small_community() {
+		new_test_ext().execute_with(|| {
+			let cid = register_test_community::<SmallRingRuntime>(None, 1.0, 1.0);
+			let accounts = setup_population(10);
+
+			for acc in &accounts {
+				pallet_encointer_ceremonies::Pallet::<SmallRingRuntime>::fake_reputation(
+					(cid, 6),
+					acc,
+					Reputation::VerifiedLinked(6),
+				);
+			}
+
+			let caller = accounts[0].clone();
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(caller.clone()),
+				cid,
+				6,
+			));
+
+			run_to_completion(&caller);
+
+			// 10 <= 16, so 1 sub-ring.
+			assert_eq!(EncointerReputationRings::sub_ring_count((cid, 6, 1)), 1);
+
+			let ring = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
+			assert_eq!(ring.len(), 10);
+		});
+	}
+
+	#[test]
+	fn sub_rings_are_contiguous_slices_of_sorted_list() {
+		new_test_ext().execute_with(|| {
+			let cid = register_test_community::<SmallRingRuntime>(None, 1.0, 1.0);
+			let accounts = setup_population(50);
+
+			for acc in &accounts {
+				pallet_encointer_ceremonies::Pallet::<SmallRingRuntime>::fake_reputation(
+					(cid, 6),
+					acc,
+					Reputation::VerifiedLinked(6),
+				);
+			}
+
+			let caller = accounts[0].clone();
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(caller.clone()),
+				cid,
+				6,
+			));
+
+			run_to_completion(&caller);
+
+			let count = EncointerReputationRings::sub_ring_count((cid, 6, 1));
+
+			// Concatenating all sub-rings in order should produce a sorted list.
+			let mut concatenated = Vec::new();
+			for i in 0..count {
+				let sub_ring = EncointerReputationRings::ring_members((cid, 6, 1, i)).unwrap();
+				concatenated.extend(sub_ring.into_inner());
+			}
+
+			let mut sorted = concatenated.clone();
+			sorted.sort();
+			assert_eq!(concatenated, sorted, "Sub-rings should be contiguous sorted slices");
+		});
+	}
 }

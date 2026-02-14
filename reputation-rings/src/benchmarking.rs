@@ -194,7 +194,7 @@ benchmarks! {
 	}: continue_ring_computation(RawOrigin::Signed(caller))
 	verify {
 		// First build step produces the 5/5 ring.
-		let ring = RingMembers::<T>::get((cid, 6u32, 5u8)).unwrap();
+		let ring = RingMembers::<T>::get((cid, 6u32, 5u8, 0u32)).unwrap();
 		assert_eq!(ring.len(), n as usize);
 	}
 }

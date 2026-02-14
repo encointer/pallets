@@ -14,12 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Encointer.  If not, see <http://www.gnu.org/licenses/>.
 
-//! # Encointer Reputation Ring Pallet
+//! # Encointer Reputation Rings Pallet
 //!
 //! Bandersnatch key registration and per-community reputation ring publication.
 //! After each ceremony cycle, computes 5 nested rings per community (N/5 for N=1..5)
 //! where the N/5 ring contains all accounts that attended >= N of the last 5 ceremonies
 //! in that community and have a registered Bandersnatch key.
+//!
+//! When a reputation level has more than `MaxRingSize` eligible members, the ring is
+//! split into multiple sub-rings of balanced size (128..=255 each).
 //!
 //! Ring computation is split across multiple blocks via `initiate_rings` +
 //! `continue_ring_computation` to stay within block weight limits.
@@ -48,6 +51,10 @@ pub use weights::WeightInfo;
 
 /// Maximum number of reputation levels (N=1..5).
 pub const MAX_REPUTATION_LEVELS: u8 = 5;
+
+/// Minimum sub-ring size. When splitting, each chunk will have at least this many members.
+/// Bandersnatch Domain11 PCS requires rings of at least 128 keys for adequate anonymity.
+pub const MIN_RING_SIZE: u32 = 128;
 
 /// Bandersnatch public key: 32 bytes.
 pub type BandersnatchPublicKey = [u8; 32];
@@ -83,7 +90,7 @@ pub mod pallet {
 	use super::*;
 	use frame_system::pallet_prelude::*;
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -119,8 +126,9 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, T::AccountId, BandersnatchPublicKey, OptionQuery>;
 
 	/// Ordered member list (Bandersnatch pubkeys) per (community, ceremony_index,
-	/// reputation_level). The N/5 ring contains pubkeys of accounts that attended >= N of the last
-	/// 5 ceremonies.
+	/// reputation_level, sub_ring_index). The N/5 ring contains pubkeys of accounts that
+	/// attended >= N of the last 5 ceremonies. When a level has more members than
+	/// `MaxRingSize`, it is split into multiple sub-rings.
 	#[pallet::storage]
 	#[pallet::getter(fn ring_members)]
 	pub type RingMembers<T: Config> = StorageNMap<
@@ -129,9 +137,24 @@ pub mod pallet {
 			NMapKey<Blake2_128Concat, CommunityIdentifier>,
 			NMapKey<Blake2_128Concat, CeremonyIndexType>,
 			NMapKey<Blake2_128Concat, u8>,
+			NMapKey<Blake2_128Concat, u32>,
 		),
 		BoundedVec<BandersnatchPublicKey, T::MaxRingSize>,
 		OptionQuery,
+	>;
+
+	/// Number of sub-rings per (community, ceremony_index, reputation_level).
+	#[pallet::storage]
+	#[pallet::getter(fn sub_ring_count)]
+	pub type SubRingCount<T: Config> = StorageNMap<
+		_,
+		(
+			NMapKey<Blake2_128Concat, CommunityIdentifier>,
+			NMapKey<Blake2_128Concat, CeremonyIndexType>,
+			NMapKey<Blake2_128Concat, u8>,
+		),
+		u32,
+		ValueQuery,
 	>;
 
 	/// Multi-block computation state. Only one computation can be active at a time.
@@ -151,11 +174,12 @@ pub mod pallet {
 		BandersnatchKeyRegistered { account: T::AccountId, key: BandersnatchPublicKey },
 		/// Ring computation started for a community at a ceremony index.
 		RingComputationStarted { community: CommunityIdentifier, ceremony_index: CeremonyIndexType },
-		/// A ring was published for a specific reputation level.
+		/// A sub-ring was published for a specific reputation level.
 		RingPublished {
 			community: CommunityIdentifier,
 			ceremony_index: CeremonyIndexType,
 			reputation_level: u8,
+			sub_ring_index: u32,
 			member_count: u32,
 		},
 		/// All 5 rings for a community/ceremony have been computed.
@@ -362,10 +386,12 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Build one ring level and store the member list.
+	/// Build one ring level and store the member list, splitting into sub-rings if needed.
 	///
 	/// Builds from strictest (5/5) down to loosest (1/5).
 	/// The N/5 ring contains all accounts with attendance >= N.
+	/// When the member count exceeds `MaxRingSize`, the sorted list is split into
+	/// balanced sub-rings of size 128..=255.
 	fn build_ring_step(
 		state: &mut RingComputationState<T::AccountId>,
 		level: u8,
@@ -388,18 +414,35 @@ impl<T: Config> Pallet<T> {
 		// Sort for deterministic ordering.
 		members.sort();
 
-		let member_count = members.len() as u32;
-		let bounded: BoundedVec<BandersnatchPublicKey, T::MaxRingSize> =
-			BoundedVec::try_from(members).map_err(|_| Error::<T>::RingTooLarge)?;
+		let total = members.len() as u32;
+		let max_ring = T::MaxRingSize::get();
 
-		<RingMembers<T>>::insert((state.community, state.ceremony_index, level), bounded);
+		let num_sub_rings = if total <= max_ring { 1u32 } else { total.div_ceil(max_ring) };
 
-		Self::deposit_event(Event::RingPublished {
-			community: state.community,
-			ceremony_index: state.ceremony_index,
-			reputation_level: level,
-			member_count,
-		});
+		for i in 0..num_sub_rings {
+			// Even-split formula: chunks differ by at most 1 element.
+			let start = (i as usize) * (total as usize) / (num_sub_rings as usize);
+			let end = ((i + 1) as usize) * (total as usize) / (num_sub_rings as usize);
+			let chunk = &members[start..end];
+
+			let bounded: BoundedVec<BandersnatchPublicKey, T::MaxRingSize> =
+				BoundedVec::try_from(chunk.to_vec()).map_err(|_| {
+					log::error!("BUG: sub-ring chunk exceeded MaxRingSize");
+					Error::<T>::RingTooLarge
+				})?;
+
+			<RingMembers<T>>::insert((state.community, state.ceremony_index, level, i), bounded);
+
+			Self::deposit_event(Event::RingPublished {
+				community: state.community,
+				ceremony_index: state.ceremony_index,
+				reputation_level: level,
+				sub_ring_index: i,
+				member_count: chunk.len() as u32,
+			});
+		}
+
+		<SubRingCount<T>>::insert((state.community, state.ceremony_index, level), num_sub_rings);
 
 		// Move to next level (4/5, 3/5, ..., 1/5, then done).
 		state.phase = if level == 1 {
