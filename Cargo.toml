@@ -27,6 +27,7 @@ members = [
     'treasuries',
     'treasuries/rpc',
     'treasuries/rpc/runtime-api',
+    'reputation-ring',
     'vouches',
 ]
 
@@ -49,6 +50,7 @@ pallet-encointer-balances = { path = "balances", default-features = false, versi
 pallet-encointer-ceremonies = { path = "ceremonies", default-features = false, version = "21.1.0" }
 pallet-encointer-communities = { path = "communities", default-features = false, version = "21.1.0" }
 pallet-encointer-reputation-commitments = { path = "reputation-commitments", default-features = false, version = "21.1.0" }
+pallet-encointer-reputation-ring = { path = "reputation-ring", default-features = false, version = "0.1.0" }
 pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "21.1.0" }
 pallet-encointer-treasuries = { path = "treasuries", default-features = false, version = "21.4.0" }
 pallet-encointer-offline-payment = { path = "offline-payment", default-features = false, version = "0.1.0" }
