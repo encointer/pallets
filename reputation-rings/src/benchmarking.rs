@@ -5,7 +5,7 @@ use encointer_primitives::{
 	storage::{current_ceremony_index_key, participant_reputation},
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
-use frame_support::{assert_ok, traits::OriginTrait};
+use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use parity_scale_codec::Encode;
 
@@ -54,26 +54,26 @@ where
 	T::AccountId: AsRef<[u8; 32]>,
 {
 	// Set required communities pallet config via extrinsics.
-	assert_ok!(pallet_encointer_communities::Pallet::<T>::set_max_speed_mps(
-		T::RuntimeOrigin::root(),
-		83,
-	));
-	assert_ok!(pallet_encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(
-		T::RuntimeOrigin::root(),
+	pallet_encointer_communities::Pallet::<T>::set_max_speed_mps(RawOrigin::Root.into(), 83)
+		.ok();
+	pallet_encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(
+		RawOrigin::Root.into(),
 		1,
-	));
+	)
+	.ok();
 
 	let bootstrappers: Vec<T::AccountId> = (0..6).map(|n| account("bs", n, n)).collect();
 	let location = Location { lat: Degree::from_num(1.0), lon: Degree::from_num(1.0) };
 
-	assert_ok!(pallet_encointer_communities::Pallet::<T>::new_community(
-		T::RuntimeOrigin::root(),
+	pallet_encointer_communities::Pallet::<T>::new_community(
+		RawOrigin::Root.into(),
 		location,
 		bootstrappers.clone(),
 		Default::default(),
 		None,
 		None,
-	));
+	)
+	.ok();
 
 	CommunityIdentifier::new(location, bootstrappers).unwrap()
 }
