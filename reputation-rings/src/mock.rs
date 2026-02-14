@@ -15,7 +15,7 @@ frame_support::construct_runtime!(
 		EncointerCommunities: pallet_encointer_communities::{Pallet, Call, Storage, Event<T>},
 		EncointerCeremonies: pallet_encointer_ceremonies::{Pallet, Call, Storage, Event<T>},
 		EncointerBalances: pallet_encointer_balances::{Pallet, Call, Storage, Event<T>},
-		EncointerReputationRing: dut::{Pallet, Call, Storage, Event<T>},
+		EncointerReputationRings: dut::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
