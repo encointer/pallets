@@ -42,21 +42,21 @@ test-utils = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"encointer-primitives/std",
-	"frame-benchmarking?/std",
-	"frame-support/std",
-	"frame-system/std",
-	"log/std",
-	"pallet-encointer-ceremonies/std",
-	"pallet-encointer-communities/std",
-	"pallet-encointer-scheduler/std",
-	"parity-scale-codec/std",
-	"scale-info/std",
-	"sp-core/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	"pallet-encointer-balances/std"
+    "encointer-primitives/std",
+    "frame-benchmarking?/std",
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+    "pallet-encointer-ceremonies/std",
+    "pallet-encointer-communities/std",
+    "pallet-encointer-scheduler/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "sp-core/std",
+    "sp-io/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "pallet-encointer-balances/std",
 ]
 runtime-benchmarks = [
     "frame-benchmarking",
@@ -72,13 +72,13 @@ runtime-benchmarks = [
     "test-utils/runtime-benchmarks",
 ]
 try-runtime = [
-	"frame-system/try-runtime",
-	"frame-support/try-runtime",
-	"pallet-encointer-ceremonies/try-runtime",
-	"pallet-encointer-communities/try-runtime",
-	"pallet-encointer-scheduler/try-runtime",
-	"encointer-primitives/try-runtime",
-	"sp-runtime/try-runtime",
-	"test-utils/try-runtime",
-	"pallet-encointer-balances/try-runtime"
+    "frame-system/try-runtime",
+    "frame-support/try-runtime",
+    "pallet-encointer-ceremonies/try-runtime",
+    "pallet-encointer-communities/try-runtime",
+    "pallet-encointer-scheduler/try-runtime",
+    "encointer-primitives/try-runtime",
+    "sp-runtime/try-runtime",
+    "test-utils/try-runtime",
+    "pallet-encointer-balances/try-runtime",
 ]
