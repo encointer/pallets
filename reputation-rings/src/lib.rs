@@ -219,7 +219,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Register or update a Bandersnatch public key for the caller.
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::DbWeight::get().reads_writes(1, 1))]
+		#[pallet::weight(<T as Config>::WeightInfo::register_bandersnatch_key())]
 		pub fn register_bandersnatch_key(
 			origin: OriginFor<T>,
 			key: BandersnatchPublicKey,
@@ -235,7 +235,7 @@ pub mod pallet {
 		///
 		/// The ceremony must have already occurred (ceremony_index < current).
 		#[pallet::call_index(1)]
-		#[pallet::weight(T::DbWeight::get().reads_writes(3, 1))]
+		#[pallet::weight(<T as Config>::WeightInfo::initiate_rings())]
 		pub fn initiate_rings(
 			origin: OriginFor<T>,
 			community: CommunityIdentifier,
@@ -282,10 +282,10 @@ pub mod pallet {
 		///
 		/// Can be called by anyone (intended for `on_idle` or off-chain worker).
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::DbWeight::get().reads_writes(
-			T::ChunkSize::get() as u64 + 2,
-			T::ChunkSize::get() as u64 + 1
-		))]
+		#[pallet::weight(
+			<T as Config>::WeightInfo::continue_ring_computation_collect(T::ChunkSize::get())
+				.max(<T as Config>::WeightInfo::continue_ring_computation_build(T::MaxRingSize::get()))
+		)]
 		pub fn continue_ring_computation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 
