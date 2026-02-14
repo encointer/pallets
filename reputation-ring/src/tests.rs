@@ -1,7 +1,7 @@
 use crate::{mock::*, BandersnatchPublicKey, Error, RingComputationPhase, MAX_REPUTATION_LEVELS};
 use encointer_primitives::ceremonies::Reputation;
 use frame_support::{assert_noop, assert_ok};
-use test_utils::helpers::{account_id, bootstrappers, register_test_community};
+use test_utils::helpers::{account_id, add_population, bootstrappers, register_test_community};
 
 /// Run ring computation to completion. Returns the number of steps taken.
 fn run_computation_to_completion(caller: &test_utils::AccountId) -> u32 {
@@ -25,6 +25,12 @@ fn run_computation_to_completion(caller: &test_utils::AccountId) -> u32 {
 fn fake_bandersnatch_key(seed: u8) -> BandersnatchPublicKey {
 	let mut key = [0u8; 32];
 	key[0] = seed;
+	key
+}
+
+fn fake_bandersnatch_key_u32(seed: u32) -> BandersnatchPublicKey {
+	let mut key = [0u8; 32];
+	key[..4].copy_from_slice(&seed.to_le_bytes());
 	key
 }
 
@@ -527,5 +533,188 @@ fn rings_are_per_community() {
 		// Community B should have empty ring (or not exist).
 		let ring_b = EncointerReputationRing::ring_members((cid_b, 6, 1));
 		assert!(ring_b.is_none() || ring_b.unwrap().is_empty());
+	});
+}
+
+// -- Large community tests (realistic 500-member scenario) --
+
+/// Register `n` generated accounts with bandersnatch keys and return their account IDs.
+fn setup_large_population(n: usize) -> Vec<test_utils::AccountId> {
+	let pairs = add_population(n, 0);
+	pairs
+		.iter()
+		.enumerate()
+		.map(|(i, pair)| {
+			let acc = account_id(pair);
+			assert_ok!(EncointerReputationRing::register_bandersnatch_key(
+				RuntimeOrigin::signed(acc.clone()),
+				fake_bandersnatch_key_u32(i as u32 + 1),
+			));
+			acc
+		})
+		.collect()
+}
+
+#[test]
+fn large_community_500_members_full_computation() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let accounts = setup_large_population(500);
+
+		// All 500 attended ceremony 6 → 1/5 reputation.
+		for acc in &accounts {
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				acc,
+				Reputation::VerifiedLinked(6),
+			);
+		}
+
+		let caller = accounts[0].clone();
+		assert_ok!(EncointerReputationRing::initiate_rings(
+			RuntimeOrigin::signed(caller.clone()),
+			cid,
+			6,
+		));
+
+		let steps = run_computation_to_completion(&caller);
+
+		// 6 collection steps (5 scans + 1 transition) + 5 building steps = 11.
+		assert_eq!(steps, 11);
+
+		// 1/5 ring should have all 500 members.
+		let ring1 = EncointerReputationRing::ring_members((cid, 6, 1)).unwrap();
+		assert_eq!(ring1.len(), 500);
+
+		// 2/5 through 5/5 should be empty (only 1 ceremony attended).
+		for level in 2..=5u8 {
+			let ring = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
+			assert_eq!(ring.len(), 0, "Ring {}/5 should be empty", level);
+		}
+	});
+}
+
+#[test]
+fn large_community_500_members_varied_attendance() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let accounts = setup_large_population(500);
+
+		// Distribute attendance realistically:
+		// Accounts 0..100:   attended all 5 ceremonies (2-6) → 5/5
+		// Accounts 100..200: attended 4 ceremonies (3-6)     → 4/5
+		// Accounts 200..350: attended 3 ceremonies (4-6)     → 3/5
+		// Accounts 350..450: attended 2 ceremonies (5-6)     → 2/5
+		// Accounts 450..500: attended 1 ceremony (6)         → 1/5
+		for (i, acc) in accounts.iter().enumerate() {
+			let ceremonies: Vec<u32> = match i {
+				0..100 => vec![2, 3, 4, 5, 6],
+				100..200 => vec![3, 4, 5, 6],
+				200..350 => vec![4, 5, 6],
+				350..450 => vec![5, 6],
+				_ => vec![6],
+			};
+			for cindex in ceremonies {
+				pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+					(cid, cindex),
+					acc,
+					Reputation::VerifiedLinked(cindex),
+				);
+			}
+		}
+
+		let caller = accounts[0].clone();
+		assert_ok!(EncointerReputationRing::initiate_rings(
+			RuntimeOrigin::signed(caller.clone()),
+			cid,
+			6,
+		));
+
+		let steps = run_computation_to_completion(&caller);
+		assert_eq!(steps, 11);
+
+		// Verify ring sizes match expected distribution.
+		let ring1 = EncointerReputationRing::ring_members((cid, 6, 1)).unwrap();
+		let ring2 = EncointerReputationRing::ring_members((cid, 6, 2)).unwrap();
+		let ring3 = EncointerReputationRing::ring_members((cid, 6, 3)).unwrap();
+		let ring4 = EncointerReputationRing::ring_members((cid, 6, 4)).unwrap();
+		let ring5 = EncointerReputationRing::ring_members((cid, 6, 5)).unwrap();
+
+		assert_eq!(ring1.len(), 500); // all 500
+		assert_eq!(ring2.len(), 450); // >= 2 attendances
+		assert_eq!(ring3.len(), 350); // >= 3 attendances
+		assert_eq!(ring4.len(), 200); // >= 4 attendances
+		assert_eq!(ring5.len(), 100); // >= 5 attendances
+
+		// Strict nesting holds.
+		assert!(ring5.len() < ring4.len());
+		assert!(ring4.len() < ring3.len());
+		assert!(ring3.len() < ring2.len());
+		assert!(ring2.len() < ring1.len());
+
+		// All ring5 members should be in ring4, etc.
+		for key in ring5.iter() {
+			assert!(ring4.contains(key));
+		}
+		for key in ring4.iter() {
+			assert!(ring3.contains(key));
+		}
+	});
+}
+
+#[test]
+fn large_community_step_count_is_predictable() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let accounts = setup_large_population(500);
+
+		// 5/5 attendance for all → worst case for collection (all match every scan).
+		for acc in &accounts {
+			for cindex in 2..=6u32 {
+				pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+					(cid, cindex),
+					acc,
+					Reputation::VerifiedLinked(cindex),
+				);
+			}
+		}
+
+		let caller = accounts[0].clone();
+		assert_ok!(EncointerReputationRing::initiate_rings(
+			RuntimeOrigin::signed(caller.clone()),
+			cid,
+			6,
+		));
+
+		// Track phase transitions.
+		let mut collection_steps = 0u32;
+		let mut building_steps = 0u32;
+
+		loop {
+			let state = EncointerReputationRing::pending_ring_computation();
+			if state.is_none() {
+				break;
+			}
+			let phase = &state.unwrap().phase;
+			match phase {
+				RingComputationPhase::CollectingMembers { .. } => collection_steps += 1,
+				RingComputationPhase::BuildingRing { .. } => building_steps += 1,
+				RingComputationPhase::Done => break,
+			}
+			assert_ok!(EncointerReputationRing::continue_ring_computation(
+				RuntimeOrigin::signed(caller.clone()),
+			));
+		}
+
+		// 5 scans + 1 transition = 6 collection steps.
+		assert_eq!(collection_steps, 6);
+		// 5 ring levels = 5 building steps.
+		assert_eq!(building_steps, 5);
+
+		// All 500 members should be in every ring (all have 5/5).
+		for level in 1..=5u8 {
+			let ring = EncointerReputationRing::ring_members((cid, 6, level)).unwrap();
+			assert_eq!(ring.len(), 500, "Ring {}/5 should have 500 members", level);
+		}
 	});
 }

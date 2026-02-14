@@ -38,6 +38,9 @@ use pallet_encointer_communities::Pallet as CommunitiesPallet;
 
 pub use pallet::*;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
