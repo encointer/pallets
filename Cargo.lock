@@ -5120,7 +5120,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-encointer-reputation-ring"
+name = "pallet-encointer-reputation-rings"
 version = "0.1.0"
 dependencies = [
  "approx",
