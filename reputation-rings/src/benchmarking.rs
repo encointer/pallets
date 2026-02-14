@@ -2,7 +2,7 @@ use crate::{Pallet as ReputationRing, *};
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityIdentifier, Degree, Location},
-	storage::{current_ceremony_index_key, participant_reputation},
+	storage::{community_identifiers, current_ceremony_index_key, participant_reputation},
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::assert_ok;
@@ -53,29 +53,17 @@ fn register_community<T: Config>() -> CommunityIdentifier
 where
 	T::AccountId: AsRef<[u8; 32]>,
 {
-	// Set required communities pallet config via extrinsics.
-	pallet_encointer_communities::Pallet::<T>::set_max_speed_mps(RawOrigin::Root.into(), 83)
-		.ok();
-	pallet_encointer_communities::Pallet::<T>::set_min_solar_trip_time_s(
-		RawOrigin::Root.into(),
-		1,
-	)
-	.ok();
-
 	let bootstrappers: Vec<T::AccountId> = (0..6).map(|n| account("bs", n, n)).collect();
 	let location = Location { lat: Degree::from_num(1.0), lon: Degree::from_num(1.0) };
+	let cid = CommunityIdentifier::new(location, bootstrappers).unwrap();
 
-	pallet_encointer_communities::Pallet::<T>::new_community(
-		RawOrigin::Root.into(),
-		location,
-		bootstrappers.clone(),
-		Default::default(),
-		None,
-		None,
-	)
-	.ok();
+	// Write directly to storage to avoid origin requirements that differ between mock and runtime.
+	let key = community_identifiers();
+	let mut cids: Vec<CommunityIdentifier> = frame_support::storage::unhashed::get_or_default(&key);
+	cids.push(cid);
+	frame_support::storage::unhashed::put_raw(&key, &cids.encode());
 
-	CommunityIdentifier::new(location, bootstrappers).unwrap()
+	cid
 }
 
 /// Setup a community with `n` members who all have 5/5 reputation (worst case).
@@ -193,9 +181,13 @@ benchmarks! {
 		advance_to_building_phase::<T>(&caller, cid);
 	}: continue_ring_computation(RawOrigin::Signed(caller))
 	verify {
-		// First build step produces the 5/5 ring.
-		let ring = RingMembers::<T>::get((cid, 6u32, 5u8, 0u32)).unwrap();
-		assert_eq!(ring.len(), n as usize);
+		// First build step produces the 5/5 ring (may be split into sub-rings).
+		let count = SubRingCount::<T>::get((cid, 6u32, 5u8));
+		assert!(count >= 1);
+		let total: usize = (0..count)
+			.map(|i| RingMembers::<T>::get((cid, 6u32, 5u8, i)).unwrap().len())
+			.sum();
+		assert_eq!(total, n as usize);
 	}
 }
 
