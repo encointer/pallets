@@ -59,9 +59,9 @@ pub type BalanceOf<T> =
 	<<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[cfg(feature = "std")]
-pub mod circuit;
+pub use encointer_offline_payment_core::circuit;
 #[cfg(feature = "std")]
-pub mod prover;
+pub use encointer_offline_payment_core::prover;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
