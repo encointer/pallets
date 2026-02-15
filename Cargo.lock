@@ -5137,6 +5137,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-encointer-reputation-rings"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "encointer-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-encointer-balances",
+ "pallet-encointer-ceremonies",
+ "pallet-encointer-communities",
+ "pallet-encointer-scheduler",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+ "test-utils",
+]
+
+[[package]]
 name = "pallet-encointer-scheduler"
 version = "21.1.0"
 dependencies = [

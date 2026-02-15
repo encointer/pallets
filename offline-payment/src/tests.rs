@@ -16,7 +16,7 @@
 
 use crate::{mock::*, Error, Event, Groth16ProofBytes, OfflineIdentities, UsedNullifiers};
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
-use frame_support::{assert_noop, assert_ok, BoundedVec};
+use frame_support::{assert_noop, assert_ok, traits::Currency, BoundedVec};
 use sp_keyring::Sr25519Keyring;
 use test_utils::helpers::register_test_community;
 
@@ -47,6 +47,10 @@ fn setup_community_with_balance(
 	let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
 	let _ = pallet_encointer_balances::Pallet::<TestRuntime>::issue(cid, account, balance);
 	cid
+}
+
+fn fund_native(account: &<TestRuntime as frame_system::Config>::AccountId, amount: u128) {
+	Balances::make_free_balance_be(account, amount);
 }
 
 // ============ Register Offline Identity Tests ============
@@ -405,13 +409,16 @@ fn e2e_zk_payment_works() {
 		let nonce = Fr::from(67890u64);
 		let amount = BalanceType::from_num(10);
 
-		// Hash public inputs
+		// Hash public inputs — bind asset_hash to genesis hash for cross-chain replay protection
 		let recipient_hash_bytes = crate::hash_recipient(&bob().encode());
-		let cid_hash_bytes = crate::hash_cid(&cid);
+		let asset_hash = crate::hash_cid(&cid);
+		let genesis_hash = <frame_system::Pallet<TestRuntime>>::block_hash(0u64);
+		let chain_asset_hash =
+			sp_io::hashing::blake2_256(&[&asset_hash[..], genesis_hash.as_ref()].concat());
 		let amount_bytes = crate::balance_to_bytes(amount);
 
 		let recipient_hash = bytes32_to_field(&recipient_hash_bytes);
-		let cid_hash = bytes32_to_field(&cid_hash_bytes);
+		let chain_asset_field = bytes32_to_field(&chain_asset_hash);
 		let amount_field = bytes32_to_field(&amount_bytes);
 
 		let (proof, public_inputs) = generate_proof(
@@ -420,7 +427,7 @@ fn e2e_zk_payment_works() {
 			nonce,
 			recipient_hash,
 			amount_field,
-			cid_hash,
+			chain_asset_field,
 		)
 		.expect("Proof generation failed");
 
@@ -476,6 +483,108 @@ fn e2e_zk_payment_works() {
 }
 
 #[test]
+fn generate_benchmark_fixtures() {
+	use crate::{
+		circuit::{compute_commitment, poseidon_config},
+		prover::{
+			bytes32_to_field, field_to_bytes32, proof_to_bytes, TrustedSetup, TEST_SETUP_SEED,
+		},
+	};
+	use ark_bn254::Fr;
+	use parity_scale_codec::Encode;
+	use sp_io::hashing::blake2_256;
+	use sp_runtime::codec::DecodeAll;
+
+	// Reproduce frame_benchmarking::account() logic
+	fn bench_account(
+		name: &str,
+		index: u32,
+		seed: u32,
+	) -> <TestRuntime as frame_system::Config>::AccountId {
+		let entropy = (name, index, seed).using_encoded(blake2_256);
+		<TestRuntime as frame_system::Config>::AccountId::decode_all(&mut &entropy[..]).unwrap()
+	}
+
+	// Same accounts as the benchmark
+	let _sender = bench_account("sender", 0, 0);
+	let recipient = bench_account("recipient", 1, 1);
+
+	// Same community as create_community() in benchmark
+	use encointer_primitives::communities::{CommunityIdentifier, Degree, Location};
+	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
+	let bs: Vec<<TestRuntime as frame_system::Config>::AccountId> = vec![
+		bench_account("alice", 1, 1),
+		bench_account("bob", 2, 2),
+		bench_account("charlie", 3, 3),
+	];
+	let cid = CommunityIdentifier::new(location, bs).unwrap();
+
+	// Same proof parameters as the benchmark
+	let poseidon = poseidon_config();
+	let zk_secret = Fr::from(12345u64);
+	let nonce = Fr::from(67890u64);
+	let amount = BalanceType::from_num(10);
+
+	let commitment_field = compute_commitment(&poseidon, &zk_secret);
+	let commitment = field_to_bytes32(&commitment_field);
+	let recipient_hash = bytes32_to_field(&crate::hash_recipient(&recipient.encode()));
+	// Bind asset_hash to test genesis hash for cross-chain replay protection
+	let asset_hash = crate::hash_cid(&cid);
+	let test_genesis_hash = [0x45u8; 32]; // substrate TestExternalities default ("hash 69")
+	let chain_asset_hash = blake2_256(&[&asset_hash[..], &test_genesis_hash[..]].concat());
+	let chain_asset_field = bytes32_to_field(&chain_asset_hash);
+	let amount_field = bytes32_to_field(&crate::balance_to_bytes(amount));
+
+	// Generate trusted setup and proof with deterministic RNG
+	let setup = TrustedSetup::generate_with_seed(TEST_SETUP_SEED);
+	let vk_bytes = setup.verifying_key_bytes();
+
+	use crate::circuit::OfflinePaymentCircuit;
+	use ark_groth16::Groth16;
+	use ark_snark::SNARK;
+	use ark_std::rand::{rngs::StdRng, SeedableRng};
+
+	let circuit = OfflinePaymentCircuit::new(
+		poseidon,
+		zk_secret,
+		nonce,
+		recipient_hash,
+		amount_field,
+		chain_asset_field,
+	);
+	let public_inputs = circuit.public_inputs();
+	let mut rng = StdRng::seed_from_u64(42); // deterministic
+	let proof = Groth16::<ark_bn254::Bn254>::prove(&setup.proving_key, circuit, &mut rng)
+		.expect("proving failed");
+	let proof_bytes = proof_to_bytes(&proof);
+	let nullifier = field_to_bytes32(&public_inputs[4]);
+
+	// Verify it works
+	assert!(crate::prover::verify_proof(&setup.verifying_key, &proof, &public_inputs));
+
+	fn bytes_to_rust_array(name: &str, bytes: &[u8]) {
+		print!("const {}: [u8; {}] = [\n\t", name, bytes.len());
+		for (i, b) in bytes.iter().enumerate() {
+			if i > 0 && i % 15 == 0 {
+				print!("\n\t");
+			}
+			if i + 1 < bytes.len() {
+				print!("0x{b:02x}, ");
+			} else {
+				print!("0x{b:02x},");
+			}
+		}
+		println!("\n];");
+	}
+
+	println!("// ===== BENCHMARK FIXTURE DATA =====");
+	bytes_to_rust_array("VK_BYTES", &vk_bytes);
+	bytes_to_rust_array("PROOF_BYTES", &proof_bytes);
+	bytes_to_rust_array("COMMITMENT", &commitment);
+	bytes_to_rust_array("NULLIFIER", &nullifier);
+}
+
+#[test]
 fn e2e_invalid_proof_rejected() {
 	use crate::prover::{TrustedSetup, TEST_SETUP_SEED};
 
@@ -522,4 +631,480 @@ fn e2e_invalid_proof_rejected() {
 			Error::<TestRuntime>::ProofDeserializationFailed
 		);
 	});
+}
+
+// ============ Native Token Helper Tests ============
+
+#[test]
+fn native_token_cid_hash_is_deterministic() {
+	let h1 = crate::native_token_cid_hash();
+	let h2 = crate::native_token_cid_hash();
+	assert_eq!(h1, h2);
+	// Must differ from any real community hash
+	assert_ne!(h1, [0u8; 32]);
+}
+
+#[test]
+fn native_balance_to_bytes_works() {
+	let amount: u128 = 1_000_000_000_000;
+	let bytes = crate::native_balance_to_bytes(amount);
+	let recovered = u128::from_le_bytes(bytes[..16].try_into().unwrap());
+	assert_eq!(recovered, amount);
+	assert_eq!(&bytes[16..], &[0u8; 16]);
+}
+
+// ============ Submit Native Offline Payment Error Tests ============
+
+#[test]
+fn submit_native_fails_zero_amount() {
+	new_test_ext().execute_with(|| {
+		let commitment = test_commitment();
+		let nullifier = test_nullifier();
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				0u128,
+				nullifier
+			),
+			Error::<TestRuntime>::AmountMustBePositive
+		);
+	});
+}
+
+#[test]
+fn submit_native_fails_self_send() {
+	new_test_ext().execute_with(|| {
+		let commitment = test_commitment();
+		let nullifier = test_nullifier();
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				alice(),
+				100u128,
+				nullifier
+			),
+			Error::<TestRuntime>::SenderEqualsRecipient
+		);
+	});
+}
+
+#[test]
+fn submit_native_fails_no_identity() {
+	new_test_ext().execute_with(|| {
+		let nullifier = test_nullifier();
+
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				100u128,
+				nullifier
+			),
+			Error::<TestRuntime>::NoOfflineIdentity
+		);
+	});
+}
+
+#[test]
+fn submit_native_fails_used_nullifier() {
+	new_test_ext().execute_with(|| {
+		let commitment = test_commitment();
+		let nullifier = test_nullifier();
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+		fund_native(&alice(), 1000);
+
+		UsedNullifiers::<TestRuntime>::insert(nullifier, ());
+
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				100u128,
+				nullifier
+			),
+			Error::<TestRuntime>::NullifierAlreadyUsed
+		);
+	});
+}
+
+#[test]
+fn submit_native_fails_no_vk() {
+	new_test_ext().execute_with(|| {
+		let commitment = test_commitment();
+		let nullifier = test_nullifier();
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+		fund_native(&alice(), 1000);
+
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				100u128,
+				nullifier
+			),
+			Error::<TestRuntime>::NoVerificationKey
+		);
+	});
+}
+
+#[test]
+fn submit_native_fails_insufficient_balance() {
+	new_test_ext().execute_with(|| {
+		let commitment = test_commitment();
+		let nullifier = test_nullifier();
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+		// Alice has 0 native balance
+
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				100u128,
+				nullifier
+			),
+			Error::<TestRuntime>::InsufficientBalance
+		);
+	});
+}
+
+#[test]
+fn submit_native_fails_invalid_proof() {
+	use crate::prover::{TrustedSetup, TEST_SETUP_SEED};
+
+	new_test_ext().execute_with(|| {
+		let setup = TrustedSetup::generate_with_seed(TEST_SETUP_SEED);
+		let bounded_vk: BoundedVec<u8, MaxVkSize> =
+			BoundedVec::try_from(setup.verifying_key_bytes()).expect("VK too large");
+		assert_ok!(EncointerOfflinePayment::set_verification_key(
+			RuntimeOrigin::root(),
+			bounded_vk
+		));
+
+		let commitment = test_commitment();
+		let nullifier = test_nullifier();
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+		fund_native(&alice(), 1000);
+
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				100u128,
+				nullifier
+			),
+			Error::<TestRuntime>::ProofDeserializationFailed
+		);
+	});
+}
+
+// ============ Cross-domain Nullifier Test ============
+
+#[test]
+fn nullifier_shared_between_cc_and_native() {
+	new_test_ext().execute_with(|| {
+		let nullifier = test_nullifier();
+		let commitment = test_commitment();
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+
+		let cid = setup_community_with_balance(&alice(), BalanceType::from_num(100));
+		fund_native(&alice(), 1000);
+
+		// Mark nullifier as used (simulates a successful CC payment)
+		UsedNullifiers::<TestRuntime>::insert(nullifier, ());
+
+		// Native payment with same nullifier should fail
+		let proof =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof,
+				alice(),
+				bob(),
+				100u128,
+				nullifier
+			),
+			Error::<TestRuntime>::NullifierAlreadyUsed
+		);
+
+		// Similarly, CC payment with a nullifier used by native should fail
+		let nullifier2 = [3u8; 32];
+		UsedNullifiers::<TestRuntime>::insert(nullifier2, ());
+
+		let proof2 =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+		assert_noop!(
+			EncointerOfflinePayment::submit_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof2,
+				alice(),
+				bob(),
+				BalanceType::from_num(10),
+				cid,
+				nullifier2
+			),
+			Error::<TestRuntime>::NullifierAlreadyUsed
+		);
+	});
+}
+
+// ============ Native E2E ZK Test ============
+
+#[test]
+fn e2e_native_zk_payment_works() {
+	use crate::{
+		circuit::{compute_commitment, poseidon_config},
+		prover::{
+			bytes32_to_field, field_to_bytes32, generate_proof, proof_to_bytes, TrustedSetup,
+			TEST_SETUP_SEED,
+		},
+	};
+	use ark_bn254::Fr;
+	use parity_scale_codec::Encode;
+
+	new_test_ext().execute_with(|| {
+		System::set_block_number(1);
+
+		let setup = TrustedSetup::generate_with_seed(TEST_SETUP_SEED);
+		let bounded_vk: BoundedVec<u8, MaxVkSize> =
+			BoundedVec::try_from(setup.verifying_key_bytes()).expect("VK too large");
+		assert_ok!(EncointerOfflinePayment::set_verification_key(
+			RuntimeOrigin::root(),
+			bounded_vk
+		));
+
+		fund_native(&alice(), 1000);
+
+		let poseidon = poseidon_config();
+		let zk_secret = Fr::from(12345u64);
+		let commitment_field = compute_commitment(&poseidon, &zk_secret);
+		let commitment = field_to_bytes32(&commitment_field);
+
+		assert_ok!(EncointerOfflinePayment::register_offline_identity(
+			RuntimeOrigin::signed(alice()),
+			commitment
+		));
+
+		let nonce = Fr::from(99999u64); // different nonce from CC test → different nullifier
+		let amount: u128 = 100;
+
+		let recipient_hash_bytes = crate::hash_recipient(&bob().encode());
+		let asset_hash = crate::native_token_cid_hash();
+		let genesis_hash = <frame_system::Pallet<TestRuntime>>::block_hash(0u64);
+		let chain_asset_hash =
+			sp_io::hashing::blake2_256(&[&asset_hash[..], genesis_hash.as_ref()].concat());
+		let amount_bytes = crate::native_balance_to_bytes(amount);
+
+		let recipient_hash = bytes32_to_field(&recipient_hash_bytes);
+		let chain_asset_field = bytes32_to_field(&chain_asset_hash);
+		let amount_field = bytes32_to_field(&amount_bytes);
+
+		let (proof, public_inputs) = generate_proof(
+			&setup.proving_key,
+			zk_secret,
+			nonce,
+			recipient_hash,
+			amount_field,
+			chain_asset_field,
+		)
+		.expect("Proof generation failed");
+
+		let proof_bytes = proof_to_bytes(&proof);
+		let nullifier = field_to_bytes32(&public_inputs[4]);
+
+		let bounded_proof: BoundedVec<u8, MaxProofSize> =
+			BoundedVec::try_from(proof_bytes).expect("Proof too large");
+		let proof_struct = Groth16ProofBytes { proof_bytes: bounded_proof };
+
+		assert_ok!(EncointerOfflinePayment::submit_native_offline_payment(
+			RuntimeOrigin::signed(charlie()),
+			proof_struct,
+			alice(),
+			bob(),
+			amount,
+			nullifier
+		));
+
+		assert_eq!(<Balances as Currency<_>>::free_balance(&alice()), 900);
+		assert_eq!(<Balances as Currency<_>>::free_balance(&bob()), 100);
+
+		assert!(UsedNullifiers::<TestRuntime>::contains_key(nullifier));
+
+		// Double-spend should fail
+		let proof2 =
+			Groth16ProofBytes { proof_bytes: BoundedVec::try_from(vec![0u8; 128]).unwrap() };
+		assert_noop!(
+			EncointerOfflinePayment::submit_native_offline_payment(
+				RuntimeOrigin::signed(charlie()),
+				proof2,
+				alice(),
+				bob(),
+				amount,
+				nullifier
+			),
+			Error::<TestRuntime>::NullifierAlreadyUsed
+		);
+	});
+}
+
+// ============ Native Benchmark Fixture Generation ============
+
+#[test]
+fn generate_native_benchmark_fixtures() {
+	use crate::{
+		circuit::{compute_commitment, poseidon_config, OfflinePaymentCircuit},
+		prover::{
+			bytes32_to_field, field_to_bytes32, proof_to_bytes, TrustedSetup, TEST_SETUP_SEED,
+		},
+	};
+	use ark_bn254::Fr;
+	use ark_groth16::Groth16;
+	use ark_snark::SNARK;
+	use ark_std::rand::{rngs::StdRng, SeedableRng};
+	use parity_scale_codec::Encode;
+	use sp_io::hashing::blake2_256;
+	use sp_runtime::codec::DecodeAll;
+
+	fn bench_account(
+		name: &str,
+		index: u32,
+		seed: u32,
+	) -> <TestRuntime as frame_system::Config>::AccountId {
+		let entropy = (name, index, seed).using_encoded(blake2_256);
+		<TestRuntime as frame_system::Config>::AccountId::decode_all(&mut &entropy[..]).unwrap()
+	}
+
+	let recipient = bench_account("recipient", 1, 1);
+
+	let poseidon = poseidon_config();
+	let zk_secret = Fr::from(12345u64);
+	// Use a different nonce from CC fixtures to get a distinct nullifier
+	let nonce = Fr::from(11111u64);
+	let amount: u128 = 10;
+
+	let commitment_field = compute_commitment(&poseidon, &zk_secret);
+	let commitment = field_to_bytes32(&commitment_field);
+	let recipient_hash = bytes32_to_field(&crate::hash_recipient(&recipient.encode()));
+	// Bind asset_hash to test genesis hash for cross-chain replay protection
+	let asset_hash = crate::native_token_cid_hash();
+	let test_genesis_hash = [0x45u8; 32]; // substrate TestExternalities default ("hash 69")
+	let chain_asset_hash = blake2_256(&[&asset_hash[..], &test_genesis_hash[..]].concat());
+	let chain_asset_field = bytes32_to_field(&chain_asset_hash);
+	let amount_field = bytes32_to_field(&crate::native_balance_to_bytes(amount));
+
+	let setup = TrustedSetup::generate_with_seed(TEST_SETUP_SEED);
+
+	let circuit = OfflinePaymentCircuit::new(
+		poseidon,
+		zk_secret,
+		nonce,
+		recipient_hash,
+		amount_field,
+		chain_asset_field,
+	);
+	let public_inputs = circuit.public_inputs();
+	let mut rng = StdRng::seed_from_u64(42);
+	let proof = Groth16::<ark_bn254::Bn254>::prove(&setup.proving_key, circuit, &mut rng)
+		.expect("proving failed");
+	let proof_bytes = proof_to_bytes(&proof);
+	let nullifier = field_to_bytes32(&public_inputs[4]);
+
+	// Verify commitment matches the CC fixtures (same zk_secret)
+	assert_eq!(
+		commitment,
+		[
+			0xba, 0xa7, 0xb4, 0x72, 0x5c, 0xa5, 0xb6, 0x73, 0x73, 0xab, 0xb8, 0x4f, 0xac, 0x19,
+			0xdf, 0x8b, 0xcc, 0x17, 0xff, 0xcf, 0x5d, 0xa6, 0x5e, 0x62, 0xe2, 0x8b, 0x86, 0x2d,
+			0x54, 0xf0, 0x08, 0x25,
+		]
+	);
+
+	assert!(crate::prover::verify_proof(&setup.verifying_key, &proof, &public_inputs));
+
+	fn bytes_to_rust_array(name: &str, bytes: &[u8]) {
+		print!("const {}: [u8; {}] = [\n\t", name, bytes.len());
+		for (i, b) in bytes.iter().enumerate() {
+			if i > 0 && i % 15 == 0 {
+				print!("\n\t");
+			}
+			if i + 1 < bytes.len() {
+				print!("0x{b:02x}, ");
+			} else {
+				print!("0x{b:02x},");
+			}
+		}
+		println!("\n];");
+	}
+
+	println!("// ===== NATIVE BENCHMARK FIXTURE DATA =====");
+	bytes_to_rust_array("NATIVE_PROOF_BYTES", &proof_bytes);
+	bytes_to_rust_array("NATIVE_NULLIFIER", &nullifier);
 }

@@ -20,7 +20,7 @@
 //! - Knowledge of zk_secret such that commitment = Poseidon(zk_secret)
 //! - Nullifier correctness: nullifier = Poseidon(zk_secret, nonce)
 //!
-//! Public inputs: commitment, recipient_hash, amount, cid_hash, nullifier
+//! Public inputs: commitment, recipient_hash, amount, asset_hash, nullifier
 //! Private inputs: zk_secret, nonce
 
 use ark_bn254::Fr;
@@ -124,7 +124,7 @@ pub struct OfflinePaymentCircuit {
 	/// Payment amount as field element
 	pub amount: Fr,
 	/// Hash of community identifier
-	pub cid_hash: Fr,
+	pub asset_hash: Fr,
 	/// Nullifier = Poseidon(zk_secret, nonce)
 	pub nullifier: Fr,
 
@@ -143,7 +143,7 @@ impl OfflinePaymentCircuit {
 		nonce: Fr,
 		recipient_hash: Fr,
 		amount: Fr,
-		cid_hash: Fr,
+		asset_hash: Fr,
 	) -> Self {
 		let commitment = compute_commitment(&poseidon_config, &zk_secret);
 		let nullifier = compute_nullifier(&poseidon_config, &zk_secret, &nonce);
@@ -153,7 +153,7 @@ impl OfflinePaymentCircuit {
 			commitment,
 			recipient_hash,
 			amount,
-			cid_hash,
+			asset_hash,
 			nullifier,
 			zk_secret,
 			nonce,
@@ -162,7 +162,7 @@ impl OfflinePaymentCircuit {
 
 	/// Get the public inputs for verification
 	pub fn public_inputs(&self) -> Vec<Fr> {
-		vec![self.commitment, self.recipient_hash, self.amount, self.cid_hash, self.nullifier]
+		vec![self.commitment, self.recipient_hash, self.amount, self.asset_hash, self.nullifier]
 	}
 }
 
@@ -172,7 +172,7 @@ impl ConstraintSynthesizer<Fr> for OfflinePaymentCircuit {
 		let commitment_var = FpVar::new_input(cs.clone(), || Ok(self.commitment))?;
 		let recipient_hash_var = FpVar::new_input(cs.clone(), || Ok(self.recipient_hash))?;
 		let amount_var = FpVar::new_input(cs.clone(), || Ok(self.amount))?;
-		let cid_hash_var = FpVar::new_input(cs.clone(), || Ok(self.cid_hash))?;
+		let asset_hash_var = FpVar::new_input(cs.clone(), || Ok(self.asset_hash))?;
 		let nullifier_var = FpVar::new_input(cs.clone(), || Ok(self.nullifier))?;
 
 		// Allocate private witnesses
@@ -200,7 +200,7 @@ impl ConstraintSynthesizer<Fr> for OfflinePaymentCircuit {
 		// The verifier ensures they match the claimed values
 		let _ = recipient_hash_var;
 		let _ = amount_var;
-		let _ = cid_hash_var;
+		let _ = asset_hash_var;
 
 		Ok(())
 	}
@@ -255,10 +255,16 @@ mod tests {
 		let nonce = Fr::from(67890u64);
 		let recipient_hash = Fr::from(111u64);
 		let amount = Fr::from(1000u64);
-		let cid_hash = Fr::from(222u64);
+		let asset_hash = Fr::from(222u64);
 
-		let circuit =
-			OfflinePaymentCircuit::new(config, zk_secret, nonce, recipient_hash, amount, cid_hash);
+		let circuit = OfflinePaymentCircuit::new(
+			config,
+			zk_secret,
+			nonce,
+			recipient_hash,
+			amount,
+			asset_hash,
+		);
 
 		let cs = ConstraintSystem::<Fr>::new_ref();
 		circuit.generate_constraints(cs.clone()).unwrap();
