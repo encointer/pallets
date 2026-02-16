@@ -31,7 +31,7 @@ use ark_crypto_primitives::sponge::{
 };
 use ark_r1cs_std::{fields::fp::FpVar, prelude::*};
 use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError};
-use ark_std::vec::Vec;
+use ark_std::{vec, vec::Vec};
 
 /// Poseidon configuration for BN254 scalar field
 /// Using standard parameters for 2-to-1 compression
