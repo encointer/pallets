@@ -282,12 +282,12 @@ fn submit_offline_payment_fails_with_insufficient_balance() {
 // ============ Set Verification Key Tests ============
 
 #[test]
-fn set_verification_key_fails_for_non_root() {
+fn set_verification_key_fails_for_unauthorized_origin() {
 	new_test_ext().execute_with(|| {
 		let vk_bytes: BoundedVec<u8, MaxVkSize> = BoundedVec::try_from(vec![0u8; 100]).unwrap();
 
 		assert_noop!(
-			EncointerOfflinePayment::set_verification_key(RuntimeOrigin::signed(alice()), vk_bytes),
+			EncointerOfflinePayment::set_verification_key(RuntimeOrigin::signed(bob()), vk_bytes),
 			sp_runtime::DispatchError::BadOrigin
 		);
 	});
@@ -300,7 +300,7 @@ fn set_verification_key_fails_with_invalid_vk() {
 		let vk_bytes: BoundedVec<u8, MaxVkSize> = BoundedVec::try_from(vec![0u8; 100]).unwrap();
 
 		assert_noop!(
-			EncointerOfflinePayment::set_verification_key(RuntimeOrigin::root(), vk_bytes),
+			EncointerOfflinePayment::set_verification_key(RuntimeOrigin::signed(alice()), vk_bytes),
 			Error::<TestRuntime>::VkDeserializationFailed
 		);
 	});
@@ -386,7 +386,7 @@ fn e2e_zk_payment_works() {
 		let bounded_vk: BoundedVec<u8, MaxVkSize> =
 			BoundedVec::try_from(vk_bytes).expect("VK too large");
 		assert_ok!(EncointerOfflinePayment::set_verification_key(
-			RuntimeOrigin::root(),
+			RuntimeOrigin::signed(alice()),
 			bounded_vk
 		));
 
@@ -597,7 +597,7 @@ fn e2e_invalid_proof_rejected() {
 		let bounded_vk: BoundedVec<u8, MaxVkSize> =
 			BoundedVec::try_from(vk_bytes).expect("VK too large");
 		assert_ok!(EncointerOfflinePayment::set_verification_key(
-			RuntimeOrigin::root(),
+			RuntimeOrigin::signed(alice()),
 			bounded_vk
 		));
 
@@ -831,7 +831,7 @@ fn submit_native_fails_invalid_proof() {
 		let bounded_vk: BoundedVec<u8, MaxVkSize> =
 			BoundedVec::try_from(setup.verifying_key_bytes()).expect("VK too large");
 		assert_ok!(EncointerOfflinePayment::set_verification_key(
-			RuntimeOrigin::root(),
+			RuntimeOrigin::signed(alice()),
 			bounded_vk
 		));
 
@@ -937,7 +937,7 @@ fn e2e_native_zk_payment_works() {
 		let bounded_vk: BoundedVec<u8, MaxVkSize> =
 			BoundedVec::try_from(setup.verifying_key_bytes()).expect("VK too large");
 		assert_ok!(EncointerOfflinePayment::set_verification_key(
-			RuntimeOrigin::root(),
+			RuntimeOrigin::signed(alice()),
 			bounded_vk
 		));
 
