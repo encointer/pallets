@@ -75,7 +75,7 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -217,10 +217,18 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
+	/// Maximum number of proposals per action type in the enactment queue.
+	pub const ENACTMENT_QUEUE_MAX_PER_TYPE: u32 = 128;
+
 	#[pallet::storage]
 	#[pallet::getter(fn enactment_queue)]
-	pub(super) type EnactmentQueue<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProposalActionIdentifier, ProposalIdType, OptionQuery>;
+	pub(super) type EnactmentQueue<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		ProposalActionIdentifier,
+		BoundedVec<ProposalIdType, ConstU32<ENACTMENT_QUEUE_MAX_PER_TYPE>>,
+		OptionQuery,
+	>;
 
 	#[derive(frame_support::DefaultNoBound)]
 	#[pallet::genesis_config]
@@ -467,7 +475,19 @@ pub mod pallet {
 							T::ConfirmationPeriod::get()
 						{
 							proposal.state = ProposalState::Approved;
-							<EnactmentQueue<T>>::insert(proposal_action_identifier, proposal_id);
+							<EnactmentQueue<T>>::try_mutate(
+								proposal_action_identifier,
+								|maybe_queue| -> Result<(), ()> {
+									let queue = maybe_queue.get_or_insert_with(BoundedVec::default);
+									queue.try_push(proposal_id).map_err(|_| ())
+								},
+							)
+							.unwrap_or_else(|_| {
+								log::error!(
+									target: "encointer",
+									"EnactmentQueue overflow for proposal {proposal_id}"
+								);
+							});
 							<LastApprovedProposalForAction<T>>::insert(
 								proposal_action_identifier,
 								(now, proposal_id),
@@ -636,14 +656,14 @@ where
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
 		match new_phase {
 			CeremonyPhaseType::Assigning => {
-				// safe as EnactmentQueue has one key per ProposalActionType and those are bounded
-				<EnactmentQueue<T>>::iter().for_each(|p| {
-					if let Err(e) = Self::enact_proposal(p.1) {
-						Self::deposit_event(Event::EnactmentFailed { proposal_id: p.1, reason: e })
+				<EnactmentQueue<T>>::iter().for_each(|(_, proposal_ids)| {
+					for proposal_id in proposal_ids {
+						if let Err(e) = Self::enact_proposal(proposal_id) {
+							Self::deposit_event(Event::EnactmentFailed { proposal_id, reason: e })
+						}
 					}
 				});
-				// remove all keys from the map
-				<EnactmentQueue<T>>::translate::<ProposalIdType, _>(|_, _| None);
+				let _ = <EnactmentQueue<T>>::clear(u32::MAX, None);
 			},
 			CeremonyPhaseType::Attesting => {},
 			CeremonyPhaseType::Registering => {},

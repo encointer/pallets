@@ -133,7 +133,10 @@ fn proposal_submission_fails_if_proposal_in_enactment_queue() {
 		let proposal_action =
 			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![100u128]).unwrap(),
+		);
 
 		assert_err!(
 			EncointerDemocracy::submit_proposal(
@@ -161,7 +164,10 @@ fn proposal_submission_for_same_proposal_id_works_for_different_community() {
 		let proposal_action2 =
 			ProposalAction::UpdateNominalIncome(cid2, NominalIncomeType::from(100u32));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![100u128]).unwrap(),
+		);
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice()),
@@ -183,7 +189,10 @@ fn proposal_submission_for_works_for_local_if_there_is_a_global_with_same_propos
 
 		let proposal_action2 = ProposalAction::Petition(Some(cid), bounded_vec![]);
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![100u128]).unwrap(),
+		);
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice()),
@@ -205,7 +214,10 @@ fn proposal_submission_for_works_for_global_if_there_is_a_local_with_same_propos
 
 		let proposal_action2 = ProposalAction::Petition(None, bounded_vec![]);
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 100);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![100u128]).unwrap(),
+		);
 
 		assert_ok!(EncointerDemocracy::submit_proposal(
 			RuntimeOrigin::signed(alice()),
@@ -669,8 +681,10 @@ fn do_update_proposal_state_works() {
 		assert!(EncointerDemocracy::do_update_proposal_state(1).unwrap());
 		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Approved);
 		assert_eq!(
-			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier()).unwrap(),
-			1
+			EncointerDemocracy::enactment_queue(proposal_action.clone().get_identifier())
+				.unwrap()
+				.into_inner(),
+			vec![1]
 		);
 	});
 }
@@ -798,8 +812,14 @@ fn enactment_updates_proposal_metadata_and_enactment_queue() {
 			Box::new(proposal_action2.clone())
 		));
 
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
-		EnactmentQueue::<TestRuntime>::insert(proposal_action2.clone().get_identifier(), 2);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action2.clone().get_identifier(),
+			BoundedVec::try_from(vec![2u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -907,7 +927,10 @@ fn enact_add_location_works() {
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		assert_eq!(EncointerCommunities::locations(cid, geo_hash.clone()).len(), 0);
 
@@ -936,7 +959,10 @@ fn enact_remove_location_works() {
 		let geo_hash = GeoHash::try_from_params(location.lat, location.lon).unwrap();
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 		assert_eq!(EncointerCommunities::locations(cid, geo_hash.clone()).len(), 1);
 
 		run_to_next_phase();
@@ -966,7 +992,10 @@ fn enact_update_community_metadata_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -994,7 +1023,10 @@ fn enact_update_demurrage_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		assert!(EncointerBalances::demurrage_per_block(cid) != demurrage);
 
@@ -1020,7 +1052,10 @@ fn enact_update_nominal_income_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1043,7 +1078,10 @@ fn enact_set_inactivity_timeout_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1075,7 +1113,10 @@ fn enact_petition_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1115,7 +1156,10 @@ fn enact_spend_native_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1149,7 +1193,10 @@ fn enact_spend_asset_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1188,7 +1235,10 @@ fn enact_issue_swap_native_option_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1228,7 +1278,10 @@ fn enact_issue_swap_asset_option_works() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1256,7 +1309,10 @@ fn enactment_error_fires_event() {
 		));
 
 		// directly inject the proposal into the enactment queue
-		EnactmentQueue::<TestRuntime>::insert(proposal_action.clone().get_identifier(), 1);
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128]).unwrap(),
+		);
 
 		run_to_next_phase();
 		// first assigning phase after proposal lifetime ended
@@ -1268,5 +1324,103 @@ fn enactment_error_fires_event() {
 			}) => (),
 			_ => panic!("Wrong event"),
 		};
+	});
+}
+
+#[test]
+fn multiple_approved_proposals_of_same_action_type_are_all_enqueued() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+		let bob = bob();
+
+		// Two SpendNative proposals (non-superseding) for the same community
+		let proposal_action1 = ProposalAction::SpendNative(Some(cid), alice.clone(), 100);
+		let proposal_action2 = ProposalAction::SpendNative(Some(cid), bob.clone(), 200);
+
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action1.clone())
+		));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action2.clone())
+		));
+
+		// Both have the same ProposalActionIdentifier
+		assert_eq!(
+			proposal_action1.clone().get_identifier(),
+			proposal_action2.clone().get_identifier()
+		);
+
+		// Simulate both being approved by injecting into the queue
+		EnactmentQueue::<TestRuntime>::insert(
+			proposal_action1.clone().get_identifier(),
+			BoundedVec::try_from(vec![1u128, 2u128]).unwrap(),
+		);
+
+		let treasury = EncointerTreasuries::get_community_treasury_account_unchecked(Some(cid));
+		Balances::make_free_balance_be(&treasury, 500_000_000);
+
+		run_to_next_phase();
+
+		// Both should be enacted
+		assert_eq!(EncointerDemocracy::proposals(1).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::proposals(2).unwrap().state, ProposalState::Enacted);
+		assert_eq!(EncointerDemocracy::enactment_queue(proposal_action1.get_identifier()), None);
+	});
+}
+
+#[test]
+fn enactment_queue_appends_on_concurrent_approval() {
+	new_test_ext().execute_with(|| {
+		let alice = alice();
+		let cid = register_test_community::<TestRuntime>(None, 10.0, 10.0);
+
+		// Make electorate 100
+		let pairs = add_population(100, 0);
+		for p in &pairs {
+			EncointerCeremonies::fake_reputation(
+				(cid, 5),
+				&account_id(p),
+				Reputation::VerifiedLinked(0),
+			);
+		}
+
+		let text1 = PalletString::try_from("petition one".as_bytes().to_vec()).unwrap();
+		let text2 = PalletString::try_from("petition two".as_bytes().to_vec()).unwrap();
+		let proposal_action1 = ProposalAction::Petition(Some(cid), text1);
+		let proposal_action2 = ProposalAction::Petition(Some(cid), text2);
+
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action1.clone())
+		));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action2.clone())
+		));
+
+		// Both proposals passing
+		Tallies::<TestRuntime>::insert(1, Tally { turnout: 100, ayes: 100 });
+		Tallies::<TestRuntime>::insert(2, Tally { turnout: 100, ayes: 100 });
+
+		// Enter confirming state
+		assert!(!EncointerDemocracy::do_update_proposal_state(1).unwrap());
+		assert!(!EncointerDemocracy::do_update_proposal_state(2).unwrap());
+
+		// Advance past confirmation period
+		advance_n_blocks(41);
+
+		// Approve both
+		assert!(EncointerDemocracy::do_update_proposal_state(1).unwrap());
+		assert!(EncointerDemocracy::do_update_proposal_state(2).unwrap());
+
+		// Both should be in the queue under the same key
+		let queue =
+			EncointerDemocracy::enactment_queue(proposal_action1.clone().get_identifier()).unwrap();
+		assert_eq!(queue.len(), 2);
+		assert!(queue.contains(&1));
+		assert!(queue.contains(&2));
 	});
 }
