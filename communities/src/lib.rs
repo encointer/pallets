@@ -535,7 +535,11 @@ impl<T: Config> Pallet<T> {
 			let mut cids = Self::cids_by_geohash(&geo_hash);
 			if let Ok(index) = cids.binary_search(&cid) {
 				cids.remove(index);
-				<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
+				if cids.is_empty() {
+					<CommunityIdentifiersByGeohash<T>>::remove(&geo_hash);
+				} else {
+					<CommunityIdentifiersByGeohash<T>>::insert(&geo_hash, cids);
+				}
 			}
 		}
 		sp_io::offchain_index::set(CACHE_DIRTY_KEY, &true.encode());
@@ -555,6 +559,9 @@ impl<T: Config> Pallet<T> {
 		Bootstrappers::<T>::remove(cid);
 
 		<CommunityIdentifiers<T>>::mutate(|v| v.retain(|&x| x != cid));
+		if <CommunityIdentifiers<T>>::get().is_empty() {
+			<CommunityIdentifiers<T>>::kill();
+		}
 
 		<CommunityMetadata<T>>::remove(cid);
 

@@ -37,7 +37,7 @@ use pallet_encointer_balances::Event as BalancesEvent;
 use rstest::*;
 use sp_core::{bounded_vec, sr25519, Pair, H256};
 use sp_runtime::{traits::BlakeTwo256, DispatchError};
-use std::{ops::Rem, str::FromStr};
+use std::{collections::BTreeSet, ops::Rem, str::FromStr};
 use test_utils::{
 	helpers::{
 		account_id, add_population, assert_dispatch_err, bootstrappers, event_at_index,
@@ -2045,6 +2045,102 @@ fn grow_population_and_removing_community_works() {
 
 			assert!(!InactivityCounters::<TestRuntime>::contains_key(cid));
 		}
+	});
+}
+
+/// Collect storage keys whose prefix matches any of the given pallet prefixes.
+/// Each pallet prefix is `twox_128(pallet_name)` (16 bytes).
+fn collect_pallet_storage_keys(pallet_prefixes: &[[u8; 16]]) -> BTreeSet<Vec<u8>> {
+	let mut keys = BTreeSet::new();
+	let mut key = sp_io::storage::next_key(&[]);
+	while let Some(k) = key {
+		if k.len() >= 16 && pallet_prefixes.iter().any(|p| k[..16] == p[..]) {
+			keys.insert(k.clone());
+		}
+		key = sp_io::storage::next_key(&k);
+	}
+	keys
+}
+
+#[test]
+fn purge_community_leaves_no_storage_leak() {
+	new_test_ext().execute_with(|| {
+		// Only check pallets whose storage purge_community is responsible for.
+		// System::Account, Timestamp, EncointerScheduler etc. are expected side effects.
+		let pallet_prefixes: Vec<[u8; 16]> =
+			["EncointerCeremonies", "EncointerCommunities", "EncointerBalances"]
+				.iter()
+				.map(|name| sp_io::hashing::twox_128(name.as_bytes()))
+				.collect();
+
+		let baseline = collect_pallet_storage_keys(&pallet_prefixes);
+
+		let mut participants = bootstrappers();
+		participants.extend(add_population(5, participants.len()));
+		let cid = perform_bootstrapping_ceremony(
+			Some(participants.clone().into_iter().map(|b| account_id(&b)).collect()),
+			3,
+		);
+
+		// grow population over several ceremonies to touch many storage maps
+		participants.extend(add_population(14, participants.len()));
+		IssuedRewards::<TestRuntime>::insert(
+			(cid, EncointerScheduler::current_ceremony_index() - 1),
+			0,
+			MeetupResult::Ok,
+		);
+		participants.iter().for_each(|p| {
+			assert_ok!(EncointerBalances::issue(cid, &account_id(p), NominalIncome::from_num(1)));
+			assert_ok!(register(account_id(p), cid, None));
+		});
+
+		run_to_next_phase(); // Assigning
+		run_to_next_phase(); // Attesting
+		fully_attest_meetup(cid, 1);
+		run_to_next_phase(); // Registering
+
+		for pair in participants.iter() {
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(pair)), cid, None)
+				.ok();
+		}
+		let cindex = EncointerScheduler::current_ceremony_index();
+		for pair in participants.iter() {
+			let proof = get_maybe_proof_for_self(cid, cindex - 1, pair);
+			register(account_id(pair), cid, proof).unwrap();
+		}
+		run_to_next_phase(); // Assigning
+		run_to_next_phase(); // Attesting
+		fully_attest_meetup(cid, 1);
+		fully_attest_meetup(cid, 2);
+		run_to_next_phase(); // Registering
+
+		for pair in participants.iter() {
+			EncointerCeremonies::claim_rewards(RuntimeOrigin::signed(account_id(pair)), cid, None)
+				.ok();
+		}
+
+		// verify we actually wrote substantial pallet state
+		let before_purge = collect_pallet_storage_keys(&pallet_prefixes);
+		assert!(
+			before_purge.len() > baseline.len() + 50,
+			"expected many pallet storage keys, but only {} extra found",
+			before_purge.len() - baseline.len()
+		);
+
+		EncointerCeremonies::purge_community(cid);
+
+		let after_purge = collect_pallet_storage_keys(&pallet_prefixes);
+		let leaked: Vec<_> = after_purge.difference(&baseline).cloned().collect();
+		assert!(
+			leaked.is_empty(),
+			"storage leak: {} keys remain after purge_community:\n{}",
+			leaked.len(),
+			leaked
+				.iter()
+				.map(|k| format!("  {}", sp_core::hexdisplay::HexDisplay::from(k)))
+				.collect::<Vec<_>>()
+				.join("\n")
+		);
 	});
 }
 
