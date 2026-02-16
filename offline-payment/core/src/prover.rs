@@ -47,8 +47,12 @@ impl TrustedSetup {
 	/// saved to files immediately after generation.
 	#[cfg(feature = "std")]
 	pub fn generate() -> Self {
-		use ark_std::rand::rngs::OsRng;
-		let mut rng = OsRng;
+		use ark_std::rand::{rngs::StdRng, SeedableRng};
+		let seed = std::time::SystemTime::now()
+			.duration_since(std::time::UNIX_EPOCH)
+			.unwrap()
+			.as_nanos() as u64;
+		let mut rng = StdRng::seed_from_u64(seed);
 		let config = poseidon_config();
 
 		let circuit = OfflinePaymentCircuit::new(

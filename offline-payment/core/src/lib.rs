@@ -3,7 +3,12 @@
 //! Pure arkworks code — no substrate/FRAME dependencies.
 //! Used by the pallet (on-chain, std-only for prover) and the mobile FFI crate.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
 pub mod circuit;
+
+#[cfg(feature = "std")]
+pub mod ceremony;
 
 #[cfg(feature = "std")]
 pub mod prover;
