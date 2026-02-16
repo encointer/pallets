@@ -32,9 +32,13 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use encointer_primitives::{communities::CommunityIdentifier, scheduler::CeremonyIndexType};
+use encointer_primitives::{
+	communities::CommunityIdentifier,
+	scheduler::{CeremonyIndexType, CeremonyPhaseType},
+};
 use frame_support::{pallet_prelude::*, traits::Get};
 use pallet_encointer_communities::Pallet as CommunitiesPallet;
+use pallet_encointer_scheduler::OnCeremonyPhaseChange;
 
 pub use pallet::*;
 
@@ -90,7 +94,7 @@ pub mod pallet {
 	use super::*;
 	use frame_system::pallet_prelude::*;
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -165,6 +169,24 @@ pub mod pallet {
 	pub type PendingRingComputation<T: Config> =
 		StorageValue<_, RingComputationState<T::AccountId>, OptionQuery>;
 
+	/// Queue of communities awaiting automatic ring computation.
+	/// Populated on Registering→Assigning phase transition.
+	#[pallet::storage]
+	#[pallet::getter(fn pending_communities)]
+	pub type PendingCommunities<T: Config> = StorageValue<
+		_,
+		BoundedVec<
+			CommunityIdentifier,
+			<T as pallet_encointer_communities::Config>::MaxCommunityIdentifiers,
+		>,
+		ValueQuery,
+	>;
+
+	/// Ceremony index for the current automatic ring computation batch.
+	#[pallet::storage]
+	#[pallet::getter(fn pending_ceremony_index)]
+	pub type PendingCeremonyIndex<T: Config> = StorageValue<_, CeremonyIndexType, ValueQuery>;
+
 	// -- Events --
 
 	#[pallet::event]
@@ -193,6 +215,8 @@ pub mod pallet {
 			ceremony_index: CeremonyIndexType,
 			ceremonies_scanned: u8,
 		},
+		/// Automatic ring computation queue was populated after ceremony completion.
+		AutomaticRingComputationQueued { ceremony_index: CeremonyIndexType, community_count: u32 },
 	}
 
 	// -- Errors --
@@ -211,6 +235,81 @@ pub mod pallet {
 		ComputationAlreadyDone,
 		/// The ring exceeds MaxRingSize.
 		RingTooLarge,
+	}
+
+	// -- Hooks --
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_idle(_block: BlockNumberFor<T>, mut remaining_weight: Weight) -> Weight {
+			let mut consumed = Weight::zero();
+			let overhead = T::DbWeight::get().reads_writes(2, 2);
+
+			loop {
+				let step_budget = Self::single_step_weight().saturating_add(overhead);
+				if remaining_weight.any_lt(step_budget) {
+					break;
+				}
+
+				// Active computation: advance one step.
+				if let Some(mut state) = PendingRingComputation::<T>::get() {
+					if state.phase == RingComputationPhase::Done {
+						Self::deposit_event(Event::RingComputationCompleted {
+							community: state.community,
+							ceremony_index: state.ceremony_index,
+						});
+						PendingRingComputation::<T>::kill();
+						consumed = consumed.saturating_add(overhead);
+						remaining_weight = remaining_weight.saturating_sub(overhead);
+						continue;
+					}
+
+					if Self::process_computation_step(&mut state).is_ok() {
+						if state.phase == RingComputationPhase::Done {
+							Self::deposit_event(Event::RingComputationCompleted {
+								community: state.community,
+								ceremony_index: state.ceremony_index,
+							});
+							PendingRingComputation::<T>::kill();
+						} else {
+							PendingRingComputation::<T>::put(state);
+						}
+					} else {
+						log::error!(
+							target: "reputation-rings",
+							"on_idle: step failed, aborting computation"
+						);
+						PendingRingComputation::<T>::kill();
+					}
+					consumed = consumed.saturating_add(step_budget);
+					remaining_weight = remaining_weight.saturating_sub(step_budget);
+					continue;
+				}
+
+				// No active computation: pop next community from queue.
+				let mut queue = PendingCommunities::<T>::get();
+				if queue.is_empty() {
+					break;
+				}
+				let community = queue.remove(0);
+				PendingCommunities::<T>::put(queue);
+				let ceremony_index = PendingCeremonyIndex::<T>::get();
+
+				PendingRingComputation::<T>::put(RingComputationState {
+					community,
+					ceremony_index,
+					phase: RingComputationPhase::CollectingMembers { next_ceremony_offset: 0 },
+					attendance: Vec::new(),
+				});
+				Self::deposit_event(Event::RingComputationStarted { community, ceremony_index });
+
+				consumed = consumed.saturating_add(overhead);
+				remaining_weight = remaining_weight.saturating_sub(overhead);
+				// Loop back to process first step immediately.
+			}
+
+			consumed
+		}
 	}
 
 	// -- Extrinsics --
@@ -314,6 +413,12 @@ pub mod pallet {
 // -- Implementation --
 
 impl<T: Config> Pallet<T> {
+	/// Worst-case weight for one computation step.
+	fn single_step_weight() -> Weight {
+		<T as Config>::WeightInfo::continue_ring_computation_collect(T::ChunkSize::get())
+			.max(<T as Config>::WeightInfo::continue_ring_computation_build(T::MaxRingSize::get()))
+	}
+
 	/// Process one step of the multi-block ring computation.
 	fn process_computation_step(state: &mut RingComputationState<T::AccountId>) -> DispatchResult {
 		match state.phase {
@@ -452,5 +557,34 @@ impl<T: Config> Pallet<T> {
 		};
 
 		Ok(())
+	}
+}
+
+impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
+	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
+		if new_phase != CeremonyPhaseType::Assigning {
+			return;
+		}
+		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
+		let completed = cindex.saturating_sub(1);
+		if completed == 0 {
+			return;
+		}
+		// Don't overwrite if previous batch is still in progress.
+		if !pallet::PendingCommunities::<T>::get().is_empty() {
+			log::warn!(
+				target: "reputation-rings",
+				"Skipping auto ring queue: previous batch still pending"
+			);
+			return;
+		}
+		let cids = CommunitiesPallet::<T>::community_identifiers();
+		let count = cids.len() as u32;
+		pallet::PendingCommunities::<T>::put(cids);
+		pallet::PendingCeremonyIndex::<T>::put(completed);
+		Pallet::<T>::deposit_event(pallet::Event::AutomaticRingComputationQueued {
+			ceremony_index: completed,
+			community_count: count,
+		});
 	}
 }

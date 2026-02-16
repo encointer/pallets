@@ -740,7 +740,7 @@ mod small_ring {
 	impl_balances!(SmallRingRuntime, System);
 	impl_encointer_balances!(SmallRingRuntime);
 	impl_encointer_communities!(SmallRingRuntime);
-	impl_encointer_scheduler!(SmallRingRuntime);
+	impl_encointer_scheduler!(SmallRingRuntime, EncointerReputationRings);
 	impl_encointer_ceremonies!(SmallRingRuntime);
 
 	pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -978,6 +978,276 @@ mod small_ring {
 			let mut sorted = concatenated.clone();
 			sorted.sort();
 			assert_eq!(concatenated, sorted, "Sub-rings should be contiguous sorted slices");
+		});
+	}
+}
+
+// -- Automatic ring computation (on_idle + OnCeremonyPhaseChange) tests --
+
+mod automatic {
+	use super::*;
+	use crate::pallet::{PendingCeremonyIndex, PendingCommunities};
+	use encointer_primitives::scheduler::CeremonyPhaseType;
+	use frame_support::{traits::Hooks, weights::Weight};
+	use pallet_encointer_scheduler::OnCeremonyPhaseChange;
+
+	#[test]
+	fn on_ceremony_phase_change_assigning_populates_queue() {
+		new_test_ext().execute_with(|| {
+			let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+			// Current ceremony_index is 7 (from genesis).
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+
+			let queue = PendingCommunities::<TestRuntime>::get();
+			assert_eq!(queue.len(), 1);
+			assert_eq!(queue[0], cid);
+			assert_eq!(PendingCeremonyIndex::<TestRuntime>::get(), 6); // 7 - 1
+		});
+	}
+
+	#[test]
+	fn on_ceremony_phase_change_ignores_non_assigning() {
+		new_test_ext().execute_with(|| {
+			let _cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Registering,
+			);
+			assert!(PendingCommunities::<TestRuntime>::get().is_empty());
+
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Attesting,
+			);
+			assert!(PendingCommunities::<TestRuntime>::get().is_empty());
+		});
+	}
+
+	#[test]
+	fn on_ceremony_phase_change_skips_if_queue_nonempty() {
+		new_test_ext().execute_with(|| {
+			let _cid_a = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+			let _cid_b = register_test_community::<TestRuntime>(None, 2.0, 2.0);
+
+			// Trigger first phase change — populates with both communities.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+			let queue = PendingCommunities::<TestRuntime>::get();
+			assert_eq!(queue.len(), 2);
+
+			// Remove one to simulate partial processing but leave queue non-empty.
+			let mut q = queue;
+			q.remove(0);
+			PendingCommunities::<TestRuntime>::put(q);
+
+			// Second phase change should NOT overwrite.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+			let queue2 = PendingCommunities::<TestRuntime>::get();
+			// Should still contain only 1 remaining community, not a fresh 2-entry queue.
+			assert_eq!(queue2.len(), 1);
+		});
+	}
+
+	#[test]
+	fn on_idle_processes_single_community() {
+		new_test_ext().execute_with(|| {
+			let bs = bootstrappers();
+			let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+			// Setup: single account with 1/5 reputation.
+			let acc = account_id(&bs[0]);
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+				RuntimeOrigin::signed(acc.clone()),
+				fake_bandersnatch_key(1),
+			));
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				&acc,
+				Reputation::VerifiedLinked(6),
+			);
+
+			// Trigger phase change to queue automatic computation.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+			assert_eq!(PendingCommunities::<TestRuntime>::get().len(), 1);
+
+			// Run on_idle with large weight budget until queue is drained.
+			let big_weight = Weight::from_parts(u64::MAX, u64::MAX);
+			for _ in 0..20 {
+				if PendingCommunities::<TestRuntime>::get().is_empty() &&
+					EncointerReputationRings::pending_ring_computation().is_none()
+				{
+					break;
+				}
+				EncointerReputationRings::on_idle(1u32.into(), big_weight);
+			}
+
+			// Queue should be drained and computation complete.
+			assert!(PendingCommunities::<TestRuntime>::get().is_empty());
+			assert!(EncointerReputationRings::pending_ring_computation().is_none());
+
+			// Ring should be published.
+			let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
+			assert_eq!(ring1.len(), 1);
+			assert!(ring1.contains(&fake_bandersnatch_key(1)));
+		});
+	}
+
+	#[test]
+	fn on_idle_processes_multiple_communities() {
+		new_test_ext().execute_with(|| {
+			let bs = bootstrappers();
+			let cid_a = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+			let cid_b = register_test_community::<TestRuntime>(None, 2.0, 2.0);
+
+			// Setup: one account with reputation in both communities.
+			let acc = account_id(&bs[0]);
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+				RuntimeOrigin::signed(acc.clone()),
+				fake_bandersnatch_key(1),
+			));
+			for &cid in &[cid_a, cid_b] {
+				pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+					(cid, 6),
+					&acc,
+					Reputation::VerifiedLinked(6),
+				);
+			}
+
+			// Trigger queue population.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+			assert_eq!(PendingCommunities::<TestRuntime>::get().len(), 2);
+
+			// Run on_idle repeatedly until done.
+			let big_weight = Weight::from_parts(u64::MAX, u64::MAX);
+			for _ in 0..50 {
+				if PendingCommunities::<TestRuntime>::get().is_empty() &&
+					EncointerReputationRings::pending_ring_computation().is_none()
+				{
+					break;
+				}
+				EncointerReputationRings::on_idle(1u32.into(), big_weight);
+			}
+
+			assert!(PendingCommunities::<TestRuntime>::get().is_empty());
+			assert!(EncointerReputationRings::pending_ring_computation().is_none());
+
+			// Both communities should have rings.
+			let ring_a = EncointerReputationRings::ring_members((cid_a, 6, 1, 0)).unwrap();
+			assert_eq!(ring_a.len(), 1);
+			let ring_b = EncointerReputationRings::ring_members((cid_b, 6, 1, 0)).unwrap();
+			assert_eq!(ring_b.len(), 1);
+		});
+	}
+
+	#[test]
+	fn on_idle_respects_weight_limit() {
+		new_test_ext().execute_with(|| {
+			let _cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+			// Queue a community.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+			assert_eq!(PendingCommunities::<TestRuntime>::get().len(), 1);
+
+			// Call on_idle with zero weight — should do nothing.
+			let consumed = EncointerReputationRings::on_idle(1u32.into(), Weight::zero());
+			assert_eq!(consumed, Weight::zero());
+
+			// Queue should still be full.
+			assert_eq!(PendingCommunities::<TestRuntime>::get().len(), 1);
+		});
+	}
+
+	#[test]
+	fn on_idle_handles_step_error_gracefully() {
+		new_test_ext().execute_with(|| {
+			let bs = bootstrappers();
+			let _cid_a = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+			let cid_b = register_test_community::<TestRuntime>(None, 2.0, 2.0);
+
+			// Setup: account with reputation in community B only.
+			let acc = account_id(&bs[0]);
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+				RuntimeOrigin::signed(acc.clone()),
+				fake_bandersnatch_key(1),
+			));
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid_b, 6),
+				&acc,
+				Reputation::VerifiedLinked(6),
+			);
+
+			// Queue both communities.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+
+			// Run on_idle until done — even if community A produces empty rings,
+			// the computation should complete and move on to community B.
+			let big_weight = Weight::from_parts(u64::MAX, u64::MAX);
+			for _ in 0..50 {
+				if PendingCommunities::<TestRuntime>::get().is_empty() &&
+					EncointerReputationRings::pending_ring_computation().is_none()
+				{
+					break;
+				}
+				EncointerReputationRings::on_idle(1u32.into(), big_weight);
+			}
+
+			assert!(PendingCommunities::<TestRuntime>::get().is_empty());
+
+			// Community B should have its ring.
+			let ring_b = EncointerReputationRings::ring_members((cid_b, 6, 1, 0)).unwrap();
+			assert_eq!(ring_b.len(), 1);
+		});
+	}
+
+	#[test]
+	fn manual_extrinsics_still_work() {
+		new_test_ext().execute_with(|| {
+			let bs = bootstrappers();
+			let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+			let acc = account_id(&bs[0]);
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+				RuntimeOrigin::signed(acc.clone()),
+				fake_bandersnatch_key(1),
+			));
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				&acc,
+				Reputation::VerifiedLinked(6),
+			);
+
+			// Queue automatic computation.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Assigning,
+			);
+
+			// But use manual extrinsic instead — should work even with queue pending.
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(acc.clone()),
+				cid,
+				6,
+			));
+			run_computation_to_completion(&acc);
+
+			// Ring should be published via manual path.
+			let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
+			assert_eq!(ring1.len(), 1);
+
+			// Queue is still pending (manual doesn't drain it).
+			assert!(!PendingCommunities::<TestRuntime>::get().is_empty());
 		});
 	}
 }

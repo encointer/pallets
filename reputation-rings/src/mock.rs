@@ -32,7 +32,7 @@ impl_timestamp!(TestRuntime, EncointerScheduler);
 impl_balances!(TestRuntime, System);
 impl_encointer_balances!(TestRuntime);
 impl_encointer_communities!(TestRuntime);
-impl_encointer_scheduler!(TestRuntime);
+impl_encointer_scheduler!(TestRuntime, EncointerReputationRings);
 impl_encointer_ceremonies!(TestRuntime);
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
