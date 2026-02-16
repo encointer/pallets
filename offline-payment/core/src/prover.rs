@@ -39,6 +39,33 @@ pub struct TrustedSetup {
 }
 
 impl TrustedSetup {
+	/// Perform trusted setup with OS-level randomness.
+	///
+	/// This is the production method. The randomness is sourced from the
+	/// operating system's CSPRNG (`OsRng`), so the resulting keys are
+	/// non-reproducible. Both the proving key and verifying key must be
+	/// saved to files immediately after generation.
+	#[cfg(feature = "std")]
+	pub fn generate() -> Self {
+		use ark_std::rand::rngs::OsRng;
+		let mut rng = OsRng;
+		let config = poseidon_config();
+
+		let circuit = OfflinePaymentCircuit::new(
+			config,
+			Fr::from(1u64),
+			Fr::from(1u64),
+			Fr::from(1u64),
+			Fr::from(1u64),
+			Fr::from(1u64),
+		);
+
+		let (pk, vk) =
+			Groth16::<Bn254>::circuit_specific_setup(circuit, &mut rng).expect("Setup failed");
+
+		Self { proving_key: pk, verifying_key: vk }
+	}
+
 	/// Perform trusted setup with a deterministic seed (FOR TESTING ONLY)
 	/// In production, use a proper MPC ceremony
 	#[cfg(feature = "std")]

@@ -69,7 +69,7 @@ while IFS= read -r CARGO_TOML; do
         fi
     fi
     echo "::endgroup::"
-done < <(find . -name "Cargo.toml")
+done < <(find . -name "Cargo.toml" -not -path "*/ffi/*")
 
 # Summary table
 echo ""
