@@ -8,4 +8,7 @@
 pub mod circuit;
 
 #[cfg(feature = "std")]
+pub mod ceremony;
+
+#[cfg(feature = "std")]
 pub mod prover;

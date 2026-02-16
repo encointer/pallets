@@ -59,6 +59,8 @@ pub type BalanceOf<T> =
 	<<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[cfg(feature = "std")]
+pub use encointer_offline_payment_core::ceremony;
+#[cfg(feature = "std")]
 pub use encointer_offline_payment_core::circuit;
 #[cfg(feature = "std")]
 pub use encointer_offline_payment_core::prover;
