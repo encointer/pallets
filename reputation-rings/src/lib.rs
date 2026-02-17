@@ -217,6 +217,8 @@ pub mod pallet {
 		},
 		/// Automatic ring computation queue was populated after ceremony completion.
 		AutomaticRingComputationQueued { ceremony_index: CeremonyIndexType, community_count: u32 },
+		/// Ring registry purged for a ceremony index.
+		RingRegistryPurged { ceremony_index: CeremonyIndexType },
 	}
 
 	// -- Errors --
@@ -413,6 +415,22 @@ pub mod pallet {
 // -- Implementation --
 
 impl<T: Config> Pallet<T> {
+	#[allow(deprecated)]
+	pub fn purge_rings(cindex: CeremonyIndexType) {
+		let cids = <pallet_encointer_communities::Pallet<T>>::community_identifiers();
+		for cid in cids.into_iter() {
+			Self::purge_community_ceremony_rings(cid, cindex);
+		}
+		log::info!(target: "reputation-rings", "ring registry purged at cindex {cindex:?}");
+		Self::deposit_event(Event::RingRegistryPurged { ceremony_index: cindex });
+	}
+
+	#[allow(deprecated)]
+	pub fn purge_community_ceremony_rings(cid: CommunityIdentifier, cindex: CeremonyIndexType) {
+		RingMembers::<T>::remove_prefix((cid, cindex), None);
+		SubRingCount::<T>::remove_prefix((cid, cindex), None);
+	}
+
 	/// Worst-case weight for one computation step.
 	fn single_step_weight() -> Weight {
 		<T as Config>::WeightInfo::continue_ring_computation_collect(T::ChunkSize::get())
@@ -562,29 +580,39 @@ impl<T: Config> Pallet<T> {
 
 impl<T: Config> OnCeremonyPhaseChange for Pallet<T> {
 	fn on_ceremony_phase_change(new_phase: CeremonyPhaseType) {
-		if new_phase != CeremonyPhaseType::Assigning {
-			return;
+		match new_phase {
+			CeremonyPhaseType::Assigning => {
+				let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
+				let completed = cindex.saturating_sub(1);
+				if completed == 0 {
+					return;
+				}
+				// Don't overwrite if previous batch is still in progress.
+				if !pallet::PendingCommunities::<T>::get().is_empty() {
+					log::warn!(
+						target: "reputation-rings",
+						"Skipping auto ring queue: previous batch still pending"
+					);
+					return;
+				}
+				let cids = CommunitiesPallet::<T>::community_identifiers();
+				let count = cids.len() as u32;
+				pallet::PendingCommunities::<T>::put(cids);
+				pallet::PendingCeremonyIndex::<T>::put(completed);
+				Pallet::<T>::deposit_event(pallet::Event::AutomaticRingComputationQueued {
+					ceremony_index: completed,
+					community_count: count,
+				});
+			},
+			CeremonyPhaseType::Registering => {
+				let reputation_lifetime =
+					<pallet_encointer_ceremonies::Pallet<T>>::reputation_lifetime();
+				let cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
+				if cindex > reputation_lifetime {
+					Self::purge_rings(cindex.saturating_sub(reputation_lifetime).saturating_sub(1));
+				}
+			},
+			CeremonyPhaseType::Attesting => {},
 		}
-		let cindex = pallet_encointer_scheduler::Pallet::<T>::current_ceremony_index();
-		let completed = cindex.saturating_sub(1);
-		if completed == 0 {
-			return;
-		}
-		// Don't overwrite if previous batch is still in progress.
-		if !pallet::PendingCommunities::<T>::get().is_empty() {
-			log::warn!(
-				target: "reputation-rings",
-				"Skipping auto ring queue: previous batch still pending"
-			);
-			return;
-		}
-		let cids = CommunitiesPallet::<T>::community_identifiers();
-		let count = cids.len() as u32;
-		pallet::PendingCommunities::<T>::put(cids);
-		pallet::PendingCeremonyIndex::<T>::put(completed);
-		Pallet::<T>::deposit_event(pallet::Event::AutomaticRingComputationQueued {
-			ceremony_index: completed,
-			community_count: count,
-		});
 	}
 }
