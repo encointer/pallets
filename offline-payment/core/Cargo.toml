@@ -1,6 +1,6 @@
 [package]
 name = "encointer-offline-payment-core"
-version = "0.1.0"
+version = "21.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Core ZK circuit and prover for Encointer offline payments (pure arkworks, no substrate)"
