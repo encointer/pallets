@@ -358,7 +358,7 @@ impl<T: Config> Pallet<T> {
 		} else {
 			return Err(Error::<T>::BalanceTooLow.into());
 		};
-		entry_tot.principal -= amount;
+		entry_tot.principal = entry_tot.principal.saturating_sub(amount);
 		//FIXME: delete account if it falls below existential deposit
 
 		<TotalIssuance<T>>::insert(community_id, entry_tot);
