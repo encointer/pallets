@@ -121,7 +121,7 @@ pub mod pallet {
 			}
 
 			if <Commitments<T>>::contains_key((cid, cindex), (purpose, &account)) {
-				return Err(<Error<T>>::AlreadyCommited);
+				return Err(<Error<T>>::AlreadyCommitted);
 			}
 
 			<Commitments<T>>::insert((cid, cindex), (purpose, &account), commitment_hash);
@@ -175,7 +175,7 @@ pub mod pallet {
 	#[derive(PartialEq)]
 	pub enum Error<T> {
 		/// Participant already commited their reputation for this purpose
-		AlreadyCommited,
+		AlreadyCommitted,
 		/// Participant does not have reputation for the specified cid, cindex
 		NoReputation,
 		/// Purposose registry is full

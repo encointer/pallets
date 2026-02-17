@@ -139,7 +139,7 @@ pub mod pallet {
 			)?;
 
 			<T as Config>::Currency::transfer(&from, &faucet_account, amount, KeepAlive)
-				.map_err(|_| <Error<T>>::InsuffiecientBalance)?;
+				.map_err(|_| <Error<T>>::InsufficientBalance)?;
 
 			let purpose_id =
 				<pallet_encointer_reputation_commitments::Pallet<T>>::do_register_purpose(
@@ -167,7 +167,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
 
-			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
+			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexistentFaucet)?;
 
 			if let Some(wl) = faucet.whitelist {
 				if !wl.contains(&cid) {
@@ -209,7 +209,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
-			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
+			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexistentFaucet)?;
 
 			<T as Config>::Currency::unreserve_all_named(
 				&Self::get_reserve_id(&faucet_account),
@@ -236,7 +236,7 @@ pub mod pallet {
 			faucet_account: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			let from = ensure_signed(origin)?;
-			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexsistentFaucet)?;
+			let faucet = Self::faucets(&faucet_account).ok_or(<Error<T>>::InexistentFaucet)?;
 
 			ensure!(from == faucet.creator, <Error<T>>::NotCreator);
 			ensure!(
@@ -331,11 +331,11 @@ pub mod pallet {
 		/// faucet is empty
 		FaucetEmpty,
 		/// insufficient balance to create the faucet
-		InsuffiecientBalance,
+		InsufficientBalance,
 		/// faucet already exists
 		FaucetAlreadyExists,
 		/// faucet does not exist
-		InexsistentFaucet,
+		InexistentFaucet,
 		/// purposeId creation failed
 		PurposeIdCreationFailed,
 		/// cid not in whitelist
