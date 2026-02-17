@@ -1213,6 +1213,48 @@ mod automatic {
 	}
 
 	#[test]
+	fn on_ceremony_phase_change_registering_purges_old_rings() {
+		new_test_ext().execute_with(|| {
+			let bs = bootstrappers();
+			let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+			// Setup: account with reputation at cindex=1.
+			let acc = account_id(&bs[0]);
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+				RuntimeOrigin::signed(acc.clone()),
+				fake_bandersnatch_key(1),
+			));
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 1),
+				&acc,
+				Reputation::VerifiedLinked(1),
+			);
+
+			// Compute rings at cindex=1.
+			// Need cindex=1 < current(7), so it's valid.
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(acc.clone()),
+				cid,
+				1,
+			));
+			run_computation_to_completion(&acc);
+
+			// Verify ring exists at cindex=1.
+			assert!(EncointerReputationRings::ring_members((cid, 1, 1, 0)).is_some());
+			assert_eq!(EncointerReputationRings::sub_ring_count((cid, 1, 1)), 1);
+
+			// reputation_lifetime=5, current cindex=7.
+			// Registering phase: purge target = 7 - 5 - 1 = 1. Rings at cindex=1 purged.
+			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
+				CeremonyPhaseType::Registering,
+			);
+
+			assert!(EncointerReputationRings::ring_members((cid, 1, 1, 0)).is_none());
+			assert_eq!(EncointerReputationRings::sub_ring_count((cid, 1, 1)), 0);
+		});
+	}
+
+	#[test]
 	fn manual_extrinsics_still_work() {
 		new_test_ext().execute_with(|| {
 			let bs = bootstrappers();
@@ -1250,4 +1292,132 @@ mod automatic {
 			assert!(!PendingCommunities::<TestRuntime>::get().is_empty());
 		});
 	}
+}
+
+// -- Purge tests --
+
+#[test]
+fn purge_community_ceremony_rings_clears_data() {
+	new_test_ext().execute_with(|| {
+		let bs = bootstrappers();
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+		let acc = account_id(&bs[0]);
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+			RuntimeOrigin::signed(acc.clone()),
+			fake_bandersnatch_key(1),
+		));
+		pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+			(cid, 6),
+			&acc,
+			Reputation::VerifiedLinked(6),
+		);
+
+		assert_ok!(EncointerReputationRings::initiate_rings(
+			RuntimeOrigin::signed(acc.clone()),
+			cid,
+			6,
+		));
+		run_computation_to_completion(&acc);
+
+		// Verify data exists.
+		assert!(EncointerReputationRings::ring_members((cid, 6, 1, 0)).is_some());
+		assert_eq!(EncointerReputationRings::sub_ring_count((cid, 6, 1)), 1);
+
+		// Purge.
+		EncointerReputationRings::purge_community_ceremony_rings(cid, 6);
+
+		// Verify data is gone.
+		for level in 1..=5u8 {
+			assert!(EncointerReputationRings::ring_members((cid, 6, level, 0)).is_none());
+			assert_eq!(EncointerReputationRings::sub_ring_count((cid, 6, level)), 0);
+		}
+	});
+}
+
+#[test]
+fn purge_rings_clears_all_communities() {
+	new_test_ext().execute_with(|| {
+		let bs = bootstrappers();
+		let cid_a = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let cid_b = register_test_community::<TestRuntime>(None, 2.0, 2.0);
+
+		let acc = account_id(&bs[0]);
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+			RuntimeOrigin::signed(acc.clone()),
+			fake_bandersnatch_key(1),
+		));
+		for &cid in &[cid_a, cid_b] {
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				&acc,
+				Reputation::VerifiedLinked(6),
+			);
+		}
+
+		// Compute rings for both communities.
+		for &cid in &[cid_a, cid_b] {
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(acc.clone()),
+				cid,
+				6,
+			));
+			run_computation_to_completion(&acc);
+		}
+
+		// Verify data exists for both.
+		assert!(EncointerReputationRings::ring_members((cid_a, 6, 1, 0)).is_some());
+		assert!(EncointerReputationRings::ring_members((cid_b, 6, 1, 0)).is_some());
+
+		// Purge all at cindex=6.
+		EncointerReputationRings::purge_rings(6);
+
+		// Verify both are gone.
+		assert!(EncointerReputationRings::ring_members((cid_a, 6, 1, 0)).is_none());
+		assert!(EncointerReputationRings::ring_members((cid_b, 6, 1, 0)).is_none());
+	});
+}
+
+#[test]
+fn purge_does_not_affect_other_cindex() {
+	new_test_ext().execute_with(|| {
+		let bs = bootstrappers();
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+
+		let acc = account_id(&bs[0]);
+		assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+			RuntimeOrigin::signed(acc.clone()),
+			fake_bandersnatch_key(1),
+		));
+
+		// Reputation at both cindex=5 and cindex=6.
+		for cindex in [5, 6] {
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, cindex),
+				&acc,
+				Reputation::VerifiedLinked(cindex),
+			);
+		}
+
+		// Compute rings at both ceremony indices.
+		for cindex in [5, 6] {
+			assert_ok!(EncointerReputationRings::initiate_rings(
+				RuntimeOrigin::signed(acc.clone()),
+				cid,
+				cindex,
+			));
+			run_computation_to_completion(&acc);
+		}
+
+		// Verify both exist.
+		assert!(EncointerReputationRings::ring_members((cid, 5, 1, 0)).is_some());
+		assert!(EncointerReputationRings::ring_members((cid, 6, 1, 0)).is_some());
+
+		// Purge only cindex=5.
+		EncointerReputationRings::purge_community_ceremony_rings(cid, 5);
+
+		// cindex=5 gone, cindex=6 survives.
+		assert!(EncointerReputationRings::ring_members((cid, 5, 1, 0)).is_none());
+		assert!(EncointerReputationRings::ring_members((cid, 6, 1, 0)).is_some());
+	});
 }
