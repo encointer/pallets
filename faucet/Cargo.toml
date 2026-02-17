@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-faucet"
-version = "21.2.0"
+version = "21.2.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Faucet pallet for the Encointer blockchain runtime"

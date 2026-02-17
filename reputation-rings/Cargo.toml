@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-reputation-rings"
-version = "0.1.0"
+version = "21.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Reputation rings pallet: Bandersnatch key registration and per-community ring publication for anonymous credentials"

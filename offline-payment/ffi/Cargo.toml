@@ -1,6 +1,6 @@
 [package]
 name = "encointer-offline-payment-ffi"
-version = "0.1.0"
+version = "21.0.0"
 edition = "2021"
 description = "FFI wrapper for Encointer offline payment ZK prover (mobile targets)"
 license = "GPL-3.0-or-later"
