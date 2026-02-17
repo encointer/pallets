@@ -200,7 +200,7 @@ fn commitments_work() {
 					0,
 					None
 				),
-				Error::<TestRuntime>::AlreadyCommited
+				Error::<TestRuntime>::AlreadyCommitted
 			);
 
 			// no reputation

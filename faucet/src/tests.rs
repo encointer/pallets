@@ -110,7 +110,7 @@ fn faucet_creation_fails_with_insufficient_balance() {
 				Some(whitelist_input.clone()),
 				10
 			),
-			Error::<TestRuntime>::InsuffiecientBalance
+			Error::<TestRuntime>::InsufficientBalance
 		);
 	});
 }
@@ -270,7 +270,7 @@ fn dripping_works() {
 					cid,
 					12
 				),
-				pallet_encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommited
+				pallet_encointer_reputation_commitments::Error::<TestRuntime>::AlreadyCommitted
 			);
 
 			assert_err!(
@@ -434,7 +434,7 @@ fn dripping_fails_with_inexistent_faucet() {
 
 		assert_err!(
 			EncointerFaucet::drip(RuntimeOrigin::signed(alice.clone()), bob.clone(), cid, 13,),
-			Error::<TestRuntime>::InexsistentFaucet
+			Error::<TestRuntime>::InexistentFaucet
 		);
 	})
 }
@@ -567,7 +567,7 @@ fn dissolve_faucet_fails_with_inexistent_faucet() {
 
 		assert_err!(
 			EncointerFaucet::dissolve_faucet(RuntimeOrigin::root(), bob.clone(), alice.clone()),
-			Error::<TestRuntime>::InexsistentFaucet
+			Error::<TestRuntime>::InexistentFaucet
 		);
 	})
 }
@@ -698,7 +698,7 @@ fn close_faucet_fails_with_inexistent_faucet() {
 
 		assert_err!(
 			EncointerFaucet::close_faucet(RuntimeOrigin::signed(bob.clone()), bob.clone()),
-			Error::<TestRuntime>::InexsistentFaucet
+			Error::<TestRuntime>::InexistentFaucet
 		);
 	})
 }

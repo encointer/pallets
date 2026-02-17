@@ -415,7 +415,7 @@ pub mod pallet {
 			let current_phase = <pallet_encointer_scheduler::Pallet<T>>::current_phase();
 			let mut cindex = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
 			match current_phase {
-				CeremonyPhaseType::Registering => cindex -= 1,
+				CeremonyPhaseType::Registering => cindex = cindex.saturating_sub(1),
 				CeremonyPhaseType::Attesting => (),
 				CeremonyPhaseType::Assigning =>
 					return Err(<Error<T>>::WrongPhaseForClaimingRewards.into()),
@@ -1352,8 +1352,8 @@ impl<T: Config> Pallet<T> {
 
 	#[allow(deprecated)]
 	fn purge_community_ceremony_internal(cc: CommunityCeremony) {
-		let cid = cc.1;
-		let cindex = cc.0;
+		let cid = cc.0;
+		let cindex = cc.1;
 
 		info!(target: LOG, "purging ceremony index {cindex} history for {cid:?}");
 
@@ -1393,7 +1393,7 @@ impl<T: Config> Pallet<T> {
 		<IssuedRewards<T>>::remove_prefix(cc, None);
 		<BurnedReputableNewbieTickets<T>>::remove_prefix(cc, None);
 
-		Self::deposit_event(Event::CommunityCeremonyHistoryPurged(cindex, cid));
+		Self::deposit_event(Event::CommunityCeremonyHistoryPurged(cid, cindex));
 	}
 
 	fn purge_registry(cindex: CeremonyIndexType) {

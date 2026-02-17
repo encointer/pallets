@@ -629,7 +629,7 @@ impl<T: Config> Pallet<T> {
 			bootstrappers.len() <= T::MaxBootstrappers::get() as usize,
 			<Error<T>>::InvalidAmountBootstrappers
 		);
-		ensure!(!bootstrappers.len() >= 3, <Error<T>>::InvalidAmountBootstrappers);
+		ensure!(bootstrappers.len() >= 3, <Error<T>>::InvalidAmountBootstrappers);
 		Ok(())
 	}
 
@@ -770,7 +770,7 @@ impl<T: Config> Pallet<T> {
 		<Locations<T>>::iter_prefix_values(cid)
 			.map(|a| a.to_vec())
 			.reduce(|a, b| a.iter().cloned().chain(b.iter().cloned()).collect())
-			.unwrap()
+			.unwrap_or_default()
 	}
 
 	pub fn get_all_balances(

@@ -38,7 +38,7 @@
 
 use core::marker::PhantomData;
 use encointer_primitives::{balances::BalanceType, communities::CommunityIdentifier};
-use frame_support::traits::{Currency, ExistenceRequirement, Get};
+use frame_support::traits::{Currency, EnsureOrigin, ExistenceRequirement, Get};
 use frame_system::ensure_signed;
 use log::info;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
@@ -197,6 +197,9 @@ pub mod pallet {
 		/// Maximum size of verification key in bytes
 		#[pallet::constant]
 		type MaxVkSize: Get<u32>;
+
+		/// Origin allowed to set the verification key (e.g. EncointerCouncil)
+		type TrustedSetupOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	/// Maps account → commitment (Poseidon hash of zk_secret)
@@ -488,7 +491,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			vk: BoundedVec<u8, T::MaxVkSize>,
 		) -> DispatchResult {
-			ensure_root(origin)?;
+			T::TrustedSetupOrigin::ensure_origin(origin)?;
 
 			// Validate that the vk can be deserialized
 			verifier::Groth16VerifyingKey::from_bytes(&vk)

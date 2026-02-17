@@ -52,6 +52,7 @@ pub mod pallet {
 	use encointer_primitives::treasuries::{SwapAssetOption, SwapNativeOption};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
+	use sp_runtime::Saturating;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -143,7 +144,8 @@ pub mod pallet {
 			);
 			let treasury_account = Self::get_community_treasury_account_unchecked(Some(cid));
 			ensure!(
-				T::Currency::free_balance(&treasury_account) - T::Currency::minimum_balance() >=
+				T::Currency::free_balance(&treasury_account)
+					.saturating_sub(T::Currency::minimum_balance()) >=
 					desired_native_amount,
 				Error::<T>::InsufficientNativeFunds
 			);
