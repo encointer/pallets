@@ -55,7 +55,7 @@ pallet-encointer-reputation-rings = { path = "reputation-rings", default-feature
 pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "21.1.0" }
 pallet-encointer-treasuries = { path = "treasuries", default-features = false, version = "21.4.1" }
 pallet-encointer-offline-payment = { path = "offline-payment", default-features = false, version = "21.0.0" }
-pallet-encointer-offline-payment-core = { path = "offline-payment/core", default-features = false, version = "21.0.0" }
+encointer-offline-payment-core = { path = "offline-payment/core", default-features = false, version = "21.0.0" }
 test-utils = { path = "test-utils" }
 # rpc apis
 encointer-balances-tx-payment-rpc-runtime-api = { path = "balances-tx-payment/rpc/runtime-api", version = "21.1.0" }
