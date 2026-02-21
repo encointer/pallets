@@ -183,9 +183,9 @@ benchmarks! {
 
 		let amount: BalanceOf<T> = 10u32.into();
 
-		// Fund sender and recipient above existential deposit so both accounts exist
-		T::Currency::make_free_balance_be(&sender, 1_000_000u32.into());
-		T::Currency::make_free_balance_be(&recipient, 1_000_000u32.into());
+		// Fund sender and recipient well above existential deposit (33M+ on Kusama system paras).
+		T::Currency::make_free_balance_be(&sender, 1_000_000_000u32.into());
+		T::Currency::make_free_balance_be(&recipient, 1_000_000_000u32.into());
 
 		let bounded_vk: BoundedVec<u8, T::MaxVkSize> =
 			BoundedVec::try_from(VK_BYTES.to_vec()).expect("VK within bounds");
