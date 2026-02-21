@@ -1,15 +1,20 @@
-## 0. WARNING
-
-This is prototype code. Do not use in production!
-
+# pallet-encointer-offline-payment
 
 ## 1. Context
 
-Encointer is a community currency system where payments happen face-to-face. Internet outages at the point of sale make the wallet unusable. The goal: let buyer and seller complete a payment using only their phones (no connectivity), with settlement happening automatically when either party regains internet.
+Encointer is a community currency system where payments happen face-to-face. Internet outages at the point of sale make
+the wallet unusable. The goal: let buyer and seller complete a payment using only their phones (no connectivity), with
+settlement happening automatically when either party regains internet.
 
-**Why ZK over a pre-signed extrinsic:** A standard Substrate extrinsic requires a sequential nonce and a mortal era anchored to a recent block hash — both are chain state that goes stale. A ZK proof with a **nullifier** replaces the nonce system entirely: each payment gets a unique, independently-verifiable nullifier. No ordering constraints, no era expiry, no stale chain state. Either party can submit the proof at any time.
+**Why ZK over a pre-signed extrinsic:** A standard Substrate extrinsic requires a sequential nonce and a mortal era
+anchored to a recent block hash — both are chain state that goes stale. A ZK proof with a **nullifier** replaces the
+nonce system entirely: each payment gets a unique, independently-verifiable nullifier. No ordering constraints, no era
+expiry, no stale chain state. Either party can submit the proof at any time.
 
-**Remaining trust assumption:** The seller cannot verify the buyer's balance offline. The buyer could generate proofs totaling more than their balance (economic double-spend). Encointer's reputation system (proof-of-personhood via ceremony attendance) bounds this trust — the seller decides whether to accept based on the buyer's verified reputation count.
+**Remaining trust assumption:** The seller cannot verify the buyer's balance offline. The buyer could generate proofs
+totaling more than their balance (economic double-spend). Encointer's reputation system (proof-of-personhood via
+ceremony attendance) bounds this trust — the seller decides whether to accept based on the buyer's verified reputation
+count.
 
 ## 2. Executive Summary
 
@@ -36,7 +41,8 @@ SETTLEMENT (either party online):
   9. Marks nullifier as used
 ```
 
-**Stack:** Pure Rust arkworks circuit (ark-r1cs-std), Poseidon hash (ark-crypto-primitives), Groth16 proving system (ark-groth16), custom Substrate pallet with on-chain verification.
+**Stack:** Pure Rust arkworks circuit (ark-r1cs-std), Poseidon hash (ark-crypto-primitives), Groth16 proving system (
+ark-groth16), custom Substrate pallet with on-chain verification.
 
 ---
 
@@ -44,25 +50,29 @@ SETTLEMENT (either party online):
 
 ### 3.1 Why nullifiers solve the nonce/era problem
 
-| Problem with pre-signed extrinsic | How nullifiers solve it |
-|---|---|
+| Problem with pre-signed extrinsic                                          | How nullifiers solve it                                                |
+|----------------------------------------------------------------------------|------------------------------------------------------------------------|
 | Nonce is sequential — multiple offline payments must be submitted in order | Each payment has an independent nullifier — any submission order works |
-| Nonce goes stale if buyer sends an online tx | Nullifiers are independent of chain state |
-| Mortal era expires (~hours/days) | Nullifiers never expire |
-| Buyer can race to invalidate nonce (double-spend) | Buyer can't produce two proofs with the same nullifier (ZK constraint) |
+| Nonce goes stale if buyer sends an online tx                               | Nullifiers are independent of chain state                              |
+| Mortal era expires (~hours/days)                                           | Nullifiers never expire                                                |
+| Buyer can race to invalidate nonce (double-spend)                          | Buyer can't produce two proofs with the same nullifier (ZK constraint) |
 
-**What nullifiers DON'T solve:** A buyer can create multiple proofs for different recipients totaling more than their balance. The chain checks balance at settlement time; the second proof would fail. This is the "limited trust" the seller accepts.
+**What nullifiers DON'T solve:** A buyer can create multiple proofs for different recipients totaling more than their
+balance. The chain checks balance at settlement time; the second proof would fail. This is the "limited trust" the
+seller accepts.
 
 ### 3.2 Cryptographic identity model
 
-The encointer wallet uses **sr25519** keys (Ristretto/Curve25519). Verifying sr25519 key derivation inside a SNARK is prohibitively expensive (~100K+ constraints for Curve25519 arithmetic). Instead:
+The encointer wallet uses **sr25519** keys (Ristretto/Curve25519). Verifying sr25519 key derivation inside a SNARK is
+prohibitively expensive (~100K+ constraints for Curve25519 arithmetic). Instead:
 
 - Derive a **ZK secret** from the account seed: `zk_secret = Poseidon(account_seed_bytes, domain_separator)`
 - Compute **commitment** = `Poseidon(zk_secret)`
 - Register the commitment on-chain, linked to the sr25519 account
 - Inside the ZK circuit, prove `commitment == Poseidon(zk_secret)` — only ~240 constraints
 
-This creates a parallel identity system: the sr25519 key is for normal transactions; the Poseidon commitment is for offline payments. They're linked on-chain by the registration extrinsic.
+This creates a parallel identity system: the sr25519 key is for normal transactions; the Poseidon commitment is for
+offline payments. They're linked on-chain by the registration extrinsic.
 
 ### 3.3 Data flow and sizes
 
@@ -159,7 +169,8 @@ impl TrustedSetup {
 }
 ```
 
-**For production:** Use a proper MPC ceremony rather than a deterministic seed. The test seed (`TEST_SETUP_SEED`) is for development only.
+**For production:** Use a proper MPC ceremony rather than a deterministic seed. The test seed (`TEST_SETUP_SEED`) is for
+development only.
 
 Artifacts: Serialized `ProvingKey<Bn254>` and `VerifyingKey<Bn254>` (arkworks canonical serialization)
 
@@ -178,12 +189,12 @@ New Substrate pallet added to the encointer parachain runtime.
 /// Set once via register_offline_identity().
 #[pallet::storage]
 pub type OfflineIdentities<T: Config> =
-    StorageMap<_, Blake2_128Concat, T::AccountId, [u8; 32], OptionQuery>;
+StorageMap<_, Blake2_128Concat, T::AccountId, [u8; 32], OptionQuery>;
 
 /// Set of spent nullifiers. Prevents double-submission of the same proof.
 #[pallet::storage]
 pub type UsedNullifiers<T: Config> =
-    StorageMap<_, Blake2_128Concat, [u8; 32], (), OptionQuery>;
+StorageMap<_, Blake2_128Concat, [u8; 32], (), OptionQuery>;
 
 /// Groth16 verification key, set by governance.
 /// Serialized ark-groth16 VerifyingKey<Bn254>.
@@ -260,7 +271,11 @@ pub fn submit_offline_payment(
     UsedNullifiers::<T>::insert(&nullifier, ());
 
     Self::deposit_event(Event::OfflinePaymentSettled {
-        sender, recipient, cid, amount, nullifier
+        sender,
+        recipient,
+        cid,
+        amount,
+        nullifier
     });
     Ok(())
 }
@@ -279,9 +294,11 @@ pub fn set_verification_key(
 
 ### 5.2 Groth16 verification on-chain
 
-Use `ark-groth16` with `sp-crypto-ec-utils` host functions for BN254 pairing. This gives native-speed EC operations rather than WASM interpretation. The verification is 3 pairings — executes in low single-digit milliseconds.
+Use `ark-groth16` with `sp-crypto-ec-utils` host functions for BN254 pairing. This gives native-speed EC operations
+rather than WASM interpretation. The verification is 3 pairings — executes in low single-digit milliseconds.
 
 Dependencies (runtime `Cargo.toml`):
+
 ```toml
 ark-bn254 = { version = "0.5", default-features = false }
 ark-groth16 = { version = "0.5", default-features = false }
@@ -291,7 +308,8 @@ sp-crypto-ec-utils = { version = "0.15", default-features = false }
 
 ### 5.3 Poseidon hash on-chain
 
-The pallet uses `ark-crypto-primitives` for Poseidon hashing, ensuring consistency between the circuit constraints and on-chain verification:
+The pallet uses `ark-crypto-primitives` for Poseidon hashing, ensuring consistency between the circuit constraints and
+on-chain verification:
 
 ```rust
 use ark_crypto_primitives::sponge::{
@@ -310,27 +328,36 @@ pub fn poseidon_hash(config: &PoseidonConfig<Fr>, inputs: &[Fr]) -> Fr {
 
 ### 5.4 Nullifier storage growth
 
-`UsedNullifiers` grows monotonically. **Pruning is dangerous** — if a nullifier is pruned, the same proof could be re-submitted, double-charging the sender.
+`UsedNullifiers` grows monotonically. **Pruning is dangerous** — if a nullifier is pruned, the same proof could be
+re-submitted, double-charging the sender.
 
-**Safe approach for v1: no pruning.** Offline payments are low-volume (community currencies, face-to-face). Even 10K payments/year = 320KB state — negligible for a parachain.
+**Safe approach for v1: no pruning.** Offline payments are low-volume (community currencies, face-to-face). Even 10K
+payments/year = 320KB state — negligible for a parachain.
 
-**Future: epoch-based pruning.** Add an `epoch` public input to the circuit (e.g., `epoch = block_number / epoch_length`). The pallet only accepts proofs from the current or previous epoch. Nullifiers from epochs older than that are safe to prune because the circuit can no longer produce valid proofs for them. This requires a circuit upgrade (new trusted setup) so it's a v2 concern.
+**Future: epoch-based pruning.** Add an `epoch` public input to the circuit (e.g.,
+`epoch = block_number / epoch_length`). The pallet only accepts proofs from the current or previous epoch. Nullifiers
+from epochs older than that are safe to prune because the circuit can no longer produce valid proofs for them. This
+requires a circuit upgrade (new trusted setup) so it's a v2 concern.
 
 ### 5.5 Fee model
 
 The `submit_offline_payment` extrinsic is called by whoever gets online first. Fee options:
 
-1. **Submitter pays** (simplest): The submitter pays the transaction fee. If the seller submits, they bear the fee cost. Can use community currency via existing `ChargeAssetTxPayment`.
-2. **Fee from transfer amount**: The pallet deducts a small fee from the transferred amount before crediting the recipient.
+1. **Submitter pays** (simplest): The submitter pays the transaction fee. If the seller submits, they bear the fee cost.
+   Can use community currency via existing `ChargeAssetTxPayment`.
+2. **Fee from transfer amount**: The pallet deducts a small fee from the transferred amount before crediting the
+   recipient.
 
 Recommend option 1 for simplicity — the seller is motivated to submit (they want their money) and can pay the small fee.
 
 ---
+
 ## 6. Mobile Prover
 
 ### 6.1 Stack choice
 
 **Pure arkworks Rust** compiled to mobile via FFI. The prover uses:
+
 - `ark-groth16` for Groth16 proving
 - `ark-bn254` for the BN254 curve
 - `ark-crypto-primitives` for Poseidon hashing
@@ -361,6 +388,7 @@ For mobile integration: build the arkworks crate as a shared library and call vi
 ### 6.2 Expected performance
 
 For the circuit on a mid-range Android phone:
+
 - Proof generation: **200ms – 1s** (arkworks native via FFI)
 - Witness generation: negligible (2 Poseidon hashes)
 - Total user-perceived latency: **< 2s** — acceptable for a payment flow
@@ -372,7 +400,7 @@ Derive `zk_secret` deterministically from the account seed:
 ```rust
 // Use the same Poseidon config as the circuit
 let config = poseidon_config();
-let zk_secret = poseidon_hash(&config, &[account_seed_field, domain_separator_field]);
+let zk_secret = poseidon_hash( & config, & [account_seed_field, domain_separator_field]);
 ```
 
 The Poseidon parameters must match exactly between the mobile prover and the on-chain verification.
@@ -408,6 +436,7 @@ Total: ~500 chars. Fits comfortably in QR version 11 (61×61), which holds 772 a
 **New file:** `app/lib/service/offline/offline_identity_service.dart`
 
 On first use (or when user enables offline payments):
+
 1. Derive `zk_secret` from account seed via Poseidon FFI
 2. Compute `commitment = Poseidon(zk_secret)`
 3. Submit `register_offline_identity(commitment)` extrinsic to chain
@@ -419,6 +448,7 @@ On first use (or when user enables offline payments):
 **Modify:** `app/lib/page/assets/transfer/payment_confirmation_page/index.dart`
 
 When offline AND offline identity is registered:
+
 1. Show "Pay Offline" button instead of "Transfer"
 2. On confirm:
    a. Generate random `nonce_secret` (32 bytes)
@@ -436,6 +466,7 @@ When offline AND offline identity is registered:
 **New file:** `app/lib/page/offline_payment/receive_offline_payment_page.dart`
 
 When QR scanner detects `encointer-offlinepay`:
+
 1. Decode proof, public inputs, and metadata
 2. (Optional) Verify proof locally via arkworks FFI — fast, gives immediate confidence
 3. Display: sender identity, amount, community symbol, reputation count
@@ -504,28 +535,29 @@ Add handler for `QrCodeContext.offlinepay` → navigate to `ReceiveOfflinePaymen
 
 ### 7.9 Polkadart type generation
 
-**Modify:** `packages/ew_polkadart/` — regenerate types after the pallet is added to the runtime. The `submit_offline_payment` extrinsic and new storage items will be auto-generated by `polkadart_cli`.
+**Modify:** `packages/ew_polkadart/` — regenerate types after the pallet is added to the runtime. The
+`submit_offline_payment` extrinsic and new storage items will be auto-generated by `polkadart_cli`.
 
 ### Summary of changes
 
-| Layer | Action | Component |
-|-------|--------|-----------|
-| **Chain** | Create | `pallet-offline-payment` (Rust, Substrate) |
-| **Chain** | Modify | Runtime — add pallet to construct_runtime!, integrate ark-groth16 |
-| **Circuit** | Create | `src/circuit.rs` (arkworks R1CS) |
-| **Circuit** | Create | Trusted setup artifacts (serialized `ProvingKey`, `VerifyingKey`) |
-| **App** | Create | `service/offline/offline_identity_service.dart` — registration |
-| **App** | Create | `service/offline/settlement_service.dart` — auto-settle |
-| **App** | Create | `store/offline_payment/offline_payment_store.dart` — persistence |
-| **App** | Create | `page/qr_scan/qr_codes/offline_payment.dart` — QR type |
-| **App** | Create | `page/offline_payment/receive_offline_payment_page.dart` — seller UI |
-| **App** | Create | `page/offline_payment/offline_payment_list_page.dart` — history |
-| **App** | Modify | `page/qr_scan/qr_codes/qr_code_base.dart` — add enum variant |
-| **App** | Modify | `page/qr_scan/qr_scan_service.dart` — handle new QR |
-| **App** | Modify | `page/assets/transfer/payment_confirmation_page/index.dart` — offline mode |
-| **App** | Modify | `store/app.dart` — init new stores |
-| **App** | Add dep | Custom Rust FFI for arkworks Groth16 proving (via `flutter_rust_bridge`) |
-| **App** | Add asset | Serialized arkworks `ProvingKey<Bn254>` |
+| Layer       | Action    | Component                                                                  |
+|-------------|-----------|----------------------------------------------------------------------------|
+| **Chain**   | Create    | `pallet-offline-payment` (Rust, Substrate)                                 |
+| **Chain**   | Modify    | Runtime — add pallet to construct_runtime!, integrate ark-groth16          |
+| **Circuit** | Create    | `src/circuit.rs` (arkworks R1CS)                                           |
+| **Circuit** | Create    | Trusted setup artifacts (serialized `ProvingKey`, `VerifyingKey`)          |
+| **App**     | Create    | `service/offline/offline_identity_service.dart` — registration             |
+| **App**     | Create    | `service/offline/settlement_service.dart` — auto-settle                    |
+| **App**     | Create    | `store/offline_payment/offline_payment_store.dart` — persistence           |
+| **App**     | Create    | `page/qr_scan/qr_codes/offline_payment.dart` — QR type                     |
+| **App**     | Create    | `page/offline_payment/receive_offline_payment_page.dart` — seller UI       |
+| **App**     | Create    | `page/offline_payment/offline_payment_list_page.dart` — history            |
+| **App**     | Modify    | `page/qr_scan/qr_codes/qr_code_base.dart` — add enum variant               |
+| **App**     | Modify    | `page/qr_scan/qr_scan_service.dart` — handle new QR                        |
+| **App**     | Modify    | `page/assets/transfer/payment_confirmation_page/index.dart` — offline mode |
+| **App**     | Modify    | `store/app.dart` — init new stores                                         |
+| **App**     | Add dep   | Custom Rust FFI for arkworks Groth16 proving (via `flutter_rust_bridge`)   |
+| **App**     | Add asset | Serialized arkworks `ProvingKey<Bn254>`                                    |
 
 ---
 
@@ -556,6 +588,7 @@ fn test_circuit_with_wrong_commitment_fails() {
 Run with: `cargo test -p pallet-encointer-offline-payment`
 
 Test cases:
+
 - Valid proof with correct witness → verifies
 - Wrong `zk_secret` → constraint violation
 - Mismatched nullifier → constraint violation
@@ -564,6 +597,7 @@ Test cases:
 ### 8.2 Pallet unit tests
 
 Standard Substrate pallet tests (`#[cfg(test)]`):
+
 - `register_offline_identity` stores commitment correctly
 - `submit_offline_payment` with valid proof → transfer succeeds, nullifier stored
 - Same nullifier submitted twice → second call returns `NullifierAlreadyUsed`
@@ -590,6 +624,7 @@ Standard Substrate pallet tests (`#[cfg(test)]`):
 ### 8.5 Manual E2E test
 
 Two emulators, both in airplane mode:
+
 1. Seller creates invoice → buyer scans
 2. Buyer generates proof → shows QR → seller scans → accepts
 3. Enable network on seller's device → auto-settlement → balance updated
@@ -603,15 +638,23 @@ Two emulators, both in airplane mode:
 
 The implementation uses arkworks directly (not Circom) for several reasons:
 
-1. **Single language stack.** Both circuit definition and on-chain verification use the same Rust/arkworks codebase. No context switching between Circom DSL and Rust, no format translation between `.zkey`/`.wasm` and arkworks types.
+1. **Single language stack.** Both circuit definition and on-chain verification use the same Rust/arkworks codebase. No
+   context switching between Circom DSL and Rust, no format translation between `.zkey`/`.wasm` and arkworks types.
 
-2. **Mobile cross-compilation.** arkworks is pure Rust with zero system dependencies — it compiles cleanly to `aarch64-apple-ios` and `aarch64-linux-android`. Use `flutter_rust_bridge` or `dart:ffi` to expose the prover to Flutter.
+2. **Mobile cross-compilation.** arkworks is pure Rust with zero system dependencies — it compiles cleanly to
+   `aarch64-apple-ios` and `aarch64-linux-android`. Use `flutter_rust_bridge` or `dart:ffi` to expose the prover to
+   Flutter.
 
-3. **Consistent Poseidon.** Using `ark-crypto-primitives::sponge::poseidon` in both the circuit and on-chain code guarantees identical hash outputs. No risk of parameter mismatch between circomlib and a separate Rust implementation.
+3. **Consistent Poseidon.** Using `ark-crypto-primitives::sponge::poseidon` in both the circuit and on-chain code
+   guarantees identical hash outputs. No risk of parameter mismatch between circomlib and a separate Rust
+   implementation.
 
-4. **Proof size.** Groth16 proofs are ~192 bytes (~256 chars base64), fitting comfortably in a QR code (version 11, 61×61).
+4. **Proof size.** Groth16 proofs are ~192 bytes (~256 chars base64), fitting comfortably in a QR code (version 11,
+   61×61).
 
 ### Trade-offs
 
-- **Trusted setup required.** Groth16 requires a per-circuit trusted setup ceremony. For production, use MPC with multiple independent contributors.
-- **Circuit changes require new setup.** Any modification to the circuit constraints requires regenerating the proving/verifying keys.
+- **Trusted setup required.** Groth16 requires a per-circuit trusted setup ceremony. For production, use MPC with
+  multiple independent contributors.
+- **Circuit changes require new setup.** Any modification to the circuit constraints requires regenerating the
+  proving/verifying keys.
