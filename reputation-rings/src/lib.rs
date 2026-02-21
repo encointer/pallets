@@ -350,8 +350,8 @@ pub mod pallet {
 
 			// Only allow during Assigning phase.
 			ensure!(
-				<pallet_encointer_scheduler::Pallet<T>>::current_phase()
-					== CeremonyPhaseType::Assigning,
+				<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
+					CeremonyPhaseType::Assigning,
 				Error::<T>::WrongPhase
 			);
 

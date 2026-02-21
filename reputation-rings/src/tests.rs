@@ -10,7 +10,6 @@ fn advance_to_assigning() {
 	assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
 }
 
-
 /// Run ring computation to completion. Returns the number of steps taken.
 fn run_computation_to_completion(caller: &test_utils::AccountId) -> u32 {
 	let mut steps = 0u32;
