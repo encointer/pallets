@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-offline-payment"
-version = "21.0.0"
+version = "21.0.1"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Offline payment pallet using ZK proofs for the Encointer blockchain runtime"

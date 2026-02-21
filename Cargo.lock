@@ -5067,7 +5067,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-offline-payment"
-version = "21.0.0"
+version = "21.0.1"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives",
