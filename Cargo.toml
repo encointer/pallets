@@ -44,7 +44,7 @@ useless_conversion = { level = "allow", priority = 2 }       # Types may change
 # local pin
 encointer-ceremonies-assignment = { path = "ceremonies/assignment", default-features = false, version = "21.1.0" }
 encointer-meetup-validation = { path = "ceremonies/meetup-validation", default-features = false, version = "21.1.0" }
-encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "21.4.0" }
+encointer-primitives = { path = "primitives", default-features = false, features = ["serde_derive"], version = "21.5.1" }
 encointer-rpc = { path = "rpc", version = "21.1.0" }
 ep-core = { path = "primitives/core", default-features = false, version = "21.0.0" }
 pallet-encointer-balances = { path = "balances", default-features = false, version = "21.2.1" }
@@ -53,7 +53,7 @@ pallet-encointer-communities = { path = "communities", default-features = false,
 pallet-encointer-reputation-commitments = { path = "reputation-commitments", default-features = false, version = "21.1.1" }
 pallet-encointer-reputation-rings = { path = "reputation-rings", default-features = false, version = "21.0.0" }
 pallet-encointer-scheduler = { path = "scheduler", default-features = false, version = "21.1.0" }
-pallet-encointer-treasuries = { path = "treasuries", default-features = false, version = "21.4.1" }
+pallet-encointer-treasuries = { path = "treasuries", default-features = false, version = "21.7.1" }
 pallet-encointer-offline-payment = { path = "offline-payment", default-features = false, version = "21.0.0" }
 encointer-offline-payment-core = { path = "offline-payment/core", default-features = false, version = "21.0.0" }
 test-utils = { path = "test-utils" }

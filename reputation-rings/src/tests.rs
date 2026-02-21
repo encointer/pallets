@@ -1,7 +1,14 @@
 use crate::{mock::*, BandersnatchPublicKey, Error, RingComputationPhase, MAX_REPUTATION_LEVELS};
-use encointer_primitives::ceremonies::Reputation;
+use encointer_primitives::{ceremonies::Reputation, scheduler::CeremonyPhaseType};
 use frame_support::{assert_noop, assert_ok};
 use test_utils::helpers::{account_id, add_population, bootstrappers, register_test_community};
+
+/// Advance ceremony phase from Registering to Assigning (required for `initiate_rings`).
+fn advance_to_assigning() {
+	assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
+	assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::root()));
+	assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
+}
 
 /// Run ring computation to completion. Returns the number of steps taken.
 fn run_computation_to_completion(caller: &test_utils::AccountId) -> u32 {
@@ -100,6 +107,7 @@ fn initiate_rings_works() {
 		let alice = account_id(&bootstrappers()[0]);
 
 		// Current ceremony index is 7 (from genesis), so ceremony 6 is valid.
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), cid, 6,));
 
 		let state = EncointerReputationRings::pending_ring_computation().unwrap();
@@ -118,6 +126,7 @@ fn initiate_rings_fails_if_computation_in_progress() {
 		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
 		let alice = account_id(&bootstrappers()[0]);
 
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(alice.clone()),
 			cid,
@@ -136,6 +145,7 @@ fn initiate_rings_fails_for_unknown_community() {
 		let alice = account_id(&bootstrappers()[0]);
 		let fake_cid = encointer_primitives::communities::CommunityIdentifier::default();
 
+		advance_to_assigning();
 		assert_noop!(
 			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), fake_cid, 6,),
 			Error::<TestRuntime>::CommunityNotFound
@@ -149,6 +159,7 @@ fn initiate_rings_fails_for_invalid_ceremony_index() {
 		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
 		let alice = account_id(&bootstrappers()[0]);
 
+		advance_to_assigning();
 		// Current index is 7. Index 7 is current (not yet complete).
 		assert_noop!(
 			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice.clone()), cid, 7,),
@@ -159,6 +170,31 @@ fn initiate_rings_fails_for_invalid_ceremony_index() {
 		assert_noop!(
 			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), cid, 0,),
 			Error::<TestRuntime>::InvalidCeremonyIndex
+		);
+	});
+}
+
+#[test]
+fn initiate_rings_fails_during_wrong_phase() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let alice = account_id(&bootstrappers()[0]);
+
+		// Genesis starts in Registering.
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
+		assert_noop!(
+			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice.clone()), cid, 6,),
+			Error::<TestRuntime>::WrongPhase
+		);
+
+		// Advance Registering → Assigning → Attesting.
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::root()));
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::root()));
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
+
+		assert_noop!(
+			EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), cid, 6,),
+			Error::<TestRuntime>::WrongPhase
 		);
 	});
 }
@@ -193,6 +229,7 @@ fn full_ring_computation_produces_all_5_rings() {
 		setup_community_with_reputations(cid, &bs[..3], &verified);
 
 		// Initiate ring computation for ceremony 6.
+		advance_to_assigning();
 		let caller = account_id(&bs[0]);
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
@@ -303,6 +340,7 @@ fn ring_nesting_is_strict_subset() {
 		];
 		setup_community_with_reputations(cid, &bs[..4], &verified);
 
+		advance_to_assigning();
 		let caller = account_id(&bs[0]);
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
@@ -363,6 +401,7 @@ fn accounts_without_bandersnatch_key_are_excluded() {
 			Reputation::VerifiedLinked(6),
 		);
 
+		advance_to_assigning();
 		let caller = alice.clone();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
@@ -400,6 +439,7 @@ fn ring_members_are_deterministically_sorted() {
 			);
 		}
 
+		advance_to_assigning();
 		let caller = account_id(&bs[0]);
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
@@ -450,6 +490,7 @@ fn account_with_3_attendances_in_correct_rings() {
 			);
 		}
 
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(acc.clone()),
 			cid,
@@ -494,6 +535,7 @@ fn rings_are_per_community() {
 		);
 
 		// Compute rings for community A.
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(acc.clone()),
 			cid_a,
@@ -554,6 +596,7 @@ fn large_community_500_members_full_computation() {
 		}
 
 		let caller = accounts[0].clone();
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
@@ -608,6 +651,7 @@ fn large_community_500_members_varied_attendance() {
 		}
 
 		let caller = accounts[0].clone();
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
@@ -664,6 +708,7 @@ fn large_community_step_count_is_predictable() {
 		}
 
 		let caller = accounts[0].clone();
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(caller.clone()),
 			cid,
@@ -801,6 +846,12 @@ mod small_ring {
 			.collect()
 	}
 
+	fn advance_to_assigning() {
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
+		assert_ok!(EncointerScheduler::next_phase(RuntimeOrigin::root()));
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
+	}
+
 	fn run_to_completion(caller: &test_utils::AccountId) -> u32 {
 		let mut steps = 0u32;
 		while EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
@@ -830,6 +881,7 @@ mod small_ring {
 			}
 
 			let caller = accounts[0].clone();
+			advance_to_assigning();
 			assert_ok!(EncointerReputationRings::initiate_rings(
 				RuntimeOrigin::signed(caller.clone()),
 				cid,
@@ -883,6 +935,7 @@ mod small_ring {
 			}
 
 			let caller = accounts[0].clone();
+			advance_to_assigning();
 			assert_ok!(EncointerReputationRings::initiate_rings(
 				RuntimeOrigin::signed(caller.clone()),
 				cid,
@@ -927,6 +980,7 @@ mod small_ring {
 			}
 
 			let caller = accounts[0].clone();
+			advance_to_assigning();
 			assert_ok!(EncointerReputationRings::initiate_rings(
 				RuntimeOrigin::signed(caller.clone()),
 				cid,
@@ -958,6 +1012,7 @@ mod small_ring {
 			}
 
 			let caller = accounts[0].clone();
+			advance_to_assigning();
 			assert_ok!(EncointerReputationRings::initiate_rings(
 				RuntimeOrigin::signed(caller.clone()),
 				cid,
@@ -1232,6 +1287,7 @@ mod automatic {
 
 			// Compute rings at cindex=1.
 			// Need cindex=1 < current(7), so it's valid.
+			advance_to_assigning();
 			assert_ok!(EncointerReputationRings::initiate_rings(
 				RuntimeOrigin::signed(acc.clone()),
 				cid,
@@ -1271,10 +1327,9 @@ mod automatic {
 				Reputation::VerifiedLinked(6),
 			);
 
-			// Queue automatic computation.
-			<EncointerReputationRings as OnCeremonyPhaseChange>::on_ceremony_phase_change(
-				CeremonyPhaseType::Assigning,
-			);
+			// Advance to Assigning — also triggers on_ceremony_phase_change which queues
+			// automatic computation.
+			advance_to_assigning();
 
 			// But use manual extrinsic instead — should work even with queue pending.
 			assert_ok!(EncointerReputationRings::initiate_rings(
@@ -1313,6 +1368,7 @@ fn purge_community_ceremony_rings_clears_data() {
 			Reputation::VerifiedLinked(6),
 		);
 
+		advance_to_assigning();
 		assert_ok!(EncointerReputationRings::initiate_rings(
 			RuntimeOrigin::signed(acc.clone()),
 			cid,
@@ -1356,6 +1412,7 @@ fn purge_rings_clears_all_communities() {
 		}
 
 		// Compute rings for both communities.
+		advance_to_assigning();
 		for &cid in &[cid_a, cid_b] {
 			assert_ok!(EncointerReputationRings::initiate_rings(
 				RuntimeOrigin::signed(acc.clone()),
@@ -1400,6 +1457,7 @@ fn purge_does_not_affect_other_cindex() {
 		}
 
 		// Compute rings at both ceremony indices.
+		advance_to_assigning();
 		for cindex in [5, 6] {
 			assert_ok!(EncointerReputationRings::initiate_rings(
 				RuntimeOrigin::signed(acc.clone()),

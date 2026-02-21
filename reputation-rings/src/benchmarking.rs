@@ -2,7 +2,11 @@ use crate::{Pallet as ReputationRing, *};
 use encointer_primitives::{
 	ceremonies::Reputation,
 	communities::{CommunityIdentifier, Degree, Location},
-	storage::{community_identifiers, current_ceremony_index_key, participant_reputation},
+	scheduler::CeremonyPhaseType,
+	storage::{
+		community_identifiers, current_ceremony_index_key, current_phase_key,
+		participant_reputation,
+	},
 };
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_support::assert_ok;
@@ -72,8 +76,12 @@ fn setup_full_community<T: Config>(n: u32) -> (CommunityIdentifier, Vec<T::Accou
 where
 	T::AccountId: AsRef<[u8; 32]>,
 {
-	// Set ceremony index to 7 so ceremony 6 is valid.
+	// Set ceremony index to 7 so ceremony 6 is valid, and phase to Assigning.
 	frame_support::storage::unhashed::put_raw(&current_ceremony_index_key(), &7u32.encode());
+	frame_support::storage::unhashed::put_raw(
+		&current_phase_key(),
+		&CeremonyPhaseType::Assigning.encode(),
+	);
 
 	let cid = register_community::<T>();
 	let accounts = setup_accounts::<T>(n);
@@ -146,6 +154,10 @@ benchmarks! {
 		frame_support::storage::unhashed::put_raw(
 			&current_ceremony_index_key(),
 			&7u32.encode(),
+		);
+		frame_support::storage::unhashed::put_raw(
+			&current_phase_key(),
+			&CeremonyPhaseType::Assigning.encode(),
 		);
 		let cid = register_community::<T>();
 		let accounts = setup_accounts::<T>(n);

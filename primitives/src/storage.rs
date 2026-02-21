@@ -48,6 +48,10 @@ pub fn current_ceremony_index_key() -> StorageKey {
 	storage_key("EncointerScheduler", "CurrentCeremonyIndex")
 }
 
+pub fn current_phase_key() -> StorageKey {
+	storage_key("EncointerScheduler", "CurrentPhase")
+}
+
 pub fn storage_key(module: &str, storage_key_name: &str) -> StorageKey {
 	let mut key = twox_128(module.as_bytes()).to_vec();
 	key.extend(&twox_128(storage_key_name.as_bytes()));
