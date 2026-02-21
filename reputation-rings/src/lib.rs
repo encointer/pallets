@@ -237,6 +237,8 @@ pub mod pallet {
 		ComputationAlreadyDone,
 		/// The ring exceeds MaxRingSize.
 		RingTooLarge,
+		/// Extrinsic called during the wrong ceremony phase.
+		WrongPhase,
 	}
 
 	// -- Hooks --
@@ -334,7 +336,9 @@ pub mod pallet {
 		/// Initiate ring computation for a community at a given ceremony index.
 		/// Computes all 5 reputation rings (N/5 for N=1..5) via multi-block process.
 		///
-		/// The ceremony must have already occurred (ceremony_index < current).
+		/// Only allowed during Assigning phase, when the previous ceremony's
+		/// reputation records are finalized. During Registering phase, `current_ceremony_index`
+		/// has already advanced but the previous ceremony hasn't completed yet.
 		#[pallet::call_index(1)]
 		#[pallet::weight(<T as Config>::WeightInfo::initiate_rings())]
 		pub fn initiate_rings(
@@ -343,6 +347,13 @@ pub mod pallet {
 			ceremony_index: CeremonyIndexType,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
+
+			// Only allow during Assigning phase.
+			ensure!(
+				<pallet_encointer_scheduler::Pallet<T>>::current_phase()
+					== CeremonyPhaseType::Assigning,
+				Error::<T>::WrongPhase
+			);
 
 			ensure!(
 				!<PendingRingComputation<T>>::exists(),
