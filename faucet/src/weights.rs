@@ -58,35 +58,6 @@ pub trait WeightInfo {
 	fn set_reserve_amount() -> Weight;
 }
 
-/// Weights for pallet_encointer_faucet using the Encointer solo chain node and recommended
-/// hardware.
-pub struct EncointerWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
-	fn create_faucet() -> Weight {
-		Weight::from_parts(226_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(6))
-			.saturating_add(T::DbWeight::get().writes(5))
-	}
-	fn drip() -> Weight {
-		Weight::from_parts(224_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(6))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
-	fn dissolve_faucet() -> Weight {
-		Weight::from_parts(174_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
-	fn close_faucet() -> Weight {
-		Weight::from_parts(196_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
-	fn set_reserve_amount() -> Weight {
-		Weight::from_parts(31_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-}
-
 // For tests
 impl WeightInfo for () {
 	fn create_faucet() -> Weight {

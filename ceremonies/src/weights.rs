@@ -67,68 +67,6 @@ pub trait WeightInfo {
 	fn purge_community_ceremony() -> Weight;
 }
 
-/// Weights for pallet_encointer_ceremonies using the Encointer solo chain node and recommended
-/// hardware.
-pub struct EncointerWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
-	fn register_participant() -> Weight {
-		Weight::from_parts(221_000_000, 0)
-			.saturating_add(RocksDbWeight::get().reads(13))
-			.saturating_add(RocksDbWeight::get().writes(5))
-	}
-	fn upgrade_registration() -> Weight {
-		Weight::from_parts(247_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(15))
-			.saturating_add(T::DbWeight::get().writes(8))
-	}
-	fn unregister_participant() -> Weight {
-		Weight::from_parts(91_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(9))
-			.saturating_add(T::DbWeight::get().writes(5))
-	}
-	fn attest_attendees() -> Weight {
-		Weight::from_parts(265_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(25))
-			.saturating_add(T::DbWeight::get().writes(4))
-	}
-	fn endorse_newcomer() -> Weight {
-		Weight::from_parts(2_029_000_000, 0)
-			.saturating_add(RocksDbWeight::get().reads(20))
-			.saturating_add(RocksDbWeight::get().writes(9))
-	}
-	fn claim_rewards() -> Weight {
-		Weight::from_parts(816_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(62))
-			.saturating_add(T::DbWeight::get().writes(22))
-	}
-	fn set_inactivity_timeout() -> Weight {
-		Weight::from_parts(29_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_meetup_time_offset() -> Weight {
-		Weight::from_parts(33_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_reputation_lifetime() -> Weight {
-		Weight::from_parts(29_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_endorsement_tickets_per_bootstrapper() -> Weight {
-		Weight::from_parts(29_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_endorsement_tickets_per_reputable() -> Weight {
-		Weight::from_parts(38_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_time_tolerance() -> Weight {
-		Weight::from_parts(29_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_location_tolerance() -> Weight {
-		Weight::from_parts(29_000_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn purge_community_ceremony() -> Weight {
-		Weight::from_parts(139_000_000, 0).saturating_add(T::DbWeight::get().writes(12))
-	}
-}
-
 // For tests
 impl WeightInfo for () {
 	fn register_participant() -> Weight {

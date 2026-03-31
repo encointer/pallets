@@ -60,53 +60,6 @@ pub trait WeightInfo {
 	fn purge_community() -> Weight;
 }
 
-/// Weights for pallet_encointer_communities using the Encointer solo chain node and recommended
-/// hardware.
-pub struct EncointerWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
-	fn new_community() -> Weight {
-		Weight::from_parts(8_232_800_000, 0)
-			.saturating_add(T::DbWeight::get().reads(5))
-			.saturating_add(T::DbWeight::get().writes(7))
-	}
-	fn add_location() -> Weight {
-		Weight::from_parts(8_156_200_000, 0)
-			.saturating_add(T::DbWeight::get().reads(6))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn remove_location() -> Weight {
-		Weight::from_parts(49_600_000, 0)
-			.saturating_add(T::DbWeight::get().reads(3))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn update_community_metadata() -> Weight {
-		Weight::from_parts(26_800_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn update_demurrage() -> Weight {
-		Weight::from_parts(25_800_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn update_nominal_income() -> Weight {
-		Weight::from_parts(25_400_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_min_solar_trip_time_s() -> Weight {
-		Weight::from_parts(16_300_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn set_max_speed_mps() -> Weight {
-		Weight::from_parts(15_500_000, 0).saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn purge_community() -> Weight {
-		Weight::from_parts(18_355_700_000, 0)
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(6))
-	}
-}
-
 // For tests
 impl WeightInfo for () {
 	fn new_community() -> Weight {
