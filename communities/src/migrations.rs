@@ -17,9 +17,7 @@ mod v0 {
 
 	pub type IpfsCid = UnboundedPalletString;
 
-	#[derive(
-		Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Debug, TypeInfo,
-	)]
+	#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Debug, TypeInfo)]
 	pub struct UnboundedCommunityMetadata {
 		/// utf8 encoded name
 		pub name: UnboundedPalletString,

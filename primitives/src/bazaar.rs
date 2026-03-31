@@ -50,9 +50,7 @@ impl<AccountId> BusinessIdentifier<AccountId> {
 }
 
 /// Data structure used for organizing the pallet's storage.
-#[derive(
-	Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo,
-)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct BusinessData {
@@ -71,9 +69,7 @@ impl BusinessData {
 /// Structure that contains the [BusinessData] including its controller account.
 ///
 /// Intended as a return value for RPC requests.
-#[derive(
-	Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo,
-)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct Business<AccountId> {
@@ -89,9 +85,7 @@ impl<AccountId> Business<AccountId> {
 
 pub type OfferingIdentifier = u32;
 
-#[derive(
-	Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo,
-)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct OfferingData {

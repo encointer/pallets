@@ -83,15 +83,7 @@ pub enum ProposalAccessPolicy {
 }
 
 #[derive(
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	Debug,
-	Clone,
-	PartialEq,
-	Eq,
-	TypeInfo,
-	MaxEncodedLen,
+	Encode, Decode, DecodeWithMemTracking, Debug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -235,15 +227,7 @@ impl<Moment: PartialEq> ProposalState<Moment> {
 	}
 }
 #[derive(
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	Debug,
-	Clone,
-	PartialEq,
-	Eq,
-	TypeInfo,
-	MaxEncodedLen,
+	Encode, Decode, DecodeWithMemTracking, Debug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]

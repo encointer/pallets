@@ -109,9 +109,7 @@ pub enum ParticipantType {
 	Newbie,
 }
 
-#[derive(
-	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, Debug, TypeInfo, MaxEncodedLen,
-)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
@@ -465,9 +463,7 @@ pub struct CeremonyInfo {
 	pub ceremony_index: CeremonyIndexType,
 }
 
-#[derive(
-	Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Default, Debug, TypeInfo,
-)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Default, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct ReputationCacheValue {
