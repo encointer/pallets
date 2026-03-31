@@ -42,7 +42,7 @@ pub fn is_prime(n: u64) -> bool {
 	if n <= 3 {
 		return n > 1;
 	}
-	if n % 2 == 0 || n % 3 == 0 {
+	if n.is_multiple_of(2) || n.is_multiple_of(3) {
 		return false;
 	}
 	if n < 25 {
@@ -52,7 +52,7 @@ pub fn is_prime(n: u64) -> bool {
 	let mut j: u64 = 25;
 	while j <= n {
 		let i_plus_two = i.checked_add(2u64).expect("i^2 does not overflow, so i + 2 is safe; qed");
-		if n % i == 0u64 || n % (i_plus_two) == 0u64 {
+		if n.is_multiple_of(i) || n.is_multiple_of(i_plus_two) {
 			return false;
 		}
 		i = i.checked_add(6u64).expect("i^2 does not overflow, so i + 6 is safe; qed");
@@ -87,7 +87,7 @@ pub fn find_prime_below(mut n: u64) -> u64 {
 	if n <= 2 {
 		return 2u64;
 	}
-	if n % 2 == 0 {
+	if n.is_multiple_of(2) {
 		n = n.checked_sub(1).expect("n > 2; qed");
 	}
 	while n > 0 {

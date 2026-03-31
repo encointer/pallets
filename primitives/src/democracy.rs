@@ -17,7 +17,6 @@ use crate::{
 };
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_core::RuntimeDebug;
 use sp_runtime::BoundedVec;
 
 pub type ProposalIdType = u128;
@@ -30,7 +29,7 @@ pub type ReputationVec<MaxLength> = BoundedVec<CommunityCeremony, MaxLength>;
 	Decode,
 	DecodeWithMemTracking,
 	Default,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,
@@ -49,7 +48,7 @@ pub struct Tally {
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,
@@ -68,7 +67,7 @@ pub enum Vote {
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,
@@ -84,15 +83,7 @@ pub enum ProposalAccessPolicy {
 }
 
 #[derive(
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	RuntimeDebug,
-	Clone,
-	PartialEq,
-	Eq,
-	TypeInfo,
-	MaxEncodedLen,
+	Encode, Decode, DecodeWithMemTracking, Debug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -114,7 +105,7 @@ pub enum ProposalAction<AccountId, Balance, Moment, AssetId> {
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,
@@ -207,7 +198,7 @@ impl<AccountId, Balance, Moment, AssetId> ProposalAction<AccountId, Balance, Mom
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,
@@ -236,15 +227,7 @@ impl<Moment: PartialEq> ProposalState<Moment> {
 	}
 }
 #[derive(
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	RuntimeDebug,
-	Clone,
-	PartialEq,
-	Eq,
-	TypeInfo,
-	MaxEncodedLen,
+	Encode, Decode, DecodeWithMemTracking, Debug, Clone, PartialEq, Eq, TypeInfo, MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]

@@ -57,42 +57,6 @@ pub trait WeightInfo {
 	fn delete_offering() -> Weight;
 }
 
-/// Weights for pallet_encointer_bazaar using the Encointer solo chain node and recommended
-/// hardware.
-pub struct EncointerWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
-	fn create_business() -> Weight {
-		Weight::from_parts(67_200_000, 0)
-			.saturating_add(T::DbWeight::get().reads(2))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn update_business() -> Weight {
-		Weight::from_parts(64_500_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn delete_business() -> Weight {
-		Weight::from_parts(71_700_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn create_offering() -> Weight {
-		Weight::from_parts(74_100_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(2))
-	}
-	fn update_offering() -> Weight {
-		Weight::from_parts(63_200_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	fn delete_offering() -> Weight {
-		Weight::from_parts(61_100_000, 0)
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-}
-
 // For tests
 impl WeightInfo for () {
 	fn create_business() -> Weight {

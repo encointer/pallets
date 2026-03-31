@@ -54,17 +54,6 @@ pub trait WeightInfo {
 	fn vouch_for() -> Weight;
 }
 
-/// Weights for pallet_encointer_reputation_commitments using the Encointer solo chain node and
-/// recommended hardware.
-pub struct EncointerWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
-	fn vouch_for() -> Weight {
-		(Weight::from_parts(54_000_000, 0))
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(2))
-	}
-}
-
 // For tests
 impl WeightInfo for () {
 	fn vouch_for() -> Weight {

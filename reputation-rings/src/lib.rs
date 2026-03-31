@@ -64,7 +64,7 @@ pub const MIN_RING_SIZE: u32 = 128;
 pub type BandersnatchPublicKey = [u8; 32];
 
 /// State machine for multi-block ring computation.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
 pub enum RingComputationPhase {
 	/// Collecting eligible members: scanning ceremony indices one by one.
 	/// `next_ceremony_offset` tracks how many of the last 5 ceremonies have been scanned.
@@ -78,7 +78,7 @@ pub enum RingComputationPhase {
 
 /// Pending ring computation state, stored on-chain during multi-block computation.
 /// Uses `Vec` (unbounded) since this is transient state cleared after computation completes.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub struct RingComputationState<AccountId: Encode + Decode + Clone + Ord> {
 	pub community: CommunityIdentifier,
 	pub ceremony_index: CeremonyIndexType,

@@ -55,27 +55,6 @@ pub trait WeightInfo {
 	fn update_proposal_state() -> Weight;
 }
 
-/// Weights for pallet_encointer_democracy using the Encointer solo chain node and recommended
-/// hardware.
-pub struct EncointerWeight<T>(PhantomData<T>);
-impl<T: frame_system::Config> WeightInfo for EncointerWeight<T> {
-	fn submit_proposal() -> Weight {
-		Weight::from_parts(40_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(3))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
-	fn vote() -> Weight {
-		Weight::from_parts(168_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(16))
-			.saturating_add(T::DbWeight::get().writes(5))
-	}
-	fn update_proposal_state() -> Weight {
-		Weight::from_parts(116_000_000, 0)
-			.saturating_add(T::DbWeight::get().reads(9))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
-}
-
 // For tests
 impl WeightInfo for () {
 	fn submit_proposal() -> Weight {

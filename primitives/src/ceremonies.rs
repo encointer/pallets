@@ -25,7 +25,6 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 #[cfg(any(feature = "std", feature = "full_crypto"))]
 use sp_core::Pair;
-use sp_core::RuntimeDebug;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
@@ -55,7 +54,7 @@ pub type ReputationCountType = u128;
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -94,7 +93,7 @@ impl Reputation {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -110,9 +109,7 @@ pub enum ParticipantType {
 	Newbie,
 }
 
-#[derive(
-	Encode, Decode, Copy, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo, MaxEncodedLen,
-)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, Default, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct ClaimOfAttendance<Signature, AccountId, Moment> {
@@ -238,7 +235,7 @@ impl<Signature, AccountId, Moment> ClaimOfAttendance<Signature, AccountId, Momen
 	PartialEq,
 	Eq,
 	Default,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -266,7 +263,7 @@ pub type AccountIdFor<Signature> = <<Signature as Verify>::Signer as IdentifyAcc
 	PartialEq,
 	Eq,
 	Default,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -323,7 +320,7 @@ where
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -351,7 +348,7 @@ impl AssignmentCount {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -375,7 +372,7 @@ pub struct Assignment {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -407,7 +404,7 @@ pub fn reputation_cache_dirty_key<Account: Encode>(account: &Account) -> Vec<u8>
 	(consts::REPUTATION_CACHE_DIRTY_KEY, account).encode()
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AggregatedAccountDataPersonal<AccountId, Moment> {
@@ -427,7 +424,7 @@ pub struct AggregatedAccountDataPersonal<AccountId, Moment> {
 	PartialEq,
 	Eq,
 	Default,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -438,7 +435,7 @@ pub struct AggregatedAccountDataGlobal {
 	pub ceremony_index: CeremonyIndexType,
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct AggregatedAccountData<AccountId, Moment> {
@@ -455,7 +452,7 @@ pub struct AggregatedAccountData<AccountId, Moment> {
 	PartialEq,
 	Eq,
 	Default,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -466,9 +463,7 @@ pub struct CeremonyInfo {
 	pub ceremony_index: CeremonyIndexType,
 }
 
-#[derive(
-	Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Default, RuntimeDebug, TypeInfo,
-)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Default, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct ReputationCacheValue {
@@ -484,7 +479,7 @@ pub struct ReputationCacheValue {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]

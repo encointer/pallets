@@ -17,7 +17,7 @@
 use crate::{communities::CommunityIdentifier, reputation_commitments::PurposeIdType};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ConstU32, MaxEncodedLen, RuntimeDebug};
+use sp_core::{bounded::BoundedVec, ConstU32, MaxEncodedLen};
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
@@ -32,7 +32,7 @@ pub type FaucetNameType = BoundedVec<u8, ConstU32<64>>;
 	DecodeWithMemTracking,
 	Eq,
 	PartialEq,
-	RuntimeDebug,
+	Debug,
 	Default,
 	MaxEncodedLen,
 	TypeInfo,
