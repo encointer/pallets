@@ -1886,7 +1886,7 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 
 [[package]]
 name = "encointer-balances-tx-payment"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1906,7 +1906,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-balances-tx-payment-rpc-runtime-api",
  "encointer-primitives",
@@ -1929,7 +1929,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc-runtime-api"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1941,7 +1941,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-ceremonies-assignment"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "sp-core",
@@ -1951,7 +1951,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-meetup-validation"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -1965,7 +1965,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-offline-payment-core"
-version = "21.0.0"
+version = "22.0.0"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives",
@@ -1981,7 +1981,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "21.5.1"
+version = "22.5.1"
 dependencies = [
  "approx",
  "bs58",
@@ -2004,7 +2004,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-rpc"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "jsonrpsee",
  "jsonrpsee-core",
@@ -2072,7 +2072,7 @@ checksum = "e48c92028aaa870e83d51c64e5d4e0b6981b360c522198c23959f219a4e1b15b"
 
 [[package]]
 name = "ep-core"
-version = "21.0.0"
+version = "22.0.0"
 dependencies = [
  "array-bytes",
  "impl-serde",
@@ -4935,7 +4935,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "21.2.1"
+version = "22.2.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4955,7 +4955,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4973,7 +4973,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -4992,7 +4992,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5003,7 +5003,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "21.1.1"
+version = "22.1.1"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -5032,7 +5032,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5051,7 +5051,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5062,7 +5062,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "21.1.1"
+version = "22.1.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5083,7 +5083,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5103,7 +5103,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -5113,7 +5113,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "21.7.1"
+version = "22.7.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5143,7 +5143,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-faucet"
-version = "21.2.1"
+version = "22.2.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5164,7 +5164,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-offline-payment"
-version = "21.0.1"
+version = "22.0.1"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives",
@@ -5197,7 +5197,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-commitments"
-version = "21.1.1"
+version = "22.1.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5220,7 +5220,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-rings"
-version = "21.0.1"
+version = "22.0.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5244,7 +5244,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -5263,7 +5263,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries"
-version = "21.7.1"
+version = "22.7.1"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5287,7 +5287,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries-rpc"
-version = "21.3.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5308,7 +5308,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries-rpc-runtime-api"
-version = "21.3.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5320,7 +5320,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-vouches"
-version = "21.1.0"
+version = "22.1.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -8539,7 +8539,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "test-utils"
-version = "21.3.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
