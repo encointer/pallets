@@ -31,7 +31,7 @@ pub mod v1 {
 		Clone,
 		PartialEq,
 		Eq,
-		RuntimeDebug,
+		Debug,
 		TypeInfo,
 		MaxEncodedLen,
 	)]

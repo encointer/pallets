@@ -19,7 +19,6 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::RuntimeDebug;
 
 /// Did the attester meet the attestee physically, virtually or through asynchronous messages?
 #[derive(
@@ -121,7 +120,7 @@ pub enum VouchQuality {
 	DecodeWithMemTracking,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	TypeInfo,
 	MaxEncodedLen,

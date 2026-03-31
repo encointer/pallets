@@ -3,14 +3,13 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_core::RuntimeDebug;
 
 #[derive(
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
 	Default,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,
@@ -45,7 +44,7 @@ pub struct SwapNativeOption<NativeBalance, Moment> {
 	Decode,
 	DecodeWithMemTracking,
 	Default,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,

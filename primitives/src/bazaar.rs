@@ -16,7 +16,6 @@
 
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::RuntimeDebug;
 
 use crate::{common::PalletString, communities::CommunityIdentifier};
 
@@ -28,7 +27,7 @@ use serde::{Deserialize, Serialize};
 	Decode,
 	DecodeWithMemTracking,
 	Default,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Eq,
 	PartialEq,
@@ -52,7 +51,7 @@ impl<AccountId> BusinessIdentifier<AccountId> {
 
 /// Data structure used for organizing the pallet's storage.
 #[derive(
-	Encode, Decode, DecodeWithMemTracking, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo,
+	Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -73,7 +72,7 @@ impl BusinessData {
 ///
 /// Intended as a return value for RPC requests.
 #[derive(
-	Encode, Decode, DecodeWithMemTracking, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo,
+	Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
@@ -91,7 +90,7 @@ impl<AccountId> Business<AccountId> {
 pub type OfferingIdentifier = u32;
 
 #[derive(
-	Encode, Decode, DecodeWithMemTracking, Default, RuntimeDebug, Clone, Eq, PartialEq, TypeInfo,
+	Encode, Decode, DecodeWithMemTracking, Default, Debug, Clone, Eq, PartialEq, TypeInfo,
 )]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]

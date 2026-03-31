@@ -16,7 +16,6 @@
 
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::RuntimeDebug;
 
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
@@ -74,7 +73,7 @@ impl Bs58verify {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]

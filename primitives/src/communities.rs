@@ -21,7 +21,6 @@ use ep_core::{bip340::Bip340, fixed::types::I64F64};
 use geohash::GeoHash as GeohashGeneric;
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::RuntimeDebug;
 use sp_std::{fmt, fmt::Formatter, prelude::Vec, str::FromStr};
 
 #[cfg(feature = "serde_derive")]
@@ -58,7 +57,7 @@ pub type MaxSpeedMpsType = u32;
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	PartialOrd,
 	Ord,
 	TypeInfo,
@@ -210,7 +209,7 @@ fn decorate_bs58_err(err: bs58::decode::Error) -> bs58::decode::Error {
 	PartialEq,
 	Eq,
 	Default,
-	RuntimeDebug,
+	Debug,
 	PartialOrd,
 	Ord,
 	TypeInfo,
@@ -238,7 +237,7 @@ impl Location {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	PartialOrd,
 	Ord,
 	TypeInfo,
@@ -259,7 +258,7 @@ pub enum AnnouncementSigner {
 	PartialEq,
 	Eq,
 	Default,
-	RuntimeDebug,
+	Debug,
 	PartialOrd,
 	Ord,
 	TypeInfo,
@@ -281,7 +280,7 @@ pub enum CommunityRules {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]
@@ -304,7 +303,7 @@ pub struct CommunityMetadata {
 	pub rules: CommunityRules,
 }
 
-#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde_derive", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde_derive", serde(rename_all = "camelCase"))]
 pub struct CidName {
@@ -397,7 +396,7 @@ impl Default for CommunityMetadata {
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]

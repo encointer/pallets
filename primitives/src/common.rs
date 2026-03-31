@@ -20,7 +20,7 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde_derive")]
 use serde::{Deserialize, Serialize};
-use sp_core::{bounded::BoundedVec, ConstU32, RuntimeDebug};
+use sp_core::{bounded::BoundedVec, ConstU32};
 
 #[cfg(not(feature = "std"))]
 use sp_std::vec::Vec;
@@ -81,7 +81,7 @@ pub fn validate_ipfs_cid(cid: &BoundedIpfsCid) -> Result<(), IpfsValidationError
 	Clone,
 	PartialEq,
 	Eq,
-	RuntimeDebug,
+	Debug,
 	TypeInfo,
 	MaxEncodedLen,
 )]

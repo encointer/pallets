@@ -18,7 +18,6 @@ use ep_core::fixed::types::I64F64;
 use log::{trace, warn};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_core::RuntimeDebug;
 use sp_std::fmt::Debug;
 
 #[cfg(feature = "serde_derive")]
@@ -53,7 +52,7 @@ pub type FeeConversionFactorType = u128;
 	Decode,
 	DecodeWithMemTracking,
 	Default,
-	RuntimeDebug,
+	Debug,
 	Clone,
 	Copy,
 	PartialEq,
