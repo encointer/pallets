@@ -56,6 +56,9 @@ where
 		account: AccountId,
 		at: Option<BlockHash>,
 	) -> RpcResult<Vec<(CommunityIdentifier, BalanceEntry<BlockNumber>)>>;
+
+	#[method(name = "encointer_invalidateCache", blocking)]
+	fn invalidate_cache(&self) -> RpcResult<()>;
 }
 
 pub struct CommunitiesRpc<Client, Block, S> {
@@ -198,6 +201,18 @@ where
 		let api = self.client.runtime_api();
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 		Ok(api.get_all_balances(at, &account).map_err(|e| Error::Runtime(e.into()))?)
+	}
+
+	fn invalidate_cache(&self) -> RpcResult<()> {
+		if !self.offchain_indexing {
+			return Err(
+				Error::OffchainIndexingDisabled("encointer_invalidateCache".to_string()).into()
+			);
+		}
+
+		log::info!("Invalidating communities cache...");
+		self.set_storage(CACHE_DIRTY_KEY, &true);
+		Ok(())
 	}
 }
 
