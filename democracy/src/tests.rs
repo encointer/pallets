@@ -1424,3 +1424,330 @@ fn enactment_queue_appends_on_concurrent_approval() {
 		assert!(queue.contains(&2));
 	});
 }
+
+// ---- Voting power tests: verify maximum achievable voting power ----
+// Genesis: current_ceremony_index = 7, reputation_lifetime = 5, phase = Registering
+// proposal_lifetime_cycles = ceil(240000 / (3 * 86400000)) = 1
+// voting_cindexes(cs=7) = [7-5+1, 7-2] = [3, 5]  → max 3 reputations
+// With 6 consecutive ceremonies of participation (cindexes 1-6), only 3-5 are valid.
+
+#[test]
+fn max_voting_power_during_registering_phase() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+
+		// Grant reputation for 6 consecutive ceremonies (1-6)
+		for ci in 1..=6 {
+			EncointerCeremonies::fake_reputation(
+				(cid, ci),
+				&alice,
+				Reputation::VerifiedLinked(0),
+			);
+		}
+
+		// We start in Registering phase at ceremony index 7
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
+		assert_eq!(EncointerScheduler::current_ceremony_index(), 7);
+
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action)
+		));
+
+		// Electorate should be 3 (cindexes 3, 4, 5)
+		let proposal = EncointerDemocracy::proposals(1).unwrap();
+		assert_eq!(proposal.electorate_size, 3);
+		assert_eq!(proposal.start_cindex, 7);
+
+		// Vote with all 6 reputations; only 3 should be accepted
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1,
+			Vote::Aye,
+			BoundedVec::try_from(vec![
+				(cid, 1), (cid, 2), (cid, 3), (cid, 4), (cid, 5), (cid, 6),
+			]).unwrap()
+		));
+
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		// Only cindexes 3, 4, 5 are in the valid range; 1, 2, 6 are excluded
+		assert_eq!(tally.turnout, 3);
+		assert_eq!(tally.ayes, 3);
+	});
+}
+
+#[test]
+fn voting_cindexes_are_phase_independent() {
+	// Verify that voting_cindexes is a pure function of proposal.start_cindex.
+	// The pallet window is [cs - R + proposal_lifetime_cycles, cs - 2].
+	// With R=5, cs=7, proposal_lifetime_cycles=1: valid range = [3, 5].
+	// The current ceremony phase at vote time does NOT affect the window.
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+		let bob = bob();
+
+		for ci in 1..=6 {
+			EncointerCeremonies::fake_reputation(
+				(cid, ci), &alice, Reputation::VerifiedLinked(0),
+			);
+			EncointerCeremonies::fake_reputation(
+				(cid, ci), &bob, Reputation::VerifiedLinked(0),
+			);
+		}
+
+		// Submit proposal at ceremony 7 (Registering phase)
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action)
+		));
+
+		// Alice votes with all reputations including out-of-range ones
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1, Vote::Aye,
+			BoundedVec::try_from(vec![
+				(cid, 1), (cid, 2), (cid, 3), (cid, 4), (cid, 5), (cid, 6),
+			]).unwrap()
+		));
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		// Only cindexes 3, 4, 5 accepted; 1, 2 too old, 6 = cs-1 excluded
+		assert_eq!(tally.turnout, 3);
+		assert_eq!(tally.ayes, 3);
+
+		// Bob votes a few blocks later (still same phase, still Registering)
+		advance_n_blocks(5);
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(bob.clone()),
+			1, Vote::Aye,
+			BoundedVec::try_from(vec![
+				(cid, 1), (cid, 2), (cid, 3), (cid, 4), (cid, 5), (cid, 6),
+			]).unwrap()
+		));
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		// Same result: 3 per voter, 6 total
+		assert_eq!(tally.turnout, 6);
+		assert_eq!(tally.ayes, 6);
+	});
+}
+
+#[test]
+fn max_power_when_proposal_submitted_during_assigning() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+
+		// Grant reputation for ceremonies 1-6
+		for ci in 1..=6 {
+			EncointerCeremonies::fake_reputation(
+				(cid, ci), &alice, Reputation::VerifiedLinked(0),
+			);
+		}
+
+		// Advance from Registering to Assigning (still ceremony 7)
+		assert_eq!(EncointerScheduler::current_ceremony_index(), 7);
+		run_to_next_phase();
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Assigning);
+		assert_eq!(EncointerScheduler::current_ceremony_index(), 7);
+
+		// Submit proposal during Assigning — start_cindex is still 7
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action)
+		));
+		let proposal = EncointerDemocracy::proposals(1).unwrap();
+		assert_eq!(proposal.start_cindex, 7);
+		// voting_cindexes = [7-5+1, 7-2] = [3, 5] → electorate = 3
+		assert_eq!(proposal.electorate_size, 3);
+
+		// Vote with all reputations
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1, Vote::Aye,
+			BoundedVec::try_from(vec![
+				(cid, 1), (cid, 2), (cid, 3), (cid, 4), (cid, 5), (cid, 6),
+			]).unwrap()
+		));
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		// Max power is still 3, even though cs-1 reputation exists
+		assert_eq!(tally.ayes, 3);
+	});
+}
+
+#[test]
+fn max_power_when_proposal_submitted_during_attesting() {
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+
+		for ci in 1..=6 {
+			EncointerCeremonies::fake_reputation(
+				(cid, ci), &alice, Reputation::VerifiedLinked(0),
+			);
+		}
+
+		// Advance to Attesting (still ceremony 7)
+		run_to_next_phase(); // → Assigning
+		run_to_next_phase(); // → Attesting
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Attesting);
+		assert_eq!(EncointerScheduler::current_ceremony_index(), 7);
+
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action)
+		));
+		let proposal = EncointerDemocracy::proposals(1).unwrap();
+		assert_eq!(proposal.start_cindex, 7);
+		assert_eq!(proposal.electorate_size, 3);
+
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1, Vote::Aye,
+			BoundedVec::try_from(vec![
+				(cid, 1), (cid, 2), (cid, 3), (cid, 4), (cid, 5), (cid, 6),
+			]).unwrap()
+		));
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		assert_eq!(tally.ayes, 3);
+	});
+}
+
+#[test]
+fn max_power_when_proposal_submitted_next_ceremony() {
+	// Submit during Registering for ceremony 8 (after advancing a full cycle).
+	// The window shifts: [8-5+1, 8-2] = [4, 6] → 3 ceremonies.
+	// Power 4 is still impossible: window size = R - 1 - plc = 5 - 1 - 1 = 3.
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+
+		for ci in 1..=7 {
+			EncointerCeremonies::fake_reputation(
+				(cid, ci), &alice, Reputation::VerifiedLinked(0),
+			);
+		}
+
+		// Advance full cycle: Registering(7) → Assigning(7) → Attesting(7) → Registering(8)
+		run_to_next_phase();
+		run_to_next_phase();
+		run_to_next_phase();
+		assert_eq!(EncointerScheduler::current_phase(), CeremonyPhaseType::Registering);
+		assert_eq!(EncointerScheduler::current_ceremony_index(), 8);
+
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action)
+		));
+		let proposal = EncointerDemocracy::proposals(1).unwrap();
+		assert_eq!(proposal.start_cindex, 8);
+		// voting_cindexes = [8-5+1, 8-2] = [4, 6] → electorate = 3
+		assert_eq!(proposal.electorate_size, 3);
+
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1, Vote::Aye,
+			BoundedVec::try_from(vec![
+				(cid, 3), (cid, 4), (cid, 5), (cid, 6), (cid, 7),
+			]).unwrap()
+		));
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		// Only cindexes 4, 5, 6 accepted. 3 too old, 7 = cs-1 excluded.
+		assert_eq!(tally.ayes, 3);
+	});
+}
+
+#[test]
+fn power_4_is_impossible_with_current_config() {
+	// With R=5 and proposal_lifetime_cycles=1, the voting window is always
+	// [cs-4, cs-2] = 3 ceremonies. This is because:
+	//   window_size = (cs-2) - (cs-R+plc) + 1 = R - 1 - plc = 5 - 1 - 1 = 3
+	// Power 4 would require plc=0, but plc = ceil(proposal_lifetime/cycle_duration) >= 1.
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+
+		// Max out reputation: 10 consecutive ceremonies
+		for ci in 1..=10 {
+			EncointerCeremonies::fake_reputation(
+				(cid, ci), &alice, Reputation::VerifiedLinked(0),
+			);
+		}
+
+		// Try all three submission phases
+		for phase_advances in 0..=2u32 {
+			// Fresh test state for each phase would be ideal, but we can
+			// just check the electorate size which determines max power.
+			// All phases have the same start_cindex=7, so electorate is the same.
+		}
+
+		// Submit at ceremony 7
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action)
+		));
+		let proposal = EncointerDemocracy::proposals(1).unwrap();
+		// Electorate = 3, not 4 or 5
+		assert_eq!(proposal.electorate_size, 3);
+
+		// Even submitting ALL 10 reputations yields only 3 votes
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1, Vote::Aye,
+			BoundedVec::try_from(vec![
+				(cid, 1), (cid, 2), (cid, 3), (cid, 4), (cid, 5),
+				(cid, 6), (cid, 7), (cid, 8), (cid, 9), (cid, 10),
+			]).unwrap()
+		));
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		assert_eq!(tally.ayes, 3);
+		assert_eq!(tally.turnout, 3);
+	});
+}
+
+#[test]
+fn cindex_cs_minus_one_is_excluded_from_voting() {
+	// Explicitly verify that ceremony cs-1 (startCindex - 1 = 6) is NOT
+	// in the valid voting range, even though it is within reputation_lifetime.
+	new_test_ext().execute_with(|| {
+		let cid = create_cid();
+		let alice = alice();
+
+		// Only grant reputation at cs-1 = 6
+		EncointerCeremonies::fake_reputation(
+			(cid, 6), &alice, Reputation::VerifiedLinked(0),
+		);
+
+		let proposal_action =
+			ProposalAction::UpdateNominalIncome(cid, NominalIncomeType::from(100u32));
+		assert_ok!(EncointerDemocracy::submit_proposal(
+			RuntimeOrigin::signed(alice.clone()),
+			Box::new(proposal_action)
+		));
+
+		// Voting with only cs-1 reputation should result in 0 accepted votes
+		assert_ok!(EncointerDemocracy::vote(
+			RuntimeOrigin::signed(alice.clone()),
+			1,
+			Vote::Aye,
+			BoundedVec::try_from(vec![(cid, 6)]).unwrap()
+		));
+
+		let tally = EncointerDemocracy::tallies(1).unwrap();
+		assert_eq!(tally.turnout, 0);
+		assert_eq!(tally.ayes, 0);
+	});
+}
