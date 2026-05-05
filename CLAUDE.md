@@ -34,7 +34,9 @@ cargo check --no-default-features
 
 ## dependency updates
 
-For polkadot sdk crates, use cargo psvm to globally update to new sdk releases. use stable<YYMM> releases unless I tell you otherwise
+For polkadot-sdk **stable** releases, `cargo psvm` does the workspace-deps bump in one shot — use `stable<YYMM>` releases unless told otherwise.
+
+For **unstable RCs** (psvm doesn't ship them) and for the full encointer ↔ polkadot-fellows/runtimes upgrade flow (patching, re-enabling encointer in /runtimes, member-version bumps, post-publish cleanup, and the duplicate-substrate-deps check), invoke the `/upgrade-polkadot-sdk` skill at `.claude/skills/upgrade-polkadot-sdk/SKILL.md` — it captures the sequencing rules and footguns we hit on each upgrade.
 
 ## Key Types
 
