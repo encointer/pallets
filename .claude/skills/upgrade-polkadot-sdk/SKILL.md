@@ -7,26 +7,36 @@ version: 0.1.0
 # Upgrading encointer-pallets to a new Polkadot SDK release
 
 ## Purpose
-This runbook upgrades `encointer-pallets` to a new `polkadot-sdk` release and re-enables encointer in `/runtimes` (the polkadot-fellows runtimes workspace). It assumes both repositories sit side-by-side (`/claude-js/encointer-pallets` and `/claude-js/runtimes`) — adjust paths if not.
+This runbook upgrades `encointer-pallets` to a new `polkadot-sdk` release and re-enables encointer in the polkadot-fellows runtimes workspace.
 
 The runtimes repo is the one that moves first to a new SDK; encointer-pallets follows. While encointer is behind, the runtimes workspace keeps every encointer wiring point commented out behind `TODO @ggwpez encointer` markers. Re-enabling them is mechanical but spread across seven files.
+
+## Path conventions
+This skill uses two placeholders for repo paths:
+- `<encointer-pallets>` — the encointer-pallets workspace root (where this skill lives, at `<encointer-pallets>/.claude/skills/upgrade-polkadot-sdk/`).
+- `<runtimes>` — the polkadot-fellows runtimes workspace root, **assumed to be a sibling of `<encointer-pallets>`** (i.e. `<parent>/encointer-pallets` and `<parent>/runtimes` for some common parent directory).
+
+Resolution at runtime:
+- If you're already in the encointer-pallets repo, `<encointer-pallets>` is `pwd` (or whatever `git rev-parse --show-toplevel` reports). `<runtimes>` is `../runtimes` from there.
+- The bundled scripts resolve both automatically: `bump-member-versions.sh` walks up from its own location to find `<encointer-pallets>`, and `derive-sdk-versions.sh` defaults its `<runtimes>` argument to the sibling.
+- If the layout differs (not siblings, or non-standard names), pass an explicit path to `derive-sdk-versions.sh` and adjust the relative `path = "../encointer-pallets"` strings in the `[patch.crates-io]` block in Phase B accordingly.
 
 ## Inputs
 Before starting, confirm:
 - Target SDK tag, e.g. `polkadot-stable2609` (stable) or `polkadot-unstable2609-rc1` (RC). The runtimes workspace already builds against this tag.
-- Path to the runtimes worktree (default `/claude-js/runtimes`).
+- The `<encointer-pallets>` and `<runtimes>` paths resolve as described under "Path conventions" above. If the sibling assumption doesn't hold, override `<runtimes>` explicitly.
 - Whether the operator wants a member-version bump as part of this work (Phase E). Default: yes.
 
 ## The sequencing rule (read this first)
-**Patches first. Member-version bumps last. `/runtimes` deps + `[patch.crates-io]` removal happens only after publication.**
+**Patches first. Member-version bumps last. `<runtimes>` deps + `[patch.crates-io]` removal happens only after publication.**
 
-Reversing the order silently fails: `/runtimes/Cargo.toml` already declares tilde requirements like `pallet-encointer-balances = "~22.2.0"`. If encointer member crates are bumped to `22.3.0` before being published, the patches in `/runtimes` no longer match those tildes and cargo silently falls back to the *old* (still-published) crates, producing duplicate substrate cohorts in the dep graph that don't show up in `cargo check`. The closing check (Phase G) is `cargo tree --duplicates` precisely to catch this.
+Reversing the order silently fails: `<runtimes>/Cargo.toml` already declares tilde requirements like `pallet-encointer-balances = "~22.2.0"`. If encointer member crates are bumped to `22.3.0` before being published, the patches in `<runtimes>` no longer match those tildes and cargo silently falls back to the *old* (still-published) crates, producing duplicate substrate cohorts in the dep graph that don't show up in `cargo check`. The closing check (Phase G) is `cargo tree --duplicates` precisely to catch this.
 
 The phases below enforce the sequence.
 
 ## Phase A — bump encointer-pallets `[workspace.dependencies]`
 
-Working dir: `/claude-js/encointer-pallets`.
+Working dir: `<encointer-pallets>`.
 
 Goal: update every Polkadot SDK / Substrate / Cumulus / xcm dep in the root `Cargo.toml` `[workspace.dependencies]` table to the cohort the runtimes repo is on. **Do not touch any member crate `package.version` here — that's Phase E.**
 
@@ -36,13 +46,13 @@ cargo install cargo-psvm   # if not already installed
 cargo psvm -v <stableYYMM> # bumps every workspace dep
 ```
 
-For **unstable RCs**: `psvm` doesn't ship RC versions. Derive the table from `/runtimes`:
+For **unstable RCs**: `psvm` doesn't ship RC versions. Derive the table from `<runtimes>`:
 ```bash
-.claude/skills/upgrade-polkadot-sdk/scripts/derive-sdk-versions.sh /claude-js/runtimes
+.claude/skills/upgrade-polkadot-sdk/scripts/derive-sdk-versions.sh <runtimes>
 ```
 That script prints, per crate in our `[workspace.dependencies]`:
 - the version we currently pin
-- the version `/runtimes/Cargo.toml` pins for the same crate
+- the version `<runtimes>/Cargo.toml` pins for the same crate
 - a tail section listing crates the runtimes manifest does NOT pin (RPC-side: `sc-rpc`, `sc-rpc-api`, `sp-blockchain`, `sp-rpc`, `pallet-transaction-payment-rpc`, plus the `sp-keystore`/`sp-inherents`/`sp-keyring` dev-deps). For those, apply a `+1 minor` heuristic (e.g. `sc-rpc 51.0.0 → 52.0.0`); cargo check will fail loudly with `error: failed to select a version` if the heuristic version isn't on crates.io, in which case fall back to manually checking the relevant crate page.
 
 After applying:
@@ -66,12 +76,12 @@ If the wasm script takes forever and looks like it's checking crates from `targe
 
 If A surfaces SDK breaks in source files, fix mechanically (renames, signature tweaks). Stop and ask the operator for any change requiring a behavioural decision.
 
-## Phase B — wire encointer back into `/runtimes`
+## Phase B — wire encointer back into `<runtimes>`
 
-Working dir: `/claude-js/runtimes`.
+Working dir: `<runtimes>`.
 
 ### B1. Add the `[patch.crates-io]` block
-Append to the bottom of `/runtimes/Cargo.toml`, immediately before `[profile.release]`:
+Append to the bottom of `<runtimes>/Cargo.toml`, immediately before `[profile.release]`:
 
 ```toml
 [patch.crates-io]
@@ -95,7 +105,7 @@ pallet-encointer-treasuries                   = { path = "../encointer-pallets/t
 pallet-encointer-treasuries-rpc-runtime-api   = { path = "../encointer-pallets/treasuries/rpc/runtime-api" }
 ```
 
-The relative path assumes `/runtimes` and `/encointer-pallets` are siblings. Adjust if not.
+The relative path assumes `<runtimes>` and `<encointer-pallets>` are siblings. Adjust if not.
 
 ### B2. Uncomment every `TODO @ggwpez encointer` marker
 The runtimes workspace keeps encointer wiring behind two comment shapes:
@@ -104,7 +114,7 @@ The runtimes workspace keeps encointer wiring behind two comment shapes:
 
 Find them all:
 ```bash
-rg 'TODO @ggwpez.*[Ee]ncointer' /claude-js/runtimes
+rg 'TODO @ggwpez.*[Ee]ncointer' <runtimes>
 ```
 
 On the May 2026 run this matched 30 sites across these files (line numbers will drift; rely on the grep):
@@ -131,12 +141,12 @@ CoretimeKusamaPara { sender: ALICE, receiver: BOB }    CoretimeKusamaPara { send
 
 ### B4. Sweep
 ```bash
-rg 'TODO @ggwpez.*[Ee]ncointer' /claude-js/runtimes
+rg 'TODO @ggwpez.*[Ee]ncointer' <runtimes>
 ```
 Must return zero hits. If anything is left, you missed a marker.
 
 ```bash
-cd /claude-js/runtimes && cargo metadata --format-version 1 > /dev/null
+cd <runtimes> && cargo metadata --format-version 1 > /dev/null
 ```
 Should exit 0 — confirms the workspace resolves cleanly with the patches.
 
@@ -190,7 +200,7 @@ The second is a sanity check that `encointer-kusama` is included in the `all-kus
 Once Phases A–D are green, bump member versions before publishing.
 
 ```bash
-cd /claude-js/encointer-pallets
+cd <encointer-pallets>
 .claude/skills/upgrade-polkadot-sdk/scripts/bump-member-versions.sh --strategy minor
 cargo check --workspace   # refreshes Cargo.lock with the new versions
 ```
@@ -205,19 +215,19 @@ The operator publishes the bumped crates manually using the dependency-ordered `
 
 After publication, the operator confirms ("the new versions are on crates.io" or similar) and the skill resumes at Phase F.
 
-## Phase F — clean up `/runtimes`
+## Phase F — clean up `<runtimes>`
 
-Goal: convert `/runtimes` from "patches pointing at local encointer crates" to "encointer crates fetched from crates.io at the new versions".
+Goal: convert `<runtimes>` from "patches pointing at local encointer crates" to "encointer crates fetched from crates.io at the new versions".
 
-### F1. Bump `/runtimes` workspace-dep versions
-For every encointer entry in `/claude-js/runtimes/Cargo.toml [workspace.dependencies]`, update the `version = "~22.x.0"` to match the version that was just published (the same number Phase E wrote into encointer-pallets). The mapping is the table the bump-member-versions script printed in its summary.
+### F1. Bump `<runtimes>` workspace-dep versions
+For every encointer entry in `<runtimes>/Cargo.toml [workspace.dependencies]`, update the `version = "~22.x.0"` to match the version that was just published (the same number Phase E wrote into encointer-pallets). The mapping is the table the bump-member-versions script printed in its summary.
 
 ### F2. Delete the `[patch.crates-io]` block
 Remove the block we added in B1.
 
-### F3. Refresh `/runtimes/Cargo.lock`
+### F3. Refresh `<runtimes>/Cargo.lock`
 ```bash
-cd /claude-js/runtimes && cargo +1.93.0 check -p encointer-kusama-runtime
+cd <runtimes> && cargo +1.93.0 check -p encointer-kusama-runtime
 ```
 Cargo will fetch the newly-published versions from crates.io and update the lockfile. Confirm with:
 ```bash
@@ -228,7 +238,7 @@ should show the new version (e.g. `22.3.0`).
 ## Phase G — closing check: duplicate substrate deps
 
 ```bash
-cd /claude-js/runtimes
+cd <runtimes>
 cargo +1.93.0 tree --workspace --duplicates 2>&1 \
   | grep -E '^(sp-|frame-|pallet-|cumulus-|polkadot-|xcm|staging-xcm|sc-|substrate-|encointer-)'
 ```
@@ -244,7 +254,7 @@ What to look for:
 
 **Subsequent RCs of the same release** (e.g. `unstable2604-rc2` after `rc1`). Re-run Phase A only, with the new RC versions — the structural changes from Phase B onward have already been done in the previous RC pass.
 
-**Rollback** (if the upgrade needs to be abandoned mid-flight). Revert `encointer-pallets/Cargo.toml` `[workspace.dependencies]` to the previous values; revert the `[patch.crates-io]` block + uncomments in `/runtimes` (`git checkout`). If Phase E ran but publication didn't happen, also revert the member-version bumps.
+**Rollback** (if the upgrade needs to be abandoned mid-flight). Revert `encointer-pallets/Cargo.toml` `[workspace.dependencies]` to the previous values; revert the `[patch.crates-io]` block + uncomments in `<runtimes>` (`git checkout`). If Phase E ran but publication didn't happen, also revert the member-version bumps.
 
 ## Troubleshooting
 
@@ -256,10 +266,10 @@ What to look for:
 | `error[E0425]: cannot find type ProofSizeExt` / `cannot find type Vec` in `cumulus-primitives-proof-size-hostfunction` | You ran `cargo check --target=wasm32-unknown-unknown` directly on a substrate runtime — upstream cumulus bug under that exact invocation | Don't use direct wasm-target check. Use `cargo check` (without `--target`) so substrate-wasm-builder runs via build.rs |
 | Wasm script seems stuck for many minutes, no output | `find . -name Cargo.toml` is iterating into `target/package/` (stale `cargo package` artifacts) | `rm -rf target/package` |
 | `warning: patch ... was not used in the crate graph` | Local crate version doesn't satisfy the `~22.x.y` requirement in /runtimes (you bumped member versions before publication) | Either bump /runtimes requirements to match local versions (only valid post-publication) or revert the member-version bumps |
-| Duplicate substrate cohorts in `cargo tree --duplicates` after Phase F | Forgot to update some encointer workspace-dep `version = "~22.x.0"` strings in `/runtimes/Cargo.toml`, so cargo resolved the old version | Re-check every encointer entry against the Phase E summary table |
+| Duplicate substrate cohorts in `cargo tree --duplicates` after Phase F | Forgot to update some encointer workspace-dep `version = "~22.x.0"` strings in `<runtimes>/Cargo.toml`, so cargo resolved the old version | Re-check every encointer entry against the Phase E summary table |
 
 ## Notes on what NOT to do
 - Don't touch member `package.version` during Phases A–D. They must stay at the currently-published values for the patches to resolve.
-- Don't bump `/runtimes` workspace-dep version strings before publication. Committing `version = "~22.3.0"` against an unpublished crate bricks the workspace for anyone without the local patch.
-- Don't add a `rust-toolchain.toml` to `/runtimes` to force the toolchain. The runtimes workspace's own `.github/env` is the source of truth for upstream; we leave it alone.
+- Don't bump `<runtimes>` workspace-dep version strings before publication. Committing `version = "~22.3.0"` against an unpublished crate bricks the workspace for anyone without the local patch.
+- Don't add a `rust-toolchain.toml` to `<runtimes>` to force the toolchain. The runtimes workspace's own `.github/env` is the source of truth for upstream; we leave it alone.
 - Don't run publish commands from this skill. Publish is a user-driven step (see "Hand-off").
