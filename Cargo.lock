@@ -1954,7 +1954,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-meetup-validation"
-version = "22.2.0"
+version = "22.2.1"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
