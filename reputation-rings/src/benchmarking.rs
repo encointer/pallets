@@ -58,7 +58,7 @@ where
 	T::AccountId: AsRef<[u8; 32]>,
 {
 	let bootstrappers: Vec<T::AccountId> = (0..6).map(|n| account("bs", n, n)).collect();
-	let location = Location { lat: Degree::from_num(1.0), lon: Degree::from_num(1.0) };
+	let location = Location { lat: Degree::from_num(1i32), lon: Degree::from_num(1i32) };
 	let cid = CommunityIdentifier::new(location, bootstrappers).unwrap();
 
 	// Write directly to storage to avoid origin requirements that differ between mock and runtime.

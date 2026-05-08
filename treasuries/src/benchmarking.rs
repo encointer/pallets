@@ -35,7 +35,7 @@ benchmarks! {
 		let swap_option: SwapNativeOption<BalanceOf<T>, T::Moment> = SwapNativeOption {
 			cid,
 			native_allowance: 100_000_000u64.saturated_into(),
-			rate: Some(BalanceType::from_num(0.000_000_2)),
+			rate: Some(BalanceType::from_num(2u32) / 10_000_000),
 			do_burn: false,
 			valid_from: None,
 			valid_until: None,
@@ -60,7 +60,7 @@ benchmarks! {
 			cid,
 			asset_allowance: asset_allowance.into(),
 			asset_id: asset_id.clone(),
-			rate: Some(BalanceType::from_num(0.000_000_2)),
+			rate: Some(BalanceType::from_num(2u32) / 10_000_000),
 			do_burn: false,
 			valid_from: None,
 			valid_until: None,
