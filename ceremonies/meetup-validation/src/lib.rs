@@ -79,7 +79,7 @@ pub fn get_participant_judgements(
 }
 
 fn vote_yields_majority(num_participants: usize, n_confirmed: u32) -> bool {
-	n_confirmed as f64 > (num_participants as f64) / 2.0
+	(n_confirmed as usize).saturating_mul(2) > num_participants
 }
 
 fn num_attestations_matches_vote(
