@@ -1889,7 +1889,7 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 
 [[package]]
 name = "encointer-balances-tx-payment"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1909,7 +1909,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-balances-tx-payment-rpc-runtime-api",
  "encointer-primitives",
@@ -1932,7 +1932,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-balances-tx-payment-rpc-runtime-api"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -1944,7 +1944,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-ceremonies-assignment"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "sp-core",
@@ -1954,7 +1954,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-meetup-validation"
-version = "22.2.1"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -1968,7 +1968,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-offline-payment-core"
-version = "22.1.0"
+version = "22.2.0"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives",
@@ -1984,7 +1984,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-primitives"
-version = "22.6.0"
+version = "22.7.0"
 dependencies = [
  "approx",
  "bs58",
@@ -2007,7 +2007,7 @@ dependencies = [
 
 [[package]]
 name = "encointer-rpc"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "jsonrpsee",
  "jsonrpsee-core",
@@ -2075,7 +2075,7 @@ checksum = "e48c92028aaa870e83d51c64e5d4e0b6981b360c522198c23959f219a4e1b15b"
 
 [[package]]
 name = "ep-core"
-version = "22.1.0"
+version = "22.2.0"
 dependencies = [
  "array-bytes",
  "impl-serde",
@@ -2245,9 +2245,9 @@ checksum = "28dd6caf6059519a65843af8fe2a3ae298b14b80179855aeb4adc2c1934ee619"
 
 [[package]]
 name = "frame-benchmarking"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1eefadb34832df54ce9421ddd6f182d756f188197f8e507651d012150e125ee0"
+checksum = "bac5bf601c69cb27aee945517b723c2df4ecfc0bdd7b498f04998307d7ce5c13"
 dependencies = [
  "anyhow",
  "frame-support",
@@ -4925,9 +4925,9 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "pallet-asset-tx-payment"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dbf12ef714ba9068629f0e204677b3f113dcdabdd04c1b6d0e68e3d72b722c3"
+checksum = "017113f0b67563bdea68388389245b085b3ac034fed74cdda24cd3758297930d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4942,9 +4942,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-balances"
-version = "48.0.0"
+version = "49.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e7eeb90835154816cffa771fa82689e94b8afe33eba30de3f8d1dcd2f2b42a3"
+checksum = "082c8405f9664430eaf30e4f62b94f50a6b831414fafb607b03a4abd148d1d47"
 dependencies = [
  "docify",
  "frame-benchmarking",
@@ -4959,7 +4959,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-balances"
-version = "22.3.0"
+version = "22.4.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -4979,7 +4979,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -4997,7 +4997,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5016,7 +5016,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-bazaar-rpc-runtime-api"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5027,7 +5027,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -5056,7 +5056,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5075,7 +5075,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies-rpc-runtime-api"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5086,7 +5086,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5107,7 +5107,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5127,7 +5127,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-communities-rpc-runtime-api"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "parity-scale-codec",
@@ -5137,7 +5137,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-democracy"
-version = "22.8.0"
+version = "22.9.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5167,7 +5167,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-faucet"
-version = "22.3.0"
+version = "22.4.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5188,7 +5188,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-offline-payment"
-version = "22.1.0"
+version = "22.2.0"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives",
@@ -5221,7 +5221,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-commitments"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5244,7 +5244,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-rings"
-version = "22.1.0"
+version = "22.2.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5268,7 +5268,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-scheduler"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
@@ -5287,7 +5287,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries"
-version = "22.8.0"
+version = "22.9.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5311,7 +5311,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries-rpc"
-version = "22.4.0"
+version = "22.5.0"
 dependencies = [
  "encointer-primitives",
  "encointer-rpc",
@@ -5332,7 +5332,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-treasuries-rpc-runtime-api"
-version = "22.4.0"
+version = "22.5.0"
 dependencies = [
  "encointer-primitives",
  "frame-support",
@@ -5344,7 +5344,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-vouches"
-version = "22.2.0"
+version = "22.3.0"
 dependencies = [
  "approx",
  "encointer-primitives",
@@ -5364,9 +5364,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-timestamp"
-version = "46.0.0"
+version = "47.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dd8823ea19e3b764aad58089e1078c211d93e0cfc1291cb7ed0dfa1fe1d6136"
+checksum = "eb51deebc7013789cb29d7e27a1be156fe3fdb51b02a4f8a16c76daded664adf"
 dependencies = [
  "docify",
  "frame-benchmarking",
@@ -5383,9 +5383,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25f17aff98f52ffb1b5d488bb140e88193fbb30c82a92113217e853c84c9586f"
+checksum = "9041abf1095150239fec5bc98c9c28b50708e5633392f9ca1b3df9f0f03d2d72"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5400,9 +5400,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc"
-version = "50.0.0"
+version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9cd722df3abb1e9d2bbdace925a25eea79f7ecd0e09dc80a870cd5c894aa653"
+checksum = "fb43a57e42ad85c40670dee48f3b615a7fe3519b853c5f3797bddc84888cd154"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -5417,9 +5417,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9849f59095432e6602658eb553aec99ed665f13f9562eaf5d1adadfca3ecc9d7"
+checksum = "5e76d71c23c93bf392aa69ac40041d39461f2083abf30abe05b753951cd7eefa"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -8591,7 +8591,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "test-utils"
-version = "22.4.0"
+version = "22.5.0"
 dependencies = [
  "encointer-primitives",
  "frame-benchmarking",
