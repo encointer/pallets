@@ -80,13 +80,13 @@ serde = { version = "1.0.197", default-features = false, features = ["derive", "
 thiserror = "2.0.11"
 
 # polkadot-sdk [no_std]
-frame-benchmarking = { version = "47.0.0", default-features = false }
+frame-benchmarking = { version = "48.0.0", default-features = false }
 frame-support = { version = "47.0.0", default-features = false }
 frame-system = { version = "47.0.0", default-features = false }
-pallet-asset-tx-payment = { version = "47.0.0", default-features = false }
-pallet-balances = { version = "48.0.0", default-features = false }
-pallet-timestamp = { version = "46.0.0", default-features = false }
-pallet-transaction-payment = { version = "47.0.0", default-features = false }
+pallet-asset-tx-payment = { version = "48.0.0", default-features = false }
+pallet-balances = { version = "49.0.0", default-features = false }
+pallet-timestamp = { version = "47.0.0", default-features = false }
+pallet-transaction-payment = { version = "48.0.0", default-features = false }
 sp-api = { version = "42.0.0", default-features = false }
 sp-application-crypto = { version = "46.0.0", default-features = false }
 sp-arithmetic = { version = "28.0.1", default-features = false }
@@ -99,7 +99,7 @@ sp-std = { version = "14.0.0", default-features = false }
 jsonrpsee = { version = "0.24.7", features = ["client-core", "server", "macros"] }
 jsonrpsee-core = { version = "0.24.7" }
 jsonrpsee-types = { version = "0.24.7" }
-pallet-transaction-payment-rpc = { version = "50.0.0" }
+pallet-transaction-payment-rpc = { version = "51.0.0" }
 sc-rpc = "52.0.0"
 sc-rpc-api = "0.56.0"
 sp-blockchain = "45.0.0"

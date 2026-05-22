@@ -2245,9 +2245,9 @@ checksum = "28dd6caf6059519a65843af8fe2a3ae298b14b80179855aeb4adc2c1934ee619"
 
 [[package]]
 name = "frame-benchmarking"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1eefadb34832df54ce9421ddd6f182d756f188197f8e507651d012150e125ee0"
+checksum = "bac5bf601c69cb27aee945517b723c2df4ecfc0bdd7b498f04998307d7ce5c13"
 dependencies = [
  "anyhow",
  "frame-support",
@@ -4925,9 +4925,9 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "pallet-asset-tx-payment"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dbf12ef714ba9068629f0e204677b3f113dcdabdd04c1b6d0e68e3d72b722c3"
+checksum = "017113f0b67563bdea68388389245b085b3ac034fed74cdda24cd3758297930d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -4942,9 +4942,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-balances"
-version = "48.0.0"
+version = "49.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e7eeb90835154816cffa771fa82689e94b8afe33eba30de3f8d1dcd2f2b42a3"
+checksum = "082c8405f9664430eaf30e4f62b94f50a6b831414fafb607b03a4abd148d1d47"
 dependencies = [
  "docify",
  "frame-benchmarking",
@@ -5364,9 +5364,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-timestamp"
-version = "46.0.0"
+version = "47.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dd8823ea19e3b764aad58089e1078c211d93e0cfc1291cb7ed0dfa1fe1d6136"
+checksum = "eb51deebc7013789cb29d7e27a1be156fe3fdb51b02a4f8a16c76daded664adf"
 dependencies = [
  "docify",
  "frame-benchmarking",
@@ -5383,9 +5383,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25f17aff98f52ffb1b5d488bb140e88193fbb30c82a92113217e853c84c9586f"
+checksum = "9041abf1095150239fec5bc98c9c28b50708e5633392f9ca1b3df9f0f03d2d72"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5400,9 +5400,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc"
-version = "50.0.0"
+version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9cd722df3abb1e9d2bbdace925a25eea79f7ecd0e09dc80a870cd5c894aa653"
+checksum = "fb43a57e42ad85c40670dee48f3b615a7fe3519b853c5f3797bddc84888cd154"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -5417,9 +5417,9 @@ dependencies = [
 
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
-version = "47.0.0"
+version = "48.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9849f59095432e6602658eb553aec99ed665f13f9562eaf5d1adadfca3ecc9d7"
+checksum = "5e76d71c23c93bf392aa69ac40041d39461f2083abf30abe05b753951cd7eefa"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
