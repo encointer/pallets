@@ -57,6 +57,9 @@ where
 		account: AccountId,
 		at: Option<BlockHash>,
 	) -> RpcResult<AggregatedAccountData<AccountId, Moment>>;
+
+	#[method(name = "encointer_invalidateReputationCache", blocking)]
+	fn invalidate_reputation_cache(&self, account: AccountId) -> RpcResult<()>;
 }
 
 pub struct CeremoniesRpc<Client, Block, AccountId, Moment, S> {
@@ -140,7 +143,7 @@ impl<Client, Block, AccountId, Moment, S>
 	CeremoniesApiServer<<Block as BlockT>::Hash, AccountId, Moment>
 	for CeremoniesRpc<Client, Block, AccountId, Moment, S>
 where
-	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
+	AccountId: 'static + Clone + Encode + Decode + Send + Sync + PartialEq + std::fmt::Debug,
 	Moment: 'static + Clone + Encode + Decode + Send + Sync + PartialEq,
 	Block: BlockT,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
@@ -190,5 +193,18 @@ where
 		Ok(api
 			.get_aggregated_account_data(at, cid, &account)
 			.map_err(|e| Error::Runtime(e.into()))?)
+	}
+
+	fn invalidate_reputation_cache(&self, account: AccountId) -> RpcResult<()> {
+		if !self.offchain_indexing {
+			return Err(Error::OffchainIndexingDisabled(
+				"encointer_invalidateReputationCache".to_string(),
+			)
+			.into());
+		}
+
+		log::info!("Invalidating reputation cache for account: {account:?}");
+		self.set_storage(&reputation_cache_dirty_key(&account), &true);
+		Ok(())
 	}
 }
