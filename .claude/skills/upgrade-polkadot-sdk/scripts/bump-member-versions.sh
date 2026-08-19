@@ -3,29 +3,43 @@
 # and update matching version strings in the root [workspace.dependencies] block.
 #
 # Usage:
-#   bump-member-versions.sh [--strategy minor|patch|major] [--dry-run]
+#   bump-member-versions.sh [--strategy minor|patch|major] [--set X.Y.Z] [--dry-run]
 #
 # Strategy semantics (input X.Y.Z):
 #   minor (default): X.Y.Z -> X.(Y+1).0
 #   patch:           X.Y.Z -> X.Y.(Z+1)
 #   major:           X.Y.Z -> (X+1).0.0
 #
-# Safety: refuses to run if member crates don't all share the same major version.
+# --set overrides --strategy and puts every member crate at exactly that version.
+# Use it for the canonical policy bump: the encointer major tracks the polkadot
+# minor of the target release, which is NOT always the current major plus one.
+# polkadot-stable2606-1 aliases polkadot-v1.24.1, so members went 22.x -> 24.0.0
+# and --strategy major (which would have produced 23.0.0) was wrong.
+#
+# Safety: refuses to run if member crates don't all share the same major version,
+# and (for --set) refuses to move backwards.
 
 set -euo pipefail
 
 STRATEGY=minor
+SET_VERSION=""
 DRY_RUN=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --strategy) STRATEGY="$2"; shift 2 ;;
+        --set)      SET_VERSION="$2"; shift 2 ;;
         --dry-run)  DRY_RUN=1; shift ;;
-        -h|--help)  sed -n '2,15p' "$0"; exit 0 ;;
+        -h|--help)  sed -n '2,20p' "$0"; exit 0 ;;
         *) echo "unknown arg: $1" >&2; exit 2 ;;
     esac
 done
 
 case "$STRATEGY" in minor|patch|major) ;; *) echo "bad --strategy: $STRATEGY" >&2; exit 2 ;; esac
+
+if [ -n "$SET_VERSION" ]; then
+    echo "$SET_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' \
+        || { echo "bad --set version: $SET_VERSION (want X.Y.Z)" >&2; exit 2; }
+fi
 
 # Run from the encointer-pallets repo root (where the workspace Cargo.toml lives).
 ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
@@ -34,6 +48,12 @@ cd "$ROOT"
 
 bump() {
     local v="$1" maj min pat
+    if [ -n "$SET_VERSION" ]; then
+        [ "$(printf '%s\n%s\n' "$v" "$SET_VERSION" | sort -V | head -1)" = "$v" ] \
+            || { echo "REFUSING: --set $SET_VERSION is older than existing $v" >&2; exit 3; }
+        echo "$SET_VERSION"
+        return
+    fi
     IFS='.' read -r maj min pat <<<"$v"
     case "$STRATEGY" in
         minor) echo "$maj.$((min+1)).0" ;;
