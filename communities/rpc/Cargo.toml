@@ -1,6 +1,6 @@
 [package]
 name = "pallet-encointer-communities-rpc"
-version = "22.3.0"
+version = "24.0.0"
 authors = ["Encointer Association <info@encointer.org>"]
 edition = "2021"
 description = "Communities rpc for the Encointer blockchain runtime"
