@@ -110,7 +110,8 @@ where
 	));
 
 	// Scan all 5 ceremonies, chunk by chunk, until the building phase is reached.
-	for _ in 0..1000 {
+	let chunks_per_ceremony = COMMUNITY_SIZE / T::ChunkSize::get().max(1) + 1;
+	for _ in 0..(MAX_REPUTATION_LEVELS as u32 * (chunks_per_ceremony + 1) + 2) {
 		let state = PendingRingComputation::<T>::get().unwrap();
 		if matches!(state.phase, RingComputationPhase::BuildingRing { .. }) {
 			return;

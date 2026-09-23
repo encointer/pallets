@@ -370,7 +370,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 
-			// Only allow during Assigning phase.
+			// Only allow during Assigning phase. `collect_members_step` resumes after a stored
+			// cursor, which is only safe while no ceremony in the scanned window can gain records.
 			ensure!(
 				<pallet_encointer_scheduler::Pallet<T>>::current_phase() ==
 					CeremonyPhaseType::Assigning,
@@ -466,7 +467,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Worst-case weight for one computation step. A collection step looks up the key map once per
 	/// record. Anyone can grow that map, and every tenfold growth beyond the keys the benchmark
-	/// prices costs about 40 kB more proof per step, hence the factor two on proof size.
+	/// prices costs about 40 kB more proof per step, hence the factor two on proof size, which
+	/// covers about a hundredfold growth of that map.
 	fn single_step_weight() -> Weight {
 		let collect =
 			<T as Config>::WeightInfo::continue_ring_computation_collect(T::ChunkSize::get());

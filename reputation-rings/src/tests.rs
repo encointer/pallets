@@ -4,7 +4,7 @@ use encointer_primitives::{
 };
 use frame_support::{
 	assert_noop, assert_ok,
-	traits::{GetStorageVersion, OnRuntimeUpgrade, StorageVersion},
+	traits::{Get, GetStorageVersion, OnRuntimeUpgrade, StorageVersion},
 };
 use parity_scale_codec::{Compact, Encode};
 use test_utils::helpers::{account_id, add_population, bootstrappers, register_test_community};
@@ -170,6 +170,18 @@ fn on_runtime_upgrade_keeps_a_decodable_computation() {
 		assert!(EncointerReputationRings::pending_ring_computation().is_some());
 		assert_eq!(EncointerReputationRings::on_chain_storage_version(), StorageVersion::new(3));
 	});
+}
+
+#[test]
+fn a_collection_step_is_priced_with_headroom() {
+	// The key map deepens as it grows, so the step is declared at twice its benchmarked proof.
+	let collect = <TestWeights as crate::WeightInfo>::continue_ring_computation_collect(
+		<TestRuntime as crate::Config>::ChunkSize::get(),
+	);
+	assert_eq!(
+		EncointerReputationRings::single_step_weight().proof_size(),
+		2 * collect.proof_size()
+	);
 }
 
 // -- Ring initiation tests --
