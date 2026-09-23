@@ -3,6 +3,7 @@ use frame_support::weights::Weight;
 pub trait WeightInfo {
 	fn register_bandersnatch_key() -> Weight;
 	fn initiate_rings() -> Weight;
+	/// `n`: reputation records scanned in one chunk, at most `ChunkSize`.
 	fn continue_ring_computation_collect(n: u32) -> Weight;
 	fn continue_ring_computation_build(n: u32) -> Weight;
 }

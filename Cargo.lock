@@ -5034,7 +5034,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-ceremonies"
-version = "24.0.0"
+version = "24.0.1"
 dependencies = [
  "approx",
  "encointer-ceremonies-assignment",
@@ -5251,7 +5251,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-encointer-reputation-rings"
-version = "24.0.0"
+version = "24.0.1"
 dependencies = [
  "approx",
  "encointer-primitives",

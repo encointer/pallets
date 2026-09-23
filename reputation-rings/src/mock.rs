@@ -1,5 +1,6 @@
 use crate as dut;
 use encointer_primitives::{balances::BalanceType, scheduler::CeremonyPhaseType};
+use frame_support::weights::Weight;
 use sp_runtime::BuildStorage;
 use test_utils::*;
 
@@ -19,9 +20,26 @@ frame_support::construct_runtime!(
 	}
 );
 
+/// Weights with a proof size, so that tests can see how a step is priced.
+pub struct TestWeights;
+impl dut::WeightInfo for TestWeights {
+	fn register_bandersnatch_key() -> Weight {
+		Weight::from_parts(1, 1)
+	}
+	fn initiate_rings() -> Weight {
+		Weight::from_parts(1, 1)
+	}
+	fn continue_ring_computation_collect(n: u32) -> Weight {
+		Weight::from_parts(1, 1_000 + n as u64)
+	}
+	fn continue_ring_computation_build(n: u32) -> Weight {
+		Weight::from_parts(1, n as u64)
+	}
+}
+
 impl dut::Config for TestRuntime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
+	type WeightInfo = TestWeights;
 	type MaxRingSize = ConstU32<2048>;
 	type ChunkSize = ConstU32<100>;
 }

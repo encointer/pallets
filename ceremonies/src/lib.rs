@@ -40,6 +40,7 @@ use encointer_primitives::{
 use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo, Pays},
 	ensure,
+	storage::PrefixIterator,
 	traits::{Get, Randomness},
 	BoundedVec,
 };
@@ -1957,6 +1958,18 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 		None
+	}
+
+	/// Iterate one community ceremony's reputation records, resuming after `cursor`, a raw key
+	/// from `PrefixIterator::last_raw_key` of a previous iterator over the same prefix.
+	pub fn participant_reputations_from(
+		cc: CommunityCeremony,
+		cursor: Option<Vec<u8>>,
+	) -> PrefixIterator<(T::AccountId, Reputation)> {
+		match cursor {
+			Some(raw_key) => <ParticipantReputation<T>>::iter_prefix_from(cc, raw_key),
+			None => <ParticipantReputation<T>>::iter_prefix(cc),
+		}
 	}
 
 	pub fn validate_reputation(
