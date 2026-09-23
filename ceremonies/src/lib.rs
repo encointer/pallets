@@ -1960,10 +1960,8 @@ impl<T: Config> Pallet<T> {
 		None
 	}
 
-	/// Iterate the reputation records of one community ceremony, resuming after `cursor`
-	/// if given. `cursor` must be a raw storage key as returned by
-	/// [`frame_support::storage::PrefixIterator::last_raw_key`] on a previous iterator over
-	/// the same prefix. Allows consumers to scan reputations in bounded chunks.
+	/// Iterate one community ceremony's reputation records, resuming after `cursor`, a raw key
+	/// from `PrefixIterator::last_raw_key` of a previous iterator over the same prefix.
 	pub fn participant_reputations_from(
 		cc: CommunityCeremony,
 		cursor: Option<Vec<u8>>,

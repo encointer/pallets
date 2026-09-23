@@ -16,6 +16,10 @@ use parity_scale_codec::Encode;
 /// Realistic community size for benchmarking.
 const COMMUNITY_SIZE: u32 = 500;
 
+/// Registered keys unrelated to the scanned community. Key registration is permissionless and
+/// uncapped, so a collection step must be priced against a deep key trie, not against `n` keys.
+const FOREIGN_KEYS: u32 = 10_000;
+
 fn fake_key(seed: u32) -> BandersnatchPublicKey {
 	let bytes = seed.to_le_bytes();
 	let mut key = [0u8; 32];
@@ -106,15 +110,16 @@ where
 	));
 
 	// Scan all 5 ceremonies, chunk by chunk, until the building phase is reached.
-	loop {
+	for _ in 0..1000 {
 		let state = PendingRingComputation::<T>::get().unwrap();
 		if matches!(state.phase, RingComputationPhase::BuildingRing { .. }) {
-			break;
+			return;
 		}
 		assert_ok!(ReputationRing::<T>::continue_ring_computation(
 			RawOrigin::Signed(caller.clone()).into(),
 		));
 	}
+	panic!("collection did not progress");
 }
 
 benchmarks! {
@@ -160,6 +165,10 @@ benchmarks! {
 		let accounts = setup_accounts::<T>(n);
 		// Reputation for ceremony 6 (offset 0 = first scan).
 		fake_reputations::<T>(&accounts, cid, 6);
+		for i in 0..FOREIGN_KEYS {
+			let foreign: T::AccountId = account("foreign", i, i);
+			BandersnatchKeys::<T>::insert(&foreign, fake_key(i));
+		}
 
 		let caller = accounts[0].clone();
 		assert_ok!(ReputationRing::<T>::initiate_rings(

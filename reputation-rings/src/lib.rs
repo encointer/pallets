@@ -68,8 +68,10 @@ pub type BandersnatchPublicKey = [u8; 32];
 pub enum RingComputationPhase {
 	/// Collecting eligible members: scanning ceremony indices one by one.
 	/// `next_ceremony_offset` tracks how many of the last 5 ceremonies have been scanned.
-	/// `cursor` is the raw storage key the current ceremony's scan resumes after when its
-	/// reputation records don't fit into a single chunk.
+	/// `cursor` is the raw storage key this ceremony's scan resumes after.
+	/// Indexed past the other variants so that a state written before the cursor existed fails to
+	/// decode instead of decoding into a corrupt one: trailing bytes are ignored by the codec.
+	#[codec(index = 3)]
 	CollectingMembers { next_ceremony_offset: u8, cursor: Option<Vec<u8>> },
 	/// Building ring for a given reputation level (1..=5).
 	/// Members have been collected; now building rings from strictest (5/5) to loosest (1/5).
@@ -96,7 +98,7 @@ pub mod pallet {
 	use super::*;
 	use frame_system::pallet_prelude::*;
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -247,6 +249,21 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// Drop an in-flight computation that no longer decodes: collecting states gained a
+		/// cursor. States that are already building rings decode unchanged and are kept.
+		fn on_runtime_upgrade() -> Weight {
+			if Self::on_chain_storage_version() >= STORAGE_VERSION {
+				return T::DbWeight::get().reads(1);
+			}
+			if PendingRingComputation::<T>::exists() && PendingRingComputation::<T>::get().is_none()
+			{
+				log::info!(target: "reputation-rings", "dropping the undecodable pending computation");
+				PendingRingComputation::<T>::kill();
+			}
+			STORAGE_VERSION.put::<Pallet<T>>();
+			T::DbWeight::get().reads_writes(3, 2)
+		}
+
 		fn on_idle(_block: BlockNumberFor<T>, mut remaining_weight: Weight) -> Weight {
 			let mut consumed = Weight::zero();
 			let overhead = T::DbWeight::get().reads_writes(2, 2);
@@ -402,10 +419,7 @@ pub mod pallet {
 		///
 		/// Can be called by anyone (intended for `on_idle` or off-chain worker).
 		#[pallet::call_index(2)]
-		#[pallet::weight(
-			<T as Config>::WeightInfo::continue_ring_computation_collect(T::ChunkSize::get())
-				.max(<T as Config>::WeightInfo::continue_ring_computation_build(T::MaxRingSize::get()))
-		)]
+		#[pallet::weight(Pallet::<T>::single_step_weight())]
 		pub fn continue_ring_computation(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 
@@ -450,9 +464,14 @@ impl<T: Config> Pallet<T> {
 		SubRingCount::<T>::remove_prefix((cid, cindex), None);
 	}
 
-	/// Worst-case weight for one computation step.
+	/// Worst-case weight for one computation step. A collection step looks up the key map once per
+	/// record. Anyone can grow that map, and every tenfold growth beyond the keys the benchmark
+	/// prices costs about 40 kB more proof per step, hence the factor two on proof size.
 	fn single_step_weight() -> Weight {
-		<T as Config>::WeightInfo::continue_ring_computation_collect(T::ChunkSize::get())
+		let collect =
+			<T as Config>::WeightInfo::continue_ring_computation_collect(T::ChunkSize::get());
+		collect
+			.saturating_add(Weight::from_parts(0, collect.proof_size()))
 			.max(<T as Config>::WeightInfo::continue_ring_computation_build(T::MaxRingSize::get()))
 	}
 
@@ -470,19 +489,10 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Scan up to `ChunkSize` reputation records of one past ceremony and update attendance
-	/// counts.
-	///
-	/// For each ceremony offset (0..5), iterate the reputation records of this community
-	/// ceremony and keep the verified ones whose account has a registered Bandersnatch key.
-	/// Scanning the reputation records rather than all registered Bandersnatch keys keeps the
-	/// work proportional to community size, which no one can inflate without actually
-	/// attending ceremonies.
-	///
-	/// A ceremony whose records don't fit into one chunk is resumed in the next step after
-	/// `cursor`. Records inserted before the cursor while the scan is in progress are missed,
-	/// which cannot happen for as long as the computation stays within the Assigning phase,
-	/// where reputation for past ceremonies is immutable.
+	/// Scan up to `ChunkSize` reputation records of one past ceremony and update attendance counts.
+	/// Never iterate the key map here: anyone can grow it, so its size is not covered by the
+	/// declared weight. Resuming after `cursor` misses no record: no extrinsic can add a
+	/// reputation record for a ceremony this old.
 	fn collect_members_step(
 		state: &mut RingComputationState<T::AccountId>,
 		offset: u8,
@@ -500,7 +510,15 @@ impl<T: Config> Pallet<T> {
 		let cindex = state.ceremony_index.saturating_sub(offset as u32);
 		if cindex == 0 {
 			// No ceremony at index 0; skip.
-			Self::finish_ceremony_scan(state, offset);
+			state.phase = RingComputationPhase::CollectingMembers {
+				next_ceremony_offset: offset + 1,
+				cursor: None,
+			};
+			Self::deposit_event(Event::MemberCollectionProgress {
+				community: state.community,
+				ceremony_index: state.ceremony_index,
+				ceremonies_scanned: offset + 1,
+			});
 			return Ok(());
 		}
 
@@ -511,7 +529,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut scanned = 0usize;
 		for (account, reputation) in records.by_ref().take(chunk_size) {
-			scanned = scanned.saturating_add(1);
+			scanned += 1;
 			if !reputation.is_verified() || !<BandersnatchKeys<T>>::contains_key(&account) {
 				continue;
 			}
@@ -525,6 +543,7 @@ impl<T: Config> Pallet<T> {
 
 		if scanned == chunk_size {
 			// Chunk is full, so more records may follow. Resume this ceremony next step.
+			log::debug!(target: "reputation-rings", "scanned a full chunk of cindex {cindex}");
 			state.phase = RingComputationPhase::CollectingMembers {
 				next_ceremony_offset: offset,
 				cursor: Some(records.last_raw_key().to_vec()),
@@ -532,23 +551,18 @@ impl<T: Config> Pallet<T> {
 			return Ok(());
 		}
 
-		Self::finish_ceremony_scan(state, offset);
-
-		Ok(())
-	}
-
-	/// This ceremony is fully scanned: advance to the next offset and report progress.
-	fn finish_ceremony_scan(state: &mut RingComputationState<T::AccountId>, offset: u8) {
 		state.phase = RingComputationPhase::CollectingMembers {
-			next_ceremony_offset: offset.saturating_add(1),
+			next_ceremony_offset: offset + 1,
 			cursor: None,
 		};
 
 		Self::deposit_event(Event::MemberCollectionProgress {
 			community: state.community,
 			ceremony_index: state.ceremony_index,
-			ceremonies_scanned: offset.saturating_add(1),
+			ceremonies_scanned: offset + 1,
 		});
+
+		Ok(())
 	}
 
 	/// Build one ring level and store the member list, splitting into sub-rings if needed.

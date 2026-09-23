@@ -1,6 +1,12 @@
 use crate::{mock::*, BandersnatchPublicKey, Error, RingComputationPhase, MAX_REPUTATION_LEVELS};
-use encointer_primitives::{ceremonies::Reputation, scheduler::CeremonyPhaseType};
-use frame_support::{assert_noop, assert_ok};
+use encointer_primitives::{
+	ceremonies::Reputation, communities::CommunityIdentifier, scheduler::CeremonyPhaseType,
+};
+use frame_support::{
+	assert_noop, assert_ok,
+	traits::{GetStorageVersion, OnRuntimeUpgrade, StorageVersion},
+};
+use parity_scale_codec::{Compact, Encode};
 use test_utils::helpers::{account_id, add_population, bootstrappers, register_test_community};
 
 /// Advance ceremony phase from Registering to Assigning (required for `initiate_rings`).
@@ -95,6 +101,74 @@ fn register_bandersnatch_key_update_works() {
 		));
 
 		assert_eq!(EncointerReputationRings::bandersnatch_key(&alice), Some(key2));
+	});
+}
+
+// -- Runtime upgrade tests --
+
+#[test]
+fn on_runtime_upgrade_drops_an_undecodable_computation() {
+	// Attendance lengths whose compact encoding could pass for the cursor that was added.
+	for attendance_len in [0u32, 64, 256] {
+		new_test_ext().execute_with(|| {
+			StorageVersion::new(2).put::<EncointerReputationRings>();
+			let cid = CommunityIdentifier::default();
+			// A collecting state as the previous runtime wrote it: no cursor after the offset.
+			let mut old_state = (cid, 6u32).encode();
+			old_state.extend_from_slice(&[0, 0]); // phase variant, offset
+			old_state.extend(Compact(attendance_len).encode());
+			// filler long enough to decode as a cursor plus one attendance entry
+			old_state.extend(vec![4u8; attendance_len as usize * 33]);
+			frame_support::storage::unhashed::put_raw(
+				&crate::pallet::PendingRingComputation::<TestRuntime>::hashed_key(),
+				&old_state,
+			);
+			assert!(EncointerReputationRings::pending_ring_computation().is_none());
+
+			<EncointerReputationRings as OnRuntimeUpgrade>::on_runtime_upgrade();
+
+			assert!(!crate::pallet::PendingRingComputation::<TestRuntime>::exists());
+			assert_eq!(
+				EncointerReputationRings::on_chain_storage_version(),
+				StorageVersion::new(3)
+			);
+		});
+	}
+}
+
+#[test]
+fn on_runtime_upgrade_keeps_an_old_building_state() {
+	new_test_ext().execute_with(|| {
+		StorageVersion::new(2).put::<EncointerReputationRings>();
+		let cid = CommunityIdentifier::default();
+		// Building states kept their encoding, so the old bytes must survive the upgrade.
+		let mut old_state = (cid, 6u32).encode();
+		old_state.extend_from_slice(&[1, 5, 0]); // phase variant, level, empty attendance
+		frame_support::storage::unhashed::put_raw(
+			&crate::pallet::PendingRingComputation::<TestRuntime>::hashed_key(),
+			&old_state,
+		);
+
+		<EncointerReputationRings as OnRuntimeUpgrade>::on_runtime_upgrade();
+
+		let state = EncointerReputationRings::pending_ring_computation().unwrap();
+		assert_eq!(state.phase, RingComputationPhase::BuildingRing { current_level: 5 });
+	});
+}
+
+#[test]
+fn on_runtime_upgrade_keeps_a_decodable_computation() {
+	new_test_ext().execute_with(|| {
+		StorageVersion::new(2).put::<EncointerReputationRings>();
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let alice = account_id(&bootstrappers()[0]);
+		advance_to_assigning();
+		assert_ok!(EncointerReputationRings::initiate_rings(RuntimeOrigin::signed(alice), cid, 6,));
+
+		<EncointerReputationRings as OnRuntimeUpgrade>::on_runtime_upgrade();
+
+		assert!(EncointerReputationRings::pending_ring_computation().is_some());
+		assert_eq!(EncointerReputationRings::on_chain_storage_version(), StorageVersion::new(3));
 	});
 }
 
@@ -409,6 +483,13 @@ fn accounts_without_bandersnatch_key_are_excluded() {
 			6,
 		));
 
+		// Bob is skipped while scanning, not only while building.
+		assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
+			caller.clone()
+		),));
+		let state = EncointerReputationRings::pending_ring_computation().unwrap();
+		assert_eq!(state.attendance, vec![(alice.clone(), 1)]);
+
 		// Run all steps to completion.
 		run_computation_to_completion(&caller);
 
@@ -605,8 +686,8 @@ fn large_community_500_members_full_computation() {
 
 		let steps = run_computation_to_completion(&caller);
 
-		// Ceremony 6 holds 500 reputation records: 5 full chunks + 1 partial = 6 steps.
-		// Ceremonies 5..2 hold none: 1 step each. Plus 1 transition and 5 building steps.
+		// Collection steps per ceremony are `records / ChunkSize + 1`: 6 for the 500 records of
+		// ceremony 6, 1 each for the empty ceremonies 5..2. Plus 1 transition and 5 building steps.
 		assert_eq!(steps, 16);
 
 		// 1/5 ring: MaxRingSize=2048, so 500 fits in 1 sub-ring.
@@ -723,6 +804,7 @@ fn large_community_step_count_is_predictable() {
 		let mut building_steps = 0u32;
 
 		loop {
+			assert!(collection_steps + building_steps < 100, "computation did not progress");
 			let state = EncointerReputationRings::pending_ring_computation();
 			if state.is_none() {
 				break;
@@ -739,7 +821,7 @@ fn large_community_step_count_is_predictable() {
 		}
 
 		// Each of the 5 ceremonies holds 500 reputation records, scanned in chunks of 100:
-		// 5 * (5 full chunks + 1 partial) + 1 transition = 31 collection steps.
+		// 5 * (500 / 100 + 1) + 1 transition = 31 collection steps.
 		assert_eq!(collection_steps, 31);
 		// 5 ring levels = 5 building steps.
 		assert_eq!(building_steps, 5);
@@ -799,24 +881,74 @@ fn collect_step_scans_at_most_chunk_size_records() {
 			RingComputationPhase::CollectingMembers { next_ceremony_offset: 1, cursor: None }
 		);
 
-		// No member is lost across the chunk boundary.
+		// No member is lost or counted twice across the chunk boundary.
 		run_computation_to_completion(&caller);
 		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
 		assert_eq!(ring1.len(), 150);
+		assert!(EncointerReputationRings::ring_members((cid, 6, 2, 0)).unwrap().is_empty());
 	});
 }
 
+/// Proof size of one collection step, with `extra_keys` accounts holding a key but no reputation.
+fn collection_step_proof_size(extra_keys: usize) -> usize {
+	let mut ext = new_test_ext();
+	let caller = ext.execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let accounts = setup_large_population(3 + extra_keys);
+		for acc in accounts.iter().take(3) {
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				acc,
+				Reputation::VerifiedLinked(6),
+			);
+		}
+		advance_to_assigning();
+		assert_ok!(EncointerReputationRings::initiate_rings(
+			RuntimeOrigin::signed(accounts[0].clone()),
+			cid,
+			6,
+		));
+		// clear setup events: they would otherwise land in the measured proof
+		frame_system::Pallet::<TestRuntime>::reset_events();
+		accounts[0].clone()
+	});
+	ext.commit_all().unwrap();
+
+	let (_, proof) = ext.execute_and_prove(|| {
+		assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
+			caller
+		),));
+	});
+	proof.encoded_size()
+}
+
 #[test]
-fn registered_keys_without_reputation_do_not_add_work() {
-	// Key registration is permissionless, so collection must scan the community's reputation
-	// records, never the global key map: otherwise anyone can inflate every ring computation
-	// by registering keys.
+fn collection_step_proof_grows_sublinearly_with_the_key_map() {
+	// Key registration is permissionless, so a step whose proof scales with the key map lets
+	// anyone push a block past its proof size limit.
+	// Ten times the keys is one more trie level per lookup, not ten times the proof.
+	let few_keys = collection_step_proof_size(10);
+	let many_keys = collection_step_proof_size(100);
+	assert!(
+		many_keys < 2 * few_keys,
+		"proof grew from {few_keys} to {many_keys} bytes for ten times the keys"
+	);
+}
+
+#[test]
+fn records_without_a_key_still_consume_the_chunk() {
 	new_test_ext().execute_with(|| {
 		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
-		let accounts = setup_large_population(300);
-
-		// Only 3 of the 300 key holders ever attended a ceremony in this community.
-		for acc in accounts.iter().take(3) {
+		// 150 reputables against a mock ChunkSize of 100, every second one holds a key.
+		let accounts: Vec<test_utils::AccountId> =
+			add_population(150, 0).iter().map(account_id).collect();
+		for (i, acc) in accounts.iter().enumerate() {
+			if i % 2 == 0 {
+				assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+					RuntimeOrigin::signed(acc.clone()),
+					fake_bandersnatch_key_u32(i as u32 + 1),
+				));
+			}
 			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
 				(cid, 6),
 				acc,
@@ -832,12 +964,66 @@ fn registered_keys_without_reputation_do_not_add_work() {
 			6,
 		));
 
-		// 5 scans of at most 3 records each + 1 transition + 5 building steps.
-		let steps = run_computation_to_completion(&caller);
-		assert_eq!(steps, 11);
+		// Skipped records count against the chunk, so the first step does not reach the end.
+		assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
+			caller.clone()
+		),));
+		let state = EncointerReputationRings::pending_ring_computation().unwrap();
+		match state.phase {
+			RingComputationPhase::CollectingMembers { next_ceremony_offset, cursor } => {
+				assert_eq!(next_ceremony_offset, 0);
+				assert!(cursor.is_some());
+			},
+			other => panic!("unexpected phase: {other:?}"),
+		}
+
+		run_computation_to_completion(&caller);
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
+		assert_eq!(ring1.len(), 75);
+	});
+}
+
+#[test]
+fn only_verified_reputation_counts() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let cases = [
+			(Reputation::Unverified, false),
+			(Reputation::UnverifiedReputable, false),
+			(Reputation::VerifiedUnlinked, true),
+			(Reputation::VerifiedLinked(6), true),
+		];
+		let accounts: Vec<test_utils::AccountId> =
+			bootstrappers().iter().take(cases.len()).map(account_id).collect();
+		for (i, (acc, (reputation, _))) in accounts.iter().zip(cases).enumerate() {
+			assert_ok!(EncointerReputationRings::register_bandersnatch_key(
+				RuntimeOrigin::signed(acc.clone()),
+				fake_bandersnatch_key(i as u8 + 1),
+			));
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				acc,
+				reputation,
+			);
+		}
+
+		let caller = accounts[0].clone();
+		advance_to_assigning();
+		assert_ok!(EncointerReputationRings::initiate_rings(
+			RuntimeOrigin::signed(caller.clone()),
+			cid,
+			6,
+		));
+		run_computation_to_completion(&caller);
 
 		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
-		assert_eq!(ring1.len(), 3);
+		for (i, (reputation, in_ring)) in cases.into_iter().enumerate() {
+			assert_eq!(
+				ring1.contains(&fake_bandersnatch_key(i as u8 + 1)),
+				in_ring,
+				"{reputation:?} belongs in the ring: {in_ring}"
+			);
+		}
 	});
 }
 
