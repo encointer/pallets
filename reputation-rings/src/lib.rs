@@ -64,11 +64,13 @@ pub const MIN_RING_SIZE: u32 = 128;
 pub type BandersnatchPublicKey = [u8; 32];
 
 /// State machine for multi-block ring computation.
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 pub enum RingComputationPhase {
 	/// Collecting eligible members: scanning ceremony indices one by one.
 	/// `next_ceremony_offset` tracks how many of the last 5 ceremonies have been scanned.
-	CollectingMembers { next_ceremony_offset: u8 },
+	/// `cursor` is the raw storage key the current ceremony's scan resumes after when its
+	/// reputation records don't fit into a single chunk.
+	CollectingMembers { next_ceremony_offset: u8, cursor: Option<Vec<u8>> },
 	/// Building ring for a given reputation level (1..=5).
 	/// Members have been collected; now building rings from strictest (5/5) to loosest (1/5).
 	BuildingRing { current_level: u8 },
@@ -302,7 +304,10 @@ pub mod pallet {
 				PendingRingComputation::<T>::put(RingComputationState {
 					community,
 					ceremony_index,
-					phase: RingComputationPhase::CollectingMembers { next_ceremony_offset: 0 },
+					phase: RingComputationPhase::CollectingMembers {
+						next_ceremony_offset: 0,
+						cursor: None,
+					},
 					attendance: Vec::new(),
 				});
 				Self::deposit_event(Event::RingComputationStarted { community, ceremony_index });
@@ -376,7 +381,10 @@ pub mod pallet {
 			let state = RingComputationState {
 				community,
 				ceremony_index,
-				phase: RingComputationPhase::CollectingMembers { next_ceremony_offset: 0 },
+				phase: RingComputationPhase::CollectingMembers {
+					next_ceremony_offset: 0,
+					cursor: None,
+				},
 				attendance: Vec::new(),
 			};
 
@@ -450,9 +458,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Process one step of the multi-block ring computation.
 	fn process_computation_step(state: &mut RingComputationState<T::AccountId>) -> DispatchResult {
-		match state.phase {
-			RingComputationPhase::CollectingMembers { next_ceremony_offset } => {
-				Self::collect_members_step(state, next_ceremony_offset)?;
+		match state.phase.clone() {
+			RingComputationPhase::CollectingMembers { next_ceremony_offset, cursor } => {
+				Self::collect_members_step(state, next_ceremony_offset, cursor)?;
 			},
 			RingComputationPhase::BuildingRing { current_level } => {
 				Self::build_ring_step(state, current_level)?;
@@ -462,13 +470,23 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Scan one past ceremony and update attendance counts.
+	/// Scan up to `ChunkSize` reputation records of one past ceremony and update attendance
+	/// counts.
 	///
-	/// For each ceremony offset (0..5), iterate over all accounts with registered
-	/// Bandersnatch keys and check if they have verified reputation for this ceremony.
+	/// For each ceremony offset (0..5), iterate the reputation records of this community
+	/// ceremony and keep the verified ones whose account has a registered Bandersnatch key.
+	/// Scanning the reputation records rather than all registered Bandersnatch keys keeps the
+	/// work proportional to community size, which no one can inflate without actually
+	/// attending ceremonies.
+	///
+	/// A ceremony whose records don't fit into one chunk is resumed in the next step after
+	/// `cursor`. Records inserted before the cursor while the scan is in progress are missed,
+	/// which cannot happen for as long as the computation stays within the Assigning phase,
+	/// where reputation for past ceremonies is immutable.
 	fn collect_members_step(
 		state: &mut RingComputationState<T::AccountId>,
 		offset: u8,
+		cursor: Option<Vec<u8>>,
 	) -> DispatchResult {
 		if offset >= MAX_REPUTATION_LEVELS {
 			// All 5 ceremonies scanned. Sort attendance by account for deterministic ordering.
@@ -482,23 +500,19 @@ impl<T: Config> Pallet<T> {
 		let cindex = state.ceremony_index.saturating_sub(offset as u32);
 		if cindex == 0 {
 			// No ceremony at index 0; skip.
-			state.phase =
-				RingComputationPhase::CollectingMembers { next_ceremony_offset: offset + 1 };
-			Self::deposit_event(Event::MemberCollectionProgress {
-				community: state.community,
-				ceremony_index: state.ceremony_index,
-				ceremonies_scanned: offset + 1,
-			});
+			Self::finish_ceremony_scan(state, offset);
 			return Ok(());
 		}
 
-		// Iterate over all accounts with registered Bandersnatch keys and check
-		// their reputation via the public getter.
 		use pallet_encointer_ceremonies::Pallet as CeremoniesPallet;
-		for (account, _key) in <BandersnatchKeys<T>>::iter() {
-			let reputation =
-				CeremoniesPallet::<T>::participant_reputation((state.community, cindex), &account);
-			if !reputation.is_verified() {
+		let chunk_size = T::ChunkSize::get().max(1) as usize;
+		let mut records =
+			CeremoniesPallet::<T>::participant_reputations_from((state.community, cindex), cursor);
+
+		let mut scanned = 0usize;
+		for (account, reputation) in records.by_ref().take(chunk_size) {
+			scanned = scanned.saturating_add(1);
+			if !reputation.is_verified() || !<BandersnatchKeys<T>>::contains_key(&account) {
 				continue;
 			}
 			// Update attendance count.
@@ -509,15 +523,32 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		state.phase = RingComputationPhase::CollectingMembers { next_ceremony_offset: offset + 1 };
+		if scanned == chunk_size {
+			// Chunk is full, so more records may follow. Resume this ceremony next step.
+			state.phase = RingComputationPhase::CollectingMembers {
+				next_ceremony_offset: offset,
+				cursor: Some(records.last_raw_key().to_vec()),
+			};
+			return Ok(());
+		}
+
+		Self::finish_ceremony_scan(state, offset);
+
+		Ok(())
+	}
+
+	/// This ceremony is fully scanned: advance to the next offset and report progress.
+	fn finish_ceremony_scan(state: &mut RingComputationState<T::AccountId>, offset: u8) {
+		state.phase = RingComputationPhase::CollectingMembers {
+			next_ceremony_offset: offset.saturating_add(1),
+			cursor: None,
+		};
 
 		Self::deposit_event(Event::MemberCollectionProgress {
 			community: state.community,
 			ceremony_index: state.ceremony_index,
-			ceremonies_scanned: offset + 1,
+			ceremonies_scanned: offset.saturating_add(1),
 		});
-
-		Ok(())
 	}
 
 	/// Build one ring level and store the member list, splitting into sub-rings if needed.

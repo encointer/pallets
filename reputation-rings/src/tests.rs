@@ -115,7 +115,7 @@ fn initiate_rings_works() {
 		assert_eq!(state.ceremony_index, 6);
 		assert_eq!(
 			state.phase,
-			RingComputationPhase::CollectingMembers { next_ceremony_offset: 0 }
+			RingComputationPhase::CollectingMembers { next_ceremony_offset: 0, cursor: None }
 		);
 	});
 }
@@ -605,8 +605,9 @@ fn large_community_500_members_full_computation() {
 
 		let steps = run_computation_to_completion(&caller);
 
-		// 6 collection steps (5 scans + 1 transition) + 5 building steps = 11.
-		assert_eq!(steps, 11);
+		// Ceremony 6 holds 500 reputation records: 5 full chunks + 1 partial = 6 steps.
+		// Ceremonies 5..2 hold none: 1 step each. Plus 1 transition and 5 building steps.
+		assert_eq!(steps, 16);
 
 		// 1/5 ring: MaxRingSize=2048, so 500 fits in 1 sub-ring.
 		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
@@ -659,7 +660,9 @@ fn large_community_500_members_varied_attendance() {
 		));
 
 		let steps = run_computation_to_completion(&caller);
-		assert_eq!(steps, 11);
+		// Collection steps per ceremony are `records / ChunkSize + 1`: 6 (500 records) +
+		// 5 (450) + 4 (350) + 3 (200) + 2 (100). Plus 1 transition and 5 building steps.
+		assert_eq!(steps, 26);
 
 		// Verify ring sizes match expected distribution (all fit in single sub-rings).
 		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
@@ -735,8 +738,9 @@ fn large_community_step_count_is_predictable() {
 			),));
 		}
 
-		// 5 scans + 1 transition = 6 collection steps.
-		assert_eq!(collection_steps, 6);
+		// Each of the 5 ceremonies holds 500 reputation records, scanned in chunks of 100:
+		// 5 * (5 full chunks + 1 partial) + 1 transition = 31 collection steps.
+		assert_eq!(collection_steps, 31);
 		// 5 ring levels = 5 building steps.
 		assert_eq!(building_steps, 5);
 
@@ -745,6 +749,95 @@ fn large_community_step_count_is_predictable() {
 			let ring = EncointerReputationRings::ring_members((cid, 6, level, 0)).unwrap();
 			assert_eq!(ring.len(), 500, "Ring {level}/5 should have 500 members");
 		}
+	});
+}
+
+#[test]
+fn collect_step_scans_at_most_chunk_size_records() {
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		// 150 reputables against a mock ChunkSize of 100.
+		let accounts = setup_large_population(150);
+		for acc in &accounts {
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				acc,
+				Reputation::VerifiedLinked(6),
+			);
+		}
+
+		let caller = accounts[0].clone();
+		advance_to_assigning();
+		assert_ok!(EncointerReputationRings::initiate_rings(
+			RuntimeOrigin::signed(caller.clone()),
+			cid,
+			6,
+		));
+
+		// First step fills one chunk and stays on the same ceremony, holding a cursor.
+		assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
+			caller.clone()
+		),));
+		let state = EncointerReputationRings::pending_ring_computation().unwrap();
+		assert_eq!(state.attendance.len(), 100);
+		match state.phase {
+			RingComputationPhase::CollectingMembers { next_ceremony_offset, cursor } => {
+				assert_eq!(next_ceremony_offset, 0);
+				assert!(cursor.is_some());
+			},
+			other => panic!("unexpected phase: {other:?}"),
+		}
+
+		// Second step picks up where the cursor left off and completes the ceremony.
+		assert_ok!(EncointerReputationRings::continue_ring_computation(RuntimeOrigin::signed(
+			caller.clone()
+		),));
+		let state = EncointerReputationRings::pending_ring_computation().unwrap();
+		assert_eq!(state.attendance.len(), 150);
+		assert_eq!(
+			state.phase,
+			RingComputationPhase::CollectingMembers { next_ceremony_offset: 1, cursor: None }
+		);
+
+		// No member is lost across the chunk boundary.
+		run_computation_to_completion(&caller);
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
+		assert_eq!(ring1.len(), 150);
+	});
+}
+
+#[test]
+fn registered_keys_without_reputation_do_not_add_work() {
+	// Key registration is permissionless, so collection must scan the community's reputation
+	// records, never the global key map: otherwise anyone can inflate every ring computation
+	// by registering keys.
+	new_test_ext().execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let accounts = setup_large_population(300);
+
+		// Only 3 of the 300 key holders ever attended a ceremony in this community.
+		for acc in accounts.iter().take(3) {
+			pallet_encointer_ceremonies::Pallet::<TestRuntime>::fake_reputation(
+				(cid, 6),
+				acc,
+				Reputation::VerifiedLinked(6),
+			);
+		}
+
+		let caller = accounts[0].clone();
+		advance_to_assigning();
+		assert_ok!(EncointerReputationRings::initiate_rings(
+			RuntimeOrigin::signed(caller.clone()),
+			cid,
+			6,
+		));
+
+		// 5 scans of at most 3 records each + 1 transition + 5 building steps.
+		let steps = run_computation_to_completion(&caller);
+		assert_eq!(steps, 11);
+
+		let ring1 = EncointerReputationRings::ring_members((cid, 6, 1, 0)).unwrap();
+		assert_eq!(ring1.len(), 3);
 	});
 }
 

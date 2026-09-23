@@ -105,19 +105,16 @@ where
 		6,
 	));
 
-	// 5 scan steps + 1 transition = 6 collection steps.
-	for _ in 0..((MAX_REPUTATION_LEVELS as u32) + 1) {
+	// Scan all 5 ceremonies, chunk by chunk, until the building phase is reached.
+	loop {
+		let state = PendingRingComputation::<T>::get().unwrap();
+		if matches!(state.phase, RingComputationPhase::BuildingRing { .. }) {
+			break;
+		}
 		assert_ok!(ReputationRing::<T>::continue_ring_computation(
 			RawOrigin::Signed(caller.clone()).into(),
 		));
 	}
-
-	// Verify we're in building phase.
-	let state = PendingRingComputation::<T>::get().unwrap();
-	assert_eq!(
-		state.phase,
-		RingComputationPhase::BuildingRing { current_level: MAX_REPUTATION_LEVELS }
-	);
 }
 
 benchmarks! {
@@ -146,10 +143,10 @@ benchmarks! {
 	}
 
 	// Benchmark: continue_ring_computation during member COLLECTION phase.
-	// Worst case: `n` registered keys, all have verified reputation for the scanned ceremony.
-	// This is the heaviest step: iterates over all BandersnatchKeys and checks reputation.
+	// Worst case: the chunk is filled with `n` reputation records which are all verified and
+	// whose accounts all have a registered Bandersnatch key.
 	continue_ring_computation_collect {
-		let n in 10 .. COMMUNITY_SIZE;
+		let n in 1 .. T::ChunkSize::get();
 
 		frame_support::storage::unhashed::put_raw(
 			&current_ceremony_index_key(),
@@ -174,11 +171,7 @@ benchmarks! {
 	}: continue_ring_computation(RawOrigin::Signed(caller))
 	verify {
 		let state = PendingRingComputation::<T>::get().unwrap();
-		assert_eq!(
-			state.phase,
-			RingComputationPhase::CollectingMembers { next_ceremony_offset: 1 }
-		);
-		// All n accounts should have been collected.
+		// All n accounts should have been collected in this single chunk.
 		assert_eq!(state.attendance.len(), n as usize);
 	}
 
