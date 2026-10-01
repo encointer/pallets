@@ -59,6 +59,14 @@ use sp_std::{
 // Logger target
 const LOG: &str = "encointer";
 
+/// Max entries cleared per storage map and ceremony when purging a ceremony's history.
+///
+/// Anyone can register as a newbie, so clearing the registry without a limit could outgrow the
+/// block proof limit in the timestamp inherent that drives phase changes: a cleared entry costs
+/// about 103 bytes of proof. Entries beyond the limit are left behind, which nothing reads: a
+/// purged ceremony index is older than the reputation lifetime.
+const PURGE_LIMIT: u32 = 500;
+
 pub use pallet::*;
 pub use weights::WeightInfo;
 
@@ -660,7 +668,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			<T as pallet::Config>::CeremonyMaster::ensure_origin(origin)?;
 
-			Self::purge_community_ceremony_internal(community_ceremony);
+			Self::purge_community_ceremony_internal(community_ceremony, PURGE_LIMIT);
 
 			Ok(().into())
 		}
@@ -1351,48 +1359,56 @@ impl<T: Config> Pallet<T> {
 		Err(Error::<T>::NoMoreNewbieTickets)
 	}
 
-	#[allow(deprecated)]
-	fn purge_community_ceremony_internal(cc: CommunityCeremony) {
+	fn purge_community_ceremony_internal(cc: CommunityCeremony, limit: u32) {
 		let cid = cc.0;
 		let cindex = cc.1;
 
 		info!(target: LOG, "purging ceremony index {cindex} history for {cid:?}");
 
-		<BootstrapperRegistry<T>>::remove_prefix(cc, None);
-		<BootstrapperIndex<T>>::remove_prefix(cc, None);
+		let mut left_over = false;
+		let mut clear = |results: sp_io::MultiRemovalResults| {
+			left_over |= results.maybe_cursor.is_some();
+		};
+
+		clear(<BootstrapperRegistry<T>>::clear_prefix(cc, limit, None));
+		clear(<BootstrapperIndex<T>>::clear_prefix(cc, limit, None));
 		<BootstrapperCount<T>>::remove(cc);
 
-		<ReputableRegistry<T>>::remove_prefix(cc, None);
-		<ReputableIndex<T>>::remove_prefix(cc, None);
+		clear(<ReputableRegistry<T>>::clear_prefix(cc, limit, None));
+		clear(<ReputableIndex<T>>::clear_prefix(cc, limit, None));
 		<ReputableCount<T>>::remove(cc);
 
-		<EndorseeRegistry<T>>::remove_prefix(cc, None);
-		<EndorseeIndex<T>>::remove_prefix(cc, None);
+		clear(<EndorseeRegistry<T>>::clear_prefix(cc, limit, None));
+		clear(<EndorseeIndex<T>>::clear_prefix(cc, limit, None));
 		<EndorseeCount<T>>::remove(cc);
 
-		<NewbieRegistry<T>>::remove_prefix(cc, None);
-		<NewbieIndex<T>>::remove_prefix(cc, None);
+		clear(<NewbieRegistry<T>>::clear_prefix(cc, limit, None));
+		clear(<NewbieIndex<T>>::clear_prefix(cc, limit, None));
 		<NewbieCount<T>>::remove(cc);
 
 		<AssignmentCounts<T>>::remove(cc);
 
 		Assignments::<T>::remove(cc);
 
-		<ParticipantReputation<T>>::remove_prefix(cc, None);
+		clear(<ParticipantReputation<T>>::clear_prefix(cc, limit, None));
 		<ReputationCount<T>>::remove(cc);
 		<GlobalReputationCount<T>>::remove(cc.1);
 
-		<Endorsees<T>>::remove_prefix(cc, None);
+		clear(<Endorsees<T>>::clear_prefix(cc, limit, None));
 		<EndorseesCount<T>>::remove(cc);
 		<MeetupCount<T>>::remove(cc);
 
-		<AttestationRegistry<T>>::remove_prefix(cc, None);
-		<AttestationIndex<T>>::remove_prefix(cc, None);
+		clear(<AttestationRegistry<T>>::clear_prefix(cc, limit, None));
+		clear(<AttestationIndex<T>>::clear_prefix(cc, limit, None));
 		<AttestationCount<T>>::remove(cc);
 
-		<MeetupParticipantCountVote<T>>::remove_prefix(cc, None);
-		<IssuedRewards<T>>::remove_prefix(cc, None);
-		<BurnedReputableNewbieTickets<T>>::remove_prefix(cc, None);
+		clear(<MeetupParticipantCountVote<T>>::clear_prefix(cc, limit, None));
+		clear(<IssuedRewards<T>>::clear_prefix(cc, limit, None));
+		clear(<BurnedReputableNewbieTickets<T>>::clear_prefix(cc, limit, None));
+
+		if left_over {
+			warn!(target: LOG, "purge of {cid:?} at cindex {cindex} hit the limit of {limit} entries per map");
+		}
 
 		Self::deposit_event(Event::CommunityCeremonyHistoryPurged(cid, cindex));
 	}
@@ -1400,7 +1416,7 @@ impl<T: Config> Pallet<T> {
 	fn purge_registry(cindex: CeremonyIndexType) {
 		let cids = <pallet_encointer_communities::Pallet<T>>::community_identifiers();
 		for cid in cids.into_iter() {
-			Self::purge_community_ceremony_internal((cid, cindex));
+			Self::purge_community_ceremony_internal((cid, cindex), PURGE_LIMIT);
 		}
 		debug!(target: LOG, "purged registry for ceremony {cindex}", );
 	}
@@ -1562,14 +1578,15 @@ impl<T: Config> Pallet<T> {
 		let current = <pallet_encointer_scheduler::Pallet<T>>::current_ceremony_index();
 		let reputation_lifetime = Self::reputation_lifetime();
 
+		let limit = (PURGE_LIMIT / reputation_lifetime.saturating_add(1)).max(1);
 		for cindex in current.saturating_sub(reputation_lifetime)..=current {
-			Self::purge_community_ceremony_internal((cid, cindex));
+			Self::purge_community_ceremony_internal((cid, cindex), limit);
 		}
 
 		<InactivityCounters<T>>::remove(cid);
 
-		#[allow(deprecated)]
-		<BurnedBootstrapperNewbieTickets<T>>::remove_prefix(cid, None);
+		// at most one entry per bootstrapper, so the limit cannot bite here
+		let _ = <BurnedBootstrapperNewbieTickets<T>>::clear_prefix(cid, limit, None);
 
 		<pallet_encointer_communities::Pallet<T>>::remove_community(cid);
 	}

@@ -60,6 +60,11 @@ pub const MAX_REPUTATION_LEVELS: u8 = 5;
 /// Bandersnatch Domain11 PCS requires rings of at least 128 keys for adequate anonymity.
 pub const MIN_RING_SIZE: u32 = 128;
 
+/// Max entries cleared per storage map and ceremony when purging published rings. Keeps the
+/// phase change that purges them within the block proof limit; a cleared entry costs about 50
+/// bytes of proof. Entries beyond the limit are left behind, which nothing reads.
+pub const PURGE_LIMIT: u32 = 500;
+
 /// Bandersnatch public key: 32 bytes.
 pub type BandersnatchPublicKey = [u8; 32];
 
@@ -449,7 +454,6 @@ pub mod pallet {
 // -- Implementation --
 
 impl<T: Config> Pallet<T> {
-	#[allow(deprecated)]
 	pub fn purge_rings(cindex: CeremonyIndexType) {
 		let cids = <pallet_encointer_communities::Pallet<T>>::community_identifiers();
 		for cid in cids.into_iter() {
@@ -459,10 +463,15 @@ impl<T: Config> Pallet<T> {
 		Self::deposit_event(Event::RingRegistryPurged { ceremony_index: cindex });
 	}
 
-	#[allow(deprecated)]
 	pub fn purge_community_ceremony_rings(cid: CommunityIdentifier, cindex: CeremonyIndexType) {
-		RingMembers::<T>::remove_prefix((cid, cindex), None);
-		SubRingCount::<T>::remove_prefix((cid, cindex), None);
+		let members = RingMembers::<T>::clear_prefix((cid, cindex), PURGE_LIMIT, None);
+		let counts = SubRingCount::<T>::clear_prefix((cid, cindex), PURGE_LIMIT, None);
+		if members.maybe_cursor.is_some() || counts.maybe_cursor.is_some() {
+			log::warn!(
+				target: "reputation-rings",
+				"purge of {cid:?} at cindex {cindex} hit the limit of {PURGE_LIMIT} entries"
+			);
+		}
 	}
 
 	/// Worst-case weight for one computation step. A collection step looks up the key map once per
