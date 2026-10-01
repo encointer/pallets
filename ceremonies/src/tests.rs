@@ -3621,3 +3621,33 @@ fn validate_reputation_works() {
 		assert!(EncointerCeremonies::validate_reputation(&alice, &cid, 7));
 	});
 }
+
+#[test]
+fn purge_clears_at_most_the_limit_per_map() {
+	let mut ext = new_test_ext();
+	// the limit counts entries removed from the backend, so commit the planted state first
+	let (cid, cindex) = ext.execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 0.0, 0.0);
+		let cindex = 1;
+		// anyone can register as a newbie, so plant more than one purge may clear
+		for i in 1..=(crate::PURGE_LIMIT as u64 + 10) {
+			let mut raw: [u8; 32] = *AccountKeyring::Alice.to_account_id().as_ref();
+			raw[..8].copy_from_slice(&i.to_le_bytes());
+			let newbie: AccountId = raw.into();
+			NewbieRegistry::<TestRuntime>::insert((cid, cindex), i, newbie.clone());
+			NewbieIndex::<TestRuntime>::insert((cid, cindex), newbie, i);
+		}
+		(cid, cindex)
+	});
+	ext.commit_all().unwrap();
+
+	ext.execute_with(|| {
+		assert_ok!(EncointerCeremonies::purge_community_ceremony(
+			RuntimeOrigin::root(),
+			(cid, cindex),
+		));
+
+		assert_eq!(NewbieRegistry::<TestRuntime>::iter_prefix((cid, cindex)).count(), 10);
+		assert_eq!(NewbieIndex::<TestRuntime>::iter_prefix((cid, cindex)).count(), 10);
+	});
+}

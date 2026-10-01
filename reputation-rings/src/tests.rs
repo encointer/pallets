@@ -1770,3 +1770,24 @@ fn purge_does_not_affect_other_cindex() {
 		assert!(EncointerReputationRings::ring_members((cid, 6, 1, 0)).is_some());
 	});
 }
+
+#[test]
+fn purge_clears_at_most_the_limit_per_map() {
+	let mut ext = new_test_ext();
+	// the limit counts entries removed from the backend, so commit the planted state first
+	let cid = ext.execute_with(|| {
+		let cid = register_test_community::<TestRuntime>(None, 1.0, 1.0);
+		let members = frame_support::BoundedVec::try_from(vec![fake_bandersnatch_key(1)]).unwrap();
+		for i in 0..(crate::PURGE_LIMIT + 10) {
+			crate::pallet::RingMembers::<TestRuntime>::insert((cid, 6u32, 1u8, i), members.clone());
+		}
+		cid
+	});
+	ext.commit_all().unwrap();
+
+	ext.execute_with(|| {
+		EncointerReputationRings::purge_community_ceremony_rings(cid, 6);
+
+		assert_eq!(crate::pallet::RingMembers::<TestRuntime>::iter_prefix((cid, 6u32)).count(), 10);
+	});
+}

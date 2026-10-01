@@ -411,6 +411,12 @@ benchmarks! {
 		let user = generate_pair();
 		assert_ok!(Pallet::<T>::register_participant(RawOrigin::Signed(account_id::<T>(&user.clone())).into(), cid, Some(fake_last_attendance_and_get_proof::<T>(&user.clone(), cid))));
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 1);
+		// a purge clears at most `PURGE_LIMIT` entries per map, so price it at that bound
+		for i in 1..=crate::PURGE_LIMIT as u64 {
+			let newbie: T::AccountId = account("newbie", i as u32, i as u32);
+			NewbieRegistry::<T>::insert((cid, cindex), i, newbie.clone());
+			NewbieIndex::<T>::insert((cid, cindex), newbie, i);
+		}
 	}: _(RawOrigin::Root, (cid, cindex))
 	verify {
 		assert_eq!(ReputableCount::<T>::get((cid, cindex)), 0);
