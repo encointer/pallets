@@ -1,8 +1,18 @@
 use crate::*;
-use approx::assert_abs_diff_eq;
-use encointer_primitives::{balances::BalanceType, fixed::traits::LossyInto};
+use encointer_primitives::balances::BalanceType;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
+
+// Tolerance for balance comparisons under demurrage drift. 1e-4, same as the
+// previous f64 `epsilon = 0.0001`. Computed in fixed-point so no float ops.
+fn balance_tolerance() -> BalanceType {
+	BalanceType::from_num(1u32) / 10_000
+}
+
+fn assert_balance_close(actual: BalanceType, expected: BalanceType) {
+	let diff = if actual > expected { actual - expected } else { expected - actual };
+	assert!(diff < balance_tolerance(), "balance {actual:?} not within tolerance of {expected:?}");
+}
 
 benchmarks! {
 	transfer {
@@ -13,10 +23,8 @@ benchmarks! {
 		Pallet::<T>::issue(cid, &alice, BalanceType::from_num(12i32)).ok();
 	}: _(RawOrigin::Signed(alice.clone()), bob.clone(), cid, BalanceType::from_num(10i32))
 	verify{
-		let balance_alice: f64 = Pallet::<T>::balance(cid, &alice).lossy_into();
-		assert_abs_diff_eq!(balance_alice, 2f64, epsilon= 0.0001);
-		let balance_bob: f64 = Pallet::<T>::balance(cid, &bob).lossy_into();
-		assert_abs_diff_eq!(balance_bob, 10f64, epsilon= 0.0001);
+		assert_balance_close(Pallet::<T>::balance(cid, &alice), BalanceType::from_num(2u32));
+		assert_balance_close(Pallet::<T>::balance(cid, &bob), BalanceType::from_num(10u32));
 	}
 
 	transfer_all {
@@ -28,8 +36,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(alice.clone()), bob.clone(), cid)
 	verify{
 		assert!(!Balance::<T>::contains_key(cid, alice));
-		let balance_bob: f64 = Pallet::<T>::balance(cid, &bob).lossy_into();
-		assert_abs_diff_eq!(balance_bob, 12f64, epsilon= 0.0001);
+		assert_balance_close(Pallet::<T>::balance(cid, &bob), BalanceType::from_num(12u32));
 	}
 
 	set_fee_conversion_factor {

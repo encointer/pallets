@@ -19,20 +19,23 @@ fn get_location(i: u32) -> Location {
 	// this is close to the worstcase scenario for the location validation algorithm
 	assert!(i < NUM_LOCATIONS);
 
-	// top left corner coordinates of the bucket u0qjb
-	let lon_base = 47.460932;
-	let lat_base = 8.437509;
+	// top left corner coordinates of the bucket u0qjb, in micro-degrees (1e-6°)
+	const LON_BASE_MICRO: i64 = 47_460_932; // 47.460932°
+	const LAT_BASE_MICRO: i64 = 8_437_509; //  8.437509°
+	const STEP_MICRO: i64 = 1_000; //         0.001°
+	const ONE_DEGREE_MICRO: i64 = 1_000_000;
 
-	let lon_step = 0.001;
-	let lat_step = 0.001;
+	let row = (i / NUM_LOCATIONS_SQRT) as i64;
+	let col = (i % NUM_LOCATIONS_SQRT) as i64;
 
-	let grid_size = NUM_LOCATIONS_SQRT;
+	let lat = Degree::from_num(LAT_BASE_MICRO + row * STEP_MICRO)
+		.checked_div(Degree::from_num(ONE_DEGREE_MICRO))
+		.expect("ONE_DEGREE_MICRO != 0; qed");
+	let lon = Degree::from_num(LON_BASE_MICRO + col * STEP_MICRO)
+		.checked_div(Degree::from_num(ONE_DEGREE_MICRO))
+		.expect("ONE_DEGREE_MICRO != 0; qed");
 
-	let lat = lat_base + (i / grid_size) as f64 * lat_step;
-
-	let lon = lon_base + (i % grid_size) as f64 * lon_step;
-
-	Location { lat: Degree::from_num(lat), lon: Degree::from_num(lon) }
+	Location { lat, lon }
 }
 
 fn setup_test_community<T: Config>() -> (
@@ -72,6 +75,9 @@ fn setup_test_community<T: Config>() -> (
 parameter_types! {
 	pub const DefaultDemurrage: Demurrage = Demurrage::from_bits(0x0000000000000000000001E3F0A8A973_i128);
 }
+
+// 0.5 in I64F64 = 1 << 63
+const HALF_DEMURRAGE: Demurrage = Demurrage::from_bits(1i128 << 63);
 
 benchmarks! {
 	new_community {
@@ -132,10 +138,10 @@ benchmarks! {
 	update_demurrage {
 		let (cid, bootstrappers, community_metadata, demurrage, nominal_income) = setup_test_community::<T>();
 	} : {
-		assert_ok!(Communities::<T>::update_demurrage(RawOrigin::Root.into(), cid, Demurrage::from_num(0.5)));
+		assert_ok!(Communities::<T>::update_demurrage(RawOrigin::Root.into(), cid, HALF_DEMURRAGE));
 	}
 	verify {
-		assert_eq!(pallet_encointer_balances::Pallet::<T>::demurrage_per_block(cid), 0.5);
+		assert_eq!(pallet_encointer_balances::Pallet::<T>::demurrage_per_block(cid), HALF_DEMURRAGE);
 	}
 
 	update_nominal_income {
