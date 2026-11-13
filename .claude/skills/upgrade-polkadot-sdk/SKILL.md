@@ -14,7 +14,7 @@ The runtimes repo is the one that moves first to a new SDK; encointer-pallets fo
 ## Path conventions
 This skill uses two placeholders for repo paths:
 - `<encointer-pallets>` — the encointer-pallets workspace root (where this skill lives, at `<encointer-pallets>/.claude/skills/upgrade-polkadot-sdk/`).
-- `<runtimes>` — the polkadot-fellows runtimes workspace root, **assumed to be a sibling of `<encointer-pallets>`** (i.e. `<parent>/encointer-pallets` and `<parent>/runtimes` for some common parent directory).
+- `<runtimes>` — the polkadot-fellows runtimes workspace root, **assumed to be a sibling of `<encointer-pallets>`** (i.e. `<parent>/encointer-pallets` and `<parent>/runtimes` for some common parent directory). The pallets checkout may be named `pallets` rather than `encointer-pallets` (e.g. in the claude-rust sandbox: `/claude-rust/pallets`); use the real directory name in the B1 patch paths.
 
 Resolution at runtime:
 - If you're already in the encointer-pallets repo, `<encointer-pallets>` is `pwd` (or whatever `git rev-parse --show-toplevel` reports). `<runtimes>` is `../runtimes` from there.
@@ -42,9 +42,11 @@ Goal: update every Polkadot SDK / Substrate / Cumulus / xcm dep in the root `Car
 
 For **stable** SDK releases:
 ```bash
-cargo install cargo-psvm   # if not already installed
-cargo psvm -v <stableYYMM> # bumps every workspace dep
+cargo install psvm --locked       # the crate is `psvm` (not `cargo-psvm`); binary lands in ~/.cargo/bin
+psvm -l | grep <YYMM>             # list available tags, e.g. polkadot-stable2609-2
+psvm -v polkadot-stable<YYMM>[-N] # bumps every workspace dep
 ```
+Cross-check the result against `<runtimes>` with `derive-sdk-versions.sh` (every row should read `==`).
 
 For **unstable RCs**: `psvm` doesn't ship RC versions. Derive the table from `<runtimes>`:
 ```bash
@@ -107,7 +109,16 @@ pallet-encointer-treasuries-rpc-runtime-api   = { path = "../encointer-pallets/t
 
 The relative path assumes `<runtimes>` and `<encointer-pallets>` are siblings. Adjust if not.
 
+### B1a. Refresh stale lock entries
+If an encointer crate was patch-released since `<runtimes>/Cargo.lock` was written (e.g. local `24.0.2` vs locked `24.0.0`), cargo reports `warning: patch ... was not used in the crate graph` even though `~24.0.0` matches, and `Cargo.lock` gains a `[[patch.unused]]` entry. Fix with a targeted update, not by touching versions:
+```bash
+cargo update -p pallet-encointer-reputation-rings@24.0.0   # one per affected crate
+grep -c 'patch.unused' Cargo.lock                          # must be 0
+```
+
 ### B2. Uncomment every `TODO @ggwpez encointer` marker
+**Skip this step if the grep below returns nothing.** On the stable2609-2 run (Nov 2026) the runtimes upgrade branch kept encointer wired in against the old crates.io release (pulling a second substrate cohort) instead of commenting it out, so only B1/B1a applied.
+
 The runtimes workspace keeps encointer wiring behind two comment shapes:
 - single-line: `# TODO @ggwpez encointer-...` or `// TODO @ggwpez encointer-...`
 - block: `/* TODO @ggwpez ... */`
@@ -187,6 +198,12 @@ SKIP_PALLET_REVIVE_FIXTURES=1 cargo +1.93.0 check -p encointer-kusama-runtime --
 ```bash
 cargo +1.93.0 test -p encointer-kusama-runtime
 ```
+The runtimes upgrade branch may not have fixed SDK breaks in encointer's own runtime code, because it was never compiled against the new SDK while it resolved to the old crates.io encointer release. On stable2609 the test mock still imported the removed `xcm_executor::traits::JustTry`; the replacement is `sp_runtime::traits::TryConvertInto`. Such fixes belong in `<runtimes>`, next to the patch block.
+
+### C5. emulated integration tests
+```bash
+cargo +1.93.0 test -p encointer-kusama-integration-tests
+```
 
 ## Phase D — verify chain-spec-generator
 ```bash
@@ -250,7 +267,7 @@ What to look for:
 
 ## Variants
 
-**Stable releases.** Phase A uses `cargo psvm`; everything else is the same.
+**Stable releases.** Phase A uses `psvm`; everything else is the same. Use `--strategy major` in Phase E (README policy; stable2606 went 22.x → 24.0.0, stable2609 24.x → 25.0.0).
 
 **Subsequent RCs of the same release** (e.g. `unstable2604-rc2` after `rc1`). Re-run Phase A only, with the new RC versions — the structural changes from Phase B onward have already been done in the previous RC pass.
 
