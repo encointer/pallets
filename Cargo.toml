@@ -80,39 +80,39 @@ serde = { version = "1.0.197", default-features = false, features = ["derive", "
 thiserror = "2.0.11"
 
 # polkadot-sdk [no_std]
-frame-benchmarking = { version = "50.0.0", default-features = false }
-frame-support = { version = "49.1.0", default-features = false }
-frame-system = { version = "49.0.0", default-features = false }
-pallet-asset-tx-payment = { version = "50.0.0", default-features = false }
-pallet-balances = { version = "51.0.2", default-features = false }
-pallet-timestamp = { version = "49.0.0", default-features = false }
-pallet-transaction-payment = { version = "50.0.0", default-features = false }
-sp-api = { version = "44.0.0", default-features = false }
-sp-application-crypto = { version = "49.0.0", default-features = false }
-sp-arithmetic = { version = "29.0.0", default-features = false }
-sp-core = { version = "43.0.0", default-features = false }
-sp-io = { version = "49.0.0", default-features = false }
-sp-runtime = { version = "49.0.0", default-features = false }
-sp-std = { version = "14.0.0", default-features = false }
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+pallet-asset-tx-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+sp-application-crypto = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611", default-features = false }
 
 # rpc stuff [std]
 jsonrpsee = { version = "0.24.11", features = ["client-core", "server", "macros"] }
 jsonrpsee-core = { version = "0.24.11" }
 jsonrpsee-types = { version = "0.24.11" }
-pallet-transaction-payment-rpc = { version = "53.0.0" }
-sc-rpc = "56.0.0"
-sc-rpc-api = "0.60.0"
-sp-blockchain = "47.0.0"
-sp-rpc = "41.0.0"
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
+sc-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
+sc-rpc-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
+sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
+sp-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
 
 # dev deps
 approx = "0.5.1"
 itertools = "0.11.0"
 rstest = "0.12.0"
 serde_json = "1.0.114"
-sp-inherents = "44.0.0"
-sp-keyring = "49.0.0"
-sp-keystore = "0.49.0"
+sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
+sp-keystore = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2611" }
 
 #[patch.crates-io]
 #substrate-fixed = { path = "../substrate-fixed"}

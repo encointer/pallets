@@ -271,6 +271,12 @@ What to look for:
 
 **Subsequent RCs of the same release** (e.g. `unstable2604-rc2` after `rc1`). Re-run Phase A only, with the new RC versions — the structural changes from Phase B onward have already been done in the previous RC pass.
 
+**SDK not yet on crates.io (git-branch pre-release).** `<runtimes>` sometimes moves to a new stable before Parity publishes it, pointing every SDK dep at `{ git = "https://github.com/paritytech/polkadot-sdk", branch = "stableYYMM" }` (stable2611, Nov 2026). No `polkadot-stableYYMM` tag exists yet, so `psvm -l` doesn't list it. Prepare everything except publication:
+- **Phase A:** in `[workspace.dependencies]`, replace `version = "..."` with that `git`/`branch` pair on every SDK entry (frame-*, sp-*, sc-*, the pallet-* SDK pallets, pallet-transaction-payment-rpc), keeping `default-features`/`features`. The old lockfile won't resolve (e.g. `failed to select a version for futures`). Seed it from `<runtimes>` with `cp <runtimes>/Cargo.lock Cargo.lock` and run `cargo metadata`; cargo prunes unused entries, and both repos land on the same SDK commit and the same shared dep versions. Check `grep -o 'polkadot-sdk?branch=stableYYMM#[0-9a-f]*' Cargo.lock | sort -u` shows the commit `<runtimes>` uses. In-tree versions on the branch look odd (`frame-support 28.0.0`); that's normal for git deps.
+- **Phase B–D:** unchanged. Member versions stay at the published values, so `<runtimes>`'s `~X.0.0` requirements still match the patches.
+- **Stop before Phase E.** crates.io rejects crates with git deps.
+- **Release day:** (1) `git diff master -- Cargo.toml` should show only the SDK lines. Restore them with `git show master:Cargo.toml > Cargo.toml`, re-applying any other edits made on the branch. (2) `psvm -v polkadot-stableYYMM`. (3) Once `<runtimes>` has flipped too, re-seed `Cargo.lock` from it and re-run the Phase A checks. (4) Continue with Phase E (`--strategy major`), publish, F, G. Source fixes made against the git branch carry over unchanged.
+
 **Rollback** (if the upgrade needs to be abandoned mid-flight). Revert `encointer-pallets/Cargo.toml` `[workspace.dependencies]` to the previous values; revert the `[patch.crates-io]` block + uncomments in `<runtimes>` (`git checkout`). If Phase E ran but publication didn't happen, also revert the member-version bumps.
 
 ## Troubleshooting

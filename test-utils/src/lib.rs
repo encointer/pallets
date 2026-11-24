@@ -156,8 +156,6 @@ macro_rules! impl_balances {
 			type ReserveIdentifier = [u8; 8];
 			type RuntimeHoldReason = ();
 			type RuntimeFreezeReason = RuntimeFreezeReason;
-			type FreezeIdentifier = ();
-			type MaxFreezes = frame_support::traits::ConstU32<0>;
 			type DoneSlashHandler = ();
 		}
 	};
